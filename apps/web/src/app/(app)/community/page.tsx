@@ -12,6 +12,8 @@ import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
+import { CrimeMixCard } from "@/components/CrimeMixCard";
+import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 
 const REGISTRY_URL = process.env.NEXT_PUBLIC_SEX_OFFENDER_REGISTRY_URL || "https://www.meganslaw.ca.gov/";
 
@@ -101,11 +103,17 @@ export default function CommunityPage() {
             title={area ? `${area.label} — incident mix` : "Citywide incident mix"}
             subtitle="SDPD NIBRS, recent cached window."
           />
+          <CrimeMixCard
+            areaSlug={area?.slug}
+            jurisdictionSlug={!area ? "san-diego" : undefined}
+            title={area ? `${area.label} — specific offenses, last 30 days` : "Citywide specific offenses, last 30 days"}
+          />
           <RecentIncidentsCards
             area={area?.slug}
             jurisdiction={!area ? "san-diego" : undefined}
             title={area ? `Recently reported in ${area.label}` : "Recently reported across San Diego"}
           />
+          <SafetyTipsPanel areaSlug={area?.slug} jurisdictionSlug={!area ? "san-diego" : undefined} />
 
           <section className="surface p-6 border-amber2-500/30">
             <h2 className="font-display text-lg text-slate2-900">Official registries</h2>

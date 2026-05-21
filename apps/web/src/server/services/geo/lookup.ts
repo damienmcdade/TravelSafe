@@ -1,11 +1,4 @@
-import { SD_AREAS, findArea, nearestArea, type KnownArea } from "../crime-data/neighborhoods";
-
-// Layered location lookup for SD-region queries.
-//   1) exact slug / name match
-//   2) ZIP-code lookup against a small in-repo SD ZIP table
-//   3) Nominatim (OpenStreetMap) geocode -> nearest known neighborhood centroid
-// Anything that can't resolve to a known SD neighborhood returns null;
-// callers then fall back to the citywide aggregate.
+import { findArea, nearestArea, listKnownAreas, type KnownArea } from "../crime-data/neighborhoods";
 
 const SD_ZIP_TO_AREA: Record<string, string> = {
   "92101": "downtown-sd",
@@ -25,12 +18,12 @@ export interface LookupResult {
   rawQuery: string;
 }
 
-function fuzzyMatch(needle: string): KnownArea | null {
+function fuzzyMatch(needle: string, areas: KnownArea[]): KnownArea | null {
   const n = needle.toLowerCase().replace(/[^a-z0-9 ]+/g, "");
   if (!n) return null;
   const tokens = n.split(/\s+/).filter(Boolean);
   let best: { area: KnownArea; score: number } | null = null;
-  for (const area of SD_AREAS) {
+  for (const area of areas) {
     const hay = `${area.slug} ${area.label}`.toLowerCase();
     let score = 0;
     for (const t of tokens) if (hay.includes(t)) score += t.length;
@@ -40,7 +33,6 @@ function fuzzyMatch(needle: string): KnownArea | null {
 }
 
 async function nominatimGeocode(query: string): Promise<{ lat: number; lng: number } | null> {
-  // San Diego County viewbox: roughly (-117.6, 33.5) to (-116.0, 32.5).
   const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", `${query}, San Diego, California`);
   url.searchParams.set("format", "json");
@@ -64,6 +56,10 @@ export async function lookupLocation(q: string): Promise<LookupResult | null> {
   const trimmed = q.trim();
   if (!trimmed) return null;
 
+  // Always pull the discovered list so we can match against the full ~100+
+  // SDPD-known neighborhoods, not just the small hardcoded fallback.
+  const areas = await listKnownAreas();
+
   const exact = findArea(trimmed);
   if (exact) return { area: exact, matchedVia: "exact", rawQuery: trimmed };
 
@@ -73,7 +69,7 @@ export async function lookupLocation(q: string): Promise<LookupResult | null> {
     if (area) return { area, matchedVia: "zip", rawQuery: trimmed };
   }
 
-  const fuzzy = fuzzyMatch(trimmed);
+  const fuzzy = fuzzyMatch(trimmed, areas);
   if (fuzzy) return { area: fuzzy, matchedVia: "fuzzy", rawQuery: trimmed };
 
   const geo = await nominatimGeocode(trimmed);
@@ -84,6 +80,6 @@ export async function lookupLocation(q: string): Promise<LookupResult | null> {
   return null;
 }
 
-export function allKnownAreas(): KnownArea[] {
-  return SD_AREAS;
+export async function allKnownAreas(): Promise<KnownArea[]> {
+  return listKnownAreas();
 }

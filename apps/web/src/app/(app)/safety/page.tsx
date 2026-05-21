@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, useApi } from "@/lib/api-client";
+import Link from "next/link";
+import { api, isSignedIn, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
-import { SignInGate } from "@/components/SignInGate";
+import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -49,11 +50,23 @@ export default function PersonalSafetyPage() {
       )}
 
       <EmergencyPanel />
-      <SignInGate message="The check-in timer and live-share links are tied to your trusted contacts, so they need an account.">
-        <CheckInPanel />
-        <LiveSharePanel />
-      </SignInGate>
+      <SafetyTipsPanel jurisdictionSlug="san-diego" />
+      <CheckInPanel />
+      <LiveSharePanel />
     </main>
+  );
+}
+
+/// Inline auth prompt that replaces the SignInGate. Used by Check-in / Live-
+/// share *when the user actually tries to arm or create* — viewing is always
+/// free, only the act of binding a timer / link to an account requires sign-in.
+function AuthPrompt({ message }: { message: string }) {
+  return (
+    <div className="mt-3 surface-muted p-3 text-sm text-slate2-700 flex flex-wrap items-center gap-2">
+      <span>{message}</span>
+      <Link href="/login" className="btn-primary text-xs">Sign in</Link>
+      <Link href="/register" className="btn-secondary text-xs">Create account</Link>
+    </div>
   );
 }
 
@@ -80,7 +93,10 @@ function EmergencyPanel() {
 }
 
 function CheckInPanel() {
-  const { data, reload } = useApi<ActiveTimer[]>("/safety/check-in/active");
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => setSignedIn(isSignedIn()), []);
+
+  const { data, reload } = useApi<ActiveTimer[]>(signedIn ? "/safety/check-in/active" : null, [signedIn]);
   const active = data?.[0] ?? null;
 
   const [duration, setDuration] = useState(30);
@@ -90,10 +106,7 @@ function CheckInPanel() {
   const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!active) {
-      setRemaining(null);
-      return;
-    }
+    if (!active) { setRemaining(null); return; }
     const tick = () => setRemaining(Math.max(0, +new Date(active.scheduledFor) - Date.now()));
     tick();
     const id = setInterval(tick, 1000);
@@ -101,6 +114,7 @@ function CheckInPanel() {
   }, [active]);
 
   async function arm() {
+    if (!signedIn) return;
     setBusy(true);
     setError(null);
     try {
@@ -168,6 +182,9 @@ function CheckInPanel() {
         </div>
       )}
       {error && <p className="mt-3 text-sm text-dusk-700">{error}</p>}
+      {!signedIn && (
+        <AuthPrompt message="Arming a timer requires an account so we can notify your confirmed contacts if it expires." />
+      )}
     </section>
   );
 }
@@ -179,7 +196,10 @@ function formatRemaining(ms: number) {
 }
 
 function LiveSharePanel() {
-  const { data, reload } = useApi<LiveShare[]>("/safety/live-share");
+  const [signedIn, setSignedIn] = useState(false);
+  useEffect(() => setSignedIn(isSignedIn()), []);
+
+  const { data, reload } = useApi<LiveShare[]>(signedIn ? "/safety/live-share" : null, [signedIn]);
   const active = (data ?? []).filter((s) => !s.revokedAt && new Date(s.expiresAt) > new Date());
 
   const [duration, setDuration] = useState(30);
@@ -187,6 +207,7 @@ function LiveSharePanel() {
   const [lastShare, setLastShare] = useState<{ shareUrl: string; expiresAt: string } | null>(null);
 
   async function create() {
+    if (!signedIn) return;
     const r = await api<{ shareUrl: string; expiresAt: string }>("/safety/live-share", {
       method: "POST",
       body: JSON.stringify({ durationMinutes: duration, contactEmail: contactEmail || undefined }),
@@ -220,10 +241,13 @@ function LiveSharePanel() {
           Send link to email (optional)
           <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="mt-1 input" />
         </label>
-        <button onClick={create} className="sm:col-span-3 px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl">
+        <button onClick={create} disabled={!signedIn} className="sm:col-span-3 btn-primary disabled:opacity-50">
           Generate link
         </button>
       </div>
+      {!signedIn && (
+        <AuthPrompt message="Generating a live-share link requires an account so you can revoke it from any device." />
+      )}
 
       {lastShare && (
         <div className="mt-4 surface-muted p-4 text-sm">

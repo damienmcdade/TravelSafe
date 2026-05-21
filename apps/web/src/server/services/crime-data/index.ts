@@ -65,10 +65,11 @@ export const crimeData = {
       dominantCategory: "PERSONS" | "PROPERTY" | "SOCIETY" | null;
     }>;
   }> {
-    const { SD_AREAS } = await import("./neighborhoods");
+    const { listKnownAreas } = await import("./neighborhoods");
+    const areas = await listKnownAreas();
     const perArea: Awaited<ReturnType<typeof crimeData.getCitywide>>["perArea"] = [];
     const totalByCategory = new Map<string, Incident[]>();
-    for (const area of SD_AREAS) {
+    for (const area of areas) {
       const incidents = await this.getIncidents(area.slug, { limit: 500 });
       const byCategory = { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 };
       for (const i of incidents) {

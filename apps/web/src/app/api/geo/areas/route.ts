@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { allKnownAreas } from "@/server/services/geo/lookup";
 
-export function GET() {
-  return NextResponse.json(allKnownAreas());
+export const dynamic = "force-dynamic";
+export async function GET() {
+  return NextResponse.json(await allKnownAreas());
 }

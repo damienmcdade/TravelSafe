@@ -10,6 +10,8 @@ import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
+import { CrimeMixCard } from "@/components/CrimeMixCard";
+import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 
 interface Area { slug: string; label: string; jurisdiction: string }
 interface PerArea { slug: string; label: string; incidentCount: number; riskLevel: 1|2|3|4|5; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number }; dominantCategory: "PERSONS"|"PROPERTY"|"SOCIETY"|null }
@@ -117,12 +119,18 @@ export default function ThreatsPage() {
               </ol>
             </section>
           )}
+          <CrimeMixCard
+            areaSlug={area?.slug}
+            jurisdictionSlug={!area ? "san-diego" : undefined}
+            title={showingCitywide ? "Specific offenses citywide — last 30 days" : `${area!.label} — last 30 days`}
+          />
           <RecentIncidentsCards
             area={area?.slug}
             jurisdiction={!area ? "san-diego" : undefined}
             title={showingCitywide ? "Recently reported across San Diego" : `Recently reported in ${area!.label}`}
             limit={8}
           />
+          <SafetyTipsPanel areaSlug={area?.slug} jurisdictionSlug={!area ? "san-diego" : undefined} />
           <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? selectedAreaStats?.alerts[0]?.provenance ?? null} />
         </div>
         <aside className="space-y-4">

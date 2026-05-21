@@ -29,6 +29,11 @@ export interface Incident {
   // No exact lat/lng on display. The adapter may carry it but the route
   // returns the value as-published (block-level), with a "block_addr"-style label.
   blockLabel?: string;
+  // Carried for centroid computation only — never surfaced to clients alongside
+  // a person identifier. The map / area-discovery code aggregates these into
+  // neighborhood centroids.
+  lat?: number;
+  lng?: number;
 }
 
 export interface AreaRiskAlert {
