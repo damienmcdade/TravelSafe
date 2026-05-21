@@ -1,7 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run db:generate && npm run build:web",
+  "buildCommand": "npm run build --workspace apps/web",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "crons": [
+    {
+      "path": "/api/cron/check-in",
+      "schedule": "* * * * *"
+    }
+  ]
 }

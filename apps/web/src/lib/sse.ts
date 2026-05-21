@@ -6,7 +6,7 @@ export function useCommunityStream(onEvent: (evt: { type: string; [k: string]: u
   const ref = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    const es = new EventSource(`${API_BASE}/community/stream`);
+    const es = new EventSource(`${API_BASE}/api/community/stream`);
     ref.current = es;
     es.onmessage = (m) => {
       try { onEvent(JSON.parse(m.data)); } catch { /* skip malformed */ }

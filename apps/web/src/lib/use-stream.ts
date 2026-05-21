@@ -18,7 +18,7 @@ export function useTextStream(path: string) {
     setError(null);
     setStatus("streaming");
     try {
-      const res = await fetch(`${API_BASE}${path}`, {
+      const res = await fetch(`${API_BASE}/api${path}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

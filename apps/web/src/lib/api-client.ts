@@ -2,7 +2,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { sampleFor } from "./sample-data";
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
+// Same-origin: every API call hits the Next.js Route Handlers under /api/*
+// served by the same Vercel deployment as the web app. NEXT_PUBLIC_API_BASE_URL
+// can still override (e.g. local dev pointing at a different host).
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
 function token(): string | null {
   if (typeof window === "undefined") return null;
@@ -41,7 +44,7 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   };
   const tk = token();
   if (tk) (headers as Record<string, string>).Authorization = `Bearer ${tk}`;
-  const res = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  const res = await fetch(`${API_BASE}/api${path}`, { ...init, headers });
   const text = await res.text();
   const body = text ? JSON.parse(text) : null;
   if (!res.ok) {
