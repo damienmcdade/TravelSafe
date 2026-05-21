@@ -14,6 +14,10 @@ export function setToken(t: string | null) {
   else localStorage.setItem("travelsafe.token", t);
 }
 
+export function isSignedIn(): boolean {
+  return token() != null;
+}
+
 export async function api<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",

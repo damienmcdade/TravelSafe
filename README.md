@@ -168,7 +168,8 @@ See [`.env.example`](./.env.example) for the full annotated list. Highlights:
 
 | Tab / Screen | Path | Backend route |
 |---|---|---|
-| Welcome / register / login | `/`, `/register`, `/login` | `POST /auth/register`, `POST /auth/login` |
+| Welcome (no sign-up required) | `/` | — links straight to `/threats`; auth is optional |
+| Register / login | `/register`, `/login` | `POST /auth/register`, `POST /auth/login` — only needed for posting / trusted contacts / check-in timer |
 | Onboarding — alert categories | `/onboarding/alert-preferences` | `PUT /preferences/alerts` |
 | Onboarding — trusted contacts | `/onboarding/trusted-contacts` | `POST /contacts`, `GET /contacts` (max 5) |
 | Threat Detection | `/threats` | `GET /crime-data/alerts?neighborhood=…` + push when entering higher-incident area |

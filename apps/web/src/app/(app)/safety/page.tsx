@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
+import { SignInGate } from "@/components/SignInGate";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -48,8 +49,10 @@ export default function PersonalSafetyPage() {
       )}
 
       <EmergencyPanel />
-      <CheckInPanel />
-      <LiveSharePanel />
+      <SignInGate message="The check-in timer and live-share links are tied to your trusted contacts, so they need an account.">
+        <CheckInPanel />
+        <LiveSharePanel />
+      </SignInGate>
     </main>
   );
 }

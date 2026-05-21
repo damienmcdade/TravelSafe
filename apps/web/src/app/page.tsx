@@ -22,9 +22,16 @@ export default function WelcomePage() {
         </ul>
       </section>
 
-      <div className="mt-10 flex gap-3">
-        <Link href="/register" className="px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl">Create account</Link>
-        <Link href="/login" className="px-4 py-2 bg-white border border-sand-200 text-slate2-900 rounded-xl">Sign in</Link>
+      <div className="mt-10 flex flex-wrap gap-3 items-center">
+        <Link href="/threats" className="px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl">
+          Explore TravelSafe
+        </Link>
+        <span className="text-sm text-slate2-500">
+          No sign-up needed for browsing.{" "}
+          <Link href="/login" className="underline">Sign in</Link> or{" "}
+          <Link href="/register" className="underline">create an account</Link>{" "}
+          if you want to post, set up trusted contacts, or use the check-in timer.
+        </span>
       </div>
     </main>
   );

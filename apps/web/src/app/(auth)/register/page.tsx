@@ -34,6 +34,7 @@ export default function RegisterPage() {
     <main className="max-w-md mx-auto px-6 py-16">
       <h1 className="font-display text-3xl text-slate2-900">Create your account</h1>
       <p className="mt-2 text-slate2-500 text-sm">
+        Optional — only needed if you want to post, set up trusted contacts, or use the check-in timer.
         Email + password only. We don&apos;t ask for or store demographic information.
       </p>
       <form className="mt-8 space-y-4" onSubmit={onSubmit}>

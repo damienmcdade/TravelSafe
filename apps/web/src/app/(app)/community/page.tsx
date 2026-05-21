@@ -3,6 +3,7 @@ import { useState } from "react";
 import { api, useApi } from "@/lib/api-client";
 import { DataProvenanceBanner, CommunityReportedLabel, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { RiskBadge } from "@/components/RiskBadge";
+import { SignInGate } from "@/components/SignInGate";
 
 const REGISTRY_URL = process.env.NEXT_PUBLIC_SEX_OFFENDER_REGISTRY_URL || "https://www.meganslaw.ca.gov/";
 
@@ -84,7 +85,9 @@ export default function CommunityPage() {
         </a>
       </section>
 
-      <PostComposer areaSlug={areaSlug} onPosted={reload} />
+      <SignInGate message="Sign in to post a heads-up. We tie posts to accounts so the moderation queue can apply the rate limit and the suspension ladder.">
+        <PostComposer areaSlug={areaSlug} onPosted={reload} />
+      </SignInGate>
 
       <section className="space-y-3">
         <h2 className="font-display text-lg text-slate2-900">Verified community posts</h2>
