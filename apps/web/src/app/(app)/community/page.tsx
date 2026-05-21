@@ -13,7 +13,6 @@ import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
-import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { CityBanner } from "@/components/CitySelector";
 import { useCity } from "@/lib/use-city";
 
@@ -119,7 +118,6 @@ export default function CommunityPage() {
             jurisdiction={!area ? city.defaultArea : undefined}
             title={area ? `Recently reported in ${area.label}` : `Recently reported across ${city.label}`}
           />
-          <SafetyTipsPanel areaSlug={area?.slug} jurisdictionSlug={!area ? city.defaultArea : undefined} />
 
           <section className="surface p-6 border-amber2-500/30">
             <h2 className="font-display text-lg text-slate2-900">Official registries</h2>

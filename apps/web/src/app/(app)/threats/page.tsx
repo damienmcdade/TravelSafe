@@ -12,7 +12,6 @@ import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
-import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { CityBanner } from "@/components/CitySelector";
 
 interface Area { slug: string; label: string; jurisdiction: string }
@@ -144,7 +143,6 @@ export default function ThreatsPage() {
             title={showingCitywide ? `Recently reported across ${city.label}` : `Recently reported in ${area!.label}`}
             limit={8}
           />
-          <SafetyTipsPanel areaSlug={area?.slug} jurisdictionSlug={!area ? city.defaultArea : undefined} />
           <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? selectedAreaStats?.alerts[0]?.provenance ?? null} />
         </div>
         <aside className="space-y-4">

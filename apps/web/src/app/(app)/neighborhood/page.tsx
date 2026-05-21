@@ -11,7 +11,6 @@ import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
-import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { CityBanner } from "@/components/CitySelector";
 import { relativeTime } from "@/lib/sse";
 
@@ -59,7 +58,6 @@ export default function NeighborhoodPage() {
           <CategoryBreakdown counts={counts} title={`${feed?.area.name ?? slug} — incident mix`} subtitle="Recent cached window." />
           <CrimeMixCard areaSlug={slug} title={`${feed?.area.name ?? slug} — specific offenses, last 30 days`} />
           <RecentIncidentsCards area={slug} title={`Recently reported in ${feed?.area.name ?? slug}`} />
-          <SafetyTipsPanel areaSlug={slug} />
           <section className="space-y-3">
             <h2 className="font-display text-xl text-slate2-900">Verified neighbor reports</h2>
             {(feed?.posts ?? []).length === 0 && (

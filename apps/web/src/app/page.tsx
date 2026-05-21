@@ -8,13 +8,12 @@ export default function WelcomePage() {
         <div className="absolute inset-0 bg-hero-dusk opacity-90" aria-hidden />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_120%,rgba(255,255,255,0.18),transparent_60%)]" aria-hidden />
         <div className="relative max-w-5xl mx-auto px-6 py-24 sm:py-32">
-          <p className="text-bay-200 text-sm tracking-wide uppercase animate-fade-in">San Diego · Area-level safety</p>
+          <p className="text-bay-200 text-sm tracking-wide uppercase animate-fade-in">Area-level safety · San Diego · Los Angeles · San Francisco</p>
           <h1 className="mt-2 font-display text-5xl sm:text-6xl text-white animate-rise-in">
             <span className="bg-gradient-to-r from-white to-coral-200 bg-clip-text text-transparent">Travel</span>Safe
           </h1>
           <p className="mt-4 max-w-xl text-sand-100 text-lg animate-rise-in">
-            Calm, neighborhood-level safety context drawn from public crime data and moderated
-            community reports — without surveillance, profiling, or doom-scrolling.
+            Calm, neighborhood-level safety context for major California cities. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
           </p>
           <div className="mt-8 flex flex-wrap gap-3 animate-rise-in">
             <Link href="/threats" className="btn-coral text-base px-6 py-3">Explore TravelSafe →</Link>
@@ -23,9 +22,9 @@ export default function WelcomePage() {
             </Link>
           </div>
           <p className="mt-6 text-xs text-sand-100/80">
-            No sign-up needed for browsing. Sign in or{" "}
+            Browsing requires no account. Sign in or{" "}
             <Link href="/register" className="underline underline-offset-2 hover:text-white">create an account</Link>{" "}
-            if you want to post, set up trusted contacts, or use the check-in timer.
+            to post, configure trusted contacts, or arm a check-in timer.
           </p>
         </div>
       </section>
@@ -36,20 +35,20 @@ export default function WelcomePage() {
           <Pillar
             tone="bay"
             label="Awareness"
-            title="Neighborhood-level data, not gossip"
-            body="Real SDPD NIBRS incidents and SANDAG annual rates — aggregated to neighborhoods, with sparkline trends and plain-language context."
+            title="Neighborhood-level data, not rumors"
+            body="Incident reports from each city's police department, aggregated to the neighborhood level. Sparkline trends and plain-language context for the area you select."
           />
           <Pillar
             tone="sage"
             label="Community"
-            title="Behavior + place, never people"
-            body="Moderated heads-ups with a structured 'what / where / when' composer. No street addresses, no names, no profiling — the pre-vetter enforces it."
+            title="Behaviors and places, never people"
+            body="Moderated posts use a structured what/where/when composer. The pre-screening service blocks street addresses, individual names, and posts that lead with appearance."
           />
           <Pillar
             tone="coral"
             label="Personal"
-            title="Check on me, on your terms"
-            body="A server-side check-in timer and revocable live-share links for your trusted contacts. The app never dials 911 for you — that button always goes straight to your phone."
+            title="Check-ins on your terms"
+            body="A server-side check-in timer and revocable live-share links for your trusted contacts. The application does not dial 911 for you; the emergency button opens your phone's native dialer."
           />
         </div>
       </section>
@@ -57,12 +56,12 @@ export default function WelcomePage() {
       {/* Not list */}
       <section className="max-w-5xl mx-auto px-6 pb-24">
         <div className="surface p-8">
-          <h2 className="font-display text-2xl text-slate2-900">What this app does not do</h2>
+          <h2 className="font-display text-2xl text-slate2-900">What this application does not do</h2>
           <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate2-700">
             <Bullet>It does not surveil, track, or geolocate individuals.</Bullet>
             <Bullet>It does not contact emergency services on your behalf. In an emergency, call 911 directly.</Bullet>
             <Bullet>It does not collect demographic data (no age, gender, ethnicity, religion).</Bullet>
-            <Bullet>Community posts are reviewed — never presented as official police data.</Bullet>
+            <Bullet>Community posts are reviewed and are never presented as official police data.</Bullet>
           </ul>
         </div>
       </section>

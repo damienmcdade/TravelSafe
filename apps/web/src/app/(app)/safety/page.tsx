@@ -5,6 +5,7 @@ import { api, isSignedIn, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { CityBanner } from "@/components/CitySelector";
+import { LocationSearch } from "@/components/LocationSearch";
 import { useCity } from "@/lib/use-city";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
@@ -23,8 +24,15 @@ interface LiveShare {
   revokedAt: string | null;
 }
 
+interface Area { slug: string; label: string; jurisdiction: string }
+
 export default function PersonalSafetyPage() {
   const { city } = useCity();
+  const [area, setArea] = useState<Area | null>(null);
+  // Reset the per-area selection when the user switches cities so safety tips
+  // re-align to the new city's default area.
+  useEffect(() => { setArea(null); }, [city.slug]);
+
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem(DISCLAIMER_KEY)) {
@@ -44,7 +52,7 @@ export default function PersonalSafetyPage() {
           <p className="mt-2 text-sm text-slate2-700">
             TravelSafe&apos;s personal-safety tools may fail due to network, device, or service issues
             and are <strong>not a substitute for 911 or professional emergency services</strong>.
-            The app does not contact emergency services on your behalf. In an emergency, call 911.
+            The application does not contact emergency services on your behalf. In an emergency, call 911.
           </p>
           <button onClick={dismissDisclaimer} className="mt-3 px-3 py-1.5 bg-slate2-900 text-sand-50 rounded-xl text-sm">
             I understand
@@ -54,7 +62,21 @@ export default function PersonalSafetyPage() {
 
       <EmergencyPanel />
       <CityBanner />
-      <SafetyTipsPanel jurisdictionSlug={city.defaultArea} />
+
+      <section className="surface p-5">
+        <h2 className="font-display text-lg text-slate2-900">Tailor safety tips to your area</h2>
+        <p className="mt-1 text-xs text-slate2-500">
+          Tips below are matched to the offenses most commonly reported in {area ? area.label : city.label}. Switch the city in the header to change region, or search a specific neighborhood here.
+        </p>
+        <div className="mt-3">
+          <LocationSearch current={area} onResolved={setArea} />
+        </div>
+      </section>
+
+      <SafetyTipsPanel
+        areaSlug={area?.slug}
+        jurisdictionSlug={!area ? city.defaultArea : undefined}
+      />
       <CheckInPanel />
       <LiveSharePanel />
     </main>

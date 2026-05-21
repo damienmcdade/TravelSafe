@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = {
-  title: "TravelSafe — San Diego",
+  title: "TravelSafe",
   description:
-    "Area-level safety awareness for the San Diego region. Not surveillance; not a substitute for emergency services.",
+    "Neighborhood-level safety awareness for San Diego, Los Angeles, and San Francisco. " +
+    "Drawn from official police data sources. Not surveillance; not a substitute for emergency services.",
   manifest: "/manifest.json",
 };
 

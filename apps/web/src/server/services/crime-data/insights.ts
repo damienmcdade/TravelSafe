@@ -38,7 +38,7 @@ function bucketByWeek(incidents: Incident[]): Map<string, number[]> {
 
 function buildBrief(area: string, trends: CategoryTrend[]): string {
   if (trends.length === 0 || trends.every((t) => t.weekly.every((w) => w === 0))) {
-    return `${area} has had few or no recorded incidents in the cached window. That's typical for many San Diego neighborhoods most weeks.`;
+    return `${area} has had few or no recorded incidents in the recent cached window. Long periods of low activity are typical for many neighborhoods.`;
   }
   const elevated = trends.filter((t) => t.currentVsBaseline > 0.25);
   const calm = trends.filter((t) => t.currentVsBaseline < -0.1);
