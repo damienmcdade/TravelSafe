@@ -122,9 +122,11 @@ npm run lint         # lint every workspace
 
 1. Create a new Railway project and add the **Postgres** plugin — it sets
    `DATABASE_URL` for you.
-2. Add a service from this repo. The included `railway.json` runs
-   `npm install && db:generate && db:migrate deploy && build:api`, then
-   `npm run start:api` with `/health` as the healthcheck path.
+2. Add a service from this repo. The included `railway.json` builds with
+   `npm install && db:generate && build:api`, then at boot runs
+   `db:migrate:deploy && start:api` with `/health` as the healthcheck path.
+   Migrations run at startup (not build) so `DATABASE_URL` is always
+   present when Prisma needs it.
 3. Set the remaining env vars (`JWT_SECRET`, `VAPID_*`, `CORS_ORIGINS` —
    include your Vercel URL).
 4. Copy the public Railway URL of the API service into Vercel as
