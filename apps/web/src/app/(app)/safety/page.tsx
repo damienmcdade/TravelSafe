@@ -4,6 +4,8 @@ import Link from "next/link";
 import { api, isSignedIn, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
+import { CityBanner } from "@/components/CitySelector";
+import { useCity } from "@/lib/use-city";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -22,6 +24,7 @@ interface LiveShare {
 }
 
 export default function PersonalSafetyPage() {
+  const { city } = useCity();
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   useEffect(() => {
     if (typeof window !== "undefined" && !localStorage.getItem(DISCLAIMER_KEY)) {
@@ -50,7 +53,8 @@ export default function PersonalSafetyPage() {
       )}
 
       <EmergencyPanel />
-      <SafetyTipsPanel jurisdictionSlug="san-diego" />
+      <CityBanner />
+      <SafetyTipsPanel jurisdictionSlug={city.defaultArea} />
       <CheckInPanel />
       <LiveSharePanel />
     </main>
