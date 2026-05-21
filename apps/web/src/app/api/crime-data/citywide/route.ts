@@ -4,5 +4,6 @@ import { crimeData } from "@/server/services/crime-data";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const maxDuration = 60;
 
 export const GET = wrap(async () => NextResponse.json(await crimeData.getCitywide()));
