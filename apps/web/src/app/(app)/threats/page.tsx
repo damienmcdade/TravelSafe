@@ -21,7 +21,7 @@ interface Alert { area: string; category: "PERSONS"|"PROPERTY"|"SOCIETY"; riskLe
 interface Citywide { city: string; totalIncidents: number; alerts: Alert[]; perArea: PerArea[] }
 
 export default function ThreatsPage() {
-  const { city } = useCity();
+  const { city, setCity, cities } = useCity();
   const [area, setArea] = useState<Area | null>(null);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [locError, setLocError] = useState<string | null>(null);
@@ -54,12 +54,18 @@ export default function ThreatsPage() {
     setLocError(null);
     try {
       const pos = await requestLocation();
-      const r = await api<{ area: string; alerts: Alert[] }>(
+      const r = await api<{ area: string; label: string; city: string; alerts: Alert[] }>(
         `/crime-data/alerts?lat=${pos.coords.latitude}&lng=${pos.coords.longitude}`,
       );
-      setArea({ slug: r.area, label: r.area, jurisdiction: city.label });
+      // If geolocation lands the user in a different supported city, switch
+      // the whole app to that city automatically so all tabs follow.
+      const matchedCity = cities.find((c) => c.label.toLowerCase() === r.city.toLowerCase());
+      if (matchedCity && matchedCity.slug !== city.slug) setCity(matchedCity.slug);
+      setArea({ slug: r.area, label: r.label, jurisdiction: r.city });
     } catch (err) {
-      setLocError(`Couldn't use your location (${(err as Error).message}). Showing the citywide view.`);
+      const e = err as Error & { status?: number; body?: { message?: string } };
+      const msg = e.body?.message ?? e.message ?? "Unknown error.";
+      setLocError(`Could not use your location: ${msg}`);
     }
   }
 
