@@ -30,24 +30,24 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="max-w-md mx-auto px-6 py-16">
+    <main className="max-w-md mx-auto px-6 py-16 animate-rise-in">
       <h1 className="font-display text-3xl text-slate2-900">Sign in</h1>
       <form className="mt-8 space-y-4" onSubmit={onSubmit}>
         <div>
           <label className="text-sm text-slate2-700">Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 input" />
         </div>
         <div>
           <label className="text-sm text-slate2-700">Password</label>
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 input" />
         </div>
         {error && <p className="text-sm text-dusk-700">{error}</p>}
-        <button type="submit" disabled={busy} className="w-full px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl disabled:opacity-50">
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-50">
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
       <p className="mt-4 text-sm text-slate2-500">
-        New here? <Link className="underline" href="/register">Create an account</Link>.
+        New here? <Link className="underline hover:text-bay-700 transition-colors" href="/register">Create an account</Link>.
       </p>
     </main>
   );

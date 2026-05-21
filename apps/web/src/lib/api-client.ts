@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { sampleFor } from "./sample-data";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:4000";
 
@@ -16,6 +17,21 @@ export function setToken(t: string | null) {
 
 export function isSignedIn(): boolean {
   return token() != null;
+}
+
+// Tiny pub-sub so the UI can show a "demo data" banner the first time we
+// fall through to bundled samples.
+let demoModeActive = false;
+const demoListeners = new Set<(active: boolean) => void>();
+function markDemoMode() {
+  if (demoModeActive) return;
+  demoModeActive = true;
+  for (const cb of demoListeners) cb(true);
+}
+export function isDemoModeActive(): boolean { return demoModeActive; }
+export function subscribeDemoMode(cb: (active: boolean) => void) {
+  demoListeners.add(cb);
+  return () => demoListeners.delete(cb);
 }
 
 export async function api<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
@@ -38,10 +54,14 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   return body as T;
 }
 
+/// React hook with built-in fallback to bundled sample data when the API
+/// can't be reached. Read endpoints always render something — write endpoints
+/// (POST/PUT/DELETE via api()) still surface their original errors.
 export function useApi<T = unknown>(path: string | null, deps: unknown[] = []) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
+  const [usingSample, setUsingSample] = useState(false);
 
   const reload = useCallback(async () => {
     if (!path) return;
@@ -50,8 +70,16 @@ export function useApi<T = unknown>(path: string | null, deps: unknown[] = []) {
     try {
       const d = await api<T>(path);
       setData(d);
+      setUsingSample(false);
     } catch (e) {
-      setError(e as Error);
+      const sample = sampleFor(path);
+      if (sample !== undefined) {
+        setData(sample as T);
+        setUsingSample(true);
+        markDemoMode();
+      } else {
+        setError(e as Error);
+      }
     } finally {
       setLoading(false);
     }
@@ -63,5 +91,5 @@ export function useApi<T = unknown>(path: string | null, deps: unknown[] = []) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, ...deps]);
 
-  return { data, error, loading, reload };
+  return { data, error, loading, reload, usingSample };
 }

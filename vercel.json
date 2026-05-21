@@ -3,6 +3,5 @@
   "buildCommand": "npm run db:generate && npm run build:web",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
-  "framework": "nextjs",
-  "rootDirectory": "apps/web"
+  "framework": "nextjs"
 }

@@ -81,10 +81,10 @@ export default function ThreatsPage() {
           <LocationSearch current={area} onResolved={setArea} />
         </div>
         <div className="surface p-4 flex flex-col gap-2 text-sm">
-          <button onClick={useMyLocation} className="px-3 py-2 bg-slate2-900 text-sand-50 rounded-xl">
+          <button onClick={useMyLocation} className="btn-primary">
             Use my location
           </button>
-          <button onClick={enableNotifications} className="px-3 py-2 bg-white border border-sand-200 text-slate2-900 rounded-xl">
+          <button onClick={enableNotifications} className="btn-secondary">
             Enable notifications
           </button>
           {pushStatus && <p className="text-xs text-slate2-500">{pushStatus}</p>}

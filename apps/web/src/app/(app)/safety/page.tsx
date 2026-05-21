@@ -67,8 +67,9 @@ function EmergencyPanel() {
       </p>
       <a
         href={`tel:${EMERGENCY_DIAL}`}
-        className="mt-4 inline-flex items-center justify-center px-6 py-3 bg-dusk-700 text-sand-50 rounded-xl text-lg font-medium"
+        className="mt-4 inline-flex items-center justify-center gap-2 px-6 py-3 bg-dusk-500 text-white rounded-xl text-lg font-medium shadow-card transition-all duration-200 ease-spring hover:bg-dusk-700 hover:-translate-y-0.5 hover:shadow-card-lift active:scale-[0.97]"
       >
+        <span className="inline-block w-2 h-2 rounded-full bg-white/80 animate-pulse" />
         Call {EMERGENCY_DIAL}
       </a>
       <p className="mt-3 text-xs text-slate2-500">
@@ -154,14 +155,14 @@ function CheckInPanel() {
             <input
               type="number" min={1} max={240} value={duration}
               onChange={(e) => setDuration(Number(e.target.value))}
-              className="mt-1 w-full px-3 py-2 surface"
+              className="mt-1 input"
             />
           </label>
           <label className="text-sm sm:col-span-2">
             Note (optional, e.g. &quot;walking home from Pacific Beach&quot;)
-            <input value={note} onChange={(e) => setNote(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+            <input value={note} onChange={(e) => setNote(e.target.value)} className="mt-1 input" />
           </label>
-          <button onClick={arm} disabled={busy} className="sm:col-span-3 px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl disabled:opacity-50">
+          <button onClick={arm} disabled={busy} className="sm:col-span-3 btn-primary disabled:opacity-50">
             {busy ? "Arming…" : "Arm timer"}
           </button>
         </div>
@@ -212,12 +213,12 @@ function LiveSharePanel() {
           <input
             type="number" min={5} max={240} value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
-            className="mt-1 w-full px-3 py-2 surface"
+            className="mt-1 input"
           />
         </label>
         <label className="text-sm sm:col-span-2">
           Send link to email (optional)
-          <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="mt-1 input" />
         </label>
         <button onClick={create} className="sm:col-span-3 px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl">
           Generate link

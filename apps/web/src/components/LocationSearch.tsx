@@ -72,11 +72,11 @@ export function LocationSearch({
           value={q}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="flex-1 px-3 py-2 surface-muted"
+          className="flex-1 input"
         />
         {current && (
-          <button onClick={clear} className="px-3 py-2 text-xs text-slate2-700 underline">
-            Citywide
+          <button onClick={clear} className="btn-ghost text-xs">
+            ← Citywide
           </button>
         )}
       </div>
@@ -93,7 +93,7 @@ export function LocationSearch({
             <button
               key={a.slug}
               onClick={() => pickKnown(a)}
-              className="text-xs px-2 py-1 rounded-full bg-sand-100 hover:bg-sand-200 text-slate2-700 transition-colors"
+              className="text-xs px-2.5 py-1 rounded-full bg-sand-100 hover:bg-bay-200 hover:text-bay-700 text-slate2-700 transition-all duration-200 ease-spring hover:-translate-y-0.5"
             >
               {a.label}
             </button>

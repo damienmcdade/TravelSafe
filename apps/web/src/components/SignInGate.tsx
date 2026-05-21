@@ -18,8 +18,8 @@ export function SignInGate({ children, message }: { children: ReactNode; message
         {message ?? "This feature requires an account so we can attach it to your profile and apply the moderation safeguards."}
       </p>
       <div className="mt-4 flex gap-3">
-        <Link href="/login" className="px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl">Sign in</Link>
-        <Link href="/register" className="px-4 py-2 bg-white border border-sand-200 text-slate2-900 rounded-xl">Create account</Link>
+        <Link href="/login" className="btn-primary">Sign in</Link>
+        <Link href="/register" className="btn-secondary">Create account</Link>
       </div>
       <p className="mt-3 text-xs text-slate2-500">
         Browsing the awareness, community, and neighborhood tabs does not require an account.

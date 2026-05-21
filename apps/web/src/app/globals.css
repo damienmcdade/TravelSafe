@@ -16,20 +16,86 @@ body {
   font-family: theme("fontFamily.sans");
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, theme("colors.bay.50"), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 100%, theme("colors.coral.200"), transparent);
+  background-attachment: fixed;
 }
 
-/* Reusable surface — used by cards across tabs. Calm by default. */
+/* Selection */
+::selection { background: theme("colors.bay.200"); color: theme("colors.slate2.900"); }
+
+/* Reusable surfaces ------------------------------------------------------- */
 .surface {
-  @apply bg-white border border-sand-200 rounded-xl shadow-[0_1px_0_rgba(0,0,0,0.02)];
+  @apply bg-panel-warm border border-sand-200 rounded-xl shadow-card transition-all duration-200;
 }
-
+.surface:hover {
+  @apply shadow-card-lift -translate-y-0.5;
+}
 .surface-muted {
   @apply bg-sand-100 border border-sand-200 rounded-xl;
 }
+.surface-bay {
+  @apply bg-panel-bay border border-bay-200 rounded-xl shadow-card;
+}
 
-/* Risk-level pills — calm progression. dusk is intentionally restrained. */
+/* Buttons ----------------------------------------------------------------- */
+.btn {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium
+         transition-all duration-200 ease-spring
+         focus:outline-none focus-visible:shadow-ring-bay
+         active:scale-[0.97] select-none;
+}
+.btn-primary {
+  @apply btn bg-bay-500 text-white shadow-card;
+}
+.btn-primary:hover { @apply bg-bay-600 shadow-card-lift -translate-y-0.5; }
+
+.btn-secondary {
+  @apply btn bg-white border border-sand-200 text-slate2-900 shadow-card;
+}
+.btn-secondary:hover { @apply border-bay-400 text-bay-700 -translate-y-0.5; }
+
+.btn-ghost {
+  @apply btn text-slate2-700 hover:text-bay-700 hover:bg-bay-50;
+}
+
+.btn-coral {
+  @apply btn bg-coral-500 text-white shadow-card;
+}
+.btn-coral:hover { @apply bg-coral-400 -translate-y-0.5; }
+
+/* Inputs ------------------------------------------------------------------ */
+.input {
+  @apply w-full px-3 py-2 bg-white border border-sand-200 rounded-xl
+         transition-all duration-200
+         focus:outline-none focus:border-bay-400 focus-visible:shadow-ring-bay;
+}
+
+/* Risk pills (calm progression — dusk reserved for severe) ----------------- */
 .risk-1 { @apply bg-sage-200 text-sage-700; }
-.risk-2 { @apply bg-sand-200 text-sand-700; }
+.risk-2 { @apply bg-bay-200 text-bay-700; }
 .risk-3 { @apply bg-amber2-200 text-amber2-700; }
-.risk-4 { @apply bg-amber2-200 text-amber2-700; }
+.risk-4 { @apply bg-coral-200 text-coral-700; }
 .risk-5 { @apply bg-dusk-500/15 text-dusk-700; }
+
+/* Loading skeletons (shimmer) --------------------------------------------- */
+.skel {
+  @apply rounded-md bg-gradient-to-r from-sand-100 via-sand-200 to-sand-100 bg-[length:200%_100%] animate-shimmer;
+}
+
+/* Tab nav underline animation --------------------------------------------- */
+.tab-link {
+  @apply relative block px-3 py-3 text-sm transition-colors duration-200;
+}
+.tab-link::after {
+  content: "";
+  @apply absolute left-3 right-3 -bottom-px h-0.5 bg-bay-500 scale-x-0 origin-left transition-transform duration-300 ease-spring;
+}
+.tab-link:hover::after,
+.tab-link.is-active::after { @apply scale-x-100; }
+
+/* Reduced-motion respect -------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

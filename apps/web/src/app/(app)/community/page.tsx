@@ -223,7 +223,7 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
       <form className="mt-4 space-y-3" onSubmit={submit}>
         <div>
           <label className="text-sm text-slate2-700">Category</label>
-          <select value={kind} onChange={(e) => setKind(e.target.value as PostListItem["kind"])} className="mt-1 w-full px-3 py-2 surface">
+          <select value={kind} onChange={(e) => setKind(e.target.value as PostListItem["kind"])} className="mt-1 input">
             <option value="HEADS_UP">Heads-up</option>
             <option value="AREA_HAZARD">Area hazard</option>
             <option value="LOST_FOUND">Lost / found</option>
@@ -232,15 +232,15 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
         </div>
         <div>
           <label className="text-sm text-slate2-700">What happened (behavior)</label>
-          <textarea required value={what} onChange={(e) => setWhat(e.target.value)} className="mt-1 w-full px-3 py-2 surface" rows={3} />
+          <textarea required value={what} onChange={(e) => setWhat(e.target.value)} className="mt-1 input" rows={3} />
         </div>
         <div>
           <label className="text-sm text-slate2-700">Where (landmark, not address)</label>
-          <input required value={where} onChange={(e) => setWhere(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input required value={where} onChange={(e) => setWhere(e.target.value)} className="mt-1 input" />
         </div>
         <div>
           <label className="text-sm text-slate2-700">When</label>
-          <input required value={when} onChange={(e) => setWhen(e.target.value)} className="mt-1 w-full px-3 py-2 surface" placeholder="e.g. Tuesday around 9pm" />
+          <input required value={when} onChange={(e) => setWhen(e.target.value)} className="mt-1 input" placeholder="e.g. Tuesday around 9pm" />
         </div>
         {(aiStatus === "streaming" || aiStatus === "done") && aiFeedback && (
           <div className="surface-muted p-3 text-sm text-slate2-700">
@@ -256,7 +256,7 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
           <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-1" />
           <span>{ACK_TEXT}</span>
         </label>
-        <button type="submit" disabled={busy || !ack} className="px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl disabled:opacity-50">
+        <button type="submit" disabled={busy || !ack} className="btn-primary disabled:opacity-50">
           {busy ? "Submitting…" : "Submit for review"}
         </button>
         {guidance && <p className="text-sm text-amber2-700">{guidance}</p>}

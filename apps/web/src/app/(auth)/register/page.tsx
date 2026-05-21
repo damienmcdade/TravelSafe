@@ -40,23 +40,23 @@ export default function RegisterPage() {
       <form className="mt-8 space-y-4" onSubmit={onSubmit}>
         <div>
           <label className="text-sm text-slate2-700">Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 input" />
         </div>
         <div>
           <label className="text-sm text-slate2-700">Password (min 8 chars)</label>
-          <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 input" />
         </div>
         <div>
           <label className="text-sm text-slate2-700">Display name (optional)</label>
-          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 w-full px-3 py-2 surface" />
+          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 input" />
         </div>
         {error && <p className="text-sm text-dusk-700">{error}</p>}
-        <button type="submit" disabled={busy} className="w-full px-4 py-2 bg-slate2-900 text-sand-50 rounded-xl disabled:opacity-50">
+        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-50">
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>
       <p className="mt-4 text-sm text-slate2-500">
-        Already have an account? <Link className="underline" href="/login">Sign in</Link>.
+        Already have an account? <Link className="underline hover:text-bay-700 transition-colors" href="/login">Sign in</Link>.
       </p>
     </main>
   );

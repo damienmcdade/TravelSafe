@@ -13,7 +13,7 @@ const TABS = [
 export function TabNav() {
   const pathname = usePathname();
   return (
-    <nav className="border-b border-sand-200 bg-white">
+    <nav className="border-b border-sand-200 bg-white/80 backdrop-blur sticky top-0 z-20">
       <ul className="max-w-5xl mx-auto flex gap-1 px-4 overflow-x-auto">
         {TABS.map((t) => {
           const active = pathname?.startsWith(t.href);
@@ -21,11 +21,7 @@ export function TabNav() {
             <li key={t.href}>
               <Link
                 href={t.href}
-                className={`block px-3 py-3 text-sm border-b-2 transition-colors ${
-                  active
-                    ? "border-slate2-700 text-slate2-900 font-medium"
-                    : "border-transparent text-slate2-500 hover:text-slate2-700"
-                }`}
+                className={`tab-link ${active ? "is-active text-slate2-900 font-medium" : "text-slate2-500 hover:text-bay-700"}`}
               >
                 {t.label}
               </Link>
