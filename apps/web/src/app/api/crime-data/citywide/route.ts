@@ -8,5 +8,6 @@ export const maxDuration = 60;
 
 export const GET = wrap(async (req: NextRequest) => {
   const city = req.nextUrl.searchParams.get("city") ?? "san-diego";
-  return NextResponse.json(await crimeData.getCitywide(city));
+  const offense = req.nextUrl.searchParams.get("offense") ?? undefined;
+  return NextResponse.json(await crimeData.getCitywide(city, { offense }));
 });

@@ -6,6 +6,11 @@ import { useCallback, useEffect, useState } from "react";
 // can still override (e.g. local dev pointing at a different host).
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
+// Default client-side periodic refresh — 10 minutes, matched to the server
+// cache TTL on the police data adapters so the user always sees the freshest
+// upstream data without hammering it.
+const DEFAULT_REFRESH_MS = 10 * 60 * 1000;
+
 function token(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("travelsafe.token");
@@ -41,11 +46,20 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   return body as T;
 }
 
-/// React hook that surfaces fetch errors directly. We intentionally do NOT
-/// fall back to bundled sample content — the app shows only real data from
-/// official sources (SANDAG, SDPD NIBRS, NWS) plus moderated community posts.
-/// Empty results render a calm empty-state, errors render an inline retry.
-export function useApi<T = unknown>(path: string | null, deps: unknown[] = []) {
+export interface UseApiOptions {
+  /** Auto-refresh interval in ms. Pass `false` to disable; default 10 minutes. */
+  refreshIntervalMs?: number | false;
+}
+
+/// React hook that surfaces fetch errors directly. Re-fetches on mount, on
+/// dependency change, on tab focus (to catch users returning after lunch),
+/// and on a configurable interval (default 10 minutes — matched to the
+/// server cache TTL on the police data adapters).
+export function useApi<T = unknown>(
+  path: string | null,
+  deps: unknown[] = [],
+  opts: UseApiOptions = {},
+) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,6 +83,27 @@ export function useApi<T = unknown>(path: string | null, deps: unknown[] = []) {
     void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, ...deps]);
+
+  // Periodic background refresh.
+  useEffect(() => {
+    if (!path) return;
+    const ms = opts.refreshIntervalMs === false ? 0 : (opts.refreshIntervalMs ?? DEFAULT_REFRESH_MS);
+    if (!ms) return;
+    const id = window.setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      void reload();
+    }, ms);
+    return () => window.clearInterval(id);
+  }, [path, opts.refreshIntervalMs, reload]);
+
+  // Refresh whenever the user brings the tab back into focus.
+  useEffect(() => {
+    function onVisible() {
+      if (typeof document !== "undefined" && !document.hidden) void reload();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [reload]);
 
   return { data, error, loading, reload };
 }

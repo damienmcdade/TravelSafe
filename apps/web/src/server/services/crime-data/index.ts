@@ -62,9 +62,11 @@ export const crimeData = {
   /// category so users get a city-of-San-Diego overview without picking an area.
   /// Per-area payload now carries a category breakdown so the Crime Map can
   /// surface "what kind of incidents drive this area's score" in its tooltip.
-  async getCitywide(citySlug: string = "san-diego"): Promise<{
+  async getCitywide(citySlug: string = "san-diego", opts: { offense?: string } = {}): Promise<{
     city: string;
     totalIncidents: number;
+    appliedOffense: string | null;
+    topOffenses: Array<{ offense: string; count: number }>;
     alerts: AreaRiskAlert[];
     perArea: Array<{
       slug: string;
@@ -75,16 +77,26 @@ export const crimeData = {
       dominantCategory: "PERSONS" | "PROPERTY" | "SOCIETY" | null;
     }>;
   }> {
-    // Per-city aggregate. Each registered city's discover() is the source of
-    // truth for which neighborhoods belong to it — we don't have to maintain
-    // a separate slug→city map.
     const { cityBySlug } = await import("./cities");
     const city = cityBySlug(citySlug) ?? CITIES[0];
     const areas = await city.discover().catch(() => [] as Awaited<ReturnType<typeof city.discover>>);
+    const offenseFilter = opts.offense?.toLowerCase().trim();
     const perArea: Awaited<ReturnType<typeof crimeData.getCitywide>>["perArea"] = [];
     const totalByCategory = new Map<string, Incident[]>();
+    const offenseCounts = new Map<string, number>();
     for (const area of areas) {
-      const incidents = await this.getIncidents(area.slug, { limit: 500 });
+      const incidentsAll = await this.getIncidents(area.slug, { limit: 500 });
+      // When the caller filters by a specific offense, only count incidents
+      // matching that offense for this area's color/intensity — but still
+      // accumulate the full top-offenses list across the city so the UI's
+      // dropdown can show all options.
+      for (const i of incidentsAll) {
+        const off = i.ibrOffenseDescription;
+        offenseCounts.set(off, (offenseCounts.get(off) ?? 0) + 1);
+      }
+      const incidents = offenseFilter
+        ? incidentsAll.filter((i) => i.ibrOffenseDescription.toLowerCase() === offenseFilter)
+        : incidentsAll;
       const byCategory = { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 };
       for (const i of incidents) {
         const k = i.nibrsCategory as keyof typeof byCategory;
@@ -98,6 +110,10 @@ export const crimeData = {
       const riskLevel = (incidents.length > 400 ? 5 : incidents.length > 200 ? 4 : incidents.length > 80 ? 3 : incidents.length > 25 ? 2 : 1) as 1 | 2 | 3 | 4 | 5;
       perArea.push({ slug: area.slug, label: area.label, incidentCount: incidents.length, riskLevel, byCategory, dominantCategory: incidents.length > 0 ? dominantCategory : null });
     }
+    const topOffenses = Array.from(offenseCounts.entries())
+      .map(([offense, count]) => ({ offense, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 30);
     const sample = perArea[0] ? await this.getAreaStats(perArea[0].slug) : null;
     const alerts: AreaRiskAlert[] = Array.from(totalByCategory.entries()).map(([category, items]) => ({
       area: `City of ${city.label}`,
@@ -114,7 +130,14 @@ export const crimeData = {
       },
     }));
     const totalIncidents = perArea.reduce((s, a) => s + a.incidentCount, 0);
-    return { city: city.label, totalIncidents, alerts, perArea: perArea.sort((a, b) => b.incidentCount - a.incidentCount) };
+    return {
+      city: city.label,
+      totalIncidents,
+      appliedOffense: offenseFilter ?? null,
+      topOffenses,
+      alerts,
+      perArea: perArea.sort((a, b) => b.incidentCount - a.incidentCount),
+    };
   },
 
   /// Derive area-level risk alert cards for the Threat Detection tab from

@@ -5,7 +5,7 @@ import "server-only";
 // polite + keep latency low. Results are returned as plain JSON the UI
 // renders as link-out cards — we never re-host article bodies.
 
-const CACHE_TTL_MS = 30 * 60 * 1000;
+const CACHE_TTL_MS = 10 * 60 * 1000;
 let cache: { fetchedAt: number; query: string; items: NewsItem[] } | null = null;
 
 export interface NewsItem {

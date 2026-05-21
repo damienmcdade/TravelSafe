@@ -8,7 +8,7 @@ import type { KnownArea } from "../neighborhoods";
 // Doc: https://dev.socrata.com/foundry/data.sfgov.org/wg3w-h783
 
 const BASE = "https://data.sfgov.org/resource/wg3w-h783.json";
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 10 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
 interface SodaRow {

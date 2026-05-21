@@ -19,7 +19,7 @@ import type { KnownArea } from "../neighborhoods";
 // add demographic fields to Incident.
 
 const BASE = "https://data.lacity.org/resource/2nrs-mtv8.json";
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 10 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
 interface SodaRow {

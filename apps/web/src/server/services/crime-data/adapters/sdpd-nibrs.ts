@@ -5,7 +5,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import type { KnownArea } from "../neighborhoods";
 import { findArea } from "../neighborhoods";
 
-const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 10 * 60 * 1000;
 let cache: { fetchedAt: number; year: number; rows: Incident[] } | null = null;
 
 function mapCrimeAgainst(value: string | undefined): CrimeCategory {
