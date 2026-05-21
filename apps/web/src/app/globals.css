@@ -17,12 +17,12 @@ body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, theme("colors.bay.50"), transparent),
-    radial-gradient(ellipse 60% 40% at 100% 100%, theme("colors.coral.200"), transparent);
+    radial-gradient(ellipse 90% 60% at 50% -10%,  rgba(30, 120, 166, 0.10), transparent 65%),
+    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(230, 100, 60, 0.10), transparent 65%),
+    radial-gradient(ellipse 50% 40% at 0% 80%,    rgba(86, 96, 201, 0.07),  transparent 65%);
   background-attachment: fixed;
 }
 
-/* Selection */
 ::selection { background: theme("colors.bay.200"); color: theme("colors.slate2.900"); }
 
 /* Reusable surfaces ------------------------------------------------------- */
@@ -39,6 +39,29 @@ body {
   @apply bg-panel-bay border border-bay-200 rounded-xl shadow-card;
 }
 
+/* Section header with gradient title underline --------------------------- */
+.section-title {
+  @apply relative font-display text-2xl text-slate2-900 pb-3;
+}
+.section-title::after {
+  content: "";
+  @apply absolute left-0 bottom-0 h-1 w-16 rounded-full bg-title-stripe bg-[length:200%_100%] animate-gradient-x;
+}
+
+/* Page header with ambient gradient bloom -------------------------------- */
+.page-hero {
+  @apply relative overflow-hidden rounded-2xl p-6 sm:p-8 mb-6 bg-gradient-to-br from-bay-50 via-white to-coral-200/40 border border-sand-200 shadow-card;
+}
+.page-hero::before {
+  content: "";
+  @apply absolute -top-12 -right-10 w-64 h-64 rounded-full bg-bay-400/30 blur-3xl pointer-events-none;
+}
+.page-hero::after {
+  content: "";
+  @apply absolute -bottom-14 -left-8 w-56 h-56 rounded-full bg-coral-400/25 blur-3xl pointer-events-none;
+}
+.page-hero > * { @apply relative; }
+
 /* Buttons ----------------------------------------------------------------- */
 .btn {
   @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium
@@ -47,9 +70,10 @@ body {
          active:scale-[0.97] select-none;
 }
 .btn-primary {
-  @apply btn bg-bay-500 text-white shadow-card;
+  @apply btn text-white shadow-card;
+  background-image: linear-gradient(135deg, theme("colors.bay.500"), theme("colors.bay.700"));
 }
-.btn-primary:hover { @apply bg-bay-600 shadow-card-lift -translate-y-0.5; }
+.btn-primary:hover { @apply shadow-glow-bay -translate-y-0.5; filter: brightness(1.06); }
 
 .btn-secondary {
   @apply btn bg-white border border-sand-200 text-slate2-900 shadow-card;
@@ -61,9 +85,10 @@ body {
 }
 
 .btn-coral {
-  @apply btn bg-coral-500 text-white shadow-card;
+  @apply btn text-white shadow-card;
+  background-image: linear-gradient(135deg, theme("colors.coral.500"), theme("colors.coral.700"));
 }
-.btn-coral:hover { @apply bg-coral-400 -translate-y-0.5; }
+.btn-coral:hover { @apply shadow-glow-coral -translate-y-0.5; filter: brightness(1.06); }
 
 /* Inputs ------------------------------------------------------------------ */
 .input {
@@ -84,16 +109,22 @@ body {
   @apply rounded-md bg-gradient-to-r from-sand-100 via-sand-200 to-sand-100 bg-[length:200%_100%] animate-shimmer;
 }
 
-/* Tab nav underline animation --------------------------------------------- */
+/* Tab nav: gradient underline animation ---------------------------------- */
 .tab-link {
   @apply relative block px-3 py-3 text-sm transition-colors duration-200;
 }
 .tab-link::after {
   content: "";
-  @apply absolute left-3 right-3 -bottom-px h-0.5 bg-bay-500 scale-x-0 origin-left transition-transform duration-300 ease-spring;
+  @apply absolute left-3 right-3 -bottom-px h-0.5 rounded-full bg-title-stripe bg-[length:200%_100%] scale-x-0 origin-left transition-transform duration-300 ease-spring;
 }
 .tab-link:hover::after,
 .tab-link.is-active::after { @apply scale-x-100; }
+
+/* Soft category accents for cards ---------------------------------------- */
+.accent-bay   { box-shadow: inset 4px 0 0 0 theme("colors.bay.500"); }
+.accent-coral { box-shadow: inset 4px 0 0 0 theme("colors.coral.500"); }
+.accent-sage  { box-shadow: inset 4px 0 0 0 theme("colors.sage.500"); }
+.accent-amber { box-shadow: inset 4px 0 0 0 theme("colors.amber2.500"); }
 
 /* Reduced-motion respect -------------------------------------------------- */
 @media (prefers-reduced-motion: reduce) {

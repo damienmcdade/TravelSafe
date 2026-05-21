@@ -62,12 +62,15 @@ export default function ThreatsPage() {
 
   return (
     <main className="space-y-8">
-      <header className="flex flex-wrap items-center gap-3 justify-between">
+      <header className="page-hero flex flex-wrap items-center gap-3 justify-between">
         <div>
-          <h1 className="font-display text-3xl text-slate2-900">What&apos;s happening in San Diego</h1>
-          <p className="mt-1 text-slate2-500 max-w-2xl">
+          <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Awareness · San Diego</p>
+          <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
+            What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">San Diego</span>
+          </h1>
+          <p className="mt-2 text-slate2-700 max-w-2xl">
             Defaults to the whole city. Search a neighborhood, ZIP, or landmark to focus.
-            Everything here is area-level and pulled from official sources — no individuals tracked, no live street feeds.
+            Everything is area-level, pulled from official sources — no individuals tracked, no live street feeds.
           </p>
         </div>
         <LiveActivityBadge />

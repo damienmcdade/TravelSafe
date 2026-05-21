@@ -77,12 +77,15 @@ export default function CommunityPage() {
 
   return (
     <main className="space-y-8">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+      <header className="page-hero flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl text-slate2-900">CommunitySafe</h1>
-          <p className="mt-1 text-slate2-500 max-w-2xl">
-            Citywide by default. Search a neighborhood, ZIP, or landmark to focus the feed below.
-            Verified neighbor reports, recent SDPD incidents, headlines, and official alerts — all in one read.
+          <p className="text-xs uppercase tracking-[0.18em] text-coral-700 font-medium">CommunitySafe</p>
+          <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
+            Verified neighbor reports, side-by-side with the data
+          </h1>
+          <p className="mt-2 text-slate2-700 max-w-2xl">
+            Citywide by default. Search a neighborhood, ZIP, or landmark to focus the feed.
+            Headlines, official alerts, and SDPD incidents flank every post.
           </p>
         </div>
         <LiveActivityBadge />
