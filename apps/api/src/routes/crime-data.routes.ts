@@ -24,6 +24,14 @@ function resolveArea(q: z.infer<typeof areaQuery>): string | null {
   return null;
 }
 
+crimeDataRouter.get("/citywide", optionalAuth, async (_req, res, next) => {
+  try {
+    res.json(await crimeData.getCitywide());
+  } catch (err) {
+    next(err);
+  }
+});
+
 crimeDataRouter.get("/alerts", optionalAuth, async (req, res, next) => {
   try {
     const q = areaQuery.parse(req.query);
@@ -41,6 +49,18 @@ crimeDataRouter.get("/area-stats", optionalAuth, async (req, res, next) => {
     const area = resolveArea(q);
     if (!area) return res.status(400).json({ error: "area_required" });
     res.json(await crimeData.getAreaStats(area));
+  } catch (err) {
+    next(err);
+  }
+});
+
+crimeDataRouter.get("/insights", optionalAuth, async (req, res, next) => {
+  try {
+    const q = areaQuery.parse(req.query);
+    const area = resolveArea(q);
+    if (!area) return res.status(400).json({ error: "area_required" });
+    const { getAreaInsights } = await import("../services/crime-data/insights.service.js");
+    res.json(await getAreaInsights(area));
   } catch (err) {
     next(err);
   }

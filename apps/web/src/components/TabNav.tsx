@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 
 const TABS = [
   { href: "/threats",      label: "Awareness" },
+  { href: "/map",          label: "Crime Map" },
   { href: "/safety",       label: "Personal Safety" },
   { href: "/community",    label: "CommunitySafe" },
   { href: "/neighborhood", label: "Neighborhood Watch" },

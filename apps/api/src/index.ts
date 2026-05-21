@@ -13,6 +13,9 @@ import { moderationRouter } from "./routes/moderation.routes.js";
 import { safetyRouter } from "./routes/safety.routes.js";
 import { pushRouter } from "./routes/push.routes.js";
 import { shareRouter } from "./routes/share.routes.js";
+import { geoRouter } from "./routes/geo.routes.js";
+import { aiRouter } from "./routes/ai.routes.js";
+import { officialAlertsRouter } from "./routes/official-alerts.routes.js";
 import { startCheckInWorker } from "./services/safety/check-in.worker.js";
 
 const app = express();
@@ -43,6 +46,9 @@ app.use("/moderation", moderationRouter);
 app.use("/safety", safetyRouter);
 app.use("/push", pushRouter);
 app.use("/share", shareRouter);
+app.use("/geo", geoRouter);
+app.use("/ai", aiRouter);
+app.use("/official-alerts", officialAlertsRouter);
 
 app.use(notFound);
 app.use(errorHandler);

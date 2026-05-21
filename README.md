@@ -170,6 +170,11 @@ See [`.env.example`](./.env.example) for the full annotated list. Highlights:
 |---|---|---|
 | Welcome (no sign-up required) | `/` | — links straight to `/threats`; auth is optional |
 | Register / login | `/register`, `/login` | `POST /auth/register`, `POST /auth/login` — only needed for posting / trusted contacts / check-in timer |
+| Awareness (citywide by default) | `/threats` | `GET /crime-data/citywide`, `GET /crime-data/insights?…`, location search via `GET /geo/lookup`, geo opt-in |
+| Crime Map | `/map` | Leaflet + OpenStreetMap, circle markers per neighborhood sized by incident volume + calm color bands |
+| Official alerts sidebar | (on CommunitySafe + Neighborhood Watch) | `GET /official-alerts` — currently National Weather Service; SDPD press releases and CHP TODO |
+| Live community pulse | (on CommunitySafe) | `GET /community/stream` (SSE) — new VERIFIED posts insert in real time |
+| AI compose coach | (in CommunitySafe composer) | `POST /ai/compose-feedback` streams from `anthropic/claude-haiku-4-5` via Vercel AI Gateway; falls back silently when `AI_GATEWAY_API_KEY` is unset |
 | Onboarding — alert categories | `/onboarding/alert-preferences` | `PUT /preferences/alerts` |
 | Onboarding — trusted contacts | `/onboarding/trusted-contacts` | `POST /contacts`, `GET /contacts` (max 5) |
 | Threat Detection | `/threats` | `GET /crime-data/alerts?neighborhood=…` + push when entering higher-incident area |

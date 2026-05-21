@@ -7,8 +7,31 @@ import { writeLimiter } from "../middleware/rate-limit.js";
 import { HttpError } from "../middleware/error.js";
 import { preVetPost, POST_RATE_LIMIT_PER_DAY } from "../services/moderation/post-prevet.js";
 import { isSuspended } from "../services/moderation/suspension.service.js";
+import { communityEvents } from "../services/community/events.js";
 
 export const communityRouter = Router();
+
+// Server-Sent Events stream for newly VERIFIED posts. Public, no auth — the
+// payload only carries the post id, area, and timestamps; the client must hit
+// /community/posts to render full content (which already filters to VERIFIED).
+communityRouter.get("/stream", (req, res) => {
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders?.();
+
+  const send = (data: unknown) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  send({ type: "hello", at: new Date().toISOString() });
+  const heartbeat = setInterval(() => res.write(": ping\n\n"), 25_000);
+  const listener = (evt: unknown) => send(evt);
+  communityEvents.on("event", listener);
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    communityEvents.off("event", listener);
+    res.end();
+  });
+});
 
 // Structured composer fields — per the anti-pattern guardrail spec, the
 // composer steers authors to describe BEHAVIOR + PLACE + TIME instead of a

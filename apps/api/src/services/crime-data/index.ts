@@ -48,6 +48,42 @@ export const crimeData = {
     return reports ?? (await mockAdapter.getRecentReports(area, opts));
   },
 
+  /// Citywide aggregate for the Awareness tab default view. Sums incidents
+  /// across all known SD neighborhoods and emits one alert card per NIBRS
+  /// category so users get a city-of-San-Diego overview without picking an area.
+  async getCitywide(): Promise<{ totalIncidents: number; alerts: AreaRiskAlert[]; perArea: Array<{ slug: string; label: string; incidentCount: number; riskLevel: 1 | 2 | 3 | 4 | 5 }> }> {
+    const { SD_AREAS } = await import("./neighborhoods.js");
+    const perArea: Array<{ slug: string; label: string; incidentCount: number; riskLevel: 1 | 2 | 3 | 4 | 5 }> = [];
+    const totalByCategory = new Map<string, Incident[]>();
+    for (const area of SD_AREAS) {
+      const incidents = await this.getIncidents(area.slug, { limit: 200 });
+      const riskLevel = (incidents.length > 200 ? 5 : incidents.length > 100 ? 4 : incidents.length > 40 ? 3 : incidents.length > 10 ? 2 : 1) as 1 | 2 | 3 | 4 | 5;
+      perArea.push({ slug: area.slug, label: area.label, incidentCount: incidents.length, riskLevel });
+      for (const i of incidents) {
+        const arr = totalByCategory.get(i.nibrsCategory) ?? [];
+        arr.push(i);
+        totalByCategory.set(i.nibrsCategory, arr);
+      }
+    }
+    const sample = perArea[0] ? await this.getAreaStats(perArea[0].slug) : null;
+    const alerts: AreaRiskAlert[] = Array.from(totalByCategory.entries()).map(([category, items]) => ({
+      area: "City of San Diego",
+      category: category as AreaRiskAlert["category"],
+      riskLevel: items.length > 800 ? 5 : items.length > 400 ? 4 : items.length > 150 ? 3 : items.length > 40 ? 2 : 1,
+      summary: `${items.length} ${category.toLowerCase()} incidents reported across SD neighborhoods in the cached window.`,
+      recency: sample?.provenance.recency ?? "see source",
+      provenance: sample?.provenance ?? {
+        source: "SDPD NIBRS (City of San Diego Open Data)",
+        datasetUrl: "https://data.sandiego.gov/datasets/police-nibrs/",
+        recency: "Quarterly refresh",
+        granularity: "neighborhood",
+        disclaimer: "Aggregated from SDPD NIBRS. Not live, not street-level.",
+      },
+    }));
+    const totalIncidents = perArea.reduce((s, a) => s + a.incidentCount, 0);
+    return { totalIncidents, alerts, perArea: perArea.sort((a, b) => b.incidentCount - a.incidentCount) };
+  },
+
   /// Derive area-level risk alert cards for the Threat Detection tab from
   /// recent incidents. Returns one alert per NIBRS category present, with a
   /// risk level based on incident count in the window.

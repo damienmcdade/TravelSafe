@@ -37,6 +37,10 @@ const Env = z.object({
   // Check-in worker
   CHECKIN_WORKER_INTERVAL_SECONDS: z.coerce.number().default(30),
   CHECKIN_GRACE_SECONDS: z.coerce.number().default(120),
+
+  // Vercel AI Gateway (composer coach). Optional — when unset, the composer
+  // gracefully falls back to local pre-vetter rules only.
+  AI_GATEWAY_API_KEY: z.string().optional(),
 });
 
 const parsed = Env.parse(process.env);
