@@ -1,63 +1,24 @@
 "use client";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useState } from "react";
-import { api, setToken } from "@/lib/api-client";
 
+// Account creation has been removed from the public flow. The /register URL
+// stays mounted (existing links don't 404) but it now explains that the
+// application no longer accepts new account creation, and points users at
+// the anonymous community feed.
 export default function RegisterPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
-    try {
-      const r = await api<{ token: string }>("/auth/register", {
-        method: "POST",
-        body: JSON.stringify({ email, password, displayName: displayName || undefined }),
-      });
-      setToken(r.token);
-      router.push("/onboarding/alert-preferences");
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <main className="max-w-md mx-auto px-6 py-16">
-      <h1 className="font-display text-3xl text-slate2-900">Create your account</h1>
-      <p className="mt-2 text-slate2-500 text-sm">
-        Optional — only needed if you want to post, set up trusted contacts, or use the check-in timer.
-        Email + password only. We don&apos;t ask for or store demographic information.
+    <main className="max-w-md mx-auto px-6 py-16 animate-rise-in">
+      <h1 className="font-display text-3xl text-slate2-900">Account creation is closed</h1>
+      <p className="mt-3 text-slate2-700 text-sm">
+        New accounts are no longer needed. CommunitySafe accepts anonymous posts (only profanity and threats are blocked), and the Crime Map, Awareness, and Neighborhood Watch tabs are all open to browse without signing in.
       </p>
-      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
-        <div>
-          <label className="text-sm text-slate2-700">Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 input" />
-        </div>
-        <div>
-          <label className="text-sm text-slate2-700">Password (min 8 chars)</label>
-          <input type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 input" />
-        </div>
-        <div>
-          <label className="text-sm text-slate2-700">Display name (optional)</label>
-          <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 input" />
-        </div>
-        {error && <p className="text-sm text-dusk-700">{error}</p>}
-        <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-50">
-          {busy ? "Creating…" : "Create account"}
-        </button>
-      </form>
-      <p className="mt-4 text-sm text-slate2-500">
-        Already have an account? <Link className="underline hover:text-bay-700 transition-colors" href="/login">Sign in</Link>.
+      <p className="mt-3 text-slate2-700 text-sm">
+        If you previously created an account, you can still <Link className="underline hover:text-bay-700 transition-colors" href="/login">sign in</Link> to access the check-in timer and live-share tools.
       </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link href="/threats" className="btn-primary">Browse {/* dynamic city label lives in the awareness page */}safety data</Link>
+        <Link href="/community" className="btn-secondary">Post anonymously</Link>
+      </div>
     </main>
   );
 }

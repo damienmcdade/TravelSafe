@@ -4,7 +4,6 @@ import { api, useApi } from "@/lib/api-client";
 import { useTextStream } from "@/lib/use-stream";
 import { useCommunityStream, relativeTime } from "@/lib/sse";
 import { DataProvenanceBanner, CommunityReportedLabel, type ProvenanceLike } from "@/components/DataProvenanceBanner";
-import { SignInGate } from "@/components/SignInGate";
 import { LocationSearch } from "@/components/LocationSearch";
 import { AreaInsightsPanel } from "@/components/AreaInsightsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
@@ -129,18 +128,16 @@ export default function CommunityPage() {
             </a>
           </section>
 
-          <SignInGate message="Sign in to post a heads-up. Posts go through moderation and stay tied to your account so the rate limit and suspension ladder actually work.">
-            <PostComposer areaSlug={areaSlug} onPosted={reload} />
-          </SignInGate>
+          <PostComposer areaSlug={areaSlug} onPosted={reload} />
 
           <section className="space-y-3">
             <header className="flex items-center justify-between">
-              <h2 className="font-display text-xl text-slate2-900">Verified neighbor reports</h2>
+              <h2 className="font-display text-xl text-slate2-900">Neighbor reports</h2>
               {livePulse > 0 && <span className="text-xs text-sage-700 animate-pulse">{livePulse} new since you arrived</span>}
             </header>
             {(posts ?? []).length === 0 && (
               <div className="surface-muted p-4 text-sm text-slate2-500">
-                Nothing posted here recently. Most San Diego neighborhoods stay quiet most days — that&apos;s a good thing.
+                No posts yet for this area. Be the first to share a heads-up below — anonymous, no sign-in required.
               </div>
             )}
             {(posts ?? []).map((p) => <PostCard key={p.id} post={p} />)}
@@ -181,15 +178,11 @@ function PostCard({ post }: { post: PostListItem }) {
   );
 }
 
-const ACK_TEXT =
-  "I confirm this report is truthful, first-hand or credible, and area-level. I understand knowingly false reports may be removed and my account suspended.";
-
 function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () => void }) {
   const [kind, setKind] = useState<PostListItem["kind"]>("HEADS_UP");
   const [what, setWhat] = useState("");
   const [where, setWhere] = useState("");
   const [when, setWhen] = useState("");
-  const [ack, setAck] = useState(false);
   const [guidance, setGuidance] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
@@ -209,17 +202,11 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
     setSuccess(null);
     setBusy(true);
     try {
-      const r = await api<{ heldForReview: boolean }>("/community/posts", {
+      await api<{ autoPublished: boolean }>("/community/posts", {
         method: "POST",
-        body: JSON.stringify({
-          areaSlug, kind, what, where, when,
-          acceptedDefamationNotice: true,
-          acceptedText: ACK_TEXT,
-        }),
+        body: JSON.stringify({ areaSlug, kind, what, where, when }),
       });
-      setSuccess(r.heldForReview
-        ? "Thanks — your post is queued for human review before it goes live."
-        : "Thanks — your post is in the moderator queue.");
+      setSuccess("Posted. Thanks for sharing.");
       setWhat(""); setWhere(""); setWhen("");
       onPosted();
     } catch (err) {
@@ -232,10 +219,9 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
 
   return (
     <section className="surface p-6">
-      <h2 className="font-display text-lg text-slate2-900">Share a heads-up</h2>
+      <h2 className="font-display text-lg text-slate2-900">Share a heads-up (anonymous)</h2>
       <p className="mt-1 text-sm text-slate2-500">
-        Describe <strong>what you saw</strong>, <strong>where</strong> (a landmark — not a street address), and <strong>when</strong>.
-        Posts about specific people, addresses, license plates, or that lead with appearance get blocked or held for review.
+        No sign-in needed. Describe <strong>what you saw</strong>, <strong>where</strong>, and <strong>when</strong>. The application blocks only posts that contain profanity, slurs, or threats of violence — everything else publishes immediately.
       </p>
       <form className="mt-4 space-y-3" onSubmit={submit}>
         <div>
@@ -269,12 +255,8 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
         {aiStatus === "disabled" && (
           <p className="text-xs text-slate2-500">AI coaching is off — set <code>AI_GATEWAY_API_KEY</code> on Vercel to enable.</p>
         )}
-        <label className="flex items-start gap-2 text-sm text-slate2-700">
-          <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} className="mt-1" />
-          <span>{ACK_TEXT}</span>
-        </label>
-        <button type="submit" disabled={busy || !ack} className="btn-primary disabled:opacity-50">
-          {busy ? "Submitting…" : "Submit for review"}
+        <button type="submit" disabled={busy} className="btn-primary disabled:opacity-50">
+          {busy ? "Posting…" : "Post anonymously"}
         </button>
         {guidance && <p className="text-sm text-amber2-700">{guidance}</p>}
         {success && <p className="text-sm text-sage-700">{success}</p>}

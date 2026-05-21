@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { TabNav } from "@/components/TabNav";
 import { CitySelector } from "@/components/CitySelector";
+import { CityBackdrop } from "@/components/CityBackdrop";
 import { isSignedIn, setToken } from "@/lib/api-client";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -17,6 +18,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <CityBackdrop />
       <header className="bg-white/80 backdrop-blur border-b border-sand-200 sticky top-0 z-30">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <Link href="/" className="font-display text-xl text-slate2-900 transition-colors hover:text-bay-700">
@@ -24,11 +26,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           </Link>
           <div className="flex items-center gap-2 text-xs text-slate2-500">
             <CitySelector />
-            <span className="text-sand-300">·</span>
-            {signedIn ? (
-              <button onClick={signOut} className="text-slate2-700 hover:text-bay-700 transition-colors">Sign out</button>
-            ) : (
-              <Link href="/login" className="text-slate2-700 hover:text-bay-700 transition-colors">Sign in</Link>
+            {signedIn && (
+              <>
+                <span className="text-sand-300">·</span>
+                <button onClick={signOut} className="text-slate2-700 hover:text-bay-700 transition-colors">Sign out</button>
+              </>
             )}
           </div>
         </div>

@@ -22,9 +22,7 @@ export default function WelcomePage() {
             </Link>
           </div>
           <p className="mt-6 text-xs text-sand-100/80">
-            Browsing requires no account. Sign in or{" "}
-            <Link href="/register" className="underline underline-offset-2 hover:text-white">create an account</Link>{" "}
-            to post, configure trusted contacts, or arm a check-in timer.
+            No account is needed. Browsing and posting on CommunitySafe are both anonymous. A check-in timer and trusted-contact features require an existing account.
           </p>
         </div>
       </section>
