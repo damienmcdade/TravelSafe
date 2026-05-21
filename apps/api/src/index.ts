@@ -47,8 +47,8 @@ app.use("/share", shareRouter);
 app.use(notFound);
 app.use(errorHandler);
 
-const server = app.listen(env.API_PORT, () => {
-  console.log(`[api] listening on :${env.API_PORT} (env=${env.NODE_ENV})`);
+const server = app.listen(env.LISTEN_PORT, () => {
+  console.log(`[api] listening on :${env.LISTEN_PORT} (env=${env.NODE_ENV})`);
   startCheckInWorker();
 });
 

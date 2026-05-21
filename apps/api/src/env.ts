@@ -3,6 +3,9 @@ import { z } from "zod";
 
 const Env = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  // Railway (and most PaaS) injects PORT. API_PORT is honored as a fallback
+  // for local dev where developers may have set the older variable name.
+  PORT: z.coerce.number().optional(),
   API_PORT: z.coerce.number().default(4000),
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 chars"),
@@ -36,6 +39,9 @@ const Env = z.object({
   CHECKIN_GRACE_SECONDS: z.coerce.number().default(120),
 });
 
-export const env = Env.parse(process.env);
+const parsed = Env.parse(process.env);
+
+// Effective listen port — PORT (PaaS) wins over API_PORT (legacy/local).
+export const env = { ...parsed, LISTEN_PORT: parsed.PORT ?? parsed.API_PORT };
 
 export const corsOrigins = env.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean);
