@@ -124,9 +124,12 @@ npm run lint         # lint every workspace
    `DATABASE_URL` for you.
 2. Add a service from this repo. The included `railway.json` builds with
    `npm install && db:generate && build:api`, then at boot runs
-   `db:migrate:deploy && start:api` with `/health` as the healthcheck path.
-   Migrations run at startup (not build) so `DATABASE_URL` is always
-   present when Prisma needs it.
+   `db:push && start:api` with `/health` as the healthcheck path.
+   `db:push` syncs the Prisma schema to Postgres directly (no migration
+   files required) — suitable for a project pre-launch. Once you have
+   production data to preserve, replace `db:push` with `db:migrate:deploy`
+   in `railway.json` and check committed migration files into
+   `packages/db/prisma/migrations/`.
 3. Set the remaining env vars (`JWT_SECRET`, `VAPID_*`, `CORS_ORIGINS` —
    include your Vercel URL).
 4. Copy the public Railway URL of the API service into Vercel as
