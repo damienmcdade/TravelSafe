@@ -302,7 +302,13 @@ export async function getSafetyTipsForArea(area: string): Promise<SafetyTipsResp
       relevance: 100 - i,
     }));
 
-  const prevention = aiAsMatched.length >= 6 ? aiAsMatched.slice(0, 10) : bucket("prevention", 8);
+  // Threshold lowered from 6 → 3 because the AI sometimes returns fewer
+  // prevention-tagged tips when many are mapped to self-defense or civic.
+  // Combining 3+ AI tips with curated fillers is still strictly better than
+  // showing only the 8 generic curated tips.
+  const prevention = aiAsMatched.length >= 3
+    ? [...aiAsMatched, ...bucket("prevention", Math.max(0, 10 - aiAsMatched.length))].slice(0, 10)
+    : bucket("prevention", 8);
   const selfDefense = aiSelfDefense.length > 0
     ? [...aiSelfDefense, ...bucket("self-defense", 2)].slice(0, 4)
     : bucket("self-defense", 4);

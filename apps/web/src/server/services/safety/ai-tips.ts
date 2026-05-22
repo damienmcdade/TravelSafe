@@ -30,16 +30,20 @@ export interface AITip {
   addresses?: string;
 }
 
+// Permissive schema — accept whatever the model emits as long as the core
+// fields are present. Groq's Llama and Gemini Flash both sometimes overshoot
+// the body length, drop the optional addresses field, or emit slightly
+// different group strings. We coerce/repair downstream rather than reject.
 const TipsSchema = z.array(
   z.object({
-    title:  z.string().min(4).max(80),
-    body:   z.string().min(20).max(600),
-    source: z.string().min(2).max(80),
-    sourceUrl: z.string().url(),
-    group:  z.enum(["prevention", "self-defense", "civic"]),
-    addresses: z.string().max(80).optional(),
+    title:  z.string().min(2),
+    body:   z.string().min(10),
+    source: z.string().min(2).optional().default("Official safety guidance"),
+    sourceUrl: z.string().optional().default("https://www.ready.gov/"),
+    group:  z.string().optional().default("prevention"),
+    addresses: z.string().optional(),
   }),
-).min(6).max(12);
+).min(1).max(20);
 
 // 6-hour in-memory cache per area. Vercel functions reuse warm instances,
 // so this gets hits within a region across many users.
@@ -180,15 +184,23 @@ Generate the JSON array now.
     return [];
   }
 
-  const tips: AITip[] = parsed.map((t, i) => ({
-    id: `ai-${area}-${i}`,
-    title:  t.title,
-    body:   t.body,
-    source: t.source,
-    sourceUrl: t.sourceUrl,
-    group:  t.group,
-    addresses: t.addresses,
-  }));
+  const tips: AITip[] = parsed.map((t, i) => {
+    // Coerce the model's group string to our 3-value enum.
+    const g = (t.group || "").toLowerCase();
+    const group: "prevention" | "self-defense" | "civic" =
+      g.includes("self") || g.includes("defense") ? "self-defense" :
+      g.includes("civic") || g.includes("community") ? "civic" : "prevention";
+    return {
+      id: `ai-${area}-${i}`,
+      title:  t.title.trim().slice(0, 80),
+      body:   t.body.trim().slice(0, 800),
+      source: t.source || "Official safety guidance",
+      // Force a valid http(s) URL — strip anything malformed.
+      sourceUrl: /^https?:\/\//.test(t.sourceUrl || "") ? t.sourceUrl! : "https://www.ready.gov/",
+      group,
+      addresses: t.addresses,
+    };
+  });
 
   cache.set(area, { fetchedAt: Date.now(), tips });
   return tips;
