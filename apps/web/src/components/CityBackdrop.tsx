@@ -260,6 +260,16 @@ const PHOTOS: Record<string, string[]> = {
     // Shea's Buffalo Theater on Main Street
     "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Shea%27s_Buffalo_Theater%2C_Main_Street%2C_Buffalo%2C_NY.jpg/1920px-Shea%27s_Buffalo_Theater%2C_Main_Street%2C_Buffalo%2C_NY.jpg",
   ],
+  "tucson": [
+    // Tucson from Sentinel Peak
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/View_of_Tucson_from_Sentinel_Peak_2.jpg/1920px-View_of_Tucson_from_Sentinel_Peak_2.jpg",
+    // Downtown Tucson skyline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/TucsonDowntownView1.jpg/1920px-TucsonDowntownView1.jpg",
+    // Fox Theater on Congress Street
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Fox_theater_Tucson.jpg/1920px-Fox_theater_Tucson.jpg",
+    // Tucson at the foot of the Catalina Mountains
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Northwest_Metro_Tucson_from_the_Santa_Catalina_Mountains.jpg/1920px-Northwest_Metro_Tucson_from_the_Santa_Catalina_Mountains.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

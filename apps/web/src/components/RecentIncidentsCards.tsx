@@ -33,6 +33,7 @@ const SOURCE_LABELS: Record<string, string> = {
   "las-vegas":     "LVMPD Calls for Service · refreshed every 5 min",
   "boise":         "BPD Calls for Service · refreshed every 5 min",
   "buffalo":       "Buffalo PD Crime Incidents · refreshed every 5 min",
+  "tucson":        "TPD Incidents (Last 45 Days) · refreshed every 5 min",
 };
 
 export function RecentIncidentsCards({

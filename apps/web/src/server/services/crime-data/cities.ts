@@ -26,6 +26,7 @@ import { montgomeryCountyAdapter, getDiscoveredAreasMontgomeryCounty } from "./a
 import { lasVegasAdapter, getDiscoveredAreasLasVegas } from "./adapters/las-vegas-arcgis";
 import { boiseAdapter, getDiscoveredAreasBoise } from "./adapters/boise-arcgis";
 import { buffaloAdapter, getDiscoveredAreasBuffalo } from "./adapters/buffalo-socrata";
+import { tucsonAdapter, getDiscoveredAreasTucson } from "./adapters/tucson-arcgis";
 
 // City registry.
 //
@@ -221,6 +222,13 @@ export const CITIES: CityEntry[] = [
     adapter: buffaloAdapter,
     discover: getDiscoveredAreasBuffalo,
   },
+  {
+    slug: "tucson",
+    label: "Tucson",
+    bbox: { south: 32.07, west: -111.10, north: 32.40, east: -110.74 },
+    adapter: tucsonAdapter,
+    discover: getDiscoveredAreasTucson,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -259,6 +267,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("lv-")   || slug === "las-vegas")    return CITIES[22];
   if (slug.startsWith("bzi-")  || slug === "boise")        return CITIES[23];
   if (slug.startsWith("buf-")  || slug === "buffalo")      return CITIES[24];
+  if (slug.startsWith("tuc-")  || slug === "tucson")       return CITIES[25];
   return CITIES[0];
 }
 
