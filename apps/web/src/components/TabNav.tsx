@@ -9,8 +9,9 @@ import { usePathname } from "next/navigation";
 // a full page change. We keep the underlying routes (/map, /watch, /safety)
 // so deep links and browser history stay clean.
 const TABS = [
-  { href: "/threats",      label: "Awareness",   subroutes: [] as string[] },
-  { href: "/map",          label: "SafeZone",    subroutes: ["/map", "/watch", "/safety", "/safety-score", "/trends"] },
+  { href: "/threats",      label: "Awareness",     subroutes: [] as string[] },
+  { href: "/map",          label: "SafeZone",      subroutes: ["/map", "/watch", "/safety", "/safety-score", "/trends"] },
+  { href: "/route",        label: "Safe Route",    subroutes: [] },
   { href: "/community",    label: "CommunitySafe", subroutes: [] },
 ];
 
