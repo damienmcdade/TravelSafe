@@ -190,6 +190,16 @@ const PHOTOS: Record<string, string[]> = {
     // SouthPark aerial — south Charlotte district
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Southpark_aerial_Charlotte_NC.jpg/1920px-Southpark_aerial_Charlotte_NC.jpg",
   ],
+  "nashville": [
+    // Nashville skyline at dusk
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Nashville%2C_TN_skyline.jpg/1920px-Nashville%2C_TN_skyline.jpg",
+    // Broadway and Bridgestone Arena
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Nashville_Visitor_Center_and_Bridgestone_Arena%2C_Broadway_and_5th_Avenue%2C_Nashville%2C_TN_%2854384487819%29.jpg/1920px-Nashville_Visitor_Center_and_Bridgestone_Arena%2C_Broadway_and_5th_Avenue%2C_Nashville%2C_TN_%2854384487819%29.jpg",
+    // Tennessee State Capitol
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Tennessee_State_Capitol_2022f.jpg/1920px-Tennessee_State_Capitol_2022f.jpg",
+    // The Parthenon — full-scale replica in Centennial Park
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Parthenon.at.Nashville.Tenenssee.01.jpg/1920px-Parthenon.at.Nashville.Tenenssee.01.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

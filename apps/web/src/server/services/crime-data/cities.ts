@@ -19,6 +19,7 @@ import { batonRougeAdapter, getDiscoveredAreasBatonRouge } from "./adapters/bato
 import { cambridgeAdapter, getDiscoveredAreasCambridge } from "./adapters/cambridge-socrata";
 import { dallasAdapter, getDiscoveredAreasDallas } from "./adapters/dallas-socrata";
 import { charlotteAdapter, getDiscoveredAreasCharlotte } from "./adapters/charlotte-arcgis";
+import { nashvilleAdapter, getDiscoveredAreasNashville } from "./adapters/nashville-arcgis";
 
 // City registry.
 //
@@ -165,6 +166,13 @@ export const CITIES: CityEntry[] = [
     adapter: charlotteAdapter,
     discover: getDiscoveredAreasCharlotte,
   },
+  {
+    slug: "nashville",
+    label: "Nashville",
+    bbox: { south: 35.97, west: -87.05, north: 36.41, east: -86.51 },
+    adapter: nashvilleAdapter,
+    discover: getDiscoveredAreasNashville,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -196,6 +204,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("cam-")  || slug === "cambridge")    return CITIES[15];
   if (slug.startsWith("dal-")  || slug === "dallas")       return CITIES[16];
   if (slug.startsWith("clt-")  || slug === "charlotte")    return CITIES[17];
+  if (slug.startsWith("nas-")  || slug === "nashville")    return CITIES[18];
   return CITIES[0];
 }
 

@@ -30,6 +30,7 @@ const SOURCES: Record<string, string> = {
   "cambridge":     "Cambridge Police Crime Reports (City of Cambridge Open Data), aggregated to CDD neighborhood.",
   "dallas":        "Dallas Police Incidents (City of Dallas Open Data), geocoded to named neighborhood. Demographic columns are excluded at request time.",
   "charlotte":     "CMPD Incidents (City of Charlotte Open Data, ArcGIS MapServer), aggregated to CMPD patrol division.",
+  "nashville":     "Metro Nashville PD Incidents (NashvilleOpenData, ArcGIS Feature Server), geocoded to MNPD precinct. Victim-demographic columns are excluded at request time.",
 };
 
 export default function MapPage() {
