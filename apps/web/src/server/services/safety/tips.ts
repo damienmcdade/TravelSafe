@@ -45,7 +45,9 @@ export interface SafetyTip {
 // the right number for the user's selected city — falls back to the city
 // 311/411 line where the police department routes non-emergency intake
 // through the city service center.
-const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string }> = {
+// Exported so the Neighborhood Watch service can reach the same verified
+// non-emergency lines without duplicating them.
+export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string }> = {
   "san-diego":     { line: "619-531-2000", label: "SDPD non-emergency",   url: "https://www.sandiego.gov/police" },
   "los-angeles":   { line: "877-275-5273", label: "LAPD non-emergency",   url: "https://www.lapdonline.org/" },
   "san-francisco": { line: "415-553-0123", label: "SFPD non-emergency",   url: "https://www.sf.gov/departments/police-department" },
@@ -78,7 +80,9 @@ const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string
 // prevention tips per city so users see guidance that names their own police
 // department and links to their city's actual crime-prevention / community
 // resources page — not the generic FBI page that every city otherwise gets.
-const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; programName?: string; programUrl?: string }> = {
+// Exported so the Neighborhood Watch service can reuse the same verified
+// per-city police-department resource links.
+export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; programName?: string; programUrl?: string }> = {
   "san-diego":     { name: "San Diego Police Department",    url: "https://www.sandiego.gov/police",         programName: "SDPD Crime Prevention",          programUrl: "https://www.sandiego.gov/police/services/prevention" },
   "los-angeles":   { name: "Los Angeles Police Department",  url: "https://www.lapdonline.org/",             programName: "LAPD Crime Prevention",          programUrl: "https://www.lapdonline.org/crime-prevention/" },
   "san-francisco": { name: "San Francisco Police Department", url: "https://www.sf.gov/departments/police-department", programName: "SFPD SafetyAwareness", programUrl: "https://www.sf.gov/topics/safety-awareness" },
