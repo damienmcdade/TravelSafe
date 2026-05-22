@@ -38,6 +38,7 @@ const CITY_POPULATION: Record<string, number> = {
   "nashville":       687_788,
   "minneapolis":     421_874,
   "cleveland":       362_656,
+  "montgomery-county": 1_058_812,
 };
 
 interface PerArea { incidentCount: number; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number } }

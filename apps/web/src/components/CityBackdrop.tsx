@@ -220,6 +220,16 @@ const PHOTOS: Record<string, string[]> = {
     // Public Square Fountain
     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Cleveland_Public_Square_Fountain_%2829744768716%29.jpg/1920px-Cleveland_Public_Square_Fountain_%2829744768716%29.jpg",
   ],
+  "montgomery-county": [
+    // Bethesda aerial
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Bethesda_aerial_2019_%28dehazed%29.jpg/1920px-Bethesda_aerial_2019_%28dehazed%29.jpg",
+    // Bethesda Wisconsin Ave
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/BethesdaMarylandWisconsin.jpg/1920px-BethesdaMarylandWisconsin.jpg",
+    // Host Hotels HQ in Bethesda — downtown landmark
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Host_Hotels_HQ_Bethesda_MD_HST_20210314_181959_1_crop.jpg/1920px-Host_Hotels_HQ_Bethesda_MD_HST_20210314_181959_1_crop.jpg",
+    // Bethesda Maryland street scene
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/BethesdaMaryland.jpg/1920px-BethesdaMaryland.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

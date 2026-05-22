@@ -33,6 +33,7 @@ const SOURCES: Record<string, string> = {
   "nashville":     "Metro Nashville PD Incidents (NashvilleOpenData, ArcGIS Feature Server), geocoded to MNPD precinct. Victim-demographic columns are excluded at request time.",
   "minneapolis":   "Minneapolis Crime_Data (City of Minneapolis Open Data, ArcGIS Feature Server). NIBRS-classified per row by MPD, aggregated to one of 87 named neighborhoods.",
   "cleveland":     "Cleveland Division of Police Calls for Service (City of Cleveland Open Data, ArcGIS Feature Server). Administrative dispatches filtered at ingest. Includes non-NIBRS reports.",
+  "montgomery-county": "Montgomery County Police Crime (Montgomery County MD Open Data, Socrata). NIBRS-classified per row by MCPD, aggregated to one of seven MCPD policing districts.",
 };
 
 export default function MapPage() {
