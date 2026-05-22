@@ -72,10 +72,17 @@ export function LocationSearch({
     return [...inCity.slice(0, 7), ...other.slice(0, 3)];
   }, [areas, q, city.label]);
 
-  // Current city's quick-pick chips when the input is empty.
+  // Every neighborhood in the active city, alphabetized — the strip below
+  // becomes a horizontally-scrollable browse rail so the user can flick
+  // through ALL options without typing. Combined with the typing autofill
+  // dropdown above, the input supports three interaction styles in one
+  // surface: free-text Enter (geo lookup), autofill picker, and scroll
+  // browse.
   const quickPicks = useMemo(() => {
     if (!areas) return [];
-    return areas.filter((a) => a.jurisdiction.toLowerCase() === city.label.toLowerCase()).slice(0, 8);
+    return areas
+      .filter((a) => a.jurisdiction.toLowerCase() === city.label.toLowerCase())
+      .sort((a, b) => a.label.localeCompare(b.label));
   }, [areas, city.label]);
 
   async function lookup(query: string) {
@@ -213,19 +220,34 @@ export function LocationSearch({
         {status === "error"   && <span className="text-dusk-700">{error}</span>}
       </div>
 
-      {/* Quick-pick chips when the input is empty ------------------- */}
+      {/* Browse strip when the input is empty — horizontally scrollable
+          list of every {city.label} neighborhood. Acts as the third
+          interaction style alongside typing autofill (above) and free-text
+          Enter (also above). The current `current` pick is highlighted so
+          users can see where they are. */}
       {q.trim().length === 0 && quickPicks.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          <span className="text-xs text-slate2-500 mr-1 self-center">Popular in {city.label}:</span>
-          {quickPicks.map((a) => (
-            <button
-              key={a.slug}
-              onClick={() => pickArea(a)}
-              className="text-xs px-2.5 py-1 rounded-full bg-sand-100 hover:bg-bay-200 hover:text-bay-700 text-slate2-700 transition-all duration-200 ease-spring hover:-translate-y-0.5"
-            >
-              {a.label}
-            </button>
-          ))}
+        <div className="mt-3">
+          <p className="text-[11px] uppercase tracking-wider text-slate2-500 mb-1.5">
+            Browse {city.label} ({quickPicks.length}) — type above to filter
+          </p>
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 [scrollbar-width:thin]">
+            {quickPicks.map((a) => {
+              const active = current?.slug === a.slug;
+              return (
+                <button
+                  key={a.slug}
+                  onClick={() => pickArea(a)}
+                  className={`shrink-0 text-xs px-2.5 py-1 rounded-full transition-all duration-200 ease-spring hover:-translate-y-0.5 ${
+                    active
+                      ? "bg-bay-500 text-white ring-1 ring-bay-700"
+                      : "bg-sand-100 hover:bg-bay-200 hover:text-bay-700 text-slate2-700"
+                  }`}
+                >
+                  {a.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>
