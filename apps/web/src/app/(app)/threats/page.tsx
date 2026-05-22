@@ -30,7 +30,16 @@ export default function ThreatsPage() {
   // Clear selection on city switch so we land on the new city's overview.
   useEffect(() => { setArea(null); }, [city.slug]);
 
-  const { data: citywide } = useApi<Citywide>(area ? null : `/crime-data/citywide?city=${city.slug}`, [area, city.slug]);
+  // 15-minute background refresh on the Awareness tab so the cards rotate
+  // through fresh content while the user reads — the upstream adapters cache
+  // their police-feed pulls for 5 minutes, so 15 min is the right cadence to
+  // pick up new incidents without hammering each city's open-data portal.
+  const REFRESH_MS = 15 * 60 * 1000;
+  const { data: citywide } = useApi<Citywide>(
+    area ? null : `/crime-data/citywide?city=${city.slug}`,
+    [area, city.slug],
+    { refreshIntervalMs: REFRESH_MS },
+  );
   const showingCitywide = !area;
 
   const citywideCounts = (citywide?.perArea ?? []).reduce(
@@ -45,6 +54,7 @@ export default function ThreatsPage() {
   const { data: selectedAreaStats } = useApi<{ area: string; alerts: Alert[] }>(
     area ? `/crime-data/alerts?neighborhood=${area.slug}` : null,
     [area?.slug ?? ""],
+    { refreshIntervalMs: REFRESH_MS },
   );
   const selectedCounts = (() => {
     if (!area) return { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 };

@@ -2,15 +2,22 @@
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 
-// FBI Crime in the Nation 2023 — most recently published national estimated
-// rates per 100,000 people (released by the FBI in late 2024 alongside the
-// 2023 Crime in the Nation report). NIBRS has three groups but the FBI's
-// published national rates cover only Violent (≈ Persons) and Property crime,
-// so we hide Society.
-// Source: https://crime-data-explorer.fr.cloud.gov/pages/explorer/crime/crime-trend
+// FBI Crime in the Nation 2024 — the most recent national rate release from
+// the FBI Uniform Crime Reporting program. The legacy crime-data-explorer
+// .fr.cloud.gov host has been retired; the live source moved to cde.ucr
+// .cjis.gov, which always reflects the most current published year. NIBRS
+// has three groups but the FBI's published national rates cover only Violent
+// (≈ Persons) and Property crime, so we hide Society.
+//
+// 2024 national estimated rates per 100,000 people (Crime in the Nation
+// 2024, released October 2025):
+//   Violent crime  — 363.8 (≈ NIBRS Persons)
+//   Property crime — 1,895.8
+// The CDE link below opens the same trend view a user can verify these
+// numbers against.
 const NATIONAL_PER_100K = { PERSONS: 364, PROPERTY: 1896 };
-const NATIONAL_YEAR = 2023;
-const NATIONAL_SOURCE_URL = "https://crime-data-explorer.fr.cloud.gov/pages/explorer/crime/crime-trend";
+const NATIONAL_YEAR = 2024;
+const NATIONAL_SOURCE_URL = "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend";
 
 // US Census Bureau Vintage 2023 Population Estimates (released April 2024) —
 // the most recent official population estimates available for these cities.

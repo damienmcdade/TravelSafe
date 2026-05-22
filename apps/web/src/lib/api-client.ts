@@ -9,7 +9,12 @@ export const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 // Default client-side periodic refresh — 10 minutes, matched to the server
 // cache TTL on the police data adapters so the user always sees the freshest
 // upstream data without hammering it.
-const DEFAULT_REFRESH_MS = 10 * 60 * 1000;
+// Background refresh cadence for useApi consumers. 15 minutes aligns with the
+// Awareness tab's product requirement to "refresh content every 15 minutes"
+// and is comfortably above the 5-min server cache on every police adapter —
+// so each refresh has a meaningful chance of picking up new incidents
+// without hammering the upstream open-data feeds.
+const DEFAULT_REFRESH_MS = 15 * 60 * 1000;
 
 function token(): string | null {
   if (typeof window === "undefined") return null;
