@@ -17,6 +17,7 @@ const SOURCES: Record<string, string> = {
   "san-francisco": "San Francisco Police Department Incident Reports, 2018 to present (DataSF).",
   "chicago":       "Chicago Police Department Crimes 2001 to present (City of Chicago Open Data).",
   "seattle":       "Seattle Police Department Crime Data, NIBRS-coded (City of Seattle Open Data).",
+  "new-york":      "New York City Police Department Complaint Data (current YTD), aggregated to NYPD precinct (NYC Open Data).",
 };
 
 export default function MapPage() {

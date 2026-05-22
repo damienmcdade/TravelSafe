@@ -6,6 +6,7 @@ import { lapdAdapter, getDiscoveredAreasLA } from "./adapters/lapd-socrata";
 import { sfAdapter, getDiscoveredAreasSF } from "./adapters/sf-socrata";
 import { chicagoAdapter, getDiscoveredAreasChicago } from "./adapters/chicago-socrata";
 import { seattleAdapter, getDiscoveredAreasSeattle } from "./adapters/seattle-socrata";
+import { nypdAdapter, getDiscoveredAreasNYC } from "./adapters/nypd-socrata";
 
 // City registry.
 //
@@ -61,6 +62,13 @@ export const CITIES: CityEntry[] = [
     adapter: seattleAdapter,
     discover: getDiscoveredAreasSeattle,
   },
+  {
+    slug: "new-york",
+    label: "New York City",
+    bbox: { south: 40.49, west: -74.27, north: 40.92, east: -73.68 },
+    adapter: nypdAdapter,
+    discover: getDiscoveredAreasNYC,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -79,6 +87,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("sf-")  || slug === "san-francisco") return CITIES[2];
   if (slug.startsWith("chi-") || slug === "chicago")       return CITIES[3];
   if (slug.startsWith("sea-") || slug === "seattle")       return CITIES[4];
+  if (slug.startsWith("ny-")  || slug === "new-york")      return CITIES[5];
   return CITIES[0];
 }
 
