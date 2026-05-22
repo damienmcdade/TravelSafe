@@ -53,6 +53,7 @@ export default function SafetyScorePage() {
       <SafeZoneSubNav />
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">SafeZone · Safety Score · {city.label}</p>
+        {/* SubNav stays in place for SafeZone's remaining two subtabs. */}
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
           How {city.label} <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">compares to the FBI national average</span>
         </h1>

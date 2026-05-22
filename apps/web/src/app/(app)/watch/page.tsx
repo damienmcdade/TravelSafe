@@ -4,7 +4,6 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { CityBanner } from "@/components/CitySelector";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
-import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 
 interface Area { slug: string; label: string; jurisdiction: string }
 interface WatchCard {
@@ -99,9 +98,8 @@ export default function NeighborhoodWatchPage() {
 
   return (
     <main className="space-y-8">
-      <SafeZoneSubNav />
       <header className="page-hero">
-        <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">SafeZone · Neighborhood Watch · {city.label}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Neighborhood Watch · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
           Awareness cards <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">tailored to a specific {city.label} neighborhood</span>
         </h1>

@@ -2,17 +2,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Top-level tabs. The three safety-oriented routes (Crime Map, Neighborhood
-// Watch, Personal Safety) are grouped under a single "SafeZone" parent tab
-// — clicking it lands on the Crime Map by default, and a sub-nav inside
-// each of the three pages lets the user move between the siblings without
-// a full page change. We keep the underlying routes (/map, /watch, /safety)
-// so deep links and browser history stay clean.
+// Top-level tabs. Crime Map / Neighborhood Watch / Personal Safety stand on
+// their own — they used to be grouped under SafeZone but the grouping added
+// a click without earning it. SafeZone now only holds the two newer subtabs
+// (Safety Score + Trend Feed), so its entry route is /safety-score.
 const TABS = [
-  { href: "/threats",      label: "Awareness",     subroutes: [] as string[] },
-  { href: "/map",          label: "SafeZone",      subroutes: ["/map", "/watch", "/safety", "/safety-score", "/trends"] },
-  { href: "/route",        label: "Safe Route",    subroutes: [] },
-  { href: "/community",    label: "CommunitySafe", subroutes: [] },
+  { href: "/threats",       label: "Awareness",        subroutes: [] as string[] },
+  { href: "/map",           label: "Crime Map",        subroutes: [] },
+  { href: "/watch",         label: "Neighborhood Watch", subroutes: [] },
+  { href: "/safety",        label: "Personal Safety",  subroutes: [] },
+  { href: "/safety-score",  label: "SafeZone",         subroutes: ["/safety-score", "/trends"] },
+  { href: "/route",         label: "Safe Route",       subroutes: [] },
+  { href: "/community",     label: "CommunitySafe",    subroutes: [] },
 ];
 
 export function TabNav() {
