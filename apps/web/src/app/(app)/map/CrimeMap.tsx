@@ -41,6 +41,10 @@ const NAME_ALIASES: Array<[string, string]> = [
   ["tierra santa", "tierrasanta"],
   ["kearney mesa", "kearny mesa"],
   ["ofarrell", "o farrell"],
+  // Denver — the Stapleton neighborhood was officially renamed "Central Park"
+  // in 2020 after community vote. The polygon file still says Stapleton; the
+  // adapter receives "central-park" from Denver Open Data.
+  ["stapleton", "central park"],
 ];
 
 function normName(s: string): string {

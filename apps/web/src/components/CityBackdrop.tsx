@@ -70,6 +70,16 @@ const PHOTOS: Record<string, string[]> = {
     // 10-mile Manhattan skyline panorama
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg/1280px-10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg",
   ],
+  "denver": [
+    // Downtown Denver skyline (Wikipedia infobox crop)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Denver%2C_Colorado_skyline_%28cropped%29.jpg/1920px-Denver%2C_Colorado_skyline_%28cropped%29.jpg",
+    // 17th Street financial district skyscraper cluster
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Downtown_Denver_Skyscrapers.JPG/1920px-Downtown_Denver_Skyscrapers.JPG",
+    // Downtown Denver 2024 — Trinity Church + Mile High Center + Lincoln Center
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Downtown_Denver_2024.jpg/1920px-Downtown_Denver_2024.jpg",
+    // Downtown panorama along Speer Boulevard at midnight
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/2006-07-14-Denver_Skyline_Midnight.jpg/1920px-2006-07-14-Denver_Skyline_Midnight.jpg",
+  ],
 };
 
 const ROTATE_MS = 5 * 60 * 1000;
