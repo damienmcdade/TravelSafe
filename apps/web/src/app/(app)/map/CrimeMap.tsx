@@ -112,14 +112,48 @@ function fuseColor(breakdown: AreaBreakdown | null, maxCount: number): { fill: s
   return { fill: `rgb(${r},${g},${b})`, opacity, stroke: `rgb(${Math.max(0, r - 50)},${Math.max(0, g - 50)},${Math.max(0, b - 50)})` };
 }
 
-function describeMix(b: AreaBreakdown | null): string {
-  if (!b || b.incidentCount === 0) return "no recent incidents";
-  const parts: string[] = [];
-  for (const k of ["PERSONS", "PROPERTY", "SOCIETY"] as Cat[]) {
-    const n = b.byCategory[k];
-    if (n > 0) parts.push(`${CATEGORY_COLOR[k].label.toLowerCase()} ${n}`);
+/// Richer hover tooltip HTML. Bold name, large total, colored category
+/// rows aligned to the same palette the polygon shading uses, and a
+/// click-affordance footer. Built as a single HTML string because
+/// react-leaflet's bindTooltip takes plain markup and we don't have a
+/// React tree inside the Leaflet layer.
+function tooltipHtml(name: string, stats: AreaBreakdown | null): string {
+  const safeName = name.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  if (!stats || stats.incidentCount === 0) {
+    return (
+      `<div style="font-family:inherit;min-width:160px">` +
+      `<div style="font-weight:600;color:#1C232C;font-size:0.875rem">${safeName}</div>` +
+      `<div style="font-size:0.75rem;color:#94a3b8;margin-top:2px">No recent reports — typical for many quiet areas.</div>` +
+      `<div style="font-size:0.65rem;color:#94a3b8;margin-top:4px;text-transform:uppercase;letter-spacing:0.05em">Click to view detail</div>` +
+      `</div>`
+    );
   }
-  return parts.join(" · ");
+  const rows = (["PERSONS", "PROPERTY", "SOCIETY"] as Cat[])
+    .map((k) => {
+      const n = stats.byCategory[k];
+      if (n === 0) return "";
+      const c = CATEGORY_COLOR[k];
+      return (
+        `<div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:#334155;margin-top:2px">` +
+        `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c.hex}"></span>` +
+        `<span style="flex:1">${c.label}</span>` +
+        `<span style="font-variant-numeric:tabular-nums;color:#0F172A;font-weight:500">${n.toLocaleString()}</span>` +
+        `</div>`
+      );
+    })
+    .filter(Boolean)
+    .join("");
+  return (
+    `<div style="font-family:inherit;min-width:200px">` +
+    `<div style="font-weight:600;color:#1C232C;font-size:0.875rem">${safeName}</div>` +
+    `<div style="display:flex;align-items:baseline;gap:4px;margin-top:1px">` +
+    `<span style="font-size:1.125rem;font-weight:600;color:#0F172A;font-variant-numeric:tabular-nums">${stats.incidentCount.toLocaleString()}</span>` +
+    `<span style="font-size:0.7rem;color:#64748b">recent reports</span>` +
+    `</div>` +
+    `<div style="margin-top:4px">${rows}</div>` +
+    `<div style="font-size:0.65rem;color:#94a3b8;margin-top:6px;text-transform:uppercase;letter-spacing:0.05em">Click to view detail</div>` +
+    `</div>`
+  );
 }
 
 export default function CrimeMap() {
@@ -230,11 +264,7 @@ export default function CrimeMap() {
   function onEachFeature(feat: Feature<Geometry>, layer: Layer) {
     const name = (feat.properties as { name?: string } | null)?.name ?? "";
     const stats = polygonStats.get(name) ?? null;
-    layer.bindTooltip(
-      `<div style="font-family:inherit"><div style="font-weight:600;color:#1C232C">${name}</div>` +
-      `<div style="font-size:0.75rem;color:#4b5563">${describeMix(stats)}</div></div>`,
-      { sticky: true },
-    );
+    layer.bindTooltip(tooltipHtml(name, stats), { sticky: true });
     layer.on({
       click: () => setSelectedName(name),
       mouseover: (e: LeafletMouseEvent) => { (e.target as L.Path).setStyle({ weight: 2 }); },
