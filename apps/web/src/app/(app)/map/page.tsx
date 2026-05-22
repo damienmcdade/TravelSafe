@@ -22,6 +22,7 @@ const SOURCES: Record<string, string> = {
   "detroit":       "Detroit RMS Crime Incidents (City of Detroit Open Data, ArcGIS Feature Server), aggregated to named neighborhood.",
   "washington-dc": "DC MPD Crime Incidents — Last 30 Days (Open Data DC, ArcGIS MapServer), aggregated to neighborhood cluster.",
   "boston":        "Boston Police Department Crime Incident Reports (City of Boston Open Data, CKAN), aggregated to BPD district.",
+  "philadelphia":  "Philadelphia Crime Incidents Part 1 & Part 2 (OpenDataPhilly, CARTO SQL), aggregated to PPD district.",
 };
 
 export default function MapPage() {

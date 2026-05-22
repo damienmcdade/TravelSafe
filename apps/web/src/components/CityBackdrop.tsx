@@ -110,6 +110,16 @@ const PHOTOS: Record<string, string[]> = {
     // Old State House on State Street — historic urban architecture
     "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Old_State_House_%2849280448012%29.jpg/1920px-Old_State_House_%2849280448012%29.jpg",
   ],
+  "philadelphia": [
+    // Philadelphia skyline May 2024 (Wikipedia infobox panorama)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Philadelphia_skyline_20240528_%28cropped_2-1%29.jpg/1920px-Philadelphia_skyline_20240528_%28cropped_2-1%29.jpg",
+    // Skyline viewed from Spring Garden Street Bridge (2018)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/A651%2C_Philadelphia_skyline_from_the_Spring_Garden_Street_Bridge%2C_2018.jpg/1920px-A651%2C_Philadelphia_skyline_from_the_Spring_Garden_Street_Bridge%2C_2018.jpg",
+    // Center City with Comcast Technology Center (tallest building)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/View_of_Center_City_%28Comcast_Technology_Center%29.jpg/1920px-View_of_Center_City_%28Comcast_Technology_Center%29.jpg",
+    // Philadelphia City Hall aerial view + downtown
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Philadelphia_City_Hall%2C_aerial_view%2C_cropped.png/1920px-Philadelphia_City_Hall%2C_aerial_view%2C_cropped.png",
+  ],
 };
 
 const ROTATE_MS = 5 * 60 * 1000;
