@@ -55,6 +55,7 @@ const Env = z.object({
   // backup when a Gemini key hits its zero-quota project trap. Get a free
   // key at https://console.groq.com/keys.
   GROQ_API_KEY:                 z.string().optional(),
+  GROQAPI:                      z.string().optional(),  // alternate name some users set
   AI_GATEWAY_API_KEY:           z.string().optional(),
 
   // Cloudflare Worker that proxies data.boston.gov for the Boston adapter.

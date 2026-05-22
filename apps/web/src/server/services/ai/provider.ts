@@ -28,10 +28,15 @@ function geminiKey(): string | undefined {
 ///     AI-Studio "Create key" flow sometimes mints keys against projects
 ///     with zero quota; we try it second to avoid surprise 429s.
 ///  3. Vercel AI Gateway — legacy paid fallback.
+function groqKey(): string | undefined {
+  return env.GROQ_API_KEY || env.GROQAPI;
+}
+
 export async function getAIModel(): Promise<unknown | null> {
-  if (env.GROQ_API_KEY) {
+  const groq = groqKey();
+  if (groq) {
     const { createGroq } = await import("@ai-sdk/groq");
-    const provider = createGroq({ apiKey: env.GROQ_API_KEY });
+    const provider = createGroq({ apiKey: groq });
     // Llama 3.3 70B Versatile — current free flagship on Groq, supports tool
     // calling + structured JSON output (all the prompts we use).
     return provider("llama-3.3-70b-versatile");
@@ -49,5 +54,5 @@ export async function getAIModel(): Promise<unknown | null> {
 }
 
 export function aiConfigured(): boolean {
-  return Boolean(env.GROQ_API_KEY || geminiKey() || env.AI_GATEWAY_API_KEY);
+  return Boolean(groqKey() || geminiKey() || env.AI_GATEWAY_API_KEY);
 }
