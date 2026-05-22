@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useApi } from "@/lib/api-client";
 
 interface Tip {
@@ -67,16 +68,22 @@ export function SafetyTipsPanel({ areaSlug, jurisdictionSlug }: { areaSlug?: str
   );
 }
 
-function Section({ title, subtitle, tips }: { title: string; subtitle: string; tips: Tip[] }) {
+function Section({ title, subtitle, tips, initial = 6 }: { title: string; subtitle: string; tips: Tip[]; initial?: number }) {
+  const [expanded, setExpanded] = useState(false);
   if (!tips.length) return null;
+  const visible = expanded ? tips : tips.slice(0, initial);
+  const hidden = tips.length - visible.length;
   return (
     <section>
-      <header className="mb-3">
-        <h3 className="font-display text-lg text-slate2-900">{title}</h3>
-        <p className="text-xs text-slate2-500 mt-0.5">{subtitle}</p>
+      <header className="mb-3 flex items-baseline justify-between flex-wrap gap-1">
+        <div>
+          <h3 className="font-display text-lg text-slate2-900">{title}</h3>
+          <p className="text-xs text-slate2-500 mt-0.5">{subtitle}</p>
+        </div>
+        <span className="text-[10px] uppercase tracking-wider text-slate2-500">{tips.length} card{tips.length === 1 ? "" : "s"}</span>
       </header>
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {tips.map((t) => (
+        {visible.map((t) => (
           <li key={t.id}>
             <article className="surface p-4 h-full bg-gradient-to-br from-white to-sand-50 hover:shadow-glow-bay transition-all animate-rise-in">
               <h4 className="font-display text-base text-slate2-900">{t.title}</h4>
@@ -88,6 +95,16 @@ function Section({ title, subtitle, tips }: { title: string; subtitle: string; t
           </li>
         ))}
       </ul>
+      {hidden > 0 && (
+        <button onClick={() => setExpanded(true)} className="mt-3 btn-secondary text-xs px-3 py-1.5">
+          Show {hidden} more {hidden === 1 ? "card" : "cards"}
+        </button>
+      )}
+      {expanded && tips.length > initial && (
+        <button onClick={() => setExpanded(false)} className="mt-3 btn-ghost text-xs px-3 py-1.5">
+          Show fewer
+        </button>
+      )}
     </section>
   );
 }
