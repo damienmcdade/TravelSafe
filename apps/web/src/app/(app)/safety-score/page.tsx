@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
@@ -49,6 +50,7 @@ export default function SafetyScorePage() {
   // keyed by city slug — picking a neighborhood here also propagates to
   // Awareness, CommunitySafe, Trend Feed, Personal Safety, etc.
   const { area, setArea } = useArea(city.slug);
+  useDocumentTitle(`Safety Score · ${area?.label ?? city.label}`);
 
   // Compare area is local-only — comparison is a transient action, not a
   // persistent preference, so it doesn't write to the global useArea

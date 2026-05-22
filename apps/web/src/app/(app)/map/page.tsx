@@ -1,6 +1,8 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 
 const CrimeMap = dynamic(() => import("./CrimeMap"), {
   ssr: false,
@@ -45,6 +47,8 @@ const SOURCES: Record<string, string> = {
 
 export default function MapPage() {
   const { city } = useCity();
+  const { area } = useArea(city.slug);
+  useDocumentTitle(`Crime Map · ${area?.label ?? city.label}`);
   return (
     <main className="space-y-6">
       <header className="page-hero">

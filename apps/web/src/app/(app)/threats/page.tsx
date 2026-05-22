@@ -5,6 +5,7 @@ import { requestLocation } from "@/lib/geolocation";
 import { ensurePushSubscription } from "@/lib/push";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
@@ -35,6 +36,7 @@ export default function ThreatsPage() {
   // propagates to every other tab (SafeZone, CommunitySafe, Personal Safety,
   // Trend Feed, Safety Score) and vice versa.
   const { area, setArea } = useArea(city.slug);
+  useDocumentTitle(`Awareness · ${area?.label ?? city.label}`);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [locError, setLocError] = useState<string | null>(null);
 

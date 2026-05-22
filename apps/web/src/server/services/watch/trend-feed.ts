@@ -34,6 +34,15 @@ export interface TrendResponse {
   /// Total recorded incidents in the window for this area.
   totalIncidents: number;
   bullets: TrendBullet[];
+  /// Hour-of-day distribution across the 30-day window. Four buckets
+  /// (late_night = 12am-6am, morning = 6am-12pm, afternoon = 12pm-6pm,
+  /// evening = 6pm-12am) plus the dominant period name + concentration
+  /// percentage. Null when the window is empty.
+  timeOfDay: {
+    buckets: { late_night: number; morning: number; afternoon: number; evening: number };
+    dominantPeriod: "late_night" | "morning" | "afternoon" | "evening";
+    dominantPct: number;
+  } | null;
   source: { label: string; url: string };
   disclaimer: string;
 }
@@ -197,6 +206,7 @@ export async function getCitywideTrend(citySlug: string): Promise<TrendResponse>
     windowStart: cutoff.toISOString(),
     totalIncidents: inWindow.length,
     bullets: [...trendBullets, ...dispatchBullets],
+    timeOfDay: tod,
     source: {
       label: sample?.provenance.source ?? `${city.label} police open-data feed`,
       url: sample?.provenance.datasetUrl ?? "about:blank",
@@ -287,6 +297,7 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string): Prom
     windowStart: cutoff.toISOString(),
     totalIncidents: inWindow.length,
     bullets: [...trendBullets, ...dispatchBullets],
+    timeOfDay: tod,
     source: {
       label: sample?.provenance.source ?? `${city.label} police open-data feed`,
       url: sample?.provenance.datasetUrl ?? "about:blank",

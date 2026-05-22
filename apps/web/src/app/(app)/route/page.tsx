@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { api, useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 import { CityBanner } from "@/components/CitySelector";
 
 const RouteMap = dynamic(() => import("./RouteMap"), {
@@ -60,6 +61,7 @@ export default function SafeRoutePage() {
   // from whatever the user picked in any other tab. Picking a new From
   // here writes back to global, so the rest of the app follows along.
   const { area: globalArea, setArea: setGlobalArea } = useArea(city.slug);
+  useDocumentTitle(`Safe Route · ${city.label}`);
   // Scope autofill to the active city. Routing only works within a single
   // city because the exposure scoring uses that city's police adapter.
   const areasPath = `/geo/areas?city=${city.slug}`;

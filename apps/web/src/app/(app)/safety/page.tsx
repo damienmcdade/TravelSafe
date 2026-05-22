@@ -7,6 +7,7 @@ import { CityBanner } from "@/components/CitySelector";
 import { LocationSearch } from "@/components/LocationSearch";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -32,6 +33,7 @@ export default function PersonalSafetyPage() {
   // same area the user picked elsewhere so safety tips track without a
   // second selection.
   const { area, setArea } = useArea(city.slug);
+  useDocumentTitle(`Personal Safety · ${area?.label ?? city.label}`);
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   useEffect(() => {

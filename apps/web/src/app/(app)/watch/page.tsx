@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 import { CityBanner } from "@/components/CitySelector";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
 
@@ -40,6 +41,7 @@ export default function NeighborhoodWatchPage() {
   // every other tab. The legacy per-tab storage key is gone; the global
   // store is the single source of truth.
   const { area: globalArea, setArea: setGlobalArea } = useArea(city.slug);
+  useDocumentTitle(`Neighborhood Watch · ${globalArea?.label ?? city.label}`);
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [committedSlug, setCommittedSlug] = useState<string | null>(null);
 

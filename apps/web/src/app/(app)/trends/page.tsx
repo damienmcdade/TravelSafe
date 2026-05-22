@@ -2,6 +2,7 @@
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
+import { useDocumentTitle } from "@/lib/use-document-title";
 import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
@@ -18,6 +19,11 @@ interface TrendResp {
   windowStart: string;
   totalIncidents: number;
   bullets: TrendBullet[];
+  timeOfDay: {
+    buckets: { late_night: number; morning: number; afternoon: number; evening: number };
+    dominantPeriod: "late_night" | "morning" | "afternoon" | "evening";
+    dominantPct: number;
+  } | null;
   source: { label: string; url: string };
   disclaimer: string;
 }
@@ -38,6 +44,7 @@ export default function TrendFeedPage() {
   // null synchronously (no flicker through stale selections) because
   // storage is per-city.
   const { area, setArea } = useArea(city.slug);
+  useDocumentTitle(`Trend Feed · ${area?.label ?? city.label}`);
 
   const path = area
     ? `/safezone/trend?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}`
@@ -111,6 +118,10 @@ export default function TrendFeedPage() {
             </section>
           )}
 
+          {trend.timeOfDay && (
+            <TimeOfDayChart data={trend.timeOfDay} areaLabel={trend.area.label} />
+          )}
+
           <section className="surface p-5">
             <header className="flex items-baseline justify-between flex-wrap gap-2">
               <h2 className="font-display text-lg text-slate2-900">Recent dispatches in {trend.area.label}</h2>
@@ -145,6 +156,76 @@ export default function TrendFeedPage() {
         </>
       )}
     </main>
+  );
+}
+
+const PERIOD_META: Record<NonNullable<TrendResp["timeOfDay"]>["dominantPeriod"], { label: string; sublabel: string; tone: string }> = {
+  late_night: { label: "Late night", sublabel: "12am – 6am", tone: "#5C8AA7" },
+  morning:    { label: "Morning",    sublabel: "6am – 12pm", tone: "#7BA86E" },
+  afternoon:  { label: "Afternoon",  sublabel: "12pm – 6pm", tone: "#CBA56C" },
+  evening:    { label: "Evening",    sublabel: "6pm – 12am", tone: "#C47C62" },
+};
+
+/// Hour-of-day distribution chart — four horizontal bars showing the
+/// share of the 30-day window in each time period. The dominant period
+/// gets a subtle ring + percentage chip so users see the answer at a
+/// glance.
+function TimeOfDayChart({ data, areaLabel }: {
+  data: NonNullable<TrendResp["timeOfDay"]>;
+  areaLabel: string;
+}) {
+  const total =
+    data.buckets.late_night + data.buckets.morning + data.buckets.afternoon + data.buckets.evening;
+  if (total === 0) return null;
+  const rows: Array<{ key: keyof typeof data.buckets; n: number }> = [
+    { key: "late_night", n: data.buckets.late_night },
+    { key: "morning",    n: data.buckets.morning },
+    { key: "afternoon",  n: data.buckets.afternoon },
+    { key: "evening",    n: data.buckets.evening },
+  ];
+  const max = Math.max(...rows.map((r) => r.n)) || 1;
+  return (
+    <section className="surface p-5 bg-gradient-to-br from-white to-sand-50">
+      <header className="flex items-baseline justify-between flex-wrap gap-1">
+        <h2 className="font-display text-lg text-slate2-900">When reports happen</h2>
+        <span className="text-xs text-slate2-500">{areaLabel} · 30-day window</span>
+      </header>
+      <p className="mt-1 text-xs text-slate2-500">
+        Hourly distribution of every report in the window, bucketed into four six-hour periods.
+        Useful for thinking about when activity is most likely vs. quiet.
+      </p>
+      <ul className="mt-4 space-y-2.5">
+        {rows.map(({ key, n }) => {
+          const meta = PERIOD_META[key];
+          const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+          const widthPct = (n / max) * 100;
+          const dominant = key === data.dominantPeriod;
+          return (
+            <li key={key}>
+              <div className="flex items-baseline justify-between gap-3 text-sm">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block w-3 h-3 rounded-sm shrink-0" style={{ background: meta.tone }} />
+                  <span className={`${dominant ? "font-medium text-slate2-900" : "text-slate2-700"}`}>{meta.label}</span>
+                  <span className="text-[11px] text-slate2-500">{meta.sublabel}</span>
+                </span>
+                <span className={`text-xs tabular-nums ${dominant ? "text-slate2-900 font-medium" : "text-slate2-500"}`}>
+                  {n.toLocaleString()} · {pct}%
+                </span>
+              </div>
+              <div className={`mt-1 h-2 rounded-full bg-sand-100 overflow-hidden ${dominant ? "ring-1 ring-bay-200" : ""}`}>
+                <div
+                  className="h-full transition-all duration-700"
+                  style={{ width: `${widthPct}%`, background: meta.tone }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-4 text-[11px] text-slate2-500">
+        Dominant period: <strong className="text-slate2-700">{PERIOD_META[data.dominantPeriod].label} ({PERIOD_META[data.dominantPeriod].sublabel})</strong> with {data.dominantPct}% of reports.
+      </p>
+    </section>
   );
 }
 

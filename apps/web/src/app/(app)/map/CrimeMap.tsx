@@ -229,8 +229,10 @@ export default function CrimeMap() {
   const [query, setQuery] = useState("");
   const [selectedName, setSelectedName] = useState<string | null>(null);
   // Sync selection to the global area store so picking a polygon here also
-  // updates /threats, /safety-score, /trends, etc. via useArea.
-  const { setArea } = useArea(city.slug);
+  // updates /threats, /safety-score, /trends, etc. via useArea. Bidirectional:
+  // a pick MADE elsewhere reflects on the map by highlighting the matching
+  // polygon and zooming to it.
+  const { area: globalArea, setArea } = useArea(city.slug);
   function pickPolygon(name: string | null) {
     setSelectedName(name);
     if (!name) { setArea(null); return; }
@@ -241,6 +243,13 @@ export default function CrimeMap() {
     () => (polygons?.features ?? []).map((f) => (f.properties as { name?: string } | null)?.name ?? "").filter(Boolean).sort(),
     [polygons],
   );
+  // Inverse lookup so an incoming globalArea (slug-keyed) can resolve to
+  // the polygon's display name and drive the map's local selection state.
+  const polygonNameBySlug = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const [n, s] of polygonSlugByName) m.set(s, n);
+    return m;
+  }, [polygonSlugByName]);
   const suggestions = useMemo(() => {
     if (!query) return [] as string[];
     const q = normName(query);
@@ -248,6 +257,23 @@ export default function CrimeMap() {
   }, [polygonNames, query]);
 
   useEffect(() => { setSelectedName(null); setQuery(""); }, [city.slug]);
+
+  // Incoming sync: when the global area changes (picked in another tab or
+  // restored from localStorage on first mount), highlight the matching
+  // polygon. Skip when polygons haven't loaded yet so we don't no-op
+  // away a user's pending pick.
+  useEffect(() => {
+    if (polygons == null) return;
+    if (!globalArea) { setSelectedName(null); return; }
+    const polyName = polygonNameBySlug.get(globalArea.slug);
+    if (polyName && polyName !== selectedName) {
+      setSelectedName(polyName);
+      setQuery(polyName);
+    }
+    // selectedName intentionally omitted from deps — we only react to
+    // globalArea / polygons changing, not to our own local state ping-pong.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalArea?.slug, polygons, polygonNameBySlug]);
 
   // Recent incidents for the selected neighborhood — used to render per-offense
   // dots inside the polygon, and to power the drill-down legend.
