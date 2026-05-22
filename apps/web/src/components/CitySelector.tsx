@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useCity, STATES, citiesInState } from "@/lib/use-city";
+import { useCity, STATES, citiesInState, CITIES } from "@/lib/use-city";
 import { WheelPicker, type WheelItem } from "./WheelPicker";
 
 export function CitySelector() {
@@ -12,6 +12,11 @@ export function CitySelector() {
   // taps "Use this city".
   const [pendingState, setPendingState] = useState<string>(city.state);
   const [pendingCity, setPendingCity]   = useState<string>(city.slug);
+
+  const pendingIsLive = useMemo(
+    () => CITIES.find((c) => c.slug === pendingCity)?.status === "live",
+    [pendingCity],
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -114,8 +119,18 @@ export function CitySelector() {
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-2">
-            <p className="text-[10px] text-slate2-500">Greyed cities are on the roadmap; their data feed isn&apos;t wired up yet.</p>
-            <button onClick={commit} className="btn-primary text-xs px-3 py-1.5">Use this city</button>
+            <p className="text-[10px] text-slate2-500 max-w-[60%]">
+              {pendingIsLive
+                ? "Greyed cities are on the roadmap; their data feed isn’t wired up yet."
+                : "This city is on the roadmap — its police data feed isn’t wired up yet."}
+            </p>
+            <button
+              onClick={commit}
+              disabled={!pendingIsLive}
+              className="btn-primary text-xs px-3 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {pendingIsLive ? "Use this city" : "Coming soon"}
+            </button>
           </div>
         </div>
       )}
