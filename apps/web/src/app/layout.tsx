@@ -15,10 +15,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        {/* Mounted at the root so the rotating cityscape backdrop is present
-            on every page — welcome, auth, app tabs, and dynamic routes alike. */}
+        {/* CityBackdrop sits at z:0 (its own stacking context via position:fixed).
+            All page content is wrapped in `relative z-10` so it paints above the
+            backdrop instead of underneath. The body is transparent so the
+            backdrop is the actual paint at the bottom of the viewport. */}
         <CityBackdrop />
-        {children}
+        <div className="relative z-10">{children}</div>
       </body>
     </html>
   );

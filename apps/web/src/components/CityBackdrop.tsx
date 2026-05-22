@@ -49,7 +49,7 @@ export function CityBackdrop() {
   }, [photos.length]);
 
   return (
-    <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden" aria-hidden>
+    <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden>
       {photos.map((url, i) => (
         <div
           key={`${city.slug}-${i}`}

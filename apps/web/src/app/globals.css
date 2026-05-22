@@ -6,21 +6,22 @@
   color-scheme: light;
 }
 
-html, body {
-  /* Fallback color shown before the CityBackdrop's first image loads (and on
-     reduced-motion / no-image users). The CityBackdrop renders above this. */
+html {
+  /* Fallback fill, painted behind everything. Stays sand-colored before the
+     CityBackdrop loads, on reduced-motion users, and if every photo fails. */
   background-color: theme("colors.sand.50");
   color: theme("colors.slate2.900");
   min-height: 100%;
 }
 
 body {
+  /* Body MUST be transparent — its solid background-color would otherwise paint
+     over the fixed CityBackdrop. The html fallback above shows through. */
+  background-color: transparent;
   font-family: theme("fontFamily.sans");
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  /* The CityBackdrop component now owns the visual background. We
-     intentionally do NOT layer body-level radial gradients here — they
-     stacked on top of the photo and dulled it. */
+  min-height: 100%;
 }
 
 ::selection { background: theme("colors.bay.200"); color: theme("colors.slate2.900"); }

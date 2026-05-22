@@ -3,27 +3,27 @@ import Link from "next/link";
 export default function WelcomePage() {
   return (
     <main className="min-h-screen">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-hero-dusk opacity-90" aria-hidden />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_120%,rgba(255,255,255,0.18),transparent_60%)]" aria-hidden />
+      {/* Hero — glass card so the city backdrop shows through. */}
+      <section className="relative">
         <div className="relative max-w-5xl mx-auto px-6 py-24 sm:py-32">
-          <p className="text-bay-200 text-sm tracking-wide uppercase animate-fade-in">Area-level safety · San Diego · Los Angeles · San Francisco</p>
-          <h1 className="mt-2 font-display text-5xl sm:text-6xl text-white animate-rise-in">
-            <span className="bg-gradient-to-r from-white to-coral-200 bg-clip-text text-transparent">Travel</span>Safe
-          </h1>
-          <p className="mt-4 max-w-xl text-sand-100 text-lg animate-rise-in">
-            Calm, neighborhood-level safety context for major California cities. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3 animate-rise-in">
-            <Link href="/threats" className="btn-coral text-base px-6 py-3">Explore TravelSafe →</Link>
-            <Link href="/map" className="btn-secondary text-base px-6 py-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
-              Open the Crime Map
-            </Link>
+          <div className="max-w-2xl rounded-2xl bg-slate2-900/55 backdrop-blur-md p-6 sm:p-8 shadow-card-lift border border-white/10">
+            <p className="text-bay-200 text-sm tracking-wide uppercase animate-fade-in">Area-level safety · San Diego · Los Angeles · San Francisco</p>
+            <h1 className="mt-2 font-display text-5xl sm:text-6xl text-white animate-rise-in">
+              <span className="bg-gradient-to-r from-white to-coral-200 bg-clip-text text-transparent">Travel</span>Safe
+            </h1>
+            <p className="mt-4 text-sand-100 text-lg animate-rise-in">
+              Calm, neighborhood-level safety context for major California cities. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3 animate-rise-in">
+              <Link href="/threats" className="btn-coral text-base px-6 py-3">Explore TravelSafe →</Link>
+              <Link href="/map" className="btn-secondary text-base px-6 py-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
+                Open the Crime Map
+              </Link>
+            </div>
+            <p className="mt-6 text-xs text-sand-100/80">
+              No account is needed. Browsing and posting on CommunitySafe are both anonymous. A check-in timer and trusted-contact features require an existing account.
+            </p>
           </div>
-          <p className="mt-6 text-xs text-sand-100/80">
-            No account is needed. Browsing and posting on CommunitySafe are both anonymous. A check-in timer and trusted-contact features require an existing account.
-          </p>
         </div>
       </section>
 
