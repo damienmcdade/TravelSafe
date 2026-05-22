@@ -25,7 +25,7 @@ export type CitySlug =
   | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
   | "charlotte" | "nashville" | "minneapolis" | "cleveland"
-  | "montgomery-county" | "las-vegas" | "boise";
+  | "montgomery-county" | "las-vegas" | "boise" | "buffalo";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
 export interface SafetyTip {
@@ -70,6 +70,7 @@ const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string
   "montgomery-county": { line: "301-279-8000", label: "MCPD non-emergency", url: "https://www.montgomerycountymd.gov/POL/" },
   "las-vegas":     { line: "702-828-3111", label: "LVMPD non-emergency",  url: "https://www.lvmpd.com/" },
   "boise":         { line: "208-377-6790", label: "BPD non-emergency",    url: "https://www.cityofboise.org/departments/police/" },
+  "buffalo":       { line: "716-851-4444", label: "Buffalo PD non-emergency", url: "https://www.buffalony.gov/313/Police-Department" },
 };
 
 // City-specific official resource links. These get joined into one or more
@@ -101,6 +102,7 @@ const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; programName?
   "montgomery-county": { name: "Montgomery County Police Department", url: "https://www.montgomerycountymd.gov/POL/", programName: "MCPD Community Outreach", programUrl: "https://www.montgomerycountymd.gov/POL/community/" },
   "las-vegas":     { name: "Las Vegas Metropolitan Police Department", url: "https://www.lvmpd.com/", programName: "LVMPD Community Engagement", programUrl: "https://www.lvmpd.com/en-us/Pages/Community-Engagement.aspx" },
   "boise":         { name: "Boise Police Department", url: "https://www.cityofboise.org/departments/police/", programName: "BPD Crime Prevention", programUrl: "https://www.cityofboise.org/departments/police/services/crime-prevention/" },
+  "buffalo":       { name: "Buffalo Police Department", url: "https://www.buffalony.gov/313/Police-Department", programName: "Buffalo PD Community Engagement", programUrl: "https://www.buffalony.gov/319/Community-Engagement" },
 };
 
 const PREVENTION_TIPS: SafetyTip[] = [

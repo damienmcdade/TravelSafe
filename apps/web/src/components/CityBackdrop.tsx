@@ -250,6 +250,16 @@ const PHOTOS: Record<string, string[]> = {
     // Hyde Park neighborhood
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Hyde_Park_Boise.jpg/1920px-Hyde_Park_Boise.jpg",
   ],
+  "buffalo": [
+    // Buffalo skyline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Buffalo%2C_NY_skyline.jpg/1920px-Buffalo%2C_NY_skyline.jpg",
+    // Buffalo City Hall
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/View_of_Buffalo_City_Hall_%28cropped%29.jpg/1920px-View_of_Buffalo_City_Hall_%28cropped%29.jpg",
+    // Allentown neighborhood
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/AllentownBuffalo1.jpg/1920px-AllentownBuffalo1.jpg",
+    // Shea's Buffalo Theater on Main Street
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Shea%27s_Buffalo_Theater%2C_Main_Street%2C_Buffalo%2C_NY.jpg/1920px-Shea%27s_Buffalo_Theater%2C_Main_Street%2C_Buffalo%2C_NY.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

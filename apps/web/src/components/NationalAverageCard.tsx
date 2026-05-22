@@ -41,6 +41,7 @@ const CITY_POPULATION: Record<string, number> = {
   "montgomery-county": 1_058_812,
   "las-vegas":       660_929,
   "boise":           237_446,
+  "buffalo":         272_140,
 };
 
 interface PerArea { incidentCount: number; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number } }
