@@ -74,6 +74,10 @@ export async function getRows(): Promise<Incident[]> {
       cache = { fetchedAt: now, year: y, rows };
       break;
     } catch (err) {
+      // Log so upstream feed problems show up in deploy logs instead of
+      // silently falling back to the prior year — matches the pattern in
+      // every other adapter's fetch path.
+      console.warn(`[sdpd] fetchYear(${y}) failed:`, (err as Error).message);
       if (y === currentYear - 2) throw err;
     }
   }

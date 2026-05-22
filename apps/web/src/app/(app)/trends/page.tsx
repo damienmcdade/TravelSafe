@@ -23,10 +23,13 @@ interface TrendResp {
   disclaimer: string;
 }
 
+// Match the muted gradient the rest of the app uses — terracotta, sand-gold,
+// slate-teal. Tailwind utilities don't have these exact tones so we use
+// inline style colors via plain hex.
 const CAT_DOT: Record<NonNullable<TrendBullet["category"]>, string> = {
-  PERSONS:  "bg-coral-500",
-  PROPERTY: "bg-amber2-500",
-  SOCIETY:  "bg-bay-500",
+  PERSONS:  "bg-[#C47C62]",
+  PROPERTY: "bg-[#CBA56C]",
+  SOCIETY:  "bg-[#5C8AA7]",
 };
 
 export default function TrendFeedPage() {

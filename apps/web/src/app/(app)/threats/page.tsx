@@ -35,7 +35,7 @@ export default function ThreatsPage() {
   // their police-feed pulls for 5 minutes, so 15 min is the right cadence to
   // pick up new incidents without hammering each city's open-data portal.
   const REFRESH_MS = 15 * 60 * 1000;
-  const { data: citywide } = useApi<Citywide>(
+  const { data: citywide, error: citywideErr, loading: citywideLoading } = useApi<Citywide>(
     area ? null : `/crime-data/citywide?city=${city.slug}`,
     [area, city.slug],
     { refreshIntervalMs: REFRESH_MS },
@@ -51,7 +51,7 @@ export default function ThreatsPage() {
     { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 },
   );
 
-  const { data: selectedAreaStats } = useApi<{ area: string; alerts: Alert[] }>(
+  const { data: selectedAreaStats, error: areaStatsErr } = useApi<{ area: string; alerts: Alert[] }>(
     area ? `/crime-data/alerts?neighborhood=${area.slug}` : null,
     [area?.slug ?? ""],
     { refreshIntervalMs: REFRESH_MS },
@@ -113,6 +113,16 @@ export default function ThreatsPage() {
           <p className="text-xs text-slate2-500">Notifications default to a once-daily digest.</p>
         </div>
       </div>
+
+      {/* Surface upstream fetch failures so the user sees what broke rather
+          than blank cards. The previous behavior silently swallowed errors
+          from /crime-data/citywide and /crime-data/alerts. */}
+      {(citywideErr || areaStatsErr) && !citywideLoading && (
+        <div className="surface p-4 text-sm text-dusk-700">
+          Couldn&apos;t reach the {city.label} police feed just now. Cards below may show stale
+          cached data — try again in ~10 seconds. ({(citywideErr ?? areaStatsErr)?.message})
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">

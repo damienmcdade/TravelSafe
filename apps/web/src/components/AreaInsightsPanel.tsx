@@ -23,7 +23,7 @@ const COLOR: Record<Trend["category"], string> = {
 };
 
 export function AreaInsightsPanel({ areaQueryString }: { areaQueryString: string }) {
-  const { data, loading } = useApi<Insights>(`/crime-data/insights?${areaQueryString}`, [areaQueryString]);
+  const { data, loading, error } = useApi<Insights>(`/crime-data/insights?${areaQueryString}`, [areaQueryString]);
 
   return (
     <section className="surface p-6">
@@ -33,7 +33,10 @@ export function AreaInsightsPanel({ areaQueryString }: { areaQueryString: string
           {data ? `${data.windowWeeks}-week trend · ${data.totalIncidents} incidents in window` : ""}
         </span>
       </header>
-      {loading && <p className="mt-2 text-sm text-slate2-500 animate-pulse">Crunching trend data…</p>}
+      {loading && !data && <p className="mt-2 text-sm text-slate2-500 animate-pulse">Crunching trend data…</p>}
+      {error && !loading && (
+        <p className="mt-2 text-sm text-dusk-700">Could not load insights right now — the police data feed may be warming up.</p>
+      )}
       {data && (
         <>
           <p className="mt-3 text-slate2-700">{data.brief}</p>

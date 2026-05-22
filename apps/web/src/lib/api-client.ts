@@ -90,42 +90,102 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
 }
 
 export interface UseApiOptions {
-  /** Auto-refresh interval in ms. Pass `false` to disable; default 10 minutes. */
+  /** Auto-refresh interval in ms. Pass `false` to disable; default 15 minutes. */
   refreshIntervalMs?: number | false;
+  /** Persist responses to localStorage with this freshness window, in ms.
+   *  When set, the hook returns cached data instantly on mount and quietly
+   *  revalidates in the background. Pass `false` to disable persistence.
+   *  Default: 15 minutes for any GET — matches the upstream cache lifetime
+   *  on the police adapters so panning a map or returning to a tab doesn't
+   *  re-pay the cold-fetch tax. */
+  staleWhileRevalidateMs?: number | false;
 }
 
-/// React hook that surfaces fetch errors directly. Re-fetches on mount, on
-/// dependency change, on tab focus (to catch users returning after lunch),
-/// and on a configurable interval (default 10 minutes — matched to the
-/// server cache TTL on the police data adapters).
+const SWR_DEFAULT_MS = 15 * 60 * 1000;
+const SWR_KEY_PREFIX = "travelsafe.swr.v1.";
+
+interface SwrEntry<T> { fetchedAt: number; data: T }
+
+function swrRead<T>(path: string, ttlMs: number): T | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(SWR_KEY_PREFIX + path);
+    if (!raw) return null;
+    const e = JSON.parse(raw) as SwrEntry<T>;
+    if (!e || typeof e.fetchedAt !== "number") return null;
+    if (Date.now() - e.fetchedAt > ttlMs) return null;
+    return e.data;
+  } catch {
+    return null;
+  }
+}
+
+function swrWrite<T>(path: string, data: T) {
+  if (typeof window === "undefined") return;
+  try {
+    // Drop oldest entries if we ever blow the 5MB localStorage budget.
+    // We don't run a periodic GC — clearing on quota error is enough.
+    window.localStorage.setItem(SWR_KEY_PREFIX + path, JSON.stringify({ fetchedAt: Date.now(), data }));
+  } catch {
+    // QuotaExceededError: drop every TravelSafe SWR entry and try once more.
+    try {
+      const toDelete: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith(SWR_KEY_PREFIX)) toDelete.push(k);
+      }
+      for (const k of toDelete) window.localStorage.removeItem(k);
+      window.localStorage.setItem(SWR_KEY_PREFIX + path, JSON.stringify({ fetchedAt: Date.now(), data }));
+    } catch { /* give up */ }
+  }
+}
+
+/// React hook that surfaces fetch errors directly. On mount it serves a
+/// stale-cached response immediately (if available within the SWR window),
+/// then revalidates in the background. Also refetches on dependency change,
+/// on tab focus (to catch users returning after lunch), and on a configurable
+/// interval (default 15 minutes — matched to the server cache TTL on the
+/// police data adapters).
 export function useApi<T = unknown>(
   path: string | null,
   deps: unknown[] = [],
   opts: UseApiOptions = {},
 ) {
-  const [data, setData] = useState<T | null>(null);
+  const swrMs = opts.staleWhileRevalidateMs === false ? 0 : (opts.staleWhileRevalidateMs ?? SWR_DEFAULT_MS);
+  const [data, setData] = useState<T | null>(() => path && swrMs > 0 ? swrRead<T>(path, swrMs) : null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
 
   const reload = useCallback(async () => {
     if (!path) return;
-    setLoading(true);
+    // Don't flip loading on if we have cached data — UI shows the cached
+    // response while we revalidate quietly behind the scenes.
+    const hasCached = swrMs > 0 && swrRead<T>(path, swrMs) != null;
+    if (!hasCached) setLoading(true);
     setError(null);
     try {
       const d = await api<T>(path);
       setData(d);
+      if (swrMs > 0) swrWrite<T>(path, d);
     } catch (e) {
       setError(e as Error);
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
+  }, [path, swrMs]);
 
   useEffect(() => {
+    if (!path) { setData(null); return; }
+    // Restore from SWR cache the moment the path changes so the UI flashes
+    // the prior city/area immediately instead of skeleton-loading.
+    if (swrMs > 0) {
+      const cached = swrRead<T>(path, swrMs);
+      if (cached != null) setData(cached);
+    }
     void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path, ...deps]);
+  }, [path, swrMs, ...deps]);
 
   // Periodic background refresh.
   useEffect(() => {

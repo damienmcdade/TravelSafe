@@ -61,7 +61,10 @@ const PERSONS_TYPES = new Set([
   "INTIMIDATION", "STALKING",
 ]);
 const PROPERTY_TYPES = new Set([
-  "THEFT", "BURGLARY", "MOTOR VEHICLE THEFT", "ROBBERY", "ARSON",
+  // ROBBERY intentionally NOT here — Chicago's own UCR taxonomy lists it
+  // alongside the violent persons offenses and we honor that for the user-
+  // facing color treatment. PERSONS_TYPES above already covers it.
+  "THEFT", "BURGLARY", "MOTOR VEHICLE THEFT", "ARSON",
   "CRIMINAL DAMAGE", "CRIMINAL TRESPASS", "DECEPTIVE PRACTICE",
   "OBSCENITY", "STOLEN PROPERTY",
 ]);

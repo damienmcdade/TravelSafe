@@ -27,12 +27,15 @@ interface ScoreResp {
   disclaimer: string;
 }
 
+// Five-step grade tone with a gentle green → sand → terracotta gradient.
+// No alarming reds — the worst grade (E) lands at a muted terracotta that
+// reads "noteworthy" rather than "emergency".
 const GRADE_TONE: Record<ScoreResp["grade"], { bg: string; ring: string; tone: string; label: string }> = {
-  A: { bg: "bg-sage-100",   ring: "ring-sage-300",   tone: "text-sage-700",   label: "Well below national" },
-  B: { bg: "bg-bay-50",     ring: "ring-bay-200",    tone: "text-bay-700",    label: "Below national" },
-  C: { bg: "bg-sand-50",    ring: "ring-sand-300",   tone: "text-slate2-700", label: "Near national average" },
-  D: { bg: "bg-amber2-100", ring: "ring-amber2-400", tone: "text-amber2-700", label: "Above national" },
-  E: { bg: "bg-coral-100",  ring: "ring-coral-300",  tone: "text-coral-700",  label: "Well above national" },
+  A: { bg: "bg-sage-100",   ring: "ring-sage-300",   tone: "text-sage-700",    label: "Well below national" },
+  B: { bg: "bg-sage-50",    ring: "ring-sage-200",   tone: "text-sage-700",    label: "Below national" },
+  C: { bg: "bg-sand-50",    ring: "ring-sand-300",   tone: "text-slate2-700",  label: "Near national average" },
+  D: { bg: "bg-amber2-50",  ring: "ring-amber2-300", tone: "text-amber2-700",  label: "Above national" },
+  E: { bg: "bg-amber2-100", ring: "ring-amber2-400", tone: "text-coral-700",   label: "Well above national" },
 };
 
 const CAT_LABEL: Record<ScoreRow["category"], string> = {
@@ -119,7 +122,7 @@ export default function SafetyScorePage() {
                     <svg viewBox="0 0 200 56" className="mt-3 w-full h-14" role="img" aria-label={`${CAT_LABEL[r.category]}: ${r.localPer100k} per 100k locally, ${r.nationalPer100k} per 100k national`}>
                       <text x="0" y="11" style={{ fontSize: 6 }} fill="#475569">{score.area.label}</text>
                       <rect x="0" y="14" width="200" height="8" rx="2" fill="#e9eef3" />
-                      <rect x="0" y="14" width={(r.localPer100k / max) * 200} height="8" rx="2" fill={above ? "#E6643C" : below ? "#7BA86E" : "#3F8DBA"} />
+                      <rect x="0" y="14" width={(r.localPer100k / max) * 200} height="8" rx="2" fill={above ? "#C47C62" : below ? "#7BA86E" : "#5C8AA7"} />
                       <text x="200" y="11" textAnchor="end" style={{ fontSize: 6 }} fill="#475569">{r.localPer100k.toLocaleString()} / 100k</text>
                       <text x="0" y="38" style={{ fontSize: 6 }} fill="#475569">National (FBI {score.source.publishedYear})</text>
                       <rect x="0" y="41" width="200" height="8" rx="2" fill="#e9eef3" />

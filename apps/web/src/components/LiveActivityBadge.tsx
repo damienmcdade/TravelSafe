@@ -1,18 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCommunityStream } from "@/lib/sse";
 
 export function LiveActivityBadge() {
   const [pulse, setPulse] = useState(false);
   const [lastEvent, setLastEvent] = useState<Date | null>(null);
+  // Track the pulse-off timer so rapid back-to-back stream events don't
+  // leak timers and so we can cancel the pending clear on unmount.
+  const pulseTimer = useRef<number | null>(null);
 
   useCommunityStream((e) => {
     if (e.type === "post.verified" || e.type === "post.reverted") {
       setLastEvent(new Date());
       setPulse(true);
-      window.setTimeout(() => setPulse(false), 1500);
+      if (pulseTimer.current != null) window.clearTimeout(pulseTimer.current);
+      pulseTimer.current = window.setTimeout(() => {
+        setPulse(false);
+        pulseTimer.current = null;
+      }, 1500);
     }
   });
+
+  useEffect(() => {
+    return () => {
+      if (pulseTimer.current != null) window.clearTimeout(pulseTimer.current);
+    };
+  }, []);
 
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-slate2-500">

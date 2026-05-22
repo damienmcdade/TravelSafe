@@ -37,12 +37,15 @@ interface RouteResp {
   disclaimer: string;
 }
 
+// Calm gradient: sage → slate-teal → sand → amber → terracotta. Every
+// route gets a meaningful color without anything looking like a hazard
+// strip. Strokes are picked so the polyline reads as data, not warning.
 const RATING_TONE: Record<RouteAlt["rating"], { stroke: string; tone: string; label: string }> = {
   A: { stroke: "#7BA86E", tone: "text-sage-700",   label: "Safest of the alternatives" },
-  B: { stroke: "#3F8DBA", tone: "text-bay-700",    label: "Lower exposure" },
+  B: { stroke: "#5C8AA7", tone: "text-bay-700",    label: "Lower exposure" },
   C: { stroke: "#94a3b8", tone: "text-slate2-700", label: "Mid exposure" },
-  D: { stroke: "#E0962A", tone: "text-amber2-700", label: "Higher exposure" },
-  E: { stroke: "#E6643C", tone: "text-coral-700",  label: "Highest exposure" },
+  D: { stroke: "#CBA56C", tone: "text-amber2-700", label: "Higher exposure" },
+  E: { stroke: "#C47C62", tone: "text-amber2-700", label: "Highest exposure" },
 };
 
 const MODES: Array<{ value: "walking" | "driving" | "transit"; label: string; hint: string }> = [

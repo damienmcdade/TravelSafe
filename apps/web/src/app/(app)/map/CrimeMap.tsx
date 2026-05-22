@@ -8,6 +8,11 @@ import "leaflet/dist/leaflet.css";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 
+// Module-level polygon cache shared across remounts of CrimeMap. Wiping
+// when the user reloads the page is fine; everything that matters lives
+// on the CDN and re-fetches in ~tens of ms anyway.
+const POLYGON_CACHE = new Map<string, FeatureCollection>();
+
 interface KnownArea { slug: string; label: string; jurisdiction: string; centroid: { lat: number; lng: number } }
 interface AreaBreakdown {
   slug: string;
@@ -22,13 +27,19 @@ interface Citywide { city: string; totalIncidents: number; appliedOffense: strin
 interface RecentIncident { id: string; nibrsCategory: "PERSONS" | "PROPERTY" | "SOCIETY"; ibrOffenseDescription: string; occurredAt: string; lat?: number; lng?: number; blockLabel?: string }
 interface RecentResp { area: string; reports: RecentIncident[] }
 
-// Three calm category colors. No alarmist red — coral is the warmest tone we use.
+// Three muted, premium-feeling category colors. We deliberately avoid the
+// red end of the spectrum so a high-incident neighborhood doesn't read as
+// emergency-alert. PERSONS lands at a warm terracotta, PROPERTY at sand-
+// gold, SOCIETY at slate-teal — all desaturated to give the map a calm,
+// data-dashboard feel instead of a hazard map. Tweaked the alpha curve at
+// the same time so saturation rises gracefully with incident density
+// instead of jumping to full-intensity.
 const CATEGORY_COLOR = {
-  PERSONS:  { rgb: [230, 100,  60], label: "Violent (persons)", hex: "#E6643C" },
-  PROPERTY: { rgb: [224, 150,  42], label: "Property",          hex: "#E0962A" },
-  SOCIETY:  { rgb: [ 30, 120, 166], label: "Society / other",   hex: "#1E78A6" },
+  PERSONS:  { rgb: [196, 124,  98], label: "Violent (persons)", hex: "#C47C62" },
+  PROPERTY: { rgb: [203, 165, 108], label: "Property",          hex: "#CBA56C" },
+  SOCIETY:  { rgb: [ 92, 138, 167], label: "Society / other",   hex: "#5C8AA7" },
 } as const;
-const NO_DATA_RGB = [200, 200, 200] as const;
+const NO_DATA_RGB = [210, 213, 219] as const;
 type Cat = keyof typeof CATEGORY_COLOR;
 
 // Known spelling variants between the official polygon files and what the
@@ -93,8 +104,11 @@ function fuseColor(breakdown: AreaBreakdown | null, maxCount: number): { fill: s
   const g = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[1]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[1]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[1]);
   const b = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[2]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[2]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[2]);
   const ratio = Math.min(1, breakdown.incidentCount / Math.max(1, maxCount));
-  // sqrt curve + 0.55 floor + 0.95 ceiling → 0.55 (faintest) to 0.95 (darkest)
-  const opacity = 0.55 + Math.sqrt(ratio) * 0.40;
+  // Softer alpha curve: floor 0.42, ceiling 0.82 so even the busiest
+  // neighborhood stays under full-saturation. cubic-root pulls midtones up
+  // a hair so users see real differentiation between sleepy areas, instead
+  // of every low-incident polygon looking identically faded.
+  const opacity = 0.42 + Math.cbrt(ratio) * 0.40;
   return { fill: `rgb(${r},${g},${b})`, opacity, stroke: `rgb(${Math.max(0, r - 50)},${Math.max(0, g - 50)},${Math.max(0, b - 50)})` };
 }
 
@@ -111,15 +125,27 @@ function describeMix(b: AreaBreakdown | null): string {
 export default function CrimeMap() {
   const { city } = useCity();
 
-  // Static polygon file is one of three small GeoJSONs in /public/geo/.
-  const [polygons, setPolygons] = useState<FeatureCollection | null>(null);
+  // Static polygon file is one of the small GeoJSONs in /public/geo/. We
+  // cache the parsed FeatureCollection per city in module memory so panning,
+  // zooming, or returning to a city we just visited doesn't trigger another
+  // HTTP fetch + JSON parse. Vercel serves these as immutable CDN assets, so
+  // a memory cache is purely an arrived-once-stays-fast win.
+  const [polygons, setPolygons] = useState<FeatureCollection | null>(() => POLYGON_CACHE.get(city.slug) ?? null);
   const [polyError, setPolyError] = useState<string | null>(null);
   useEffect(() => {
+    const cached = POLYGON_CACHE.get(city.slug);
+    if (cached) { setPolygons(cached); setPolyError(null); return; }
     setPolygons(null); setPolyError(null);
+    let cancelled = false;
     fetch(`/geo/${city.slug}.geojson`)
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
-      .then((d: FeatureCollection) => setPolygons(d))
-      .catch((e) => setPolyError(`Could not load ${city.label} neighborhood boundaries (${(e as Error).message}).`));
+      .then((d: FeatureCollection) => {
+        if (cancelled) return;
+        POLYGON_CACHE.set(city.slug, d);
+        setPolygons(d);
+      })
+      .catch((e) => { if (!cancelled) setPolyError(`Could not load ${city.label} neighborhood boundaries (${(e as Error).message}).`); });
+    return () => { cancelled = true; };
   }, [city.slug, city.label]);
 
   const { data: areas } = useApi<KnownArea[]>("/geo/areas");

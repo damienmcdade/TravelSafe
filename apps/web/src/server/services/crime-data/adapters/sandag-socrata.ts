@@ -47,9 +47,16 @@ async function sodaGet(query: Record<string, string>): Promise<SodaRow[]> {
   for (const [k, v] of Object.entries(query)) url.searchParams.set(k, v);
   const headers: Record<string, string> = { Accept: "application/json" };
   if (env.SANDAG_SOCRATA_APP_TOKEN) headers["X-App-Token"] = env.SANDAG_SOCRATA_APP_TOKEN;
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`SANDAG SODA ${res.status}: ${await res.text()}`);
-  return (await res.json()) as SodaRow[];
+  try {
+    const res = await fetch(url, { headers });
+    if (!res.ok) throw new Error(`SANDAG SODA ${res.status}: ${await res.text()}`);
+    return (await res.json()) as SodaRow[];
+  } catch (err) {
+    // Surface SANDAG upstream issues in deploy logs — matches the warn
+    // pattern in every other adapter so we never silently swallow failures.
+    console.warn("[sandag] fetch failed:", (err as Error).message);
+    throw err;
+  }
 }
 
 export const sandagSocrataAdapter: CrimeDataAdapter = {
