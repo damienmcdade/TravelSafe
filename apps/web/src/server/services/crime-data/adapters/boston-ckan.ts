@@ -12,8 +12,13 @@ import type { KnownArea } from "../neighborhoods";
 // Doc: https://data.boston.gov/dataset/crime-incident-reports-august-2015-to-date-source-new-system
 
 const RESOURCE_ID = "b973d8cb-eeb2-4e7e-99da-c92938efc9c0";
-const SQL_BASE = "https://data.boston.gov/api/3/action/datastore_search_sql";
-const ROW_LIMIT = 10_000;
+// datastore_search (NOT datastore_search_sql) — the SQL endpoint times out
+// from Vercel's runtime against this dataset for any LIMIT above a few
+// thousand. The simple search endpoint returns the same shape but supports
+// limit/offset URL params with much better tail latency, and supports sort
+// directly via &sort= so we still get the freshest rows first.
+const SEARCH_BASE = "https://data.boston.gov/api/3/action/datastore_search";
+const ROW_LIMIT = 5_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
@@ -81,13 +86,19 @@ const PROVENANCE: DataProvenance = {
 };
 
 async function fetchBoston(): Promise<Incident[]> {
-  const sql = `SELECT "INCIDENT_NUMBER","OFFENSE_DESCRIPTION","DISTRICT","OCCURRED_ON_DATE","Lat","Long" FROM "${RESOURCE_ID}" ORDER BY "OCCURRED_ON_DATE" DESC LIMIT ${ROW_LIMIT}`;
-  const url = `${SQL_BASE}?sql=${encodeURIComponent(sql)}`;
+  const url = new URL(SEARCH_BASE);
+  url.searchParams.set("resource_id", RESOURCE_ID);
+  url.searchParams.set("limit", String(ROW_LIMIT));
+  // CKAN's datastore_search accepts "fieldname desc" syntax for sort.
+  url.searchParams.set("sort", "OCCURRED_ON_DATE desc");
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
   if (!res.ok) throw new Error(`Boston CKAN ${res.status}`);
-  const body = await res.json() as { result?: { records?: BostonRow[] } };
+  const body = await res.json() as { success?: boolean; error?: unknown; result?: { records?: BostonRow[] } };
+  if (body.success === false) {
+    throw new Error(`Boston CKAN error: ${JSON.stringify(body.error)}`);
+  }
   const rows = body.result?.records ?? [];
   return rows.map((r, i) => {
     const lat = Number(r.Lat);
