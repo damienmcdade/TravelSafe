@@ -84,32 +84,39 @@ export const crimeData = {
     const perArea: Awaited<ReturnType<typeof crimeData.getCitywide>>["perArea"] = [];
     const totalByCategory = new Map<string, Incident[]>();
     const offenseCounts = new Map<string, number>();
-    for (const area of areas) {
+    // Parallelize the per-area fetch. The adapter caches its upstream pull
+    // so for a city of N areas we still only hit the police feed ONCE on
+    // cold cache regardless of how many areas the loop iterates — but each
+    // per-area dispatch into our cache has a few ms of in-process overhead.
+    // Sequential await stacked that overhead into ~1s for Detroit (199 areas)
+    // / Oakland (134 areas); Promise.all collapses it into one effective
+    // round-trip. The serial loop was the dominant blocker on first paint
+    // of the Crime Map.
+    const incidentsAllPerArea = await Promise.all(
       // No artificial per-area cap. Earlier we limited to 500 which made every
       // busy neighborhood show the same flat 500 number — destroying the visual
       // hierarchy on the Crime Map and undermining user trust in the numbers.
-      // The adapters all cache their full citywide pull (LA/SF: ~50k rows,
-      // SDPD: a year of NIBRS), so passing MAX_SAFE_INTEGER just removes the
-      // slice and uses the real count.
-      const incidentsAll = await this.getIncidents(area.slug, { limit: Number.MAX_SAFE_INTEGER });
-      // When the caller filters by a specific offense, only count incidents
-      // matching that offense for this area's color/intensity — but still
-      // accumulate the full top-offenses list across the city so the UI's
-      // dropdown can show all options.
-      for (const i of incidentsAll) {
-        const off = i.ibrOffenseDescription;
+      areas.map((a) => this.getIncidents(a.slug, { limit: Number.MAX_SAFE_INTEGER }).catch(() => [])),
+    );
+    for (let i = 0; i < areas.length; i++) {
+      const area = areas[i];
+      const incidentsAll = incidentsAllPerArea[i];
+      // Accumulate the full top-offenses list across the city so the UI's
+      // offense-dropdown can show all options.
+      for (const inc of incidentsAll) {
+        const off = inc.ibrOffenseDescription;
         offenseCounts.set(off, (offenseCounts.get(off) ?? 0) + 1);
       }
       const incidents = offenseFilter
-        ? incidentsAll.filter((i) => i.ibrOffenseDescription.toLowerCase() === offenseFilter)
+        ? incidentsAll.filter((inc) => inc.ibrOffenseDescription.toLowerCase() === offenseFilter)
         : incidentsAll;
       const byCategory = { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 };
-      for (const i of incidents) {
-        const k = i.nibrsCategory as keyof typeof byCategory;
+      for (const inc of incidents) {
+        const k = inc.nibrsCategory as keyof typeof byCategory;
         if (k in byCategory) byCategory[k] += 1;
-        const arr = totalByCategory.get(i.nibrsCategory) ?? [];
-        arr.push(i);
-        totalByCategory.set(i.nibrsCategory, arr);
+        const arr = totalByCategory.get(inc.nibrsCategory) ?? [];
+        arr.push(inc);
+        totalByCategory.set(inc.nibrsCategory, arr);
       }
       const dominantCategory = (Object.entries(byCategory) as Array<["PERSONS" | "PROPERTY" | "SOCIETY", number]>)
         .sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;

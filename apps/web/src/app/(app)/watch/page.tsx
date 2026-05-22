@@ -162,6 +162,8 @@ export default function NeighborhoodWatchPage() {
               ariaLabel={`Neighborhoods in ${city.label}`}
               height={224}
               rowHeight={36}
+              searchable
+              searchPlaceholder={`Search ${city.label} neighborhoods`}
             />
           )}
 

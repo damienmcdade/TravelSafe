@@ -103,6 +103,8 @@ export function CitySelector() {
                 ariaLabel="State"
                 height={196}
                 rowHeight={36}
+                searchable
+                searchPlaceholder="State"
               />
             </div>
             <div>
@@ -114,6 +116,8 @@ export function CitySelector() {
                 ariaLabel="City"
                 height={196}
                 rowHeight={36}
+                searchable
+                searchPlaceholder="City"
               />
             </div>
           </div>

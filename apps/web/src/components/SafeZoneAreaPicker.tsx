@@ -149,6 +149,8 @@ export function SafeZoneAreaPicker({
             ariaLabel={`Neighborhoods in ${city.label}`}
             height={196}
             rowHeight={36}
+            searchable
+            searchPlaceholder={`Search ${city.label} neighborhoods`}
           />
         )}
       </div>
