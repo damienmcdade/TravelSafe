@@ -7,6 +7,8 @@
 }
 
 html, body {
+  /* Fallback color shown before the CityBackdrop's first image loads (and on
+     reduced-motion / no-image users). The CityBackdrop renders above this. */
   background-color: theme("colors.sand.50");
   color: theme("colors.slate2.900");
   min-height: 100%;
@@ -16,11 +18,9 @@ body {
   font-family: theme("fontFamily.sans");
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
-  background-image:
-    radial-gradient(ellipse 90% 60% at 50% -10%,  rgba(30, 120, 166, 0.10), transparent 65%),
-    radial-gradient(ellipse 70% 50% at 100% 100%, rgba(230, 100, 60, 0.10), transparent 65%),
-    radial-gradient(ellipse 50% 40% at 0% 80%,    rgba(86, 96, 201, 0.07),  transparent 65%);
-  background-attachment: fixed;
+  /* The CityBackdrop component now owns the visual background. We
+     intentionally do NOT layer body-level radial gradients here — they
+     stacked on top of the photo and dulled it. */
 }
 
 ::selection { background: theme("colors.bay.200"); color: theme("colors.slate2.900"); }
