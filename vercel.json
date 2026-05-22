@@ -8,6 +8,10 @@
     {
       "path": "/api/cron/check-in",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/warm-cache",
+      "schedule": "*/4 * * * *"
     }
   ]
 }
