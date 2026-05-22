@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 // so deep links and browser history stay clean.
 const TABS = [
   { href: "/threats",      label: "Awareness",   subroutes: [] as string[] },
-  { href: "/map",          label: "SafeZone",    subroutes: ["/map", "/watch", "/safety"] },
+  { href: "/map",          label: "SafeZone",    subroutes: ["/map", "/watch", "/safety", "/safety-score", "/trends"] },
   { href: "/community",    label: "CommunitySafe", subroutes: [] },
 ];
 

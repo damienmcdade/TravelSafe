@@ -11,9 +11,11 @@ import { usePathname } from "next/navigation";
 ///   Neighborhood Watch — what your neighborhood specifically should know
 ///   Personal Safety   — concrete tools (check-in timer, live share, tips)
 const SUBTABS = [
-  { href: "/map",    label: "Crime Map",         hint: "City-wide polygon view" },
-  { href: "/watch",  label: "Neighborhood Watch", hint: "Tailored cards per area" },
-  { href: "/safety", label: "Personal Safety",    hint: "Check-in, share, tips" },
+  { href: "/map",          label: "Crime Map",         hint: "City-wide polygon view" },
+  { href: "/watch",        label: "Neighborhood Watch", hint: "Tailored cards per area" },
+  { href: "/safety-score", label: "Safety Score",      hint: "Area vs FBI national" },
+  { href: "/trends",       label: "Trend Feed",        hint: "30-day rolling timeline" },
+  { href: "/safety",       label: "Personal Safety",    hint: "Check-in, share, tips" },
 ];
 
 export function SafeZoneSubNav() {
