@@ -25,7 +25,7 @@ export type CitySlug =
   | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
   | "charlotte" | "nashville" | "minneapolis" | "cleveland"
-  | "montgomery-county";
+  | "montgomery-county" | "las-vegas";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
 export interface SafetyTip {
@@ -68,6 +68,7 @@ const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string
   "minneapolis":   { line: "612-348-2345", label: "MPD non-emergency",    url: "https://www.minneapolismn.gov/government/departments/police-department/" },
   "cleveland":     { line: "216-621-1234", label: "CDP non-emergency",    url: "https://www.clevelandpolice.org/" },
   "montgomery-county": { line: "301-279-8000", label: "MCPD non-emergency", url: "https://www.montgomerycountymd.gov/POL/" },
+  "las-vegas":     { line: "702-828-3111", label: "LVMPD non-emergency",  url: "https://www.lvmpd.com/" },
 };
 
 // City-specific official resource links. These get joined into one or more
@@ -97,6 +98,7 @@ const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; programName?
   "minneapolis":   { name: "Minneapolis Police Department",  url: "https://www.minneapolismn.gov/government/departments/police-department/", programName: "MPD Crime Prevention", programUrl: "https://www.minneapolismn.gov/resident-services/public-safety/police-public-safety/crime-prevention/" },
   "cleveland":     { name: "Cleveland Division of Police",   url: "https://www.clevelandpolice.org/", programName: "CDP Community Policing", programUrl: "https://www.clevelandpolice.org/about/community" },
   "montgomery-county": { name: "Montgomery County Police Department", url: "https://www.montgomerycountymd.gov/POL/", programName: "MCPD Community Outreach", programUrl: "https://www.montgomerycountymd.gov/POL/community/" },
+  "las-vegas":     { name: "Las Vegas Metropolitan Police Department", url: "https://www.lvmpd.com/", programName: "LVMPD Community Engagement", programUrl: "https://www.lvmpd.com/en-us/Pages/Community-Engagement.aspx" },
 };
 
 const PREVENTION_TIPS: SafetyTip[] = [

@@ -34,6 +34,7 @@ const SOURCES: Record<string, string> = {
   "minneapolis":   "Minneapolis Crime_Data (City of Minneapolis Open Data, ArcGIS Feature Server). NIBRS-classified per row by MPD, aggregated to one of 87 named neighborhoods.",
   "cleveland":     "Cleveland Division of Police Calls for Service (City of Cleveland Open Data, ArcGIS Feature Server). Administrative dispatches filtered at ingest. Includes non-NIBRS reports.",
   "montgomery-county": "Montgomery County Police Crime (Montgomery County MD Open Data, Socrata). NIBRS-classified per row by MCPD, aggregated to one of seven MCPD policing districts.",
+  "las-vegas":     "LVMPD Calls for Service (Opendata Las Vegas, ArcGIS Feature Server). Administrative dispatches and ambiguous calls filtered at ingest. Geocoded to one of 26 named Las Vegas neighborhoods.",
 };
 
 export default function MapPage() {

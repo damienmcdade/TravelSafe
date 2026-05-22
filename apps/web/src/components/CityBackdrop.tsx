@@ -230,6 +230,16 @@ const PHOTOS: Record<string, string[]> = {
     // Bethesda Maryland street scene
     "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/BethesdaMaryland.jpg/1920px-BethesdaMaryland.jpg",
   ],
+  "las-vegas": [
+    // Las Vegas aerial from above
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Las_Vegas_from_above_%2840064746644%29.jpg/1920px-Las_Vegas_from_above_%2840064746644%29.jpg",
+    // Las Vegas Strip
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Las_Vegas_Strip_09_2017_4897.jpg/1920px-Las_Vegas_Strip_09_2017_4897.jpg",
+    // Las Vegas at night
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/Las_Vegas_at_Night.JPG/1920px-Las_Vegas_at_Night.JPG",
+    // Symphony Park downtown
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/LasVegasSymphonyPark1.jpg/1920px-LasVegasSymphonyPark1.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting
