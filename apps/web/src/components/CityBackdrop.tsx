@@ -40,6 +40,36 @@ const PHOTOS: Record<string, string[]> = {
     // Lombard Street's famous crooked block — dense urban scene
     "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Lombard_Street_2020.jpg/1280px-Lombard_Street_2020.jpg",
   ],
+  "chicago": [
+    // Chicago Loop skyline April 2024 (Wikipedia infobox)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Chicago_Skyline_in_April_2024_b.jpg/1280px-Chicago_Skyline_in_April_2024_b.jpg",
+    // Wide downtown panorama from Lake Michigan
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Chicago_Skyline_in_September_2023_pano.jpg/1280px-Chicago_Skyline_in_September_2023_pano.jpg",
+    // Full Chicago skyline with North Side skyscrapers
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Full_chicago_skyline.jpg/1280px-Full_chicago_skyline.jpg",
+    // Downtown Chicago at night along the Chicago River
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/DowntownChicagoILatNight.jpg/1280px-DowntownChicagoILatNight.jpg",
+  ],
+  "seattle": [
+    // Aerial of Downtown Seattle financial district, July 2025
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Seattle_Downtown_Aerial%2C_July_2025_%28zoomed_and_perspective_corrected%29.jpg/1280px-Seattle_Downtown_Aerial%2C_July_2025_%28zoomed_and_perspective_corrected%29.jpg",
+    // Kerry Park panorama: Space Needle + downtown highrise cluster
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/Seattle_skyline_panorama_from_Kerry_Park%2C_June_2022.jpg/1280px-Seattle_skyline_panorama_from_Kerry_Park%2C_June_2022.jpg",
+    // Downtown grid from the Columbia Center observation deck
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Seattle-Columbia-Center-looking-north-2320.jpg/1280px-Seattle-Columbia-Center-looking-north-2320.jpg",
+    // Downtown financial district from Smith Tower
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Seattle_downtown_from_smith_tower.jpg/1280px-Seattle_downtown_from_smith_tower.jpg",
+  ],
+  "new-york": [
+    // Empire State Building from Rockefeller Center
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg/1280px-View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg",
+    // Times Square at night
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/New_york_times_square-terabass_%28cropped%29.jpg/1280px-New_york_times_square-terabass_%28cropped%29.jpg",
+    // Brooklyn Bridge cables framing Lower Manhattan skyline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Spiderweb_BB_jeh.jpg/1280px-Spiderweb_BB_jeh.jpg",
+    // 10-mile Manhattan skyline panorama
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg/1280px-10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg",
+  ],
 };
 
 const ROTATE_MS = 5 * 60 * 1000;
