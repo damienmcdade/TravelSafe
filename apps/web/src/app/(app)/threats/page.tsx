@@ -6,15 +6,21 @@ import { ensurePushSubscription } from "@/lib/push";
 import { useCity } from "@/lib/use-city";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
-import { AreaInsightsPanel } from "@/components/AreaInsightsPanel";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { CategoryBreakdown } from "@/components/CategoryBreakdown";
-import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
 import { CityBanner } from "@/components/CitySelector";
-import { NationalAverageCard } from "@/components/NationalAverageCard";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
+// SafeZoneTab — modular drop-in widgets. The page is now a thin layout
+// orchestrator: it owns the city/area selection and hands those down to
+// the module, which fetches and renders everything itself via the
+// useSafeZoneData hook.
+import {
+  BlockScoreWidget,
+  ThreatFeed,
+  useSafeZoneData,
+} from "@/components/SafeZoneTab";
 
 interface Area { slug: string; label: string; jurisdiction: string }
 interface PerArea { slug: string; label: string; incidentCount: number; riskLevel: 1|2|3|4|5; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number }; dominantCategory: "PERSONS"|"PROPERTY"|"SOCIETY"|null }
@@ -131,11 +137,14 @@ export default function ThreatsPage() {
         </div>
       )}
 
+      <SafeZoneTabSection
+        city={{ slug: city.slug, label: city.label, defaultArea: city.defaultArea }}
+        area={area}
+      />
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">
           {!showingCitywide && area && <AreaBriefPanel areaSlug={area.slug} />}
-          <NationalAverageCard />
-          <AreaInsightsPanel areaQueryString={showingCitywide ? `jurisdiction=${city.defaultArea}` : `neighborhood=${area!.slug}`} />
           <CategoryBreakdown
             counts={showingCitywide ? citywideCounts : selectedCounts}
             title={showingCitywide ? `${city.label} category mix` : `${area!.label} — category mix`}
@@ -168,12 +177,6 @@ export default function ThreatsPage() {
             jurisdictionSlug={!area ? city.defaultArea : undefined}
             title={showingCitywide ? `Specific offenses across ${city.label} — last 30 days` : `${area!.label} — last 30 days`}
           />
-          <RecentIncidentsCards
-            area={area?.slug}
-            jurisdiction={!area ? city.defaultArea : undefined}
-            title={showingCitywide ? `Recently reported across ${city.label}` : `Recently reported in ${area!.label}`}
-            limit={8}
-          />
           <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? selectedAreaStats?.alerts[0]?.provenance ?? null} />
         </div>
         <aside className="space-y-4">
@@ -181,5 +184,48 @@ export default function ThreatsPage() {
         </aside>
       </div>
     </main>
+  );
+}
+
+/// Thin orchestrator around the SafeZoneTab module. Owns ONLY the
+/// city/area selection — everything else flows through useSafeZoneData
+/// and is rendered by the stateless widgets. This is what the module
+/// looks like when a partner application drops it into their own page.
+function SafeZoneTabSection({
+  city,
+  area,
+}: {
+  city: { slug: string; label: string; defaultArea: string };
+  area: { slug: string; label: string; jurisdiction: string } | null;
+}) {
+  // If no neighborhood is picked, use the city's default area so the
+  // module always has a real selection to score. The label falls back
+  // to the city name.
+  const effectiveArea = area ?? { slug: city.defaultArea, label: city.label, jurisdiction: city.label };
+  const data = useSafeZoneData({
+    city: { slug: city.slug, label: city.label },
+    area: { slug: effectiveArea.slug, label: effectiveArea.label },
+  });
+  const sourceLabel = `${city.label} official police open-data feed`;
+  return (
+    <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2">
+        <BlockScoreWidget
+          score={data.blockScore}
+          loading={data.loading}
+          contextLabel={`${effectiveArea.label}, ${city.label}`}
+        />
+      </div>
+      <div>
+        <ThreatFeed
+          threats={data.threats}
+          baseline={data.baseline}
+          windowDays={data.windowDays}
+          contextLabel={effectiveArea.label}
+          source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
+          loading={data.loading}
+        />
+      </div>
+    </section>
   );
 }
