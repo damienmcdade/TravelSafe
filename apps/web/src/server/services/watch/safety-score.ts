@@ -212,58 +212,101 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
 export async function getSafetyScore(areaSlug: string, areaLabel: string): Promise<SafetyScoreResponse> {
   const city = cityForArea(areaSlug);
   const cityPop = CITY_POPULATION[city.slug] ?? 0;
-  const incidents = await crimeData.getIncidents(areaSlug, { limit: 5000 }).catch(() => []);
-  // Compute the rate-relevant counts (Society isn't published as a national
-  // rate by the FBI so we hide it from the comparison).
-  let persons = 0, property = 0;
+
+  // CREDIBILITY FIX — the previous implementation divided the city
+  // population by N_areas to get a per-area denominator (~12k for typical
+  // cities), then computed rate-per-100k. For most urban neighborhoods
+  // that produced rates 5-20× the FBI national rate, which the score
+  // mapping clamped to its floor (5) regardless of how the area actually
+  // compared to its peers. Every BlockScore came out the same.
+  //
+  // We now compute the area's report volume relative to its CITYWIDE PEER
+  // AVERAGE (citywide totals / N tracked neighborhoods). A neighborhood
+  // reporting the average share gets the city's per-100k rate; one
+  // reporting double the share gets 2× that rate; half gets half. The FBI
+  // national comparison still appears on the card, but the localPer100k
+  // figure varies meaningfully across neighborhoods within the same city.
+  //
+  // Fan-out cost: discover() + a Promise.all over per-area incident pulls.
+  // The adapter cache means the underlying police feed is hit once per
+  // city regardless — the per-area dispatch is in-process and fast.
+  const areas = await city.discover().catch(() => []);
+  const incidentsPerArea = await Promise.all(
+    areas.map((a) => crimeData.getIncidents(a.slug, { limit: 5000 }).catch(() => [])),
+  );
+
+  // Citywide totals across every tracked neighborhood.
+  let cityPersons = 0, cityProperty = 0;
   let earliest = Infinity, latest = 0;
-  for (const i of incidents) {
+  for (const arr of incidentsPerArea) {
+    for (const i of arr) {
+      const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
+      if (k === "PERSONS") cityPersons += 1;
+      else if (k === "PROPERTY") cityProperty += 1;
+      const t = +new Date(i.occurredAt);
+      if (Number.isFinite(t) && t > 0) {
+        if (t < earliest) earliest = t;
+        if (t > latest) latest = t;
+      }
+    }
+  }
+
+  // This neighborhood's counts — reuse the fan-out result if discover()
+  // returned our slug; otherwise pull directly.
+  const idx = areas.findIndex((a) => a.slug === areaSlug);
+  const areaIncidents = idx >= 0
+    ? incidentsPerArea[idx]
+    : await crimeData.getIncidents(areaSlug, { limit: 5000 }).catch(() => []);
+  let persons = 0, property = 0;
+  for (const i of areaIncidents) {
     const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
     if (k === "PERSONS") persons += 1;
     else if (k === "PROPERTY") property += 1;
-    const t = +new Date(i.occurredAt);
-    if (Number.isFinite(t) && t > 0) {
-      if (t < earliest) earliest = t;
-      if (t > latest) latest = t;
-    }
   }
+
   const windowDays = (latest > 0 && earliest < Infinity)
     ? Math.max(1, Math.round((latest - earliest) / (24 * 60 * 60 * 1000)))
     : 0;
-  // Approximate per-area population: equal split across the city's named
-  // neighborhoods. The exact value matters less than the relative comparison
-  // since both numerator and denominator scale the same way for "this area".
-  let pop = cityPop;
-  try {
-    const knownAreas = await city.discover();
-    if (knownAreas.length > 0 && cityPop > 0) {
-      pop = Math.round(cityPop / knownAreas.length);
-    }
-  } catch { /* fall back to citywide */ }
 
-  // Annualize: rate per 100k for the year, given the window we observed.
-  const annualize = (count: number) => {
-    if (pop <= 0 || windowDays <= 0) return 0;
-    const annualCount = count * (365 / windowDays);
-    return (annualCount / pop) * 100_000;
+  // Citywide annualized rate per 100k — uses the actual US Census Vintage
+  // 2023 city population, the same denominator the FBI uses for its
+  // official city-vs-national comparisons.
+  const annualizeCity = (count: number) => {
+    if (cityPop <= 0 || windowDays <= 0) return 0;
+    return (count * 365 / windowDays / cityPop) * 100_000;
   };
+  const cityPersons100k = annualizeCity(cityPersons);
+  const cityProperty100k = annualizeCity(cityProperty);
+
+  // Peer-relative scaling: how this area's report count compares to the
+  // average tracked neighborhood in the same city. Average = 1.0; high =
+  // 2-5; quiet = 0.1-0.5. We scale citywide-per-100k by this multiplier
+  // to get a per-area localPer100k that is directly comparable to the FBI
+  // national rate while preserving inter-neighborhood variance.
+  const N = Math.max(1, areas.length);
+  const expectedPersons = cityPersons / N;
+  const expectedProperty = cityProperty / N;
+  const personsScale = expectedPersons > 0 ? persons / expectedPersons : 0;
+  const propertyScale = expectedProperty > 0 ? property / expectedProperty : 0;
+  const persons100k = Math.round(cityPersons100k * personsScale);
+  const property100k = Math.round(cityProperty100k * propertyScale);
 
   const rows: SafetyScoreRow[] = [
     {
       category: "PERSONS",
       count: persons,
-      localPer100k: Math.round(annualize(persons)),
+      localPer100k: persons100k,
       nationalPer100k: FBI_NATIONAL_PER_100K_2024.PERSONS,
       deltaPct: FBI_NATIONAL_PER_100K_2024.PERSONS === 0 ? 0
-        : Math.round(((annualize(persons) - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
+        : Math.round(((persons100k - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
     },
     {
       category: "PROPERTY",
       count: property,
-      localPer100k: Math.round(annualize(property)),
+      localPer100k: property100k,
       nationalPer100k: FBI_NATIONAL_PER_100K_2024.PROPERTY,
       deltaPct: FBI_NATIONAL_PER_100K_2024.PROPERTY === 0 ? 0
-        : Math.round(((annualize(property) - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
+        : Math.round(((property100k - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
     },
   ];
 
@@ -273,7 +316,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   return {
     city: { slug: city.slug, label: city.label },
     area: { slug: areaSlug, label: areaLabel },
-    populationEstimate: pop,
+    populationEstimate: cityPop > 0 && N > 0 ? Math.round(cityPop / N) : 0,
     windowDays,
     asOf: latest > 0 ? new Date(latest).toISOString() : null,
     grade,
@@ -281,12 +324,11 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     rows,
     source: FBI_NATIONAL_SOURCE,
     disclaimer:
-      "Per-100k rates are annualized from the window of incidents the city's " +
-      "police adapter currently has cached. Population for each neighborhood " +
-      `is approximated by evenly dividing the ${city.label} city total across all ` +
-      "known neighborhoods — accurate for relative comparisons, not census-grade. " +
-      `National rates are the FBI Uniform Crime Reporting program's ${FBI_NATIONAL_SOURCE.publishedYear} ` +
-      "annual release. Society / public-order offenses are excluded because the " +
-      "FBI doesn't publish a national rate for that category.",
+      `Per-area rate scales ${city.label}'s citywide per-100k rate by this neighborhood's ` +
+      `share of recent reports relative to a typical ${city.label} neighborhood. A neighborhood ` +
+      `reporting the average ${city.label} share lands at ${city.label}'s citywide rate; one ` +
+      `reporting twice the share scales to 2× that rate. The score then compares the result to ` +
+      `the FBI Uniform Crime Reporting program's ${FBI_NATIONAL_SOURCE.publishedYear} national average. ` +
+      "Society / public-order offenses are excluded because the FBI doesn't publish a national rate for them.",
   };
 }

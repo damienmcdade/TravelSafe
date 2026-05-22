@@ -22,8 +22,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const maxDuration = 60;
 
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+};
+
 export const GET = wrap(async (req: NextRequest) => {
   const { city, area, label } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
-  if (city) return NextResponse.json(await getCitywideTrend(city));
-  return NextResponse.json(await getTrendForArea(area!, label ?? area!));
+  if (city) return NextResponse.json(await getCitywideTrend(city), { headers: CACHE_HEADERS });
+  return NextResponse.json(await getTrendForArea(area!, label ?? area!), { headers: CACHE_HEADERS });
 });

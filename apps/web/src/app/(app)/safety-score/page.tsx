@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
 import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 
-interface Area { slug: string; label: string; jurisdiction: string }
 interface ScoreRow {
   category: "PERSONS" | "PROPERTY";
   count: number;
@@ -45,29 +45,18 @@ const CAT_LABEL: Record<ScoreRow["category"], string> = {
 
 export default function SafetyScorePage() {
   const { city } = useCity();
-  // null === citywide view (the default). The neighborhood wheel below is
-  // an optional drill-down — picking a row sets `area` to that neighborhood
-  // and switches the query from ?city= to ?area=.
-  //
-  // We track which city the current `area` selection belongs to. If the
-  // user switches city in the header, that snapshot stops matching and we
-  // SYNCHRONOUSLY treat the selection as null — no flicker waiting for a
-  // useEffect to fire after the new render.
-  const [areaState, setAreaState] = useState<{ city: string; area: Area | null }>({ city: city.slug, area: null });
-  const area = areaState.city === city.slug ? areaState.area : null;
-  const setArea = (a: Area | null) => setAreaState({ city: city.slug, area: a });
+  // null === citywide view (the default). Reads from the GLOBAL area store
+  // keyed by city slug — picking a neighborhood here also propagates to
+  // Awareness, CommunitySafe, Trend Feed, Personal Safety, etc. The hook
+  // returns null synchronously on city switch (no flicker through stale
+  // selections) because storage is per-city.
+  const { area, setArea } = useArea(city.slug);
 
   const path = area
     ? `/safezone/safety-score?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}`
     : `/safezone/safety-score?city=${encodeURIComponent(city.slug)}`;
   const { data: score, loading, error } = useApi<ScoreResp>(path, [path]);
   const tone = useMemo(() => (score ? GRADE_TONE[score.grade] : null), [score]);
-
-  // Sync the state container's city slug so the next setArea writes to the
-  // correct snapshot. This runs alongside renders triggered by city change.
-  useEffect(() => {
-    if (areaState.city !== city.slug) setAreaState({ city: city.slug, area: null });
-  }, [city.slug, areaState.city]);
 
   return (
     <main className="space-y-6">
@@ -100,6 +89,7 @@ export default function SafetyScorePage() {
       <SafeZoneAreaPicker
         storageKey="safety-score.area"
         onCommit={setArea}
+        selectedSlug={area?.slug ?? null}
         title={`Drill into a ${city.label} neighborhood (optional)`}
         subtitle={`Citywide is the default. Pick a neighborhood to compare just that area against the FBI national rate.`}
         commitLabel="Show this neighborhood"

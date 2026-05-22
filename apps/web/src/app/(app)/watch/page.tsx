@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
 import { CityBanner } from "@/components/CitySelector";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
 
@@ -35,9 +36,10 @@ const GROUP_TAG: Record<WatchCard["group"], { label: string; tone: string; ring:
 
 export default function NeighborhoodWatchPage() {
   const { city } = useCity();
-  // Per-tab persistence of the user's pick within a city — so switching to
-  // CommunitySafe and back returns to the same neighborhood.
-  const storageKey = `travelsafe.watch.area.${city.slug}`;
+  // Globally-shared neighborhood selection — picking here propagates to
+  // every other tab. The legacy per-tab storage key is gone; the global
+  // store is the single source of truth.
+  const { area: globalArea, setArea: setGlobalArea } = useArea(city.slug);
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [committedSlug, setCommittedSlug] = useState<string | null>(null);
 
@@ -57,17 +59,19 @@ export default function NeighborhoodWatchPage() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [areas, city.label]);
 
-  // Restore the last selected neighborhood for THIS city, else default to
-  // the first available one. Reset every time the city changes.
+  // Seed the wheel from the GLOBAL area whenever it changes (city switch,
+  // pick in another tab, or first mount). If no global pick exists, fall
+  // back to the first available neighborhood so the wheel always has a
+  // valid landing position.
   useEffect(() => {
+    if (globalArea) {
+      setPendingSlug(globalArea.slug);
+      setCommittedSlug(globalArea.slug);
+      return;
+    }
     setCommittedSlug(null);
     setPendingSlug(null);
-    if (typeof window === "undefined") return;
-    try {
-      const stored = window.localStorage.getItem(storageKey);
-      if (stored) setPendingSlug(stored);
-    } catch { /* ignore */ }
-  }, [city.slug, storageKey]);
+  }, [globalArea?.slug, city.slug]);
   useEffect(() => {
     if (pendingSlug || cityAreas.length === 0) return;
     setPendingSlug(cityAreas[0].slug);
@@ -75,10 +79,11 @@ export default function NeighborhoodWatchPage() {
 
   function commit() {
     if (!pendingSlug) return;
+    const next = cityAreas.find((a) => a.slug === pendingSlug);
+    if (!next) return;
     setCommittedSlug(pendingSlug);
-    if (typeof window !== "undefined") {
-      try { window.localStorage.setItem(storageKey, pendingSlug); } catch { /* ignore */ }
-    }
+    // Write to the global store so the rest of the app follows along.
+    setGlobalArea({ slug: next.slug, label: next.label, jurisdiction: next.jurisdiction });
   }
 
   const selectedArea = useMemo(

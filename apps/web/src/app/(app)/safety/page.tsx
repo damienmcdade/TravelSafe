@@ -6,6 +6,7 @@ import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { CityBanner } from "@/components/CitySelector";
 import { LocationSearch } from "@/components/LocationSearch";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -27,10 +28,10 @@ interface Area { slug: string; label: string; jurisdiction: string }
 
 export default function PersonalSafetyPage() {
   const { city } = useCity();
-  const [area, setArea] = useState<Area | null>(null);
-  // Reset the per-area selection when the user switches cities so safety tips
-  // re-align to the new city's default area.
-  useEffect(() => { setArea(null); }, [city.slug]);
+  // Globally-shared neighborhood selection — Personal Safety follows the
+  // same area the user picked elsewhere so safety tips track without a
+  // second selection.
+  const { area, setArea } = useArea(city.slug);
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   useEffect(() => {

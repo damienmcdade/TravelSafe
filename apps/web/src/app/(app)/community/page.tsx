@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, useApi } from "@/lib/api-client";
+import { useArea } from "@/lib/use-area";
 import { useTextStream } from "@/lib/use-stream";
 import { useCommunityStream, relativeTime } from "@/lib/sse";
 import { DataProvenanceBanner, CommunityReportedLabel, type ProvenanceLike } from "@/components/DataProvenanceBanner";
@@ -49,8 +50,9 @@ const KIND_TONE: Record<PostListItem["kind"], string> = {
 
 export default function CommunityPage() {
   const { city } = useCity();
-  const [area, setArea] = useState<Area | null>(null);
-  useEffect(() => { setArea(null); }, [city.slug]);
+  // Globally-shared neighborhood selection — keeps CommunitySafe in lockstep
+  // with Awareness, SafeZone, Trend Feed, Personal Safety, etc.
+  const { area, setArea } = useArea(city.slug);
   const areaSlug = area?.slug ?? city.defaultArea;
 
   // Always pass `area=` — otherwise the DB query drops the filter and returns

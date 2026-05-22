@@ -9,9 +9,14 @@ const Query = z.object({
 });
 
 export const dynamic = "force-dynamic";
+
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+};
+
 export const GET = wrap(async (req: NextRequest) => {
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   const area = q.neighborhood ?? q.jurisdiction;
   if (!area) throw new HttpError(400, "area_required");
-  return NextResponse.json(await getAreaInsights(area));
+  return NextResponse.json(await getAreaInsights(area), { headers: CACHE_HEADERS });
 });

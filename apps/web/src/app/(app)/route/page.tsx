@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { api, useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
 import { CityBanner } from "@/components/CitySelector";
 
 const RouteMap = dynamic(() => import("./RouteMap"), {
@@ -55,6 +56,10 @@ const MODES: Array<{ value: "walking" | "driving" | "transit"; label: string; hi
 
 export default function SafeRoutePage() {
   const { city } = useCity();
+  // Globally-shared neighborhood selection — the From combobox prefills
+  // from whatever the user picked in any other tab. Picking a new From
+  // here writes back to global, so the rest of the app follows along.
+  const { area: globalArea, setArea: setGlobalArea } = useArea(city.slug);
   // Scope autofill to the active city. Routing only works within a single
   // city because the exposure scoring uses that city's police adapter.
   const areasPath = `/geo/areas?city=${city.slug}`;
@@ -72,6 +77,27 @@ export default function SafeRoutePage() {
   // is always a real, supported area centroid (no geocoding lottery).
   const [from, setFrom] = useState<Area | null>(null);
   const [to, setTo]     = useState<Area | null>(null);
+
+  // Hydrate From from the global area whenever the list of city areas
+  // loads and a global pick exists. We only do this when From is still
+  // null so we don't overwrite an explicit local pick the user has made.
+  useEffect(() => {
+    if (from) return;
+    if (!globalArea) return;
+    if (cityAreas.length === 0) return;
+    const match = cityAreas.find((a) => a.slug === globalArea.slug);
+    if (match) setFrom(match);
+  }, [globalArea, cityAreas, from]);
+
+  // When the user explicitly picks From, mirror it to the global store so
+  // the rest of the app sees the same neighborhood. Clearing From also
+  // clears the global pick so other tabs don't keep a stale value. Picking
+  // To stays local — a destination is transient and shouldn't override the
+  // user's "current neighborhood" elsewhere.
+  function pickFrom(a: Area | null) {
+    setFrom(a);
+    setGlobalArea(a ? { slug: a.slug, label: a.label, jurisdiction: a.jurisdiction } : null);
+  }
   const [mode, setMode] = useState<"walking" | "driving" | "transit">("walking");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,7 +170,7 @@ export default function SafeRoutePage() {
                 placeholder={`Type to search ${cityAreas.length} ${city.label} neighborhoods`}
                 options={cityAreas}
                 value={from}
-                onPick={setFrom}
+                onPick={pickFrom}
                 ariaLabel={`Starting neighborhood in ${city.label}`}
               />
               <NeighborhoodCombobox

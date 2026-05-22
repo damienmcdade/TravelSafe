@@ -18,6 +18,7 @@ export function SafeZoneAreaPicker({
   subtitle,
   commitLabel = "Show this neighborhood",
   autoCommit = true,
+  selectedSlug = null,
 }: {
   /// Per-tab persistence key namespace (e.g. `safety-score.area`).
   /// Internally we append the city slug so each city gets its own slot.
@@ -31,6 +32,10 @@ export function SafeZoneAreaPicker({
   /// Set to false on pages where citywide is the legitimate default state —
   /// the user has to explicitly tap "Show this neighborhood" to drill in.
   autoCommit?: boolean;
+  /// Externally-driven selection (e.g. from useArea). When set, the wheel
+  /// jumps to that slug and marks it as committed so the picker visually
+  /// reflects a global neighborhood pick from another tab.
+  selectedSlug?: string | null;
 }) {
   const { city } = useCity();
   const fullKey = `travelsafe.${storageKey}.${city.slug}`;
@@ -60,6 +65,18 @@ export function SafeZoneAreaPicker({
     if (pendingSlug || cityAreas.length === 0) return;
     setPendingSlug(cityAreas[0].slug);
   }, [pendingSlug, cityAreas]);
+
+  // Honor an externally-driven selection (e.g. user picked an area in
+  // another tab via useArea). Jump the wheel to that slug AND mark it as
+  // committed so the page renders for that area without a re-tap.
+  useEffect(() => {
+    if (!selectedSlug) return;
+    if (selectedSlug === committedSlug && selectedSlug === pendingSlug) return;
+    if (cityAreas.length === 0) return;
+    if (!cityAreas.find((a) => a.slug === selectedSlug)) return;
+    setPendingSlug(selectedSlug);
+    setCommittedSlug(selectedSlug);
+  }, [selectedSlug, cityAreas, committedSlug, pendingSlug]);
 
   function commit() {
     if (!pendingSlug) return;

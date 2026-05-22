@@ -1,12 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
 import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 
-interface Area { slug: string; label: string; jurisdiction: string }
 interface TrendBullet {
   kind: "trend" | "dispatch";
   at: string;
@@ -34,24 +33,16 @@ const CAT_DOT: Record<NonNullable<TrendBullet["category"]>, string> = {
 
 export default function TrendFeedPage() {
   const { city } = useCity();
-  // City-pinned area selection: the state snapshot records which city the
-  // selection belongs to. When the user switches city in the header, the
-  // snapshot mismatch means `area` reads as null SYNCHRONOUSLY in the same
-  // render — no flicker through a stale neighborhood URL.
-  const [areaState, setAreaState] = useState<{ city: string; area: Area | null }>({ city: city.slug, area: null });
-  const area = areaState.city === city.slug ? areaState.area : null;
-  const setArea = (a: Area | null) => setAreaState({ city: city.slug, area: a });
+  // Reads from the GLOBAL area store keyed by city slug — the neighborhood
+  // picked here propagates to every other tab, and switching city returns
+  // null synchronously (no flicker through stale selections) because
+  // storage is per-city.
+  const { area, setArea } = useArea(city.slug);
 
   const path = area
     ? `/safezone/trend?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}`
     : `/safezone/trend?city=${encodeURIComponent(city.slug)}`;
   const { data: trend, loading, error } = useApi<TrendResp>(path, [path]);
-
-  // Reconcile the state container's city to the active one so subsequent
-  // setArea writes land in the right snapshot.
-  useEffect(() => {
-    if (areaState.city !== city.slug) setAreaState({ city: city.slug, area: null });
-  }, [city.slug, areaState.city]);
 
   const trendBullets = trend?.bullets.filter((b) => b.kind === "trend") ?? [];
   const dispatchBullets = trend?.bullets.filter((b) => b.kind === "dispatch") ?? [];
@@ -87,6 +78,7 @@ export default function TrendFeedPage() {
       <SafeZoneAreaPicker
         storageKey="trend-feed.area"
         onCommit={setArea}
+        selectedSlug={area?.slug ?? null}
         title={`Drill into a ${city.label} neighborhood (optional)`}
         subtitle={`Citywide is the default. Pick a neighborhood to see just that area's 30-day timeline.`}
         commitLabel="Show this neighborhood"

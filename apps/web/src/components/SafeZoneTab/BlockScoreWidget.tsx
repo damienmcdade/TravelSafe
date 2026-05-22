@@ -11,12 +11,12 @@ export interface BlockScoreWidgetProps {
 }
 
 // Muted band colors aligned with the rest of the app's premium palette.
-// "Elevated" lands on terracotta rather than alert red so the widget reads
-// as a data summary rather than an emergency notice.
+// Labels are written in plain English — readers should be able to tell
+// at a glance what the number means without learning a new vocabulary.
 const BAND_STYLE: Record<BlockScoreBand, { stroke: string; fill: string; tone: string; chip: string; label: string }> = {
-  safe:     { stroke: "#7BA86E", fill: "#EAF4E6", tone: "text-sage-700",    chip: "bg-sage-100 ring-sage-200",    label: "Safer than benchmark" },
-  moderate: { stroke: "#CBA56C", fill: "#FAF1DD", tone: "text-amber2-700",  chip: "bg-amber2-50 ring-amber2-300", label: "Near benchmark" },
-  elevated: { stroke: "#C47C62", fill: "#F4E1D9", tone: "text-coral-700",   chip: "bg-coral-100 ring-coral-200",  label: "Above benchmark" },
+  safe:     { stroke: "#7BA86E", fill: "#EAF4E6", tone: "text-sage-700",    chip: "bg-sage-100 ring-sage-200",    label: "Fewer reports than national average" },
+  moderate: { stroke: "#CBA56C", fill: "#FAF1DD", tone: "text-amber2-700",  chip: "bg-amber2-50 ring-amber2-300", label: "About the national average" },
+  elevated: { stroke: "#C47C62", fill: "#F4E1D9", tone: "text-coral-700",   chip: "bg-coral-100 ring-coral-200",  label: "More reports than national average" },
 };
 
 // SVG ring geometry — single source of truth used by both the full and
@@ -81,7 +81,7 @@ export function BlockScoreWidget({ score, loading, contextLabel }: BlockScoreWid
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-            <span className="text-[10px] uppercase tracking-wider text-slate2-500">BlockScore</span>
+            <span className="text-[10px] uppercase tracking-wider text-slate2-500">Safety Index</span>
             <span className="font-display text-4xl text-slate2-900 leading-none">{score.score}</span>
             <span className="text-[10px] text-slate2-500 mt-0.5">out of 100</span>
           </div>
@@ -93,27 +93,37 @@ export function BlockScoreWidget({ score, loading, contextLabel }: BlockScoreWid
           </span>
           <h3 className="mt-2 font-display text-lg text-slate2-900">{contextLabel}</h3>
           <p className="mt-1 text-sm text-slate2-700 leading-snug">{score.headline}</p>
+          <p className="mt-2 text-xs text-slate2-500 leading-snug">
+            A higher number means fewer police reports per resident than the FBI national average.
+            100 means no recent reports; 50 roughly matches the national rate.
+          </p>
           <a
             href={score.benchmark.url}
             target="_blank"
             rel="noreferrer"
             className="mt-3 inline-flex items-center gap-1 text-xs text-bay-700 hover:underline"
           >
-            Benchmark: {score.benchmark.label} ({score.benchmark.year}) →
+            Compared against: {score.benchmark.label} ({score.benchmark.year}) →
           </a>
         </div>
       </div>
 
       <BandLegend currentBand={score.band} />
+
+      <p className="mt-3 text-[11px] text-slate2-500 leading-snug">
+        Based on publicly published police reports over the cached window. Reflects historical reporting only — not a prediction
+        of future risk, and not a substitute for professional safety advice. Should not be used as the sole basis for housing,
+        lending, insurance, or hiring decisions.
+      </p>
     </section>
   );
 }
 
 function BandLegend({ currentBand }: { currentBand: BlockScoreBand }) {
   const rows: Array<{ band: BlockScoreBand; range: string; copy: string }> = [
-    { band: "safe",     range: "80–100", copy: "Reports below FBI national" },
-    { band: "moderate", range: "50–79",  copy: "Tracks national average" },
-    { band: "elevated", range: "<50",    copy: "Above FBI national" },
+    { band: "safe",     range: "80–100", copy: "Fewer reports than national rate" },
+    { band: "moderate", range: "50–79",  copy: "Roughly matches national rate" },
+    { band: "elevated", range: "0–49",   copy: "More reports than national rate" },
   ];
   return (
     <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">

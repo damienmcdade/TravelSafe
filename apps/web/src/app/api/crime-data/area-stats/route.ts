@@ -12,9 +12,14 @@ const Query = z.object({
 });
 
 export const dynamic = "force-dynamic";
+
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+};
+
 export const GET = wrap(async (req: NextRequest) => {
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   const area = q.neighborhood ?? q.jurisdiction ?? (q.lat != null && q.lng != null ? nearestArea({ lat: q.lat, lng: q.lng })?.slug ?? null : null);
   if (!area) throw new HttpError(400, "area_required");
-  return NextResponse.json(await crimeData.getAreaStats(area));
+  return NextResponse.json(await crimeData.getAreaStats(area), { headers: CACHE_HEADERS });
 });

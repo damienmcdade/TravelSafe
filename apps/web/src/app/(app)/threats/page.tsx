@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { api, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { ensurePushSubscription } from "@/lib/push";
 import { useCity } from "@/lib/use-city";
+import { useArea } from "@/lib/use-area";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
@@ -29,12 +30,12 @@ interface Citywide { city: string; totalIncidents: number; alerts: Alert[]; perA
 
 export default function ThreatsPage() {
   const { city, setCity, cities } = useCity();
-  const [area, setArea] = useState<Area | null>(null);
+  // Globally-shared neighborhood selection. Picking a neighborhood here
+  // propagates to every other tab (SafeZone, CommunitySafe, Personal Safety,
+  // Trend Feed, Safety Score) and vice versa.
+  const { area, setArea } = useArea(city.slug);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [locError, setLocError] = useState<string | null>(null);
-
-  // Clear selection on city switch so we land on the new city's overview.
-  useEffect(() => { setArea(null); }, [city.slug]);
 
   // 15-minute background refresh on the Awareness tab so the cards rotate
   // through fresh content while the user reads — the upstream adapters cache
@@ -141,6 +142,14 @@ export default function ThreatsPage() {
         city={{ slug: city.slug, label: city.label, defaultArea: city.defaultArea }}
         area={area}
       />
+
+      <p className="surface-muted p-3 text-xs text-slate2-600 leading-snug">
+        <strong className="text-slate2-900">How to read this:</strong>{" "}
+        TravelSafe summarizes publicly published police reports. Scores reflect historical reporting,
+        not predictions of future risk, and are not a substitute for professional safety advice.
+        Should not be used as the sole basis for housing, lending, insurance, or hiring decisions —
+        verify each statistic with the cited official source before acting on it.
+      </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">

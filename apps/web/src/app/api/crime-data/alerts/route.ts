@@ -45,6 +45,17 @@ async function resolveByLatLng(lat: number, lng: number): Promise<{ area: KnownA
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
+
+// Slug-based lookups are shared cache keys (everyone querying "loop" hits
+// the same entry). Lat/lng-based lookups skip the shared edge cache because
+// every coordinate is effectively unique.
+const SHARED_CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+};
+const PRIVATE_CACHE_HEADERS = {
+  "Cache-Control": "private, max-age=60",
+};
+
 export const GET = wrap(async (req: NextRequest) => {
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
 
@@ -56,13 +67,12 @@ export const GET = wrap(async (req: NextRequest) => {
       label: slug,
       city: city.label,
       alerts: await crimeData.getAreaAlerts(slug, { limit: q.limit }),
-    });
+    }, { headers: SHARED_CACHE_HEADERS });
   }
 
   if (q.lat != null && q.lng != null) {
     const resolved = await resolveByLatLng(q.lat, q.lng);
     if (!resolved) {
-      // Last-ditch sync fallback in case the discover() calls failed.
       const fallback = nearestArea({ lat: q.lat, lng: q.lng });
       if (fallback) {
         return NextResponse.json({
@@ -70,7 +80,7 @@ export const GET = wrap(async (req: NextRequest) => {
           label: fallback.label,
           city: fallback.jurisdiction,
           alerts: await crimeData.getAreaAlerts(fallback.slug, { limit: q.limit }),
-        });
+        }, { headers: PRIVATE_CACHE_HEADERS });
       }
       throw new HttpError(404, "outside_coverage", "Your location is outside the cities TravelSafe currently covers (San Diego, Los Angeles, San Francisco).");
     }
@@ -79,7 +89,7 @@ export const GET = wrap(async (req: NextRequest) => {
       label: resolved.area.label,
       city: resolved.cityLabel,
       alerts: await crimeData.getAreaAlerts(resolved.area.slug, { limit: q.limit }),
-    });
+    }, { headers: PRIVATE_CACHE_HEADERS });
   }
 
   throw new HttpError(400, "area_required");

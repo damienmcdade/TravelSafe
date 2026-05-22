@@ -12,8 +12,12 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const maxDuration = 60;
 
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+};
+
 export const GET = wrap(async (req: NextRequest) => {
   const { area, label } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   const watch = await getWatchForArea(area, label ?? area);
-  return NextResponse.json(watch);
+  return NextResponse.json(watch, { headers: CACHE_HEADERS });
 });

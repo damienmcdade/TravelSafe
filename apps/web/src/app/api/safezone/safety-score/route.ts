@@ -24,8 +24,17 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 export const maxDuration = 60;
 
+// Edge cache for 5 min (matches the upstream adapter's cache TTL — there's
+// no fresher data to serve than this). stale-while-revalidate of 15 min
+// lets the Vercel edge serve a stale response instantly while it
+// revalidates in the background — first cold visit pays the upstream
+// fetch, every subsequent user inside the window hits cache.
+const CACHE_HEADERS = {
+  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+};
+
 export const GET = wrap(async (req: NextRequest) => {
   const { city, area, label } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
-  if (city) return NextResponse.json(await getCitywideSafetyScore(city));
-  return NextResponse.json(await getSafetyScore(area!, label ?? area!));
+  if (city) return NextResponse.json(await getCitywideSafetyScore(city), { headers: CACHE_HEADERS });
+  return NextResponse.json(await getSafetyScore(area!, label ?? area!), { headers: CACHE_HEADERS });
 });

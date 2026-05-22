@@ -28,6 +28,25 @@ export function LocationSearch({
   // Reset the query when the city changes so the autocomplete restarts clean.
   useEffect(() => { setQ(""); setStatus("idle"); setError(null); setOpen(false); }, [city.slug]);
 
+  // Mirror the externally-provided `current` selection into the input. This
+  // matters when the area was picked in another tab via the global useArea
+  // store — when the user lands here, the search should already show the
+  // active neighborhood, not an empty box.
+  useEffect(() => {
+    if (current && current.label !== q) {
+      setQ(current.label);
+      setStatus("found");
+      setOpen(false);
+      setError(null);
+    } else if (!current && status === "found") {
+      // The selection was cleared elsewhere; wipe the input so the user
+      // isn't looking at a stale label.
+      setQ("");
+      setStatus("idle");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.slug]);
+
   // Close the dropdown on outside click.
   useEffect(() => {
     function onClick(e: MouseEvent) {
