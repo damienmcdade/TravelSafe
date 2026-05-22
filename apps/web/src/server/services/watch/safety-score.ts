@@ -1,6 +1,7 @@
 import "server-only";
 import { crimeData } from "../crime-data";
 import { cityForArea } from "../crime-data/cities";
+import { loadPolygonAreas, lookupAreaKm2, totalCityKm2 } from "../../lib/polygon-areas";
 
 /// Safety Score — compares the user's selected area against the FBI's most
 /// recent national rates per 100,000 residents. Returns the raw local and
@@ -278,16 +279,47 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   const cityPersons100k = annualizeCity(cityPersons);
   const cityProperty100k = annualizeCity(cityProperty);
 
-  // Peer-relative scaling: how this area's report count compares to the
-  // average tracked neighborhood in the same city. Average = 1.0; high =
-  // 2-5; quiet = 0.1-0.5. We scale citywide-per-100k by this multiplier
-  // to get a per-area localPer100k that is directly comparable to the FBI
-  // national rate while preserving inter-neighborhood variance.
+  // POPULATION DENOMINATOR — two strategies, polygon-area-weighted
+  // preferred, peer-share as fallback.
+  //
+  // 1. Polygon-area weighting (preferred): if the city's GeoJSON file is
+  //    available and this area's polygon matches one of its features, we
+  //    estimate per-area population as cityPop × (areaKm² / cityTotalKm²).
+  //    This accounts for the fact that a tiny downtown core polygon
+  //    represents far fewer residents than a sprawling suburban district
+  //    of the same name length. Density isn't uniform either, but
+  //    polygon-area weighting beats peer-share for cities with very
+  //    uneven neighborhood sizes.
+  //
+  // 2. Peer-share (fallback): when no polygon data is available, use the
+  //    citywide totals / N_areas approach so an "average neighborhood"
+  //    reports the city's per-100k rate. Preserves cross-neighborhood
+  //    variance within the city even without polygon geometry.
   const N = Math.max(1, areas.length);
-  const expectedPersons = cityPersons / N;
-  const expectedProperty = cityProperty / N;
-  const personsScale = expectedPersons > 0 ? persons / expectedPersons : 0;
-  const propertyScale = expectedProperty > 0 ? property / expectedProperty : 0;
+  const polygonAreas = await loadPolygonAreas(city.slug);
+  const ourAreaKm2 = lookupAreaKm2(areaLabel, polygonAreas);
+  const cityTotalKm2 = totalCityKm2(polygonAreas);
+
+  let personsScale: number;
+  let propertyScale: number;
+  let popDenominator: number;
+  if (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0) {
+    // Polygon-weighted: per-area pop estimate, then ratio of (this area's
+    // count / its pop) to (citywide count / citywide pop).
+    const areaPop = cityPop * (ourAreaKm2 / cityTotalKm2);
+    popDenominator = Math.round(areaPop);
+    const localPersonsRate = areaPop > 0 ? (persons * 365 / Math.max(1, windowDays) / areaPop) * 100_000 : 0;
+    const localPropertyRate = areaPop > 0 ? (property * 365 / Math.max(1, windowDays) / areaPop) * 100_000 : 0;
+    personsScale = cityPersons100k > 0 ? localPersonsRate / cityPersons100k : 0;
+    propertyScale = cityProperty100k > 0 ? localPropertyRate / cityProperty100k : 0;
+  } else {
+    // Peer-share fallback (unchanged from before).
+    popDenominator = cityPop > 0 ? Math.round(cityPop / N) : 0;
+    const expectedPersons = cityPersons / N;
+    const expectedProperty = cityProperty / N;
+    personsScale = expectedPersons > 0 ? persons / expectedPersons : 0;
+    propertyScale = expectedProperty > 0 ? property / expectedProperty : 0;
+  }
   const persons100k = Math.round(cityPersons100k * personsScale);
   const property100k = Math.round(cityProperty100k * propertyScale);
 
@@ -313,22 +345,29 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   const grade = gradeFromDeltas(rows);
   const headline = headlineFor(grade, areaLabel, city.label);
 
+  const usedPolygonWeight = ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0;
   return {
     city: { slug: city.slug, label: city.label },
     area: { slug: areaSlug, label: areaLabel },
-    populationEstimate: cityPop > 0 && N > 0 ? Math.round(cityPop / N) : 0,
+    populationEstimate: popDenominator,
     windowDays,
     asOf: latest > 0 ? new Date(latest).toISOString() : null,
     grade,
     headline,
     rows,
     source: FBI_NATIONAL_SOURCE,
-    disclaimer:
-      `Per-area rate scales ${city.label}'s citywide per-100k rate by this neighborhood's ` +
-      `share of recent reports relative to a typical ${city.label} neighborhood. A neighborhood ` +
-      `reporting the average ${city.label} share lands at ${city.label}'s citywide rate; one ` +
-      `reporting twice the share scales to 2× that rate. The score then compares the result to ` +
-      `the FBI Uniform Crime Reporting program's ${FBI_NATIONAL_SOURCE.publishedYear} national average. ` +
-      "Society / public-order offenses are excluded because the FBI doesn't publish a national rate for them.",
+    disclaimer: usedPolygonWeight
+      ? `Per-area rate uses this neighborhood's polygon area (${ourAreaKm2!.toFixed(1)} km²) ` +
+        `to estimate population — assuming roughly uniform density across ${city.label}, an area ` +
+        `gets a share of ${city.label}'s total population proportional to its share of the city's ` +
+        `mapped area. The score then compares the result to the FBI Uniform Crime Reporting program's ` +
+        `${FBI_NATIONAL_SOURCE.publishedYear} national average. Society / public-order offenses are ` +
+        "excluded because the FBI doesn't publish a national rate for them."
+      : `Per-area rate scales ${city.label}'s citywide per-100k rate by this neighborhood's ` +
+        `share of recent reports relative to a typical ${city.label} neighborhood. A neighborhood ` +
+        `reporting the average ${city.label} share lands at ${city.label}'s citywide rate; one ` +
+        `reporting twice the share scales to 2× that rate. The score then compares the result to ` +
+        `the FBI Uniform Crime Reporting program's ${FBI_NATIONAL_SOURCE.publishedYear} national average. ` +
+        "Society / public-order offenses are excluded because the FBI doesn't publish a national rate for them.",
   };
 }

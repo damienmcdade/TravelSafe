@@ -170,12 +170,32 @@ export default function CommunityPage() {
 }
 
 function PostCard({ post }: { post: PostListItem }) {
+  // Track which action is in flight (or null when idle). One slot is
+  // enough because the API calls are mutually exclusive — a user wouldn't
+  // be reacting AND reporting simultaneously.
+  const [busy, setBusy] = useState<"HELPFUL" | "CONFIRMED" | "CONCERNED" | "REPORT" | null>(null);
+  const [confirmed, setConfirmed] = useState<"HELPFUL" | "CONFIRMED" | "CONCERNED" | "REPORT" | null>(null);
+
   async function report() {
-    await api(`/moderation/posts/${post.id}/report`, { method: "POST", body: JSON.stringify({}) });
-    alert("Reported — a moderator will re-review.");
+    if (busy) return;
+    setBusy("REPORT");
+    try {
+      await api(`/moderation/posts/${post.id}/report`, { method: "POST", body: JSON.stringify({}) });
+      setConfirmed("REPORT");
+      alert("Reported — a moderator will re-review.");
+    } finally {
+      setBusy(null);
+    }
   }
   async function react(kind: "HELPFUL" | "CONFIRMED" | "CONCERNED") {
-    await api(`/community/posts/${post.id}/react`, { method: "POST", body: JSON.stringify({ kind }) });
+    if (busy) return;
+    setBusy(kind);
+    try {
+      await api(`/community/posts/${post.id}/react`, { method: "POST", body: JSON.stringify({ kind }) });
+      setConfirmed(kind);
+    } finally {
+      setBusy(null);
+    }
   }
   return (
     <article className={`surface p-5 border-l-4 ${KIND_TONE[post.kind]} transition-transform hover:-translate-y-0.5 animate-rise-in`}>
@@ -185,12 +205,39 @@ function PostCard({ post }: { post: PostListItem }) {
       </header>
       <pre className="mt-3 whitespace-pre-wrap text-slate2-900 font-sans">{post.body}</pre>
       <footer className="mt-4 flex flex-wrap items-center gap-2 text-xs">
-        <button onClick={() => react("HELPFUL")} className="px-2.5 py-1 surface-muted hover:bg-bay-200 hover:text-bay-700 transition-all">Helpful</button>
-        <button onClick={() => react("CONFIRMED")} className="px-2.5 py-1 surface-muted hover:bg-sage-200 hover:text-sage-700 transition-all">I saw this too</button>
-        <button onClick={() => react("CONCERNED")} className="px-2.5 py-1 surface-muted hover:bg-amber2-200 hover:text-amber2-700 transition-all">Concerned</button>
-        <button onClick={report} className="ml-auto text-dusk-700 underline hover:text-dusk-500">Report this post</button>
+        <ReactButton onClick={() => react("HELPFUL")}    busy={busy === "HELPFUL"}   done={confirmed === "HELPFUL"}   color="bay">Helpful</ReactButton>
+        <ReactButton onClick={() => react("CONFIRMED")}  busy={busy === "CONFIRMED"} done={confirmed === "CONFIRMED"} color="sage">I saw this too</ReactButton>
+        <ReactButton onClick={() => react("CONCERNED")}  busy={busy === "CONCERNED"} done={confirmed === "CONCERNED"} color="amber2">Concerned</ReactButton>
+        <button
+          onClick={report}
+          disabled={busy != null}
+          className="ml-auto text-dusk-700 underline hover:text-dusk-500 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {busy === "REPORT" ? "Reporting…" : confirmed === "REPORT" ? "Reported ✓" : "Report this post"}
+        </button>
       </footer>
     </article>
+  );
+}
+
+function ReactButton({ onClick, busy, done, color, children }: {
+  onClick: () => void; busy: boolean; done: boolean;
+  color: "bay" | "sage" | "amber2"; children: React.ReactNode;
+}) {
+  const baseHover = color === "bay" ? "hover:bg-bay-200 hover:text-bay-700"
+                  : color === "sage" ? "hover:bg-sage-200 hover:text-sage-700"
+                  : "hover:bg-amber2-200 hover:text-amber2-700";
+  const doneTone = color === "bay" ? "bg-bay-200 text-bay-700"
+                 : color === "sage" ? "bg-sage-200 text-sage-700"
+                 : "bg-amber2-200 text-amber2-700";
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className={`px-2.5 py-1 transition-all disabled:opacity-60 disabled:cursor-wait ${done ? doneTone : `surface-muted ${baseHover}`}`}
+    >
+      {busy ? "…" : done ? `${children} ✓` : children}
+    </button>
   );
 }
 

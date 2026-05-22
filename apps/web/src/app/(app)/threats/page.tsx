@@ -39,6 +39,12 @@ export default function ThreatsPage() {
   useDocumentTitle(`Awareness · ${area?.label ?? city.label}`);
   const [pushStatus, setPushStatus] = useState<string | null>(null);
   const [locError, setLocError] = useState<string | null>(null);
+  // Busy flags so the two action buttons render their in-flight state.
+  // Geolocation can take 2-5s on cold permission prompts and push
+  // subscription waits for the browser dialog; silent buttons made the
+  // page feel unresponsive.
+  const [locBusy, setLocBusy] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
 
   // 15-minute background refresh on the Awareness tab so the cards rotate
   // through fresh content while the user reads — the upstream adapters cache
@@ -72,7 +78,9 @@ export default function ThreatsPage() {
   })();
 
   async function useMyLocation() {
+    if (locBusy) return;
     setLocError(null);
+    setLocBusy(true);
     try {
       const pos = await requestLocation();
       const r = await api<{ area: string; label: string; city: string; alerts: Alert[] }>(
@@ -87,12 +95,20 @@ export default function ThreatsPage() {
       const e = err as Error & { status?: number; body?: { message?: string } };
       const msg = e.body?.message ?? e.message ?? "Unknown error.";
       setLocError(`Could not use your location: ${msg}`);
+    } finally {
+      setLocBusy(false);
     }
   }
 
   async function enableNotifications() {
-    const r = await ensurePushSubscription();
-    setPushStatus(r.ok ? "Notifications on — you'll get a daily digest by default." : `Notifications not enabled: ${r.reason}.`);
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      const r = await ensurePushSubscription();
+      setPushStatus(r.ok ? "Notifications on — you'll get a daily digest by default." : `Notifications not enabled: ${r.reason}.`);
+    } finally {
+      setPushBusy(false);
+    }
   }
 
   return (
@@ -116,8 +132,20 @@ export default function ThreatsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2"><LocationSearch current={area} onResolved={setArea} /></div>
         <div className="surface p-4 flex flex-col gap-2 text-sm">
-          <button onClick={useMyLocation} className="btn-primary">Use my location</button>
-          <button onClick={enableNotifications} className="btn-secondary">Enable notifications</button>
+          <button
+            onClick={useMyLocation}
+            disabled={locBusy}
+            className="btn-primary disabled:opacity-60 disabled:cursor-wait"
+          >
+            {locBusy ? "Locating…" : "Use my location"}
+          </button>
+          <button
+            onClick={enableNotifications}
+            disabled={pushBusy}
+            className="btn-secondary disabled:opacity-60 disabled:cursor-wait"
+          >
+            {pushBusy ? "Subscribing…" : "Enable notifications"}
+          </button>
           {pushStatus && <p className="text-xs text-slate2-500">{pushStatus}</p>}
           {locError && <p className="text-xs text-amber2-700">{locError}</p>}
           <p className="text-xs text-slate2-500">Notifications default to a once-daily digest.</p>

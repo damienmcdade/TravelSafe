@@ -151,10 +151,19 @@ function CheckInPanel() {
     }
   }
 
+  // Separate busy flag for markSafe so the user gets immediate feedback
+  // (this is a safety feature — silent fire is genuinely dangerous, the
+  // user might tap it twice and not know whether the timer cleared).
+  const [safeBusy, setSafeBusy] = useState(false);
   async function markSafe() {
-    if (!active) return;
-    await api(`/safety/check-in/${active.id}/safe`, { method: "POST" });
-    await reload();
+    if (!active || safeBusy) return;
+    setSafeBusy(true);
+    try {
+      await api(`/safety/check-in/${active.id}/safe`, { method: "POST" });
+      await reload();
+    } finally {
+      setSafeBusy(false);
+    }
   }
 
   return (
@@ -171,8 +180,12 @@ function CheckInPanel() {
             {remaining != null ? formatRemaining(remaining) : "…"}
           </div>
           {active.message && <div className="mt-1 text-sm text-slate2-500">Note: {active.message}</div>}
-          <button onClick={markSafe} className="mt-3 px-4 py-2 bg-sage-500 text-sand-50 rounded-xl">
-            I&apos;m safe — clear timer
+          <button
+            onClick={markSafe}
+            disabled={safeBusy}
+            className="mt-3 px-4 py-2 bg-sage-500 text-sand-50 rounded-xl disabled:opacity-60 disabled:cursor-wait"
+          >
+            {safeBusy ? "Clearing…" : "I'm safe — clear timer"}
           </button>
         </div>
       ) : (
@@ -216,20 +229,33 @@ function LiveSharePanel() {
   const [duration, setDuration] = useState(30);
   const [contactEmail, setContactEmail] = useState("");
   const [lastShare, setLastShare] = useState<{ shareUrl: string; expiresAt: string } | null>(null);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   async function create() {
-    if (!signedIn) return;
-    const r = await api<{ shareUrl: string; expiresAt: string }>("/safety/live-share", {
-      method: "POST",
-      body: JSON.stringify({ durationMinutes: duration, contactEmail: contactEmail || undefined }),
-    });
-    setLastShare(r);
-    await reload();
+    if (!signedIn || createBusy) return;
+    setCreateBusy(true);
+    try {
+      const r = await api<{ shareUrl: string; expiresAt: string }>("/safety/live-share", {
+        method: "POST",
+        body: JSON.stringify({ durationMinutes: duration, contactEmail: contactEmail || undefined }),
+      });
+      setLastShare(r);
+      await reload();
+    } finally {
+      setCreateBusy(false);
+    }
   }
 
   async function revoke(id: string) {
-    await api(`/safety/live-share/${id}`, { method: "DELETE" });
-    await reload();
+    if (revokingId) return;
+    setRevokingId(id);
+    try {
+      await api(`/safety/live-share/${id}`, { method: "DELETE" });
+      await reload();
+    } finally {
+      setRevokingId(null);
+    }
   }
 
   return (
@@ -252,8 +278,12 @@ function LiveSharePanel() {
           Send link to email (optional)
           <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="mt-1 input" />
         </label>
-        <button onClick={create} disabled={!signedIn} className="sm:col-span-3 btn-primary disabled:opacity-50">
-          Generate link
+        <button
+          onClick={create}
+          disabled={!signedIn || createBusy}
+          className="sm:col-span-3 btn-primary disabled:opacity-50 disabled:cursor-wait"
+        >
+          {createBusy ? "Generating…" : "Generate link"}
         </button>
       </div>
       {!signedIn && (
@@ -272,7 +302,13 @@ function LiveSharePanel() {
           {active.map((s) => (
             <li key={s.id} className="py-3 flex justify-between items-center text-sm">
               <span>Active until {new Date(s.expiresAt).toLocaleString()}</span>
-              <button onClick={() => revoke(s.id)} className="text-dusk-700 underline">Revoke</button>
+              <button
+                onClick={() => revoke(s.id)}
+                disabled={revokingId === s.id}
+                className="text-dusk-700 underline disabled:opacity-60 disabled:cursor-wait"
+              >
+                {revokingId === s.id ? "Revoking…" : "Revoke"}
+              </button>
             </li>
           ))}
         </ul>
