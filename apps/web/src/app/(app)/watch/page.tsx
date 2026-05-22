@@ -41,12 +41,17 @@ export default function NeighborhoodWatchPage() {
   const [pendingSlug, setPendingSlug] = useState<string | null>(null);
   const [committedSlug, setCommittedSlug] = useState<string | null>(null);
 
-  // Areas come from /api/geo/areas — same source the rest of the app uses.
-  // We filter to the active city by jurisdiction (label) so the wheel only
-  // shows neighborhoods the user can actually drill into.
-  const { data: areas, loading: areasLoading } = useApi<Area[]>("/geo/areas");
+  // Areas come from /api/geo/areas?city=<slug> — the per-city scoped path
+  // only fans out ONE adapter discovery on cold cache (2-5s vs the 30s+
+  // all-cities call), so the wheel populates quickly. Refetches whenever
+  // the user switches city.
+  const areasPath = `/geo/areas?city=${city.slug}`;
+  const { data: areas, loading: areasLoading, error: areasErr } = useApi<Area[]>(areasPath, [areasPath]);
   const cityAreas = useMemo(() => {
     if (!areas) return [];
+    // Adapter discovery already scopes by city; this filter is belt-and-suspenders
+    // in case the all-cities path returns (e.g. cached response from before the
+    // city query was added) so the wheel never shows another city's areas.
     return areas
       .filter((a) => a.jurisdiction.toLowerCase() === city.label.toLowerCase())
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -123,11 +128,26 @@ export default function NeighborhoodWatchPage() {
         </div>
 
         <div className="mt-4 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-start">
-          {areasLoading || cityAreas.length === 0 ? (
+          {areasLoading ? (
             <div className="surface-muted p-8 text-center text-sm text-slate2-500 animate-pulse">
-              {areasLoading
-                ? `Loading ${city.label} neighborhoods…`
-                : `No neighborhoods are available yet for ${city.label}. Try a different city in the selector above.`}
+              Loading {city.label} neighborhoods…
+            </div>
+          ) : cityAreas.length === 0 ? (
+            // areasErr fires when the police adapter call timed out or the
+            // upstream feed is briefly unreachable — distinguish that from
+            // a city that legitimately has no published neighborhoods so the
+            // user can retry rather than blame the data.
+            <div className="surface-muted p-8 text-center text-sm text-slate2-700">
+              {areasErr ? (
+                <>
+                  <p className="font-medium text-slate2-900">Could not reach the {city.label} police feed just now.</p>
+                  <p className="mt-1.5 text-xs text-slate2-500">
+                    The data source is sometimes slow on the first request after a deploy. Switch tabs or wait ~10 seconds, then come back — the wheel will populate from the same official feed that powers the Crime Map.
+                  </p>
+                </>
+              ) : (
+                <p>No neighborhoods are tracked for {city.label} yet. Pick a different city in the header.</p>
+              )}
             </div>
           ) : (
             <WheelPicker
