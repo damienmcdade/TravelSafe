@@ -110,12 +110,69 @@ export function BlockScoreWidget({ score, loading, contextLabel }: BlockScoreWid
 
       <BandLegend currentBand={score.band} />
 
+      <HowItsCalculated benchmark={score.benchmark} />
+
       <p className="mt-3 text-[11px] text-slate2-500 leading-snug">
         Based on publicly published police reports over the cached window. Reflects historical reporting only — not a prediction
         of future risk, and not a substitute for professional safety advice. Should not be used as the sole basis for housing,
         lending, insurance, or hiring decisions.
       </p>
     </section>
+  );
+}
+
+/// Plain-English methodology disclosure. Collapsed by default so it
+/// doesn't crowd the score, expanded on click. Walks the user through
+/// the four-step calculation in everyday language and names the two
+/// public datasets that drive it (the city's police feed and the FBI
+/// national rate) so the math is auditable, not magical.
+function HowItsCalculated({ benchmark }: { benchmark: BlockScore["benchmark"] }) {
+  return (
+    <details className="mt-4 group">
+      <summary className="cursor-pointer list-none flex items-center gap-1.5 text-xs font-medium text-bay-700 hover:underline select-none">
+        <span className="inline-block w-3 transition-transform group-open:rotate-90">›</span>
+        How is this score calculated?
+      </summary>
+      <div className="mt-3 surface-muted p-4 text-xs text-slate2-700 leading-relaxed space-y-2.5">
+        <p>
+          We translate two public datasets into one easy-to-read number. No private
+          information, no predictions — just published report counts plus arithmetic.
+        </p>
+        <ol className="list-decimal pl-5 space-y-1.5">
+          <li>
+            <strong className="text-slate2-900">Count the reports.</strong>{" "}
+            We pull every recently published police report in this neighborhood from
+            the city&apos;s official open-data feed, split into violent (persons) and
+            property crime — the two categories the FBI publishes national rates for.
+          </li>
+          <li>
+            <strong className="text-slate2-900">Compare to the typical neighborhood.</strong>{" "}
+            We total every tracked neighborhood in this city and figure out the average
+            share. If a neighborhood reports twice the average share of city reports,
+            it earns twice the rate; half the share earns half. This is what lets the
+            score tell distinct neighborhoods apart honestly.
+          </li>
+          <li>
+            <strong className="text-slate2-900">Express it as a rate per 100,000 residents.</strong>{" "}
+            The same denominator the FBI uses for its city-vs-national comparisons,
+            scaled by US Census Vintage 2023 city population.
+          </li>
+          <li>
+            <strong className="text-slate2-900">Compare to the national average.</strong>{" "}
+            We average the gap across both categories and map it onto a 0&ndash;100
+            scale. <strong>100</strong> means no recent reports; <strong>50</strong>{" "}
+            roughly matches the national rate; below 50 means above national. Higher
+            is always safer in the data, lower is always more activity.
+          </li>
+        </ol>
+        <p className="text-[11px] text-slate2-500 pt-1">
+          Benchmark source:{" "}
+          <a href={benchmark.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">
+            {benchmark.label} ({benchmark.year})
+          </a>
+        </p>
+      </div>
+    </details>
   );
 }
 
