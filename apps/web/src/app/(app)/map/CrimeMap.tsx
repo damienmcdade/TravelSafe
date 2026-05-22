@@ -74,9 +74,14 @@ function normName(s: string): string {
 /// the neighborhood's total. Output saturation scales with how many incidents
 /// the area saw vs the city-wide max — so a sleepy area is pale, a busy area
 /// is vivid, regardless of which category dominates.
+///
+/// Opacity curve uses sqrt() so the difference between "few incidents" and
+/// "many incidents" reads even when the citywide max is dominated by a single
+/// outlier neighborhood. Floor lifted from 0.25 → 0.55 in March because
+/// users reported the previous palette read as washed-out.
 function fuseColor(breakdown: AreaBreakdown | null, maxCount: number): { fill: string; opacity: number; stroke: string } {
   if (!breakdown || breakdown.incidentCount === 0) {
-    return { fill: `rgb(${NO_DATA_RGB.join(",")})`, opacity: 0.10, stroke: "#94a3b8" };
+    return { fill: `rgb(${NO_DATA_RGB.join(",")})`, opacity: 0.22, stroke: "#94a3b8" };
   }
   const total = breakdown.byCategory.PERSONS + breakdown.byCategory.PROPERTY + breakdown.byCategory.SOCIETY || 1;
   const w: Record<Cat, number> = {
@@ -87,10 +92,10 @@ function fuseColor(breakdown: AreaBreakdown | null, maxCount: number): { fill: s
   const r = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[0]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[0]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[0]);
   const g = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[1]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[1]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[1]);
   const b = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[2]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[2]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[2]);
-  // Floor at 0.25 so even small counts read as colored; ceiling at 0.78 so
-  // hover/selection can still pop above the base layer.
-  const opacity = 0.25 + Math.min(1, breakdown.incidentCount / Math.max(1, maxCount)) * 0.53;
-  return { fill: `rgb(${r},${g},${b})`, opacity, stroke: `rgb(${Math.max(0, r - 40)},${Math.max(0, g - 40)},${Math.max(0, b - 40)})` };
+  const ratio = Math.min(1, breakdown.incidentCount / Math.max(1, maxCount));
+  // sqrt curve + 0.55 floor + 0.95 ceiling → 0.55 (faintest) to 0.95 (darkest)
+  const opacity = 0.55 + Math.sqrt(ratio) * 0.40;
+  return { fill: `rgb(${r},${g},${b})`, opacity, stroke: `rgb(${Math.max(0, r - 50)},${Math.max(0, g - 50)},${Math.max(0, b - 50)})` };
 }
 
 function describeMix(b: AreaBreakdown | null): string {
@@ -343,9 +348,13 @@ function ZoomController({ polygons, selectedName, fallbackCenter }: { polygons: 
       }
     }
     // No selection — fit the whole city polygon bbox.
+    // maxZoom caps how far in we'll zoom for small cities (e.g. DC, SF) so the
+    // initial view is always recognizably "the city" rather than three blocks
+    // of downtown. fitBounds normally stops at maxZoom or the city's natural
+    // fit, whichever is closer in.
     const layer = L.geoJSON(polygons as FeatureCollection);
     const bounds = layer.getBounds();
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [10, 10] });
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [12, 12], maxZoom: 12 });
     else map.setView(fallbackCenter, 11);
   }, [polygons, selectedName, fallbackCenter, map]);
   return null;
@@ -366,9 +375,9 @@ function CityLegend() {
       <p className="mt-4 text-xs text-slate2-500">Mixed colors mean a mixed crime profile. A neighborhood with mostly property crime but some violent crime appears as a warmer orange, not pure amber.</p>
       <div className="mt-3 flex items-center gap-2 text-xs text-slate2-500">
         <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: "#cbd5e1" }} />no data</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.3 }} />few</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.55 }} />some</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.78 }} />many</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.55 }} />few</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.75 }} />some</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.95 }} />many</span>
       </div>
     </section>
   );
