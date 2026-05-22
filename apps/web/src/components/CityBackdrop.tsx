@@ -100,6 +100,16 @@ const PHOTOS: Record<string, string[]> = {
     // Union Station — urban transit hub + Beaux-Arts architecture
     "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Union_Station_Washington_DC.jpg/1920px-Union_Station_Washington_DC.jpg",
   ],
+  "boston": [
+    // Boston skyline from Longfellow Bridge (September 2017 panorama)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/Boston_skyline_from_Longfellow_Bridge_September_2017_panorama_2.jpg/1920px-Boston_skyline_from_Longfellow_Bridge_September_2017_panorama_2.jpg",
+    // John Hancock Tower — Boston's iconic glass skyscraper
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/John_Hancock_Tower.jpg/1920px-John_Hancock_Tower.jpg",
+    // Federal Reserve + Boston financial district from across the Fort Point Channel
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Federal_Reserve_from_South_Boston.jpg/1920px-Federal_Reserve_from_South_Boston.jpg",
+    // Old State House on State Street — historic urban architecture
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Old_State_House_%2849280448012%29.jpg/1920px-Old_State_House_%2849280448012%29.jpg",
+  ],
 };
 
 const ROTATE_MS = 5 * 60 * 1000;
