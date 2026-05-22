@@ -76,6 +76,10 @@ export async function api<T = unknown>(path: string, init: RequestInit = {}): Pr
   };
   const tk = token();
   if (tk) (headers as Record<string, string>).Authorization = `Bearer ${tk}`;
+  // init.signal already flows through to fetch() via the spread — callers
+  // that pass an AbortSignal will see the underlying fetch cancel when
+  // .abort() is called, freeing the network slot before the response
+  // arrives.
   const res = await fetch(`${API_BASE}/api${path}`, { ...init, headers });
   const text = await res.text();
   const body = text ? JSON.parse(text) : null;
@@ -163,11 +167,20 @@ export function useApi<T = unknown>(
   // Track the latest in-flight request so a slow stale response can't
   // overwrite a fresh one when the user rapidly switches city / area.
   // Each useEffect run bumps the version; only the matching version's
-  // resolved data is committed to state.
+  // resolved data is committed to state. We also hold onto the latest
+  // AbortController so the network request itself can be cancelled —
+  // version-ref alone drops the result client-side, but the bytes still
+  // travel. Aborting frees the connection and saves bandwidth on rapid
+  // dep changes (e.g. someone scrubbing through cities).
   const versionRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   const reload = useCallback(async () => {
     if (!path) return;
+    // Cancel any previous request before starting a new one.
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const myVersion = ++versionRef.current;
     // Don't flip loading on if we have cached data — UI shows the cached
     // response while we revalidate quietly behind the scenes.
@@ -175,11 +188,14 @@ export function useApi<T = unknown>(
     if (!hasCached) setLoading(true);
     setError(null);
     try {
-      const d = await api<T>(path);
+      const d = await api<T>(path, { signal: controller.signal });
       if (myVersion !== versionRef.current) return; // stale — newer request superseded us
       setData(d);
       if (swrMs > 0) swrWrite<T>(path, d);
     } catch (e) {
+      // Suppress aborts entirely — they happen when the user navigates or
+      // rapidly switches selection. Not an error condition.
+      if ((e as { name?: string })?.name === "AbortError") return;
       if (myVersion !== versionRef.current) return; // stale errors also dropped
       setError(e as Error);
     } finally {
@@ -197,9 +213,8 @@ export function useApi<T = unknown>(
       if (cached != null) setData(cached);
     }
     void reload();
-    // Bump version on unmount/dep-change so any still-pending fetch is
-    // ignored when it resolves.
-    return () => { versionRef.current++; };
+    // Bump version on unmount/dep-change AND abort any pending fetch.
+    return () => { versionRef.current++; abortRef.current?.abort(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path, swrMs, ...deps]);
 
