@@ -122,6 +122,10 @@ function swrRead<T>(path: string, ttlMs: number): T | null {
 
 function swrWrite<T>(path: string, data: T) {
   if (typeof window === "undefined") return;
+  // Guard against accidental "null"-keyed entries when a caller passes a
+  // nullable path that briefly resolved to null. Without this, the cache
+  // would accumulate `travelsafe.swr.v1.null` entries and eat quota.
+  if (!path || path === "null") return;
   try {
     // Drop oldest entries if we ever blow the 5MB localStorage budget.
     // We don't run a periodic GC — clearing on quota error is enough.

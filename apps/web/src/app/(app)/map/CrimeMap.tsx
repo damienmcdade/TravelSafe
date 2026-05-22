@@ -137,11 +137,19 @@ export default function CrimeMap() {
     if (cached) { setPolygons(cached); setPolyError(null); return; }
     setPolygons(null); setPolyError(null);
     let cancelled = false;
-    fetch(`/geo/${city.slug}.geojson`)
+    // Capture the city we started fetching so the resolved response can't
+    // overwrite the cache or state for a different city if the user
+    // rapid-switches before the response lands. Each effect closure has its
+    // own `startedSlug` snapshot.
+    const startedSlug = city.slug;
+    fetch(`/geo/${startedSlug}.geojson`)
       .then((r) => r.ok ? r.json() : Promise.reject(new Error(`${r.status}`)))
       .then((d: FeatureCollection) => {
+        // Only cache and set if THIS effect's slug still matches what's
+        // mounted. A stale response from a prior city can't poison the
+        // cache for a city it didn't originate from.
         if (cancelled) return;
-        POLYGON_CACHE.set(city.slug, d);
+        POLYGON_CACHE.set(startedSlug, d);
         setPolygons(d);
       })
       .catch((e) => { if (!cancelled) setPolyError(`Could not load ${city.label} neighborhood boundaries (${(e as Error).message}).`); });

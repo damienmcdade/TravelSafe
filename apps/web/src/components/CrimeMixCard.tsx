@@ -6,10 +6,13 @@ import { relativeTime } from "@/lib/sse";
 interface Slice { offense: string; category: "PERSONS" | "PROPERTY" | "SOCIETY"; count: number; lastOccurredAt: string }
 interface Mix { area: string; windowDays: number; asOf: string | null; totalIncidents: number; topOffenses: Slice[] }
 
+// Aligned with the rest of the app's muted palette: PERSONS = terracotta,
+// PROPERTY = sand-gold, SOCIETY = slate-teal. The previous mapping shuffled
+// the category-color pairs AND used the old bright-saturation tones.
 const COLOR: Record<Slice["category"], { bar: string; chip: string; iconBg: string }> = {
-  PERSONS:  { bar: "linear-gradient(90deg, #3FA6CC, #1E78A6)",  chip: "bg-bay-200 text-bay-700",     iconBg: "bg-bay-100" },
-  PROPERTY: { bar: "linear-gradient(90deg, #EE8A66, #E6643C)",  chip: "bg-coral-200 text-coral-700", iconBg: "bg-coral-200" },
-  SOCIETY:  { bar: "linear-gradient(90deg, #C2E0BD, #5B9E51)",  chip: "bg-sage-200 text-sage-700",   iconBg: "bg-sage-200" },
+  PERSONS:  { bar: "linear-gradient(90deg, #D9A18C, #C47C62)",  chip: "bg-coral-100 text-coral-700",   iconBg: "bg-coral-100" },
+  PROPERTY: { bar: "linear-gradient(90deg, #E0C290, #CBA56C)",  chip: "bg-amber2-100 text-amber2-700", iconBg: "bg-amber2-100" },
+  SOCIETY:  { bar: "linear-gradient(90deg, #8FB1C8, #5C8AA7)",  chip: "bg-bay-100 text-bay-700",       iconBg: "bg-bay-100" },
 };
 
 const SOURCE_LABEL: Record<string, string> = {

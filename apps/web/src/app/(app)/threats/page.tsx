@@ -114,13 +114,20 @@ export default function ThreatsPage() {
         </div>
       </div>
 
-      {/* Surface upstream fetch failures so the user sees what broke rather
-          than blank cards. The previous behavior silently swallowed errors
-          from /crime-data/citywide and /crime-data/alerts. */}
-      {(citywideErr || areaStatsErr) && !citywideLoading && (
+      {/* Surface upstream fetch failures, scoped to whichever feed actually
+          failed for the user's current view. Showing the citywide error
+          while looking at a specific area (or vice versa) would mis-blame
+          the wrong stream. */}
+      {showingCitywide && citywideErr && !citywideLoading && (
         <div className="surface p-4 text-sm text-dusk-700">
-          Couldn&apos;t reach the {city.label} police feed just now. Cards below may show stale
-          cached data — try again in ~10 seconds. ({(citywideErr ?? areaStatsErr)?.message})
+          Couldn&apos;t reach the {city.label} citywide police feed just now. Cards below may
+          show stale cached data — try again in ~10 seconds. ({citywideErr.message})
+        </div>
+      )}
+      {!showingCitywide && areaStatsErr && (
+        <div className="surface p-4 text-sm text-dusk-700">
+          Couldn&apos;t reach the police feed for {area!.label} just now. Cards below may
+          show stale cached data — try again in ~10 seconds. ({areaStatsErr.message})
         </div>
       )}
 
