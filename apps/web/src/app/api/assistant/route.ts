@@ -21,7 +21,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     const r = await streamAssistant(messages);
     if (!r.configured) {
       return NextResponse.json(
-        { error: "assistant_not_configured", note: "AI_GATEWAY_API_KEY is not set on this deployment." },
+        { error: "assistant_not_configured", note: "No AI provider configured. Set GOOGLE_GENERATIVE_AI_API_KEY (free at aistudio.google.com) or AI_GATEWAY_API_KEY on this deployment." },
         { status: 503 },
       );
     }

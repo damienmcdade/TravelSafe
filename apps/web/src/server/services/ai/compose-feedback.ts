@@ -1,9 +1,11 @@
-import { env } from "../../lib/env";
+import { aiConfigured, getAIModel } from "./provider";
 
-// Vercel AI Gateway via the AI SDK v6. Uses the plain "provider/model" string
-// convention so the gateway can route + fail over between providers.
+// AI SDK v6 streamText with whichever provider provider.ts resolves to.
+// Default: Google Gemini 2.0 Flash (free tier, 15 RPM / 1,500 RPD). Falls
+// back to the Vercel AI Gateway if GOOGLE_GENERATIVE_AI_API_KEY isn't set
+// but AI_GATEWAY_API_KEY is.
 //
-// The route returns a streaming text response. If AI_GATEWAY_API_KEY isn't
+// The route returns a streaming text response. If no AI provider is
 // configured, the route short-circuits with a 503 and the composer falls
 // back to the local pre-vetter only — never blocks the user.
 
@@ -26,13 +28,14 @@ rephrase. Never repeat the user's full draft back.
 `.trim();
 
 export async function streamComposeFeedback(draft: { what: string; where: string; when: string }) {
-  if (!env.AI_GATEWAY_API_KEY) {
+  if (!aiConfigured()) {
     return { configured: false as const };
   }
+  const model = await getAIModel();
+  if (!model) return { configured: false as const };
   const { streamText } = await import("ai");
   const result = await streamText({
-    // Vercel AI Gateway routes "anthropic/claude-haiku-4-5" without provider-specific imports.
-    model: "anthropic/claude-haiku-4-5",
+    model: model as Parameters<typeof streamText>[0]["model"],
     system: SYSTEM_PROMPT,
     prompt:
       `What: ${draft.what}\n` +

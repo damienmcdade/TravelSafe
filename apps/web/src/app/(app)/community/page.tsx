@@ -265,7 +265,7 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
           </div>
         )}
         {aiStatus === "disabled" && (
-          <p className="text-xs text-slate2-500">AI coaching is off — set <code>AI_GATEWAY_API_KEY</code> on Vercel to enable.</p>
+          <p className="text-xs text-slate2-500">AI coaching is off — set <code>GOOGLE_GENERATIVE_AI_API_KEY</code> on Vercel (free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="underline">aistudio.google.com</a>).</p>
         )}
         <button type="submit" disabled={busy} className="btn-primary disabled:opacity-50">
           {busy ? "Posting…" : "Post anonymously"}

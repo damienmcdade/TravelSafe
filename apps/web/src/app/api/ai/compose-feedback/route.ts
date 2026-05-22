@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   const draft = Body.parse(await req.json());
   const result = await streamComposeFeedback(draft);
   if (!result.configured) {
-    return NextResponse.json({ error: "ai_disabled", message: "AI_GATEWAY_API_KEY not configured" }, { status: 503 });
+    return NextResponse.json({ error: "ai_disabled", message: "No AI provider configured. Set GOOGLE_GENERATIVE_AI_API_KEY (free at aistudio.google.com)." }, { status: 503 });
   }
   const enc = new TextEncoder();
   const stream = new ReadableStream({

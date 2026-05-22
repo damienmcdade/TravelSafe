@@ -40,7 +40,14 @@ const Env = z.object({
   CHECKIN_GRACE_SECONDS: z.coerce.number().default(120),
   CRON_SECRET: z.string().optional(), // optional shared secret for /api/cron/* protection
 
-  // Vercel AI Gateway
+  // AI provider — Google Gemini (free tier).
+  // Get a key at https://aistudio.google.com/app/apikey and set
+  // GOOGLE_GENERATIVE_AI_API_KEY in your Vercel env. The free tier covers
+  // 15 RPM / 1,500 requests/day per project on gemini-2.0-flash, which is
+  // plenty for TravelSafe's assistant + per-neighborhood AI tips at
+  // production traffic. The legacy AI_GATEWAY_API_KEY var is still read
+  // as a fallback so existing Vercel AI Gateway setups keep working.
+  GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   AI_GATEWAY_API_KEY: z.string().optional(),
 
   // Cloudflare Worker that proxies data.boston.gov for the Boston adapter.

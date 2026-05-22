@@ -4,13 +4,6 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
-    "start": "next start -p 3000",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
-  },
-  "scripts": {
-    "dev": "next dev -p 3000",
     "build": "prisma generate --schema=../../packages/db/prisma/schema.prisma && next build",
     "start": "next start -p 3000",
     "lint": "next lint",
@@ -18,6 +11,7 @@
     "postinstall": "prisma generate --schema=../../packages/db/prisma/schema.prisma"
   },
   "dependencies": {
+    "@ai-sdk/google": "^3.0.79",
     "@prisma/client": "^5.22.0",
     "ai": "^6.0.0",
     "bcryptjs": "^2.4.3",

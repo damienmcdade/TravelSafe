@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { env } from "../../lib/env";
+import { aiConfigured, getAIModel } from "../ai/provider";
 import { getCrimeMix } from "../crime-data/mix";
 import { cityForArea } from "../crime-data/cities";
 
@@ -104,7 +104,7 @@ Hard rules:
 `.trim();
 
 export async function generateAITipsForArea(area: string): Promise<AITip[]> {
-  if (!env.AI_GATEWAY_API_KEY) return [];
+  if (!aiConfigured()) return [];
   const cached = cache.get(area);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.tips;
 
@@ -135,9 +135,11 @@ Generate the JSON array now.
 
   let raw = "";
   try {
+    const model = await getAIModel();
+    if (!model) return [];
     const { generateText } = await import("ai");
     const res = await generateText({
-      model: "anthropic/claude-haiku-4-5",
+      model: model as Parameters<typeof generateText>[0]["model"],
       system: SYSTEM_PROMPT,
       prompt: userPrompt,
       temperature: 0.4,

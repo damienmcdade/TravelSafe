@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { env } from "../../lib/env";
+import { aiConfigured, getAIModel } from "./provider";
 import { crimeData } from "../crime-data";
 import { CITIES, cityBySlug } from "../crime-data/cities";
 
@@ -162,9 +162,11 @@ async function compareCityToNational(slug: string) {
 // ---- streamText entry point -------------------------------------------------
 
 export async function streamAssistant(messages: Array<{ role: "user" | "assistant"; content: string }>) {
-  if (!env.AI_GATEWAY_API_KEY) {
+  if (!aiConfigured()) {
     return { configured: false as const };
   }
+  const model = await getAIModel();
+  if (!model) return { configured: false as const };
   const { streamText, tool } = await import("ai");
 
   const tools = {
@@ -202,7 +204,7 @@ export async function streamAssistant(messages: Array<{ role: "user" | "assistan
   };
 
   const result = await streamText({
-    model: "anthropic/claude-haiku-4-5",
+    model: model as Parameters<typeof streamText>[0]["model"],
     system: SYSTEM_PROMPT,
     messages: messages.map((m) => ({ role: m.role, content: m.content })),
     tools,
