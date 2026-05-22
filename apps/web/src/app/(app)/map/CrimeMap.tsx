@@ -91,8 +91,12 @@ function normName(s: string): string {
 /// "many incidents" reads even when the citywide max is dominated by a single
 /// outlier neighborhood. Floor lifted from 0.25 → 0.55 in March because
 /// users reported the previous palette read as washed-out.
-function fuseColor(breakdown: AreaBreakdown | null, maxCount: number): { fill: string; opacity: number; stroke: string } {
-  if (!breakdown || breakdown.incidentCount === 0) {
+function fuseColor(
+  breakdown: AreaBreakdown | null,
+  value: number,
+  maxValue: number,
+): { fill: string; opacity: number; stroke: string } {
+  if (!breakdown || breakdown.incidentCount === 0 || value <= 0) {
     return { fill: `rgb(${NO_DATA_RGB.join(",")})`, opacity: 0.22, stroke: "#94a3b8" };
   }
   const total = breakdown.byCategory.PERSONS + breakdown.byCategory.PROPERTY + breakdown.byCategory.SOCIETY || 1;
@@ -104,13 +108,63 @@ function fuseColor(breakdown: AreaBreakdown | null, maxCount: number): { fill: s
   const r = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[0]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[0]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[0]);
   const g = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[1]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[1]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[1]);
   const b = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[2]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[2]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[2]);
-  const ratio = Math.min(1, breakdown.incidentCount / Math.max(1, maxCount));
+  const ratio = Math.min(1, value / Math.max(1, maxValue));
   // Softer alpha curve: floor 0.42, ceiling 0.82 so even the busiest
   // neighborhood stays under full-saturation. cubic-root pulls midtones up
   // a hair so users see real differentiation between sleepy areas, instead
   // of every low-incident polygon looking identically faded.
   const opacity = 0.42 + Math.cbrt(ratio) * 0.40;
   return { fill: `rgb(${r},${g},${b})`, opacity, stroke: `rgb(${Math.max(0, r - 50)},${Math.max(0, g - 50)},${Math.max(0, b - 50)})` };
+}
+
+/// Compute approximate area in km² for every polygon in a city's
+/// GeoJSON. Equirectangular projection anchored on each polygon's mean
+/// latitude + shoelace formula — same logic as server/lib/polygon-areas.ts
+/// but inlined here so the map shading can render without a network
+/// round-trip. Accurate to within a few percent for neighborhood-scale
+/// polygons; that's enough for density-based ordering of polygons.
+function computePolygonAreasKm2(fc: FeatureCollection | null): Map<string, number> {
+  const out = new Map<string, number>();
+  if (!fc) return out;
+  for (const feat of fc.features) {
+    const name = (feat.properties as { name?: string } | null)?.name;
+    if (!name) continue;
+    let area = 0;
+    if (feat.geometry?.type === "Polygon") {
+      area = ringsAreaKm2((feat.geometry as { coordinates: number[][][] }).coordinates);
+    } else if (feat.geometry?.type === "MultiPolygon") {
+      for (const poly of (feat.geometry as { coordinates: number[][][][] }).coordinates) {
+        area += ringsAreaKm2(poly);
+      }
+    }
+    if (area > 0) out.set(name, area);
+  }
+  return out;
+}
+
+function ringsAreaKm2(rings: number[][][]): number {
+  let totalLat = 0, count = 0;
+  for (const ring of rings) for (const p of ring) { totalLat += p[1]; count++; }
+  if (count === 0) return 0;
+  const meanLat = totalLat / count;
+  const kmPerDegLat = 110.574;
+  const kmPerDegLon = 111.320 * Math.cos((meanLat * Math.PI) / 180);
+  let total = 0;
+  for (let r = 0; r < rings.length; r++) {
+    const ring = rings[r];
+    if (ring.length < 3) continue;
+    let sum = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const xi = ring[i][0] * kmPerDegLon;
+      const yi = ring[i][1] * kmPerDegLat;
+      const xj = ring[j][0] * kmPerDegLon;
+      const yj = ring[j][1] * kmPerDegLat;
+      sum += xj * yi - xi * yj;
+    }
+    const ringArea = Math.abs(sum) / 2;
+    total += r === 0 ? ringArea : -ringArea;
+  }
+  return Math.max(0, total);
 }
 
 /// Richer hover tooltip HTML. Bold name, large total, colored category
@@ -223,7 +277,40 @@ export default function CrimeMap() {
     return { polygonStats: stats, polygonSlugByName: slugByName };
   }, [polygons, areas, citywide, city.label]);
 
-  const maxCount = useMemo(() => Math.max(1, ...Array.from(polygonStats.values()).map((s) => s?.incidentCount ?? 0)), [polygonStats]);
+  // Polygon areas in km² for the density overlay. Computed once per
+  // polygon load via the same shoelace formula the server uses
+  // (lib/polygon-areas.ts) but inlined here so the map renders without
+  // a network round-trip. See computePolygonAreasKm2 below.
+  const polygonAreasKm2 = useMemo(() => computePolygonAreasKm2(polygons), [polygons]);
+
+  // ---- View mode: count vs density -----------------------------------------
+  // "count" shades polygons by raw incident count (the original mode).
+  // "density" shades by incidents per km², which better surfaces small
+  // high-activity neighborhoods whose absolute counts get out-shouted by
+  // sprawling-but-quieter districts. Uses the polygon areas computed
+  // client-side from the same GeoJSON the map already loaded.
+  const [mapMode, setMapMode] = useState<"count" | "density">("count");
+
+  // The "value" each polygon contributes for shading — count in count
+  // mode, count/km² in density mode. maxValue normalizes the gradient.
+  const polygonValues = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const [name, stats] of polygonStats) {
+      const count = stats?.incidentCount ?? 0;
+      if (mapMode === "density") {
+        const km2 = polygonAreasKm2.get(name) ?? 0;
+        m.set(name, km2 > 0 ? count / km2 : 0);
+      } else {
+        m.set(name, count);
+      }
+    }
+    return m;
+  }, [polygonStats, polygonAreasKm2, mapMode]);
+  const maxValue = useMemo(() => Math.max(1, ...Array.from(polygonValues.values())), [polygonValues]);
+  // Back-compat alias for the rest of the file that still reads
+  // `maxCount` — equivalent under count mode and produces the same
+  // visual scale in density mode (values are already normalized).
+  const maxCount = maxValue;
 
   // ---- Selection (autocomplete + zoom + drill-down) ------------------------
   const [query, setQuery] = useState("");
@@ -292,7 +379,8 @@ export default function CrimeMap() {
     if (!feat) return {};
     const name = (feat.properties as { name?: string } | null)?.name ?? "";
     const stats = polygonStats.get(name) ?? null;
-    const { fill, opacity, stroke } = fuseColor(stats, maxCount);
+    const value = polygonValues.get(name) ?? 0;
+    const { fill, opacity, stroke } = fuseColor(stats, value, maxValue);
     const isSel = name === selectedName;
     return {
       fillColor: fill,
@@ -334,6 +422,30 @@ export default function CrimeMap() {
         {polyError && (
           <div className="absolute top-3 left-3 right-3 z-[400] surface-muted px-3 py-1.5 text-xs text-coral-700">
             {polyError}
+          </div>
+        )}
+
+        {/* Count vs density toggle — only render when we have polygons AND
+            polygon-area data available (otherwise density mode would
+            produce zeros). Sits over the top-left of the map. */}
+        {polygons && polygonAreasKm2.size > 0 && (
+          <div className="absolute top-3 left-3 z-[400] surface-muted px-1 py-1 text-xs flex items-center gap-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setMapMode("count")}
+              className={`px-2 py-1 rounded transition-colors ${mapMode === "count" ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-100"}`}
+              title="Shade polygons by raw incident count"
+            >
+              By count
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapMode("density")}
+              className={`px-2 py-1 rounded transition-colors ${mapMode === "density" ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-100"}`}
+              title="Shade polygons by incidents per square kilometer"
+            >
+              By density (per km²)
+            </button>
           </div>
         )}
         <MapContainer center={[city.centroid.lat, city.centroid.lng]} zoom={11} scrollWheelZoom className="h-[62vh] min-h-[460px] max-h-[720px] w-full">
@@ -610,7 +722,7 @@ function CityRanking({ polygons, polygonStats, maxCount, totalIncidents, cityLab
       <ol className="mt-3 divide-y divide-sand-200 max-h-[420px] overflow-auto pr-1">
         {ranked.slice(0, 25).map(({ name, stats }) => {
           const count = stats?.incidentCount ?? 0;
-          const { fill, opacity } = fuseColor(stats, maxCount);
+          const { fill, opacity } = fuseColor(stats, count, maxCount);
           const pct = (count / maxCount) * 100;
           return (
             <li key={name} className="py-2.5">
