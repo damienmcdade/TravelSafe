@@ -1,15 +1,20 @@
 import "server-only";
 import { CrimeCategory } from "@prisma/client";
+import { env } from "../../../lib/env";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
 
 // City of Boston — Crime Incident Reports (BPD).
-// CKAN datastore at data.boston.gov, resource_id b973d8cb-..., 260k+ rows
-// going back to August 2015. We query via the datastore_search_sql endpoint
-// with ORDER BY OCCURRED_ON_DATE DESC + LIMIT so we always get the freshest
-// slice. Different protocol from Socrata or ArcGIS; pagination is LIMIT/OFFSET
-// inside the SQL, not URL parameters.
-// Doc: https://data.boston.gov/dataset/crime-incident-reports-august-2015-to-date-source-new-system
+//
+// data.boston.gov returns 0 records when called directly from Vercel's IP
+// range for any non-trivial response (the block is at Boston's CDN edge —
+// proven by limit=2 working everywhere, limit≥500 failing only from Vercel).
+// To bypass it we deploy a tiny Cloudflare Worker (see /workers/boston-proxy)
+// that forwards the same CKAN query from Cloudflare's edge. When
+// BOSTON_PROXY_URL is set we route through it; otherwise fall back to direct
+// (which works for any non-Vercel runtime).
+//
+// CKAN doc: https://data.boston.gov/dataset/crime-incident-reports-august-2015-to-date-source-new-system
 
 const RESOURCE_ID = "b973d8cb-eeb2-4e7e-99da-c92938efc9c0";
 // datastore_search (NOT datastore_search_sql) — the SQL endpoint times out
@@ -92,9 +97,21 @@ const PROVENANCE: DataProvenance = {
     "BPD's 12 districts — not live, not street-level. TravelSafe does not track individuals.",
 };
 
+function endpointBase(): string {
+  // Route through the Cloudflare Worker proxy if configured. The Worker's
+  // /datastore_search endpoint accepts the same CKAN query params we'd send
+  // to data.boston.gov, so the only difference here is the URL host.
+  const proxy = env.BOSTON_PROXY_URL;
+  if (proxy) {
+    const trimmed = proxy.replace(/\/+$/, "");
+    return `${trimmed}/datastore_search`;
+  }
+  return SEARCH_BASE;
+}
+
 async function fetchPage(offset: number): Promise<BostonRow[]> {
   const sort = encodeURIComponent("OCCURRED_ON_DATE desc");
-  const u = `${SEARCH_BASE}?resource_id=${RESOURCE_ID}&limit=${PAGE_SIZE}&offset=${offset}&sort=${sort}`;
+  const u = `${endpointBase()}?resource_id=${RESOURCE_ID}&limit=${PAGE_SIZE}&offset=${offset}&sort=${sort}`;
   const res = await fetch(u, {
     headers: {
       Accept: "application/json",

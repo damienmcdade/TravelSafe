@@ -1,0 +1,11 @@
+name = "travelsafe-boston-proxy"
+main = "src/worker.ts"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# After `wrangler deploy`, the Worker is reachable at:
+#   https://travelsafe-boston-proxy.<your-cf-subdomain>.workers.dev
+#
+# Optional: bind a custom domain (e.g. boston-proxy.travelsafe.app) under
+# `routes` if you want a cleaner URL. Not required for TravelSafe — the
+# default workers.dev URL works fine.

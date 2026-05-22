@@ -43,6 +43,14 @@ const Env = z.object({
   // Vercel AI Gateway
   AI_GATEWAY_API_KEY: z.string().optional(),
 
+  // Cloudflare Worker that proxies data.boston.gov for the Boston adapter.
+  // data.boston.gov rejects requests from Vercel's IP range for any non-
+  // trivial response size; the Worker (deployed from /workers/boston-proxy)
+  // sits on Cloudflare's edge and forwards transparently. When BOSTON_PROXY_URL
+  // is set, the Boston adapter routes through it; otherwise it falls back to
+  // a direct call (currently 0-record from Vercel).
+  BOSTON_PROXY_URL: z.string().url().optional(),
+
   // Moderator allowlist (comma-separated emails)
   MODERATOR_EMAILS: z.string().default(""),
 });
