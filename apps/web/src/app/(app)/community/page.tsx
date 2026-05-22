@@ -12,6 +12,7 @@ import { CategoryBreakdown } from "@/components/CategoryBreakdown";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
+import { CommunitySignalsPanel } from "@/components/CommunitySignalsPanel";
 import { CityBanner } from "@/components/CitySelector";
 import { useCity } from "@/lib/use-city";
 
@@ -52,8 +53,12 @@ export default function CommunityPage() {
   useEffect(() => { setArea(null); }, [city.slug]);
   const areaSlug = area?.slug ?? city.defaultArea;
 
+  // Always pass `area=` — otherwise the DB query drops the filter and returns
+  // every Verified post across every city (which would surface San Diego
+  // posts in a Chicago view, etc.). `areaSlug` falls back to the city's
+  // default area when no specific neighborhood is selected.
   const { data: posts, reload } = useApi<PostListItem[]>(
-    area ? `/community/posts?area=${areaSlug}` : "/community/posts",
+    `/community/posts?area=${areaSlug}`,
     [areaSlug],
   );
   const { data: stats } = useApi<AreaStats | null>(
@@ -117,6 +122,9 @@ export default function CommunityPage() {
 
           {/* Anonymous composer directly under the feed. */}
           <PostComposer areaSlug={areaSlug} onPosted={reload} />
+
+          {/* Per-neighborhood community signals from the city's subreddit. */}
+          <CommunitySignalsPanel areaSlug={areaSlug} />
 
           {/* Supporting context below the social surface. */}
           <AreaInsightsPanel areaQueryString={area ? `neighborhood=${areaSlug}` : `jurisdiction=${city.defaultArea}`} />

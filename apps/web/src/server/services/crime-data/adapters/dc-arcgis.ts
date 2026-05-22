@@ -2,16 +2,20 @@ import "server-only";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import dcGeo from "../../../data/dc-neighborhoods.json";
 
 // Washington DC — MPD Crime Incidents.
-// ArcGIS MapServer at maps2.dcgis.dc.gov. Layer 39 is the rolling "last 30
-// days" feed; we use it instead of the calendar-year layers so we never have
-// to stitch across year boundaries and the data is always fresh.
+// ArcGIS MapServer at maps2.dcgis.dc.gov, layer 39 (last 30 days). We
+// geocode each incident's LATITUDE/LONGITUDE into one of DC's 51 official
+// named neighborhoods (Health Planning Neighborhoods polygon set) via
+// point-in-polygon at intake. The MPD-published NEIGHBORHOOD_CLUSTER
+// field bundled multiple neighborhoods together — users complained they
+// couldn't tell Adams Morgan from Kalorama Heights — so we ignore it now.
 // Doc: https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/MPD/MapServer/39
 
 const BASE = "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/MPD/MapServer/39/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                // 10,000 rows ceiling (30-day window usually 2-3k anyway)
+const PAGES = 5;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
@@ -19,8 +23,7 @@ interface DcRow {
   CCN?: string;
   OFFENSE?: string;
   METHOD?: string;
-  START_DATE?: number;             // epoch ms
-  NEIGHBORHOOD_CLUSTER?: string;   // "Cluster 6"
+  START_DATE?: number;
   WARD?: string;
   DISTRICT?: string;
   LATITUDE?: number;
@@ -31,8 +34,7 @@ const PERSONS_OFFENSES = new Set([
   "HOMICIDE", "ASSAULT W/DANGEROUS WEAPON", "ROBBERY", "SEX ABUSE",
 ]);
 const PROPERTY_OFFENSES = new Set([
-  "THEFT/OTHER", "THEFT F/AUTO", "MOTOR VEHICLE THEFT",
-  "BURGLARY", "ARSON",
+  "THEFT/OTHER", "THEFT F/AUTO", "MOTOR VEHICLE THEFT", "BURGLARY", "ARSON",
 ]);
 function mapToNibrs(row: DcRow): CrimeCategory {
   const o = (row.OFFENSE ?? "").trim().toUpperCase();
@@ -41,69 +43,55 @@ function mapToNibrs(row: DcRow): CrimeCategory {
   return CrimeCategory.SOCIETY;
 }
 
-// DC's 46 Neighborhood Clusters with their underlying named neighborhoods.
-// Sourced verbatim from opendata.dc.gov DCGIS Neighborhood Clusters dataset
-// (NBH_NAMES property). "Cluster 6" alone reads as gibberish to users, so
-// every UI surface displays the cluster number alongside its neighborhood
-// list. The polygon file under /public/geo/washington-dc.geojson carries the
-// same composed strings as its `name` property.
-const CLUSTER_NEIGHBORHOODS: Record<string, string> = {
-  "Cluster 1":  "Kalorama Heights, Adams Morgan, Lanier Heights",
-  "Cluster 2":  "Columbia Heights, Mt. Pleasant, Pleasant Plains, Park View",
-  "Cluster 3":  "Howard University, Le Droit Park, Cardozo/Shaw",
-  "Cluster 4":  "Georgetown, Burleith/Hillandale",
-  "Cluster 5":  "West End, Foggy Bottom, GWU",
-  "Cluster 6":  "Dupont Circle, Connecticut Avenue/K Street",
-  "Cluster 7":  "Shaw, Logan Circle",
-  "Cluster 8":  "Downtown, Chinatown, Penn Quarters, Mount Vernon Square, North Capitol Street",
-  "Cluster 9":  "Southwest Employment Area, Southwest/Waterfront, Fort McNair, Buzzard Point",
-  "Cluster 10": "Hawthorne, Barnaby Woods, Chevy Chase",
-  "Cluster 11": "Friendship Heights, American University Park, Tenleytown",
-  "Cluster 12": "North Cleveland Park, Forest Hills, Van Ness",
-  "Cluster 13": "Spring Valley, Palisades, Wesley Heights, Foxhall Crescent, Foxhall Village, Georgetown Reservoir",
-  "Cluster 14": "Cathedral Heights, McLean Gardens, Glover Park",
-  "Cluster 15": "Cleveland Park, Woodley Park, Massachusetts Avenue Heights, Woodland-Normanstone Terrace",
-  "Cluster 16": "Colonial Village, Shepherd Park, North Portal Estates",
-  "Cluster 17": "Takoma, Brightwood, Manor Park",
-  "Cluster 18": "Brightwood Park, Crestwood, Petworth",
-  "Cluster 19": "Lamont Riggs, Queens Chapel, Fort Totten, Pleasant Hill",
-  "Cluster 20": "North Michigan Park, Michigan Park, University Heights",
-  "Cluster 21": "Edgewood, Bloomingdale, Truxton Circle, Eckington",
-  "Cluster 22": "Brookland, Brentwood, Langdon",
-  "Cluster 23": "Ivy City, Arboretum, Trinidad, Carver Langston",
-  "Cluster 24": "Woodridge, Fort Lincoln, Gateway",
-  "Cluster 25": "Union Station, Stanton Park, Kingman Park",
-  "Cluster 26": "Capitol Hill, Lincoln Park",
-  "Cluster 27": "Near Southeast, Navy Yard",
-  "Cluster 28": "Historic Anacostia",
-  "Cluster 29": "Eastland Gardens, Kenilworth",
-  "Cluster 30": "Mayfair, Hillbrook, Mahaning Heights",
-  "Cluster 31": "Deanwood, Burrville, Grant Park, Lincoln Heights, Fairmont Heights",
-  "Cluster 32": "River Terrace, Benning, Greenway, Dupont Park",
-  "Cluster 33": "Capitol View, Marshall Heights, Benning Heights",
-  "Cluster 34": "Twining, Fairlawn, Randle Highlands, Penn Branch, Fort Davis Park, Fort Dupont",
-  "Cluster 35": "Fairfax Village, Naylor Gardens, Hillcrest, Summit Park",
-  "Cluster 36": "Woodland/Fort Stanton, Garfield Heights, Knox Hill",
-  "Cluster 37": "Sheridan, Barry Farm, Buena Vista",
-  "Cluster 38": "Douglas, Shipley Terrace",
-  "Cluster 39": "Congress Heights, Bellevue, Washington Highlands",
-  "Cluster 40": "Walter Reed",
-  "Cluster 41": "Rock Creek Park",
-  "Cluster 42": "Observatory Circle",
-  "Cluster 43": "Saint Elizabeths",
-  "Cluster 44": "Joint Base Anacostia-Bolling",
-  "Cluster 45": "National Mall, Potomac River",
-  "Cluster 46": "Arboretum, Anacostia River",
-};
+// ---- Point-in-polygon geocoding ---------------------------------------------
 
-/// "Cluster 6" → "Cluster 6: Dupont Circle, Connecticut Avenue/K Street".
-/// Falls back to the bare cluster ID if the number is unknown.
-function enrich(cluster: string | undefined): string {
-  if (!cluster) return "Unknown";
-  const tag = cluster.trim();
-  const nbh = CLUSTER_NEIGHBORHOODS[tag];
-  return nbh ? `${tag}: ${nbh}` : tag;
+interface DCPolygon { name: string; geometry: { type: "Polygon" | "MultiPolygon"; coordinates: number[][][] | number[][][][] } }
+const POLYS = (dcGeo as { polygons: DCPolygon[] }).polygons;
+
+// Precompute axis-aligned bounding boxes per polygon for fast rejection.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = POLYS.map((p) => {
+  const allRings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of allRings) {
+    for (const [x, y] of ring) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings: allRings };
+});
+
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1];
+    const xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
 }
+
+/// Returns the DC neighborhood name containing (lng, lat), or null if no
+/// polygon matches. Uses bbox prefilter so 99% of polygons are rejected
+/// before the slower ring test runs.
+function geocodeDC(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    // Point passes bbox — run real ring test. For MultiPolygon-derived
+    // ring lists, a point inside an odd number of rings is inside.
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
+}
+
+// ---- adapter ----------------------------------------------------------------
 
 const PROVENANCE: DataProvenance = {
   source: "DC MPD Crime Incidents — Last 30 Days (Open Data DC, ArcGIS MapServer)",
@@ -111,15 +99,15 @@ const PROVENANCE: DataProvenance = {
   recency: "Refreshed daily by the Metropolitan Police Department",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the DC Metropolitan Police Department and " +
-    "aggregated to DC's 46 Neighborhood Clusters — not live, not street-level. " +
-    "TravelSafe does not track individuals.",
+    "Incidents are reported by the DC Metropolitan Police Department, with neighborhood " +
+    "assigned by point-in-polygon geocoding against DC's official Health Planning " +
+    "Neighborhood polygons. Not live, not street-level. TravelSafe does not track individuals.",
 };
 
 async function fetchPage(offset: number): Promise<DcRow[]> {
   const url = new URL(BASE);
   url.searchParams.set("where", "1=1");
-  url.searchParams.set("outFields", "CCN,OFFENSE,METHOD,START_DATE,NEIGHBORHOOD_CLUSTER,WARD,DISTRICT,LATITUDE,LONGITUDE");
+  url.searchParams.set("outFields", "CCN,OFFENSE,METHOD,START_DATE,WARD,DISTRICT,LATITUDE,LONGITUDE");
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("orderByFields", "START_DATE DESC");
   url.searchParams.set("resultOffset", String(offset));
@@ -141,9 +129,17 @@ async function fetchDC(): Promise<Incident[]> {
   return rows.map((r, i) => {
     const lat = r.LATITUDE;
     const lon = r.LONGITUDE;
+    // Point-in-polygon geocode every row that has coords. Unmatched rows
+    // fall back to the ward number rather than an unhelpful "Unknown".
+    let area = "Unknown";
+    if (typeof lat === "number" && typeof lon === "number" && lat !== 0 && lon !== 0) {
+      area = geocodeDC(lon, lat) ?? (r.WARD ? `Ward ${r.WARD}` : "Unknown");
+    } else if (r.WARD) {
+      area = `Ward ${r.WARD}`;
+    }
     return {
       id: `dc-${r.CCN ?? i}`,
-      area: enrich(r.NEIGHBORHOOD_CLUSTER),
+      area,
       occurredAt: r.START_DATE ? new Date(r.START_DATE).toISOString() : new Date(0).toISOString(),
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: r.OFFENSE?.trim() || "Unknown",
@@ -180,32 +176,21 @@ export async function getDiscoveredAreasDC(): Promise<KnownArea[]> {
   }
   return Array.from(agg.entries())
     .filter(([, e]) => e.count >= 3)
-    .map(([name, e]) => {
-      // Cluster number drives the slug for compactness.
-      const clusterTag = name.split(":")[0].trim().replace(/\s+/g, "-").toLowerCase(); // "Cluster 6" → "cluster-6"
-      return {
-        slug: `dc-${clusterTag}`,
-        label: name,
-        jurisdiction: "Washington",
-        centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
-      };
-    })
-    .sort((a, b) => {
-      // Sort by cluster number, not alpha — so "Cluster 2" < "Cluster 10".
-      const na = parseInt(a.label.replace(/\D+/, ""), 10) || 999;
-      const nb = parseInt(b.label.replace(/\D+/, ""), 10) || 999;
-      return na - nb;
-    });
+    .map(([name, e]) => ({
+      slug: `dc-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+      label: name,
+      jurisdiction: "Washington",
+      centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function labelForDCSlug(slug: string, rows: Incident[]): string | null {
   const s = slug.toLowerCase();
   const want = s.startsWith("dc-") ? s.slice(3) : s;
-  // Compact cluster tag like "cluster-6" → "Cluster 6"
-  const wantTag = want.replace(/-/g, " ").trim();
   for (const r of rows) {
-    const headTag = r.area.split(":")[0].trim().toLowerCase();
-    if (headTag === wantTag) return r.area;
+    const candidate = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (candidate === want) return r.area;
   }
   return null;
 }
