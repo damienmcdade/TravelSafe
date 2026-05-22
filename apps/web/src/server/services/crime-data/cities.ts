@@ -9,6 +9,7 @@ import { seattleAdapter, getDiscoveredAreasSeattle } from "./adapters/seattle-so
 import { nypdAdapter, getDiscoveredAreasNYC } from "./adapters/nypd-socrata";
 import { denverAdapter, getDiscoveredAreasDenver } from "./adapters/denver-arcgis";
 import { detroitAdapter, getDiscoveredAreasDetroit } from "./adapters/detroit-arcgis";
+import { dcAdapter, getDiscoveredAreasDC } from "./adapters/dc-arcgis";
 
 // City registry.
 //
@@ -85,6 +86,13 @@ export const CITIES: CityEntry[] = [
     adapter: detroitAdapter,
     discover: getDiscoveredAreasDetroit,
   },
+  {
+    slug: "washington-dc",
+    label: "Washington",
+    bbox: { south: 38.79, west: -77.12, north: 38.99, east: -76.91 },
+    adapter: dcAdapter,
+    discover: getDiscoveredAreasDC,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -106,6 +114,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("ny-")  || slug === "new-york")      return CITIES[5];
   if (slug.startsWith("den-") || slug === "denver")        return CITIES[6];
   if (slug.startsWith("det-") || slug === "detroit")       return CITIES[7];
+  if (slug.startsWith("dc-")  || slug === "washington-dc") return CITIES[8];
   return CITIES[0];
 }
 

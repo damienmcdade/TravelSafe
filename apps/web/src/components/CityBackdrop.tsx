@@ -90,6 +90,16 @@ const PHOTOS: Record<string, string[]> = {
     // Campus Martius — downtown plaza framed by surrounding skyscrapers
     "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Campus_Martius%2C_Detroit%2C_MI.jpg/1920px-Campus_Martius%2C_Detroit%2C_MI.jpg",
   ],
+  "washington-dc": [
+    // Capitol Hill Historic District — dense urban row houses + Capitol view
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/DC_Capitol_Historic_District.jpg/1920px-DC_Capitol_Historic_District.jpg",
+    // Washington DC Chinatown gate + Penn Quarter buildings (October 2016)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Washington_DC_Chinatown_-_a_-_Oct_2016.jpg/1920px-Washington_DC_Chinatown_-_a_-_Oct_2016.jpg",
+    // Georgetown — C&O Canal with historic urban frontage
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/USA-Georgetown_C%26O_Canal.jpg/1920px-USA-Georgetown_C%26O_Canal.jpg",
+    // Union Station — urban transit hub + Beaux-Arts architecture
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Union_Station_Washington_DC.jpg/1920px-Union_Station_Washington_DC.jpg",
+  ],
 };
 
 const ROTATE_MS = 5 * 60 * 1000;
