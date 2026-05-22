@@ -99,7 +99,8 @@ export async function getCommunitySignals(areaSlug: string): Promise<{ source: s
     const res = await fetch(url, {
       headers: {
         Accept: "application/json",
-        "User-Agent": "TravelSafe/0.1 (community signals; https://github.com/damienmcdade/TravelSafe)",
+        // Reddit gets pickier about UAs over time; use a browser-shaped one.
+        "User-Agent": "Mozilla/5.0 (compatible; TravelSafe/0.1; +https://github.com/damienmcdade/TravelSafe)",
       },
     });
     if (!res.ok) throw new Error(`Reddit ${res.status}`);
@@ -122,7 +123,50 @@ export async function getCommunitySignals(areaSlug: string): Promise<{ source: s
       }));
   } catch (err) {
     console.warn("[community-signals] reddit fetch failed:", (err as Error).message);
-    return { source: `Reddit · r/${sub}`, signals: cached?.signals ?? [] };
+  }
+
+  // Reddit blocks Vercel's IP range (same pattern we saw with data.boston.gov)
+  // — falls through with 0 signals. Fall back to Google News headlines for
+  // the same neighborhood query so users always see something community-
+  // shaped. The news fallback is already proven reliable from Vercel.
+  if (signals.length === 0) {
+    try {
+      const newsUrl = new URL("https://news.google.com/rss/search");
+      newsUrl.searchParams.set("q", `${q} ${city.label} when:30d`);
+      newsUrl.searchParams.set("hl", "en-US");
+      newsUrl.searchParams.set("gl", "US");
+      newsUrl.searchParams.set("ceid", "US:en");
+      const res = await fetch(newsUrl, { headers: { Accept: "application/rss+xml", "User-Agent": "TravelSafe/0.1" } });
+      if (res.ok) {
+        const xml = await res.text();
+        const items = xml.split(/<item>/i).slice(1, SIGNAL_LIMIT + 1);
+        for (const raw of items) {
+          const close = raw.indexOf("</item>");
+          const block = close >= 0 ? raw.slice(0, close) : raw;
+          const get = (tag: string) => block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "i"))?.[1] ?? "";
+          const title = get("title").replace(/<[^>]+>/g, "").trim();
+          const link = get("link").replace(/<[^>]+>/g, "").trim();
+          const pub = get("pubDate");
+          const source = get("source") || (link ? new URL(link).hostname.replace(/^www\./, "") : "Google News");
+          if (!title || !link) continue;
+          signals.push({
+            id: `news-${signals.length}`,
+            title,
+            excerpt: "",
+            url: link,
+            subreddit: source,
+            postedAt: pub ? new Date(pub).toISOString() : new Date().toISOString(),
+            score: 0,
+            comments: 0,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("[community-signals] news fallback failed:", (err as Error).message);
+    }
+    const label = signals.length > 0 ? `Google News · ${city.label} · ${q}` : `Reddit · r/${sub}`;
+    cache.set(cacheKey, { fetchedAt: Date.now(), signals });
+    return { source: label, signals };
   }
 
   cache.set(cacheKey, { fetchedAt: Date.now(), signals });
