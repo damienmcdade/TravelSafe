@@ -180,6 +180,16 @@ const PHOTOS: Record<string, string[]> = {
     // Downtown skyline from Lake Cliff Park
     "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Dallas_downtown_skyline_seen_from_Lake_Cliff.jpg/1920px-Dallas_downtown_skyline_seen_from_Lake_Cliff.jpg",
   ],
+  "charlotte": [
+    // Uptown Charlotte aerial
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Uptown_Charlotte_2018_taking_by_DJI_Phantom_4_pro.jpg/1920px-Uptown_Charlotte_2018_taking_by_DJI_Phantom_4_pro.jpg",
+    // Bank of America Corporate Center — iconic downtown landmark
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Bank_of_America_Corporate_Center.jpg/1920px-Bank_of_America_Corporate_Center.jpg",
+    // Romare Bearden Park
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Romare_Bearden_Park_2.JPG/1920px-Romare_Bearden_Park_2.JPG",
+    // SouthPark aerial — south Charlotte district
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Southpark_aerial_Charlotte_NC.jpg/1920px-Southpark_aerial_Charlotte_NC.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

@@ -29,6 +29,7 @@ const SOURCES: Record<string, string> = {
   "baton-rouge":   "Baton Rouge Police Crime Incidents (City of Baton Rouge Open Data). NIBRS-classified per row by BRPD.",
   "cambridge":     "Cambridge Police Crime Reports (City of Cambridge Open Data), aggregated to CDD neighborhood.",
   "dallas":        "Dallas Police Incidents (City of Dallas Open Data), geocoded to named neighborhood. Demographic columns are excluded at request time.",
+  "charlotte":     "CMPD Incidents (City of Charlotte Open Data, ArcGIS MapServer), aggregated to CMPD patrol division.",
 };
 
 export default function MapPage() {
