@@ -28,6 +28,7 @@ const SOURCES: Record<string, string> = {
   "new-orleans":   "NOPD Calls for Service 2026 (City of New Orleans Open Data), geocoded to named neighborhood. Includes non-crime dispatches.",
   "baton-rouge":   "Baton Rouge Police Crime Incidents (City of Baton Rouge Open Data). NIBRS-classified per row by BRPD.",
   "cambridge":     "Cambridge Police Crime Reports (City of Cambridge Open Data), aggregated to CDD neighborhood.",
+  "dallas":        "Dallas Police Incidents (City of Dallas Open Data), geocoded to named neighborhood. Demographic columns are excluded at request time.",
 };
 
 export default function MapPage() {

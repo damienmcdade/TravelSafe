@@ -170,6 +170,16 @@ const PHOTOS: Record<string, string[]> = {
     // MIT Main Campus aerial — Killian Court & the Great Dome
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/MIT_Main_Campus_Aerial.jpg/1920px-MIT_Main_Campus_Aerial.jpg",
   ],
+  "dallas": [
+    // Downtown Dallas skyline from Reunion Tower
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/View_of_Dallas_from_Reunion_Tower_August_2015_05.jpg/1920px-View_of_Dallas_from_Reunion_Tower_August_2015_05.jpg",
+    // Klyde Warren Park with downtown skyline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Klyde_Warren_Park_and_Dallas%27_Skyline.jpg/1920px-Klyde_Warren_Park_and_Dallas%27_Skyline.jpg",
+    // Margaret Hunt Hill Bridge — Calatrava-designed landmark
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/The_Margaret_Hunt_Hill_Bridge.jpg/1920px-The_Margaret_Hunt_Hill_Bridge.jpg",
+    // Downtown skyline from Lake Cliff Park
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Dallas_downtown_skyline_seen_from_Lake_Cliff.jpg/1920px-Dallas_downtown_skyline_seen_from_Lake_Cliff.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting
