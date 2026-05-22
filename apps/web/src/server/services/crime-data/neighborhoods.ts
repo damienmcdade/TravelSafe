@@ -35,15 +35,21 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
   return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-/// Async — preferred. Pulls fresh discovered list from the SDPD CSV cache
+/// Async — preferred. Pulls fresh discovered list from every city adapter
 /// and merges in the small fallback so the legacy seven always resolve too.
+///
+/// IMPORTANT: discoveries run in PARALLEL. With 20 cities at ~2-3s of cold
+/// adapter fetch each, a sequential `for await` here would routinely exceed
+/// the 60s Vercel function timeout and return 504, breaking the Crime Map
+/// polygon coloring and the Personal Safety LocationSearch autocomplete
+/// (both subscribers of /api/geo/areas). Parallel fan-out keeps the cold
+/// call under ~5s for the entire 20-city set.
 export async function listKnownAreas(): Promise<KnownArea[]> {
   const { CITIES } = await import("./cities");
-  const all: KnownArea[] = [];
-  for (const c of CITIES) {
-    const discovered = await c.discover().catch(() => [] as KnownArea[]);
-    all.push(...discovered);
-  }
+  const results = await Promise.all(
+    CITIES.map((c) => c.discover().catch(() => [] as KnownArea[])),
+  );
+  const all = results.flat();
   lastDiscovered = all;
   const merged = new Map<string, KnownArea>();
   for (const a of FALLBACK_AREAS) merged.set(a.slug, a);

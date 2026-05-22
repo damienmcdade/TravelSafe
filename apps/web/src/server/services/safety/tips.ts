@@ -19,7 +19,12 @@ import { generateAITipsForArea, type AITip } from "./ai-tips";
 // offenses in their area, not a generic boilerplate set. The CA-legal
 // section stays curated because it cites verbatim statute and case law.
 
-export type CitySlug = "san-diego" | "los-angeles" | "san-francisco" | "chicago" | "seattle" | "new-york" | "denver" | "detroit" | "washington-dc" | "boston" | "philadelphia";
+export type CitySlug =
+  | "san-diego" | "los-angeles" | "san-francisco" | "oakland"
+  | "chicago" | "seattle" | "new-york" | "denver" | "detroit"
+  | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
+  | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
+  | "charlotte" | "nashville" | "minneapolis";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
 export interface SafetyTip {
@@ -34,19 +39,59 @@ export interface SafetyTip {
   cities?: CitySlug[];
 }
 
-// City-specific non-emergency contact numbers (verified against each department).
+// City-specific non-emergency contact numbers (each verified against the
+// department's own public-information page). Used by the safety tab to show
+// the right number for the user's selected city — falls back to the city
+// 311/411 line where the police department routes non-emergency intake
+// through the city service center.
 const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string }> = {
-  "san-diego":     { line: "619-531-2000", label: "SDPD non-emergency",  url: "https://www.sandiego.gov/police" },
-  "los-angeles":   { line: "877-275-5273", label: "LAPD non-emergency",  url: "https://www.lapdonline.org/" },
-  "san-francisco": { line: "415-553-0123", label: "SFPD non-emergency",  url: "https://www.sf.gov/departments/police-department" },
+  "san-diego":     { line: "619-531-2000", label: "SDPD non-emergency",   url: "https://www.sandiego.gov/police" },
+  "los-angeles":   { line: "877-275-5273", label: "LAPD non-emergency",   url: "https://www.lapdonline.org/" },
+  "san-francisco": { line: "415-553-0123", label: "SFPD non-emergency",   url: "https://www.sf.gov/departments/police-department" },
+  "oakland":       { line: "510-777-3333", label: "OPD non-emergency",    url: "https://www.oaklandca.gov/departments/police-department" },
   "chicago":       { line: "311",          label: "Chicago Police via 311", url: "https://www.chicago.gov/city/en/depts/cpd.html" },
-  "seattle":       { line: "206-625-5011", label: "SPD non-emergency",  url: "https://www.seattle.gov/police" },
-  "new-york":      { line: "311",          label: "NYPD via NYC 311",   url: "https://www.nyc.gov/site/nypd/index.page" },
-  "denver":        { line: "720-913-2000", label: "DPD non-emergency",  url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
-  "detroit":       { line: "313-267-4600", label: "DPD non-emergency",  url: "https://detroitmi.gov/departments/police-department" },
-  "washington-dc": { line: "311",          label: "MPD via DC 311",     url: "https://mpdc.dc.gov/" },
-  "boston":        { line: "617-343-4240", label: "BPD non-emergency",  url: "https://www.boston.gov/departments/police" },
-  "philadelphia":  { line: "311",          label: "PPD via Philly 311", url: "https://www.phila.gov/departments/philadelphia-police-department/" },
+  "seattle":       { line: "206-625-5011", label: "SPD non-emergency",    url: "https://www.seattle.gov/police" },
+  "new-york":      { line: "311",          label: "NYPD via NYC 311",     url: "https://www.nyc.gov/site/nypd/index.page" },
+  "denver":        { line: "720-913-2000", label: "DPD non-emergency",    url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
+  "detroit":       { line: "313-267-4600", label: "DPD non-emergency",    url: "https://detroitmi.gov/departments/police-department" },
+  "washington-dc": { line: "311",          label: "MPD via DC 311",       url: "https://mpdc.dc.gov/" },
+  "boston":        { line: "617-343-4240", label: "BPD non-emergency",    url: "https://www.boston.gov/departments/police" },
+  "philadelphia":  { line: "311",          label: "PPD via Philly 311",   url: "https://www.phila.gov/departments/philadelphia-police-department/" },
+  "cincinnati":    { line: "513-765-1212", label: "CPD non-emergency",    url: "https://www.cincinnati-oh.gov/police/" },
+  "new-orleans":   { line: "504-821-2222", label: "NOPD non-emergency",   url: "https://nola.gov/nopd/" },
+  "baton-rouge":   { line: "225-389-2000", label: "BRPD non-emergency",   url: "https://www.brla.gov/2128/Police-Department" },
+  "cambridge":     { line: "617-349-3300", label: "Cambridge PD non-emergency", url: "https://www.cambridgepolice.org/" },
+  "dallas":        { line: "214-744-4444", label: "DPD non-emergency",    url: "https://www.dallaspolice.net/" },
+  "charlotte":     { line: "704-336-7600", label: "CMPD non-emergency",   url: "https://charlottenc.gov/CMPD" },
+  "nashville":     { line: "615-862-8600", label: "MNPD non-emergency",   url: "https://www.nashville.gov/departments/police" },
+  "minneapolis":   { line: "612-348-2345", label: "MPD non-emergency",    url: "https://www.minneapolismn.gov/government/departments/police-department/" },
+};
+
+// City-specific official resource links. These get joined into one or more
+// prevention tips per city so users see guidance that names their own police
+// department and links to their city's actual crime-prevention / community
+// resources page — not the generic FBI page that every city otherwise gets.
+const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; programName?: string; programUrl?: string }> = {
+  "san-diego":     { name: "San Diego Police Department",    url: "https://www.sandiego.gov/police",         programName: "SDPD Crime Prevention",          programUrl: "https://www.sandiego.gov/police/services/prevention" },
+  "los-angeles":   { name: "Los Angeles Police Department",  url: "https://www.lapdonline.org/",             programName: "LAPD Crime Prevention",          programUrl: "https://www.lapdonline.org/crime-prevention/" },
+  "san-francisco": { name: "San Francisco Police Department", url: "https://www.sf.gov/departments/police-department", programName: "SFPD SafetyAwareness", programUrl: "https://www.sf.gov/topics/safety-awareness" },
+  "oakland":       { name: "Oakland Police Department",      url: "https://www.oaklandca.gov/departments/police-department", programName: "OPD Crime Prevention", programUrl: "https://www.oaklandca.gov/topics/crime-prevention" },
+  "chicago":       { name: "Chicago Police Department",      url: "https://www.chicago.gov/city/en/depts/cpd.html", programName: "CPD CAPS (Chicago Alternative Policing Strategy)", programUrl: "https://home.chicagopolice.org/community/caps/" },
+  "seattle":       { name: "Seattle Police Department",      url: "https://www.seattle.gov/police",          programName: "SPD Crime Prevention",           programUrl: "https://www.seattle.gov/police/crime-prevention" },
+  "new-york":      { name: "New York City Police Department", url: "https://www.nyc.gov/site/nypd/index.page", programName: "NYPD Crime Prevention",         programUrl: "https://www.nyc.gov/site/nypd/services/see-something-say-something/see-something-say-something.page" },
+  "denver":        { name: "Denver Police Department",       url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department", programName: "DPD Community Programs", programUrl: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department/Community" },
+  "detroit":       { name: "Detroit Police Department",      url: "https://detroitmi.gov/departments/police-department", programName: "DPD Project Green Light", programUrl: "https://detroitmi.gov/departments/police-department/project-green-light-detroit" },
+  "washington-dc": { name: "DC Metropolitan Police Department", url: "https://mpdc.dc.gov/",                  programName: "MPDC Crime Prevention",          programUrl: "https://mpdc.dc.gov/page/crime-prevention" },
+  "boston":        { name: "Boston Police Department",       url: "https://www.boston.gov/departments/police", programName: "BPD Crime Prevention",         programUrl: "https://www.boston.gov/departments/police/crime-prevention" },
+  "philadelphia":  { name: "Philadelphia Police Department", url: "https://www.phila.gov/departments/philadelphia-police-department/", programName: "PPD Public Safety", programUrl: "https://www.phila.gov/services/safety-emergencies-criminal-records/" },
+  "cincinnati":    { name: "Cincinnati Police Department",   url: "https://www.cincinnati-oh.gov/police/",   programName: "CPD Citizens On Patrol",         programUrl: "https://www.cincinnati-oh.gov/police/about-cpd/community-engagement/" },
+  "new-orleans":   { name: "New Orleans Police Department",  url: "https://nola.gov/nopd/",                  programName: "NOPD Community Engagement",      programUrl: "https://nola.gov/nopd/community-engagement/" },
+  "baton-rouge":   { name: "Baton Rouge Police Department",  url: "https://www.brla.gov/2128/Police-Department", programName: "BRPD Crime Prevention",      programUrl: "https://www.brla.gov/2130/Community-Services" },
+  "cambridge":     { name: "Cambridge Police Department",    url: "https://www.cambridgepolice.org/",        programName: "Cambridge PD Community Services", programUrl: "https://www.cambridgepolice.org/community/" },
+  "dallas":        { name: "Dallas Police Department",       url: "https://www.dallaspolice.net/",           programName: "DPD Community Affairs",          programUrl: "https://www.dallaspolice.net/about/community-affairs" },
+  "charlotte":     { name: "Charlotte-Mecklenburg Police",   url: "https://charlottenc.gov/CMPD",            programName: "CMPD Crime Prevention",          programUrl: "https://charlottenc.gov/CMPD/Pages/CommunityRelations/CrimePrevention.aspx" },
+  "nashville":     { name: "Metro Nashville Police Department", url: "https://www.nashville.gov/departments/police", programName: "MNPD Office of Community Engagement", programUrl: "https://www.nashville.gov/departments/police/office-professional-accountability/office-community-engagement" },
+  "minneapolis":   { name: "Minneapolis Police Department",  url: "https://www.minneapolismn.gov/government/departments/police-department/", programName: "MPD Crime Prevention", programUrl: "https://www.minneapolismn.gov/resident-services/public-safety/police-public-safety/crime-prevention/" },
 };
 
 const PREVENTION_TIPS: SafetyTip[] = [
@@ -233,7 +278,35 @@ export interface SafetyTipsResponse {
   disclaimer: string;
 }
 
-const CA_CITIES = new Set<CitySlug>(["san-diego", "los-angeles", "san-francisco"]);
+const CA_CITIES = new Set<CitySlug>(["san-diego", "los-angeles", "san-francisco", "oakland"]);
+
+/// Build one city-specific tip per request, pointing to that city's actual
+/// police department crime-prevention page rather than the generic FBI
+/// resource everyone else gets. We tailor the body to the area's dominant
+/// crime mix so a Detroit user with property-heavy stats sees property-
+/// focused phrasing and a Seattle user with society-heavy stats sees
+/// transit-focused phrasing.
+function buildCityResourceTip(citySlug: CitySlug, dominantCategory: "PERSONS" | "PROPERTY" | "SOCIETY" | null): MatchedTip {
+  const res = CITY_RESOURCES[citySlug];
+  const cityName = res.name.replace(/ Police Department$/, "").replace(/ Police$/, "").trim();
+  let body = `For local guidance specific to ${cityName}, your police department publishes a crime-prevention resource page with neighborhood-watch sign-ups, community-meeting schedules, and tips matched to recent ${cityName} crime trends. Use this as your first stop before reading the generic federal material in the cards below.`;
+  if (dominantCategory === "PROPERTY") {
+    body = `Property crime drives most reports in your area right now. The ${res.name} crime-prevention resource page lists ${cityName}-specific guidance — securing vehicles, package-theft countermeasures, residential burglary checklists — that is more relevant than the generic federal material in the cards below.`;
+  } else if (dominantCategory === "PERSONS") {
+    body = `Violent incidents drive a meaningful share of reports in your area. The ${res.name} publishes ${cityName}-specific personal-safety guidance (transit-station awareness, de-escalation, what to do if confronted) along with neighborhood-watch and victim-services contacts that the generic federal cards below do not include.`;
+  } else if (dominantCategory === "SOCIETY") {
+    body = `"Society" offenses (drug, weapons, public-order) drive much of the recent reporting here. The ${res.name} publishes ${cityName}-specific guidance on reporting these incidents to the right channel — police non-emergency line for ongoing activity, 911 for active emergencies — rather than confronting anyone yourself.`;
+  }
+  return {
+    id: `city-resource-${citySlug}`,
+    title: `${cityName} police: official prevention resources`,
+    body,
+    source: res.programName ?? res.name,
+    sourceUrl: res.programUrl ?? res.url,
+    group: "prevention",
+    relevance: 200, // pin to the top of prevention
+  };
+}
 
 /// Pick tips matched to the area's actual top offenses + dominant category.
 /// Prevention is AI-generated per-neighborhood (10 tips, grounded in real
@@ -306,9 +379,13 @@ export async function getSafetyTipsForArea(area: string): Promise<SafetyTipsResp
   // prevention-tagged tips when many are mapped to self-defense or civic.
   // Combining 3+ AI tips with curated fillers is still strictly better than
   // showing only the 8 generic curated tips.
-  const prevention = aiAsMatched.length >= 3
-    ? [...aiAsMatched, ...bucket("prevention", Math.max(0, 10 - aiAsMatched.length))].slice(0, 10)
+  // Always inject one city-specific tip at the top of prevention so users see
+  // guidance naming THEIR police department (not the generic FBI fallback).
+  const cityResourceTip = buildCityResourceTip(citySlug, dominantCategory);
+  const aiOrCurated = aiAsMatched.length >= 3
+    ? [...aiAsMatched, ...bucket("prevention", Math.max(0, 10 - aiAsMatched.length))]
     : bucket("prevention", 8);
+  const prevention = [cityResourceTip, ...aiOrCurated].slice(0, 10);
   const selfDefense = aiSelfDefense.length > 0
     ? [...aiSelfDefense, ...bucket("self-defense", 2)].slice(0, 4)
     : bucket("self-defense", 4);
@@ -320,10 +397,19 @@ export async function getSafetyTipsForArea(area: string): Promise<SafetyTipsResp
   if (CA_CITIES.has(citySlug)) sourceParts.push("California statute (Penal Code) and the California Attorney General");
   if (aiPrevention.length > 0) sourceParts.push("AI-tailored prevention guidance grounded in this area's most-reported offenses");
 
+  // Hard guarantee: every registered city now has an entry in NON_EMERGENCY,
+  // so this lookup never falls back. The `?? san-diego` was masking missing
+  // entries — the user saw SDPD's number on Baton Rouge, Cambridge, Dallas,
+  // Charlotte, Nashville, and Minneapolis because the type cast above is
+  // unsafe and the runtime lookup silently failed.
+  const nonEmergency = NON_EMERGENCY[citySlug];
+  if (!nonEmergency) {
+    console.warn(`[safety.tips] NON_EMERGENCY missing entry for city slug: ${citySlug}`);
+  }
   return {
     area,
     city: { slug: city.slug, label: city.label },
-    nonEmergency: NON_EMERGENCY[citySlug] ?? NON_EMERGENCY["san-diego"],
+    nonEmergency: nonEmergency ?? NON_EMERGENCY["san-diego"],
     basedOn: { dominantCategory, topOffense: mix?.topOffenses[0]?.offense },
     prevention,
     selfDefense,
