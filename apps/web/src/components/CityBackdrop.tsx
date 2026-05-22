@@ -210,6 +210,16 @@ const PHOTOS: Record<string, string[]> = {
     // Mill City Museum — historic mill ruins
     "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Minneapolis-Mill_City_Museum-20070514_%28cropped%29.jpg/1920px-Minneapolis-Mill_City_Museum-20070514_%28cropped%29.jpg",
   ],
+  "cleveland": [
+    // Cleveland skyline from Lakewood Park
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cleveland_skyline_from_Lakewood_Park%2C_January_2026.jpg/1920px-Cleveland_skyline_from_Lakewood_Park%2C_January_2026.jpg",
+    // Playhouse Square chandelier district
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Cleveland_Playhouse_Square_%2813917560487%29.jpg/1920px-Cleveland_Playhouse_Square_%2813917560487%29.jpg",
+    // Rock and Roll Hall of Fame
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Rock_and_Roll_Hall_of_Fame_-_Joy_of_Museums_1.jpg/1920px-Rock_and_Roll_Hall_of_Fame_-_Joy_of_Museums_1.jpg",
+    // Public Square Fountain
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Cleveland_Public_Square_Fountain_%2829744768716%29.jpg/1920px-Cleveland_Public_Square_Fountain_%2829744768716%29.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

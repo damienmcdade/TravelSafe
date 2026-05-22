@@ -24,7 +24,7 @@ export type CitySlug =
   | "chicago" | "seattle" | "new-york" | "denver" | "detroit"
   | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
-  | "charlotte" | "nashville" | "minneapolis";
+  | "charlotte" | "nashville" | "minneapolis" | "cleveland";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
 export interface SafetyTip {
@@ -65,6 +65,7 @@ const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url: string
   "charlotte":     { line: "704-336-7600", label: "CMPD non-emergency",   url: "https://charlottenc.gov/CMPD" },
   "nashville":     { line: "615-862-8600", label: "MNPD non-emergency",   url: "https://www.nashville.gov/departments/police" },
   "minneapolis":   { line: "612-348-2345", label: "MPD non-emergency",    url: "https://www.minneapolismn.gov/government/departments/police-department/" },
+  "cleveland":     { line: "216-621-1234", label: "CDP non-emergency",    url: "https://www.clevelandpolice.org/" },
 };
 
 // City-specific official resource links. These get joined into one or more
@@ -92,6 +93,7 @@ const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; programName?
   "charlotte":     { name: "Charlotte-Mecklenburg Police",   url: "https://charlottenc.gov/CMPD",            programName: "CMPD Crime Prevention",          programUrl: "https://charlottenc.gov/CMPD/Pages/CommunityRelations/CrimePrevention.aspx" },
   "nashville":     { name: "Metro Nashville Police Department", url: "https://www.nashville.gov/departments/police", programName: "MNPD Office of Community Engagement", programUrl: "https://www.nashville.gov/departments/police/office-professional-accountability/office-community-engagement" },
   "minneapolis":   { name: "Minneapolis Police Department",  url: "https://www.minneapolismn.gov/government/departments/police-department/", programName: "MPD Crime Prevention", programUrl: "https://www.minneapolismn.gov/resident-services/public-safety/police-public-safety/crime-prevention/" },
+  "cleveland":     { name: "Cleveland Division of Police",   url: "https://www.clevelandpolice.org/", programName: "CDP Community Policing", programUrl: "https://www.clevelandpolice.org/about/community" },
 };
 
 const PREVENTION_TIPS: SafetyTip[] = [
