@@ -8,13 +8,13 @@ import { getCitywideTrend } from "@/server/services/watch/trend-feed";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Vercel Cron hits this every 4 minutes (configured in vercel.json). The
-// adapter cache TTL is 5 minutes, so warming every 4 min guarantees a
-// fresh cache slot before the previous one expires — no user ever pays
-// the cold-fetch tax on the citywide aggregate again. The edge cache
-// (s-maxage=300 on the response-side routes) is also warmed transitively
-// because the underlying adapter pulls populate before any real user
-// hits a route that depends on them.
+// Vercel Cron hits this once daily (Hobby plan limit — Pro unlocks
+// minute-level schedules). The adapter cache TTL is 5 min so a daily hit
+// only guarantees a warm window briefly each day. For continuous warming
+// (e.g. on Pro), change the vercel.json schedule to `*/4 * * * *` so the
+// cache slot is replaced before each 5-min expiry. The handler can also
+// be triggered externally (UptimeRobot, GitHub Actions cron, etc.) on a
+// 4-min cadence — pass CRON_SECRET as a Bearer header to authorize.
 //
 // If CRON_SECRET is set, require it as a Bearer header so the endpoint
 // isn't a public trigger.
