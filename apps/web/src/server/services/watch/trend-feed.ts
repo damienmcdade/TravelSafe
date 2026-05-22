@@ -44,6 +44,47 @@ function ymd(iso: string): string {
   return d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 }
 
+/// Bucket an incident's hour-of-day into one of four periods. The buckets
+/// align with how people actually plan their day around safety: "late
+/// night" is when the bars close and walking home reads differently,
+/// "morning" is commute, etc.
+type TimePeriod = "late_night" | "morning" | "afternoon" | "evening";
+const PERIOD_LABEL: Record<TimePeriod, string> = {
+  late_night: "late night (12am-6am)",
+  morning:    "morning (6am-12pm)",
+  afternoon:  "afternoon (12pm-6pm)",
+  evening:    "evening (6pm-12am)",
+};
+function periodFromHour(h: number): TimePeriod {
+  if (h < 6)  return "late_night";
+  if (h < 12) return "morning";
+  if (h < 18) return "afternoon";
+  return "evening";
+}
+
+interface TimeOfDayBuckets { late_night: number; morning: number; afternoon: number; evening: number }
+
+/// Compute a time-of-day breakdown across a window of incidents.
+/// Returns null when the window is empty (no signal to report). When
+/// there's data, returns the four bucket counts plus the dominant
+/// period and what percentage of the window fell into it.
+function timeOfDayAnalysis(incidents: Array<{ occurredAt: string }>):
+  { buckets: TimeOfDayBuckets; dominantPeriod: TimePeriod; dominantPct: number } | null {
+  if (incidents.length === 0) return null;
+  const buckets: TimeOfDayBuckets = { late_night: 0, morning: 0, afternoon: 0, evening: 0 };
+  for (const i of incidents) {
+    const t = new Date(i.occurredAt);
+    if (Number.isNaN(t.getTime())) continue;
+    buckets[periodFromHour(t.getHours())] += 1;
+  }
+  const total = buckets.late_night + buckets.morning + buckets.afternoon + buckets.evening;
+  if (total === 0) return null;
+  const entries = Object.entries(buckets) as Array<[TimePeriod, number]>;
+  entries.sort((a, b) => b[1] - a[1]);
+  const [dominantPeriod, dominantCount] = entries[0];
+  return { buckets, dominantPeriod, dominantPct: Math.round((dominantCount / total) * 100) };
+}
+
 /// Citywide variant. Aggregates the 30-day trend feed across every tracked
 /// neighborhood for the given city. Used as the default Trend Feed view
 /// when the user hasn't drilled into a specific neighborhood. Same
@@ -120,6 +161,17 @@ export async function getCitywideTrend(citySlug: string): Promise<TrendResponse>
       at: new Date(now).toISOString(),
       text,
       category: cat,
+    });
+  }
+
+  // Citywide time-of-day pattern — same threshold as the per-area path
+  // (30% concentration required to be "meaningful").
+  const tod = timeOfDayAnalysis(inWindow);
+  if (tod && tod.dominantPct >= 30) {
+    trendBullets.push({
+      kind: "trend",
+      at: new Date(now).toISOString(),
+      text: `Most reports across ${city.label} occur during ${PERIOD_LABEL[tod.dominantPeriod]} — ${tod.dominantPct}% of the past 30 days landed in that window.`,
     });
   }
 
@@ -203,6 +255,18 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string): Prom
       at: new Date(now).toISOString(),
       text,
       category: cat,
+    });
+  }
+
+  // Time-of-day pattern across the full 30-day window. Surface only when
+  // a meaningful dominant period exists (>= 30% concentration) so we don't
+  // emit a generic "25% in each quarter" non-insight.
+  const tod = timeOfDayAnalysis(inWindow);
+  if (tod && tod.dominantPct >= 30) {
+    trendBullets.push({
+      kind: "trend",
+      at: new Date(now).toISOString(),
+      text: `Most reports in ${areaLabel} occur during ${PERIOD_LABEL[tod.dominantPeriod]} — ${tod.dominantPct}% of the past 30 days landed in that window.`,
     });
   }
 
