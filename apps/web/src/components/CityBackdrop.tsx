@@ -2,16 +2,17 @@
 import { useEffect, useState } from "react";
 import { useCity } from "@/lib/use-city";
 
-// Curated cityscape photos served via Unsplash's CDN (the hot-linkable
-// `images.unsplash.com` host). Unsplash's License permits this kind of use.
-// If any URL 404s the dark gradient overlay still keeps the UI readable, and
-// the rotation continues to the next photo.
+// Curated cityscape photos. Where Unsplash photo IDs were verified to resolve,
+// we use the Unsplash CDN; gaps are filled with Lorem Picsum, which always
+// returns a real photograph per stable seed string. That guarantees the
+// backdrop always renders something — never a blank wall — while still
+// rotating between several distinct images per city.
 const PHOTOS: Record<string, string[]> = {
   "san-diego": [
     "https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=2400&q=70",
-    "https://images.unsplash.com/photo-1582645002527-faa9c5d5060f?auto=format&fit=crop&w=2400&q=70",
-    "https://images.unsplash.com/photo-1583425423320-2b59328d4dc5?auto=format&fit=crop&w=2400&q=70",
-    "https://images.unsplash.com/photo-1591600196834-83a8d0427e89?auto=format&fit=crop&w=2400&q=70",
+    "https://picsum.photos/seed/travelsafe-san-diego-1/2400/1350",
+    "https://picsum.photos/seed/travelsafe-san-diego-2/2400/1350",
+    "https://picsum.photos/seed/travelsafe-san-diego-3/2400/1350",
   ],
   "los-angeles": [
     "https://images.unsplash.com/photo-1597714026720-8f74c62310ba?auto=format&fit=crop&w=2400&q=70",
@@ -22,8 +23,8 @@ const PHOTOS: Record<string, string[]> = {
   "san-francisco": [
     "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?auto=format&fit=crop&w=2400&q=70",
     "https://images.unsplash.com/photo-1521747116042-5a810fda9664?auto=format&fit=crop&w=2400&q=70",
-    "https://images.unsplash.com/photo-1499158856793-90b32ecadbcd?auto=format&fit=crop&w=2400&q=70",
     "https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=2400&q=70",
+    "https://picsum.photos/seed/travelsafe-san-francisco-1/2400/1350",
   ],
 };
 
@@ -64,10 +65,9 @@ export function CityBackdrop() {
           />
         </div>
       ))}
-      {/* Legibility overlay — light gradient so text remains readable on any photo. */}
-      <div className="absolute inset-0 bg-gradient-to-b from-sand-50/55 via-sand-50/75 to-sand-50/92" />
-      {/* Accent wash matched to the body's existing radial blooms. */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,rgba(30,120,166,0.18),transparent_65%),radial-gradient(ellipse_70%_50%_at_100%_100%,rgba(230,100,60,0.18),transparent_65%)]" />
+      {/* Light legibility overlay — the photo reads clearly while text on top
+          stays comfortable to read. No sand-50 wash on the bottom anymore. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-white/30 via-white/45 to-white/65" />
     </div>
   );
 }
