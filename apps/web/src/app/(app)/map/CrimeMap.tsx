@@ -32,7 +32,17 @@ const NO_DATA_RGB = [200, 200, 200] as const;
 type Cat = keyof typeof CATEGORY_COLOR;
 
 function normName(s: string): string {
-  return s.toLowerCase().replace(/[\/_]/g, " ").replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+  return s.toLowerCase()
+    .replace(/[\/_]/g, " ")
+    .replace(/[^a-z0-9 ]/g, "")
+    // Collapse common city-name abbreviations so polygon "West Los Angeles"
+    // matches our area label "West LA", "San Francisco Tenderloin" matches
+    // "SF Tenderloin", etc. Both sides of the compare get the same treatment.
+    .replace(/\blos angeles\b/g, "la")
+    .replace(/\bsan francisco\b/g, "sf")
+    .replace(/\bsan diego\b/g, "sd")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /// Blend the three category colors weighted by the share of each category in
