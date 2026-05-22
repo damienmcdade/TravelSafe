@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { generateAITipsForArea, type AITip } from "@/server/services/safety/ai-tips";
+import { generateAITipsForArea, getAITipsDebug, type AITip } from "@/server/services/safety/ai-tips";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -20,5 +20,6 @@ export async function GET(req: NextRequest) {
     count: tips.length,
     error,
     sample: tips.slice(0, 2),
+    debug: getAITipsDebug(),
   });
 }

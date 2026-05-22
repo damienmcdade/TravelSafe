@@ -47,6 +47,15 @@ interface CacheEntry { fetchedAt: number; tips: AITip[] }
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
+// Module-level last-call telemetry surfaced via /api/diag/tips so we can see
+// what the model actually returned when generation fails to produce >= 6 tips.
+let __lastRaw = "";
+let __lastStripped = "";
+let __lastParseError: string | null = null;
+export function getAITipsDebug() {
+  return { lastRaw: __lastRaw.slice(0, 600), lastStripped: __lastStripped.slice(0, 600), lastParseError: __lastParseError };
+}
+
 const TRUSTED_SOURCES = [
   "FBI Crime Prevention",
   "FBI — Safety Resources",
@@ -150,13 +159,23 @@ Generate the JSON array now.
     return [];
   }
 
-  // Strip any accidental markdown fence the model might wrap around the JSON.
-  const stripped = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  // Strip any accidental markdown fence the model might wrap around the JSON,
+  // and pull the first JSON array out of the response (Groq + Llama sometimes
+  // prefix prose like "Here's the JSON:" before emitting the array).
+  let stripped = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
+  const firstBracket = stripped.indexOf("[");
+  const lastBracket = stripped.lastIndexOf("]");
+  if (firstBracket >= 0 && lastBracket > firstBracket) {
+    stripped = stripped.slice(firstBracket, lastBracket + 1);
+  }
+  __lastRaw = raw;
+  __lastStripped = stripped;
   let parsed: z.infer<typeof TipsSchema>;
   try {
     const json = JSON.parse(stripped);
     parsed = TipsSchema.parse(json);
   } catch (err) {
+    __lastParseError = `${(err as Error).name}: ${(err as Error).message}`;
     console.warn("[ai-tips] parse failed:", (err as Error).message, "raw:", stripped.slice(0, 200));
     return [];
   }
