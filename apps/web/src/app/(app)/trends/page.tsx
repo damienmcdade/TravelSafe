@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { CityBanner } from "@/components/CitySelector";
@@ -34,10 +34,18 @@ const CAT_DOT: Record<NonNullable<TrendBullet["category"]>, string> = {
 
 export default function TrendFeedPage() {
   const { city } = useCity();
+  // null === citywide view (the default). The wheel below is an optional
+  // drill-down; picking a row sets `area` and switches the query.
   const [area, setArea] = useState<Area | null>(null);
 
-  const path = area ? `/safezone/trend?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}` : null;
+  const path = area
+    ? `/safezone/trend?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}`
+    : `/safezone/trend?city=${encodeURIComponent(city.slug)}`;
   const { data: trend, loading, error } = useApi<TrendResp>(path, [path]);
+
+  // Reset to citywide when the user changes city in the header so a stale
+  // neighborhood slug from the prior city doesn't 404 the new request.
+  useEffect(() => { setArea(null); }, [city.slug]);
 
   const trendBullets = trend?.bullets.filter((b) => b.kind === "trend") ?? [];
   const dispatchBullets = trend?.bullets.filter((b) => b.kind === "dispatch") ?? [];
@@ -51,27 +59,38 @@ export default function TrendFeedPage() {
           What&apos;s shifted in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">{city.label} over the past 30 days</span>
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
-          A bulleted, chronological summary of recent local police dispatches plus a week-over-week shift line per NIBRS group. Pulled straight from the same official feed that powers the Crime Map.
+          Defaults to a citywide 30-day rolling timeline. Drill into a specific {city.label} neighborhood below if you want a per-area view. Both modes use the same official police open-data feed that powers the Crime Map.
         </p>
       </header>
       <CityBanner />
 
-      <SafeZoneAreaPicker
-        storageKey="trend-feed.area"
-        onCommit={setArea}
-        title={`Pick a ${city.label} neighborhood for trends`}
-      />
-
-      {!area && (
-        <div className="surface-muted p-6 text-sm text-slate2-500 text-center">
-          Pick a neighborhood above to see its 30-day police-feed timeline.
+      {area && (
+        <div className="flex items-center justify-between flex-wrap gap-2 surface-muted px-4 py-3">
+          <p className="text-sm text-slate2-700">
+            Showing {area.label} · drill-down view.
+          </p>
+          <button
+            onClick={() => setArea(null)}
+            className="text-xs text-bay-700 hover:underline"
+          >
+            ← Back to {city.label} citywide
+          </button>
         </div>
       )}
 
-      {loading && area && <TrendSkeleton />}
+      <SafeZoneAreaPicker
+        storageKey="trend-feed.area"
+        onCommit={setArea}
+        title={`Drill into a ${city.label} neighborhood (optional)`}
+        subtitle={`Citywide is the default. Pick a neighborhood to see just that area's 30-day timeline.`}
+        commitLabel="Show this neighborhood"
+        autoCommit={false}
+      />
+
+      {loading && !trend && <TrendSkeleton />}
       {error && !loading && (
         <p className="surface p-4 text-sm text-dusk-700">
-          Could not load the trend feed for {area?.label}. Try again in a moment.
+          Could not load the trend feed for {area?.label ?? `${city.label} citywide`}. The police feed may be warming up — try again in a moment.
         </p>
       )}
 

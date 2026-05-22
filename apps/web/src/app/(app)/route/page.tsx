@@ -1,7 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { api } from "@/lib/api-client";
+import { api, useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { CityBanner } from "@/components/CitySelector";
 
@@ -15,7 +15,6 @@ const RouteMap = dynamic(() => import("./RouteMap"), {
 });
 
 interface Area { slug: string; label: string; jurisdiction: string; centroid: { lat: number; lng: number } }
-interface LookupResult { area: Area; matchedVia: "exact" | "zip" | "fuzzy" | "geocode"; rawQuery: string }
 
 export interface RouteAlt {
   coordinates: Array<[number, number]>;
@@ -56,31 +55,42 @@ const MODES: Array<{ value: "walking" | "driving" | "transit"; label: string; hi
 
 export default function SafeRoutePage() {
   const { city } = useCity();
-  const [fromQ, setFromQ] = useState("");
-  const [toQ, setToQ] = useState("");
+  // Scope autofill to the active city. Routing only works within a single
+  // city because the exposure scoring uses that city's police adapter.
+  const areasPath = `/geo/areas?city=${city.slug}`;
+  const { data: areas, loading: areasLoading, error: areasErr } = useApi<Area[]>(areasPath, [areasPath]);
+  const cityAreas = useMemo(() => {
+    if (!areas) return [];
+    return areas
+      .filter((a) => a.jurisdiction.toLowerCase() === city.label.toLowerCase())
+      .sort((a, b) => a.label.localeCompare(b.label));
+  }, [areas, city.label]);
+
+  // Two committed picks + their query strings drive the search UI.
+  // We do NOT keep raw free-text — the user must select a neighborhood
+  // from the autofill list so the lat/lng we send to the routing engine
+  // is always a real, supported area centroid (no geocoding lottery).
+  const [from, setFrom] = useState<Area | null>(null);
+  const [to, setTo]     = useState<Area | null>(null);
   const [mode, setMode] = useState<"walking" | "driving" | "transit">("walking");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RouteResp | null>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
 
+  // Reset selections when the user switches city in the header. A
+  // neighborhood from one city's adapter doesn't exist in another's
+  // bbox, so carrying it over would silently fail.
+  useEffect(() => { setFrom(null); setTo(null); setResult(null); setError(null); }, [city.slug]);
+
   async function compute() {
     setBusy(true); setError(null); setResult(null);
     try {
-      const f = fromQ.trim();
-      const t = toQ.trim();
-      if (!f || !t) { setError("Enter both a from and a to."); return; }
-      // Resolve both endpoints via /api/geo/lookup. Falls back to the city
-      // centroid if either side doesn't match a known area or geocode.
-      const [fromR, toR] = await Promise.all([
-        api<LookupResult>(`/geo/lookup?q=${encodeURIComponent(f)}`).catch(() => null),
-        api<LookupResult>(`/geo/lookup?q=${encodeURIComponent(t)}`).catch(() => null),
-      ]);
-      if (!fromR) { setError(`Couldn't match "${f}" — try a neighborhood, ZIP, or landmark.`); return; }
-      if (!toR)   { setError(`Couldn't match "${t}" — try a neighborhood, ZIP, or landmark.`); return; }
+      if (!from || !to) { setError("Pick a starting neighborhood and a destination neighborhood from the lists."); return; }
+      if (from.slug === to.slug) { setError("Starting neighborhood and destination must be different."); return; }
       const r = await api<RouteResp>(
-        `/route/safe?fromLat=${fromR.area.centroid.lat}&fromLng=${fromR.area.centroid.lng}` +
-        `&toLat=${toR.area.centroid.lat}&toLng=${toR.area.centroid.lng}&mode=${mode}`,
+        `/route/safe?fromLat=${from.centroid.lat}&fromLng=${from.centroid.lng}` +
+        `&toLat=${to.centroid.lat}&toLng=${to.centroid.lng}&mode=${mode}`,
       );
       setResult(r);
       setSelectedIdx(0);
@@ -99,59 +109,79 @@ export default function SafeRoutePage() {
           Pick the <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">statistically safer route</span> through {city.label}
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
-          Type a starting point and a destination — both can be neighborhoods, ZIP codes, or major landmarks. We pull up to three route alternatives from OpenStreetMap&apos;s routing engine, score each by the recent crime exposure of the neighborhoods it crosses (using the same official police feed that powers the Crime Map), and rank them safest first.
+          Select a starting neighborhood and a destination neighborhood — both auto-fill from the same {city.label} neighborhoods TravelSafe tracks elsewhere. We then pull up to three route alternatives from OpenStreetMap&apos;s routing engine, score each by the recent crime exposure of the neighborhoods it crosses (using the same official police feed that powers the Crime Map), and rank them safest first.
         </p>
       </header>
 
       <CityBanner />
 
-      <section className="surface p-5 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <label className="block text-sm">
-            <span className="text-slate2-700">From</span>
-            <input
-              value={fromQ}
-              onChange={(e) => setFromQ(e.target.value)}
-              placeholder={`e.g. Hillcrest, ${city.label}`}
-              className="mt-1 input"
-              autoComplete="off"
-            />
-          </label>
-          <label className="block text-sm">
-            <span className="text-slate2-700">To</span>
-            <input
-              value={toQ}
-              onChange={(e) => setToQ(e.target.value)}
-              placeholder={`e.g. Pacific Beach, ${city.label}`}
-              className="mt-1 input"
-              autoComplete="off"
-            />
-          </label>
-        </div>
+      {/* The "this is not turn-by-turn navigation" disclaimer is part of
+          the value prop — Safe Route is a neighborhood-level analytical
+          tool, not Google Maps. We surface it before the inputs so users
+          set the right expectation. */}
+      <aside className="surface-muted p-4 text-sm text-slate2-700 leading-snug">
+        <strong className="text-slate2-900">Neighborhood-to-neighborhood only.</strong>{" "}
+        Safe Route does not accept street addresses, ZIP codes, or landmarks.
+        Both endpoints must be {city.label} neighborhoods supported by TravelSafe.
+        The resulting polyline runs centroid-to-centroid through {city.label}&apos;s
+        actual street network, then the exposure score reflects the historical
+        police-feed activity of the neighborhoods that polyline crosses — not a
+        turn-by-turn safety guarantee.
+      </aside>
 
-        <div className="flex flex-wrap items-baseline gap-2 mt-1">
-          <span className="text-xs uppercase tracking-wider text-slate2-500 mr-1">Mode:</span>
-          {MODES.map((m) => (
-            <button
-              key={m.value}
-              onClick={() => setMode(m.value)}
-              title={m.hint}
-              className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
-                mode === m.value ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-50"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-          <button
-            onClick={compute}
-            disabled={busy || !fromQ.trim() || !toQ.trim()}
-            className="ml-auto btn-primary text-sm px-4 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {busy ? "Routing…" : "Find safe routes"}
-          </button>
-        </div>
-        {error && <p className="text-xs text-coral-700 mt-1">{error}</p>}
+      <section className="surface p-5 space-y-3">
+        {areasLoading && !areas ? (
+          <p className="text-sm text-slate2-500 animate-pulse">Loading {city.label} neighborhoods…</p>
+        ) : areasErr || cityAreas.length === 0 ? (
+          <p className="text-sm text-dusk-700">
+            Could not reach the {city.label} neighborhood list. Try switching tabs and back — the police adapter may be warming up.
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <NeighborhoodCombobox
+                label="From"
+                placeholder={`Type to search ${cityAreas.length} ${city.label} neighborhoods`}
+                options={cityAreas}
+                value={from}
+                onPick={setFrom}
+                ariaLabel={`Starting neighborhood in ${city.label}`}
+              />
+              <NeighborhoodCombobox
+                label="To"
+                placeholder="Pick a destination neighborhood"
+                options={cityAreas.filter((a) => a.slug !== from?.slug)}
+                value={to}
+                onPick={setTo}
+                ariaLabel={`Destination neighborhood in ${city.label}`}
+              />
+            </div>
+
+            <div className="flex flex-wrap items-baseline gap-2 mt-1">
+              <span className="text-xs uppercase tracking-wider text-slate2-500 mr-1">Mode:</span>
+              {MODES.map((m) => (
+                <button
+                  key={m.value}
+                  onClick={() => setMode(m.value)}
+                  title={m.hint}
+                  className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                    mode === m.value ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-50"
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+              <button
+                onClick={compute}
+                disabled={busy || !from || !to || from?.slug === to?.slug}
+                className="ml-auto btn-primary text-sm px-4 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {busy ? "Routing…" : "Find safe routes"}
+              </button>
+            </div>
+            {error && <p className="text-xs text-coral-700 mt-1">{error}</p>}
+          </>
+        )}
       </section>
 
       {result && (
@@ -206,5 +236,127 @@ export default function SafeRoutePage() {
         </>
       )}
     </main>
+  );
+}
+
+/// Lightweight autofill combobox. Filters the supplied option list by
+/// substring as the user types, surfaces up to 8 matches, and emits the
+/// picked Area to the parent. Closes on outside click; arrow keys move
+/// focus through the list. Designed so users CAN'T submit a free-text
+/// value — the only way to commit a selection is to pick a real option,
+/// which guarantees the routing endpoints always receive a real centroid.
+function NeighborhoodCombobox({
+  label, placeholder, options, value, onPick, ariaLabel,
+}: {
+  label: string;
+  placeholder: string;
+  options: Area[];
+  value: Area | null;
+  onPick: (a: Area | null) => void;
+  ariaLabel: string;
+}) {
+  const [q, setQ] = useState(value?.label ?? "");
+  const [open, setOpen] = useState(false);
+  const [focusIdx, setFocusIdx] = useState(0);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Sync the displayed text whenever the committed value changes from above
+  // (e.g., city switch wipes it). We don't sync on every keystroke since the
+  // user owns the input while typing.
+  useEffect(() => { setQ(value?.label ?? ""); }, [value]);
+
+  // Outside-click closer.
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [open]);
+
+  const matches = useMemo(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return options.slice(0, 8);
+    return options
+      .filter((a) => a.label.toLowerCase().includes(needle))
+      .slice(0, 8);
+  }, [q, options]);
+
+  function pick(a: Area) {
+    onPick(a);
+    setQ(a.label);
+    setOpen(false);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setOpen(true);
+      setFocusIdx((i) => Math.min(matches.length - 1, i + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setFocusIdx((i) => Math.max(0, i - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const p = matches[focusIdx];
+      if (p) pick(p);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  }
+
+  return (
+    <div ref={wrapRef} className="relative">
+      <label className="block text-sm">
+        <span className="text-slate2-700">{label}</span>
+        <input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+            setFocusIdx(0);
+            // Typing invalidates the previously-picked area; the parent
+            // should not run a route until the user re-picks.
+            if (value && e.target.value !== value.label) onPick(null);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={onKeyDown}
+          placeholder={placeholder}
+          className="mt-1 input"
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-label={ariaLabel}
+        />
+      </label>
+      {open && matches.length > 0 && (
+        <ul
+          className="absolute z-30 left-0 right-0 mt-1 surface shadow-card-lift max-h-72 overflow-auto p-1"
+          role="listbox"
+        >
+          {matches.map((m, i) => (
+            <li key={m.slug}>
+              <button
+                type="button"
+                onMouseEnter={() => setFocusIdx(i)}
+                onMouseDown={(e) => { e.preventDefault(); pick(m); }}
+                className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                  i === focusIdx ? "bg-bay-100 text-slate2-900" : "hover:bg-sand-100 text-slate2-900"
+                }`}
+                role="option"
+                aria-selected={i === focusIdx}
+              >
+                {m.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {open && matches.length === 0 && (
+        <div className="absolute z-30 left-0 right-0 mt-1 surface shadow-card-lift p-3 text-xs text-slate2-500">
+          No matching neighborhood. Safe Route only routes between supported {value?.jurisdiction ?? "city"} neighborhoods.
+        </div>
+      )}
+    </div>
   );
 }

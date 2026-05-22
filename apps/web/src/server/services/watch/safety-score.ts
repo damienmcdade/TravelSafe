@@ -111,6 +111,94 @@ function headlineFor(grade: SafetyScoreResponse["grade"], areaLabel: string, cit
   }
 }
 
+/// Citywide variant. Aggregates every tracked neighborhood's incidents into
+/// a single rate-per-100k against the FBI 2024 national average. Used as
+/// the default Safety Score view when the user hasn't drilled into a
+/// specific neighborhood — population denominator is the full US Census
+/// city total rather than an even-split per-area approximation, so the
+/// comparison reflects the city's actual reported rate.
+export async function getCitywideSafetyScore(citySlug: string): Promise<SafetyScoreResponse> {
+  const { cityBySlug } = await import("../crime-data/cities");
+  const city = cityBySlug(citySlug) ?? cityForArea("");
+  const cityPop = CITY_POPULATION[city.slug] ?? 0;
+  const areas = await city.discover().catch(() => []);
+
+  // Sum NIBRS Persons + Property counts across every tracked neighborhood.
+  // We deliberately re-use the per-area adapter cache here — discover()
+  // populates the same cache the rest of the app reads, so the loop is
+  // effectively one upstream pull regardless of city size.
+  let persons = 0, property = 0;
+  let earliest = Infinity, latest = 0;
+  for (const a of areas) {
+    const incidents = await crimeData.getIncidents(a.slug, { limit: 5000 }).catch(() => []);
+    for (const i of incidents) {
+      const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
+      if (k === "PERSONS") persons += 1;
+      else if (k === "PROPERTY") property += 1;
+      const t = +new Date(i.occurredAt);
+      if (Number.isFinite(t) && t > 0) {
+        if (t < earliest) earliest = t;
+        if (t > latest) latest = t;
+      }
+    }
+  }
+  const windowDays = (latest > 0 && earliest < Infinity)
+    ? Math.max(1, Math.round((latest - earliest) / (24 * 60 * 60 * 1000)))
+    : 0;
+  // Full city population — no per-area division. The Vintage 2023 Census
+  // total is the canonical denominator the FBI itself uses to publish
+  // city-vs-national rates.
+  const pop = cityPop;
+  const annualize = (count: number) => {
+    if (pop <= 0 || windowDays <= 0) return 0;
+    const annualCount = count * (365 / windowDays);
+    return (annualCount / pop) * 100_000;
+  };
+
+  const rows: SafetyScoreRow[] = [
+    {
+      category: "PERSONS",
+      count: persons,
+      localPer100k: Math.round(annualize(persons)),
+      nationalPer100k: FBI_NATIONAL_PER_100K_2024.PERSONS,
+      deltaPct: FBI_NATIONAL_PER_100K_2024.PERSONS === 0 ? 0
+        : Math.round(((annualize(persons) - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
+    },
+    {
+      category: "PROPERTY",
+      count: property,
+      localPer100k: Math.round(annualize(property)),
+      nationalPer100k: FBI_NATIONAL_PER_100K_2024.PROPERTY,
+      deltaPct: FBI_NATIONAL_PER_100K_2024.PROPERTY === 0 ? 0
+        : Math.round(((annualize(property) - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
+    },
+  ];
+
+  const grade = gradeFromDeltas(rows);
+  const cityLabel = `${city.label} (citywide)`;
+  const headline = headlineFor(grade, cityLabel, city.label);
+
+  return {
+    city: { slug: city.slug, label: city.label },
+    area: { slug: city.slug, label: cityLabel },
+    populationEstimate: pop,
+    windowDays,
+    asOf: latest > 0 ? new Date(latest).toISOString() : null,
+    grade,
+    headline,
+    rows,
+    source: FBI_NATIONAL_SOURCE,
+    disclaimer:
+      "Citywide rate is the sum of incidents across every tracked neighborhood, " +
+      `annualized from the cached window and scaled to per-100,000 residents using ` +
+      `${city.label}'s US Census Bureau Vintage 2023 population (${pop.toLocaleString()}). ` +
+      "National rates are the FBI Uniform Crime Reporting program's 2024 " +
+      "annual release — the same denominator the FBI uses to publish " +
+      "official city-vs-national comparisons. Society / public-order " +
+      "offenses are excluded because the FBI does not publish a national rate.",
+  };
+}
+
 export async function getSafetyScore(areaSlug: string, areaLabel: string): Promise<SafetyScoreResponse> {
   const city = cityForArea(areaSlug);
   const cityPop = CITY_POPULATION[city.slug] ?? 0;

@@ -17,6 +17,7 @@ export function SafeZoneAreaPicker({
   title,
   subtitle,
   commitLabel = "Show this neighborhood",
+  autoCommit = true,
 }: {
   /// Per-tab persistence key namespace (e.g. `safety-score.area`).
   /// Internally we append the city slug so each city gets its own slot.
@@ -25,6 +26,11 @@ export function SafeZoneAreaPicker({
   title?: string;
   subtitle?: string;
   commitLabel?: string;
+  /// When true (default), the picker emits the first available area as soon
+  /// as the area list loads so the host page renders content immediately.
+  /// Set to false on pages where citywide is the legitimate default state —
+  /// the user has to explicitly tap "Show this neighborhood" to drill in.
+  autoCommit?: boolean;
 }) {
   const { city } = useCity();
   const fullKey = `travelsafe.${storageKey}.${city.slug}`;
@@ -66,8 +72,10 @@ export function SafeZoneAreaPicker({
   }
 
   // Auto-commit the first time areas load so subtabs render something
-  // immediately without forcing the user to push a button.
+  // immediately without forcing the user to push a button. Pages that
+  // have a meaningful citywide default opt out via autoCommit={false}.
   useEffect(() => {
+    if (!autoCommit) return;
     if (committedSlug || !pendingSlug || cityAreas.length === 0) return;
     const exists = cityAreas.find((a) => a.slug === pendingSlug);
     if (exists) {
@@ -75,7 +83,7 @@ export function SafeZoneAreaPicker({
       onCommit(exists);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityAreas.length, pendingSlug, committedSlug]);
+  }, [cityAreas.length, pendingSlug, committedSlug, autoCommit]);
 
   const wheelItems: WheelItem[] = useMemo(
     () => cityAreas.map((a) => ({ value: a.slug, label: a.label, detail: city.label })),

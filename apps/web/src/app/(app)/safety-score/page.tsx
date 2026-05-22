@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { CityBanner } from "@/components/CitySelector";
@@ -45,43 +45,63 @@ const CAT_LABEL: Record<ScoreRow["category"], string> = {
 
 export default function SafetyScorePage() {
   const { city } = useCity();
+  // null === citywide view (the default). The neighborhood wheel below is
+  // an optional drill-down — picking a row sets `area` to that neighborhood
+  // and switches the query from ?city= to ?area=.
   const [area, setArea] = useState<Area | null>(null);
 
-  const path = area ? `/safezone/safety-score?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}` : null;
+  const path = area
+    ? `/safezone/safety-score?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}`
+    : `/safezone/safety-score?city=${encodeURIComponent(city.slug)}`;
   const { data: score, loading, error } = useApi<ScoreResp>(path, [path]);
   const tone = useMemo(() => (score ? GRADE_TONE[score.grade] : null), [score]);
+
+  // Switching cities in the header drops any neighborhood selection so the
+  // user sees the new city's citywide score immediately instead of carrying
+  // over a stale neighborhood slug.
+  useEffect(() => { setArea(null); }, [city.slug]);
 
   return (
     <main className="space-y-6">
       <SafeZoneSubNav />
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">SafeZone · Safety Score · {city.label}</p>
-        {/* SubNav stays in place for SafeZone's remaining two subtabs. */}
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
           How {city.label} <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">compares to the FBI national average</span>
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
-          The Safety Score annualizes your selected neighborhood&apos;s recent police-feed activity, scales it to per-100,000 residents, and lines it up against the FBI Crime in the Nation rates. Letter grade is based on the average of the two reported categories.
+          Defaults to a citywide score against the FBI Crime in the Nation 2024 national rate. Drill into a specific {city.label} neighborhood below if you want a per-area comparison. Letter grade reflects the average of the violent and property categories — the two NIBRS groups the FBI publishes national rates for.
         </p>
       </header>
       <CityBanner />
 
-      <SafeZoneAreaPicker
-        storageKey="safety-score.area"
-        onCommit={setArea}
-        title={`Pick a ${city.label} neighborhood to score`}
-      />
-
-      {!area && (
-        <div className="surface-muted p-6 text-sm text-slate2-500 text-center">
-          Pick a neighborhood above to see how it stacks up against the FBI national average.
+      {area && (
+        <div className="flex items-center justify-between flex-wrap gap-2 surface-muted px-4 py-3">
+          <p className="text-sm text-slate2-700">
+            Showing {area.label} · drill-down view.
+          </p>
+          <button
+            onClick={() => setArea(null)}
+            className="text-xs text-bay-700 hover:underline"
+          >
+            ← Back to {city.label} citywide
+          </button>
         </div>
       )}
 
-      {loading && area && <ScoreSkeleton />}
+      <SafeZoneAreaPicker
+        storageKey="safety-score.area"
+        onCommit={setArea}
+        title={`Drill into a ${city.label} neighborhood (optional)`}
+        subtitle={`Citywide is the default. Pick a neighborhood to compare just that area against the FBI national rate.`}
+        commitLabel="Show this neighborhood"
+        autoCommit={false}
+      />
+
+      {loading && !score && <ScoreSkeleton />}
       {error && !loading && (
         <p className="surface p-4 text-sm text-dusk-700">
-          Could not compute the score for {area?.label}. Try a different neighborhood or come back in a moment.
+          Could not compute the score for {area?.label ?? `${city.label} citywide`}. The police feed may be warming up — try again in a moment.
         </p>
       )}
 
