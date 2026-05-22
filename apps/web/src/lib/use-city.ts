@@ -42,7 +42,7 @@ export const CITIES: CityInfo[] = [
   { slug: "philadelphia",  label: "Philadelphia",  state: "PA", stateLabel: "Pennsylvania",   defaultArea: "phl-center",     centroid: { lat: 39.95,  lng: -75.17  }, status: "coming-soon", source: "PPD Crime Incidents · phl.gov / CARTO" },
   { slug: "washington-dc", label: "Washington",    state: "DC", stateLabel: "District of Columbia", defaultArea: "dc-downtown", centroid: { lat: 38.91, lng: -77.04 }, status: "coming-soon", source: "MPD Crime Incidents · opendata.dc.gov" },
   { slug: "denver",        label: "Denver",        state: "CO", stateLabel: "Colorado",       defaultArea: "den-five-points",centroid: { lat: 39.74,  lng: -104.99 }, status: "live",        source: "Denver Crime Offenses · Denver Open Data (ArcGIS)" },
-  { slug: "detroit",       label: "Detroit",       state: "MI", stateLabel: "Michigan",       defaultArea: "det-downtown",   centroid: { lat: 42.33,  lng: -83.05  }, status: "coming-soon", source: "DPD RMS Crime Incidents · data.detroitmi.gov" },
+  { slug: "detroit",       label: "Detroit",       state: "MI", stateLabel: "Michigan",       defaultArea: "det-downtown",   centroid: { lat: 42.33,  lng: -83.05  }, status: "live",        source: "Detroit RMS Crime Incidents · Detroit Open Data (ArcGIS)" },
 ];
 
 /// All US states with at least one TravelSafe city, sorted alphabetically.

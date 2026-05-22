@@ -19,6 +19,7 @@ const SOURCES: Record<string, string> = {
   "seattle":       "Seattle Police Department Crime Data, NIBRS-coded (City of Seattle Open Data).",
   "new-york":      "New York City Police Department Complaint Data (current YTD), aggregated to NYPD precinct (NYC Open Data).",
   "denver":        "Denver Crime Offenses (Denver Open Data, ArcGIS Feature Server), aggregated to statistical neighborhood.",
+  "detroit":       "Detroit RMS Crime Incidents (City of Detroit Open Data, ArcGIS Feature Server), aggregated to named neighborhood.",
 };
 
 export default function MapPage() {

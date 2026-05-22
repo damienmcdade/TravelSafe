@@ -61,6 +61,7 @@ function normName(s: string): string {
     .replace(/\bnew york\b/g, "ny")
     .replace(/\bseattle\b/g, "sea")
     .replace(/\bdenver\b/g, "den")
+    .replace(/\bdetroit\b/g, "det")
     .replace(/\s+/g, " ")
     .trim();
   for (const [a, b] of NAME_ALIASES) {

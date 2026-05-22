@@ -80,6 +80,16 @@ const PHOTOS: Record<string, string[]> = {
     // Downtown panorama along Speer Boulevard at midnight
     "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/2006-07-14-Denver_Skyline_Midnight.jpg/1920px-2006-07-14-Denver_Skyline_Midnight.jpg",
   ],
+  "detroit": [
+    // Detroit skyline viewed across the river from Windsor (September 2025)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Detroit_Skyline_from_Windsor_2025-09-01.jpg/1920px-Detroit_Skyline_from_Windsor_2025-09-01.jpg",
+    // Renaissance Center cluster — signature Detroit skyline building
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Renaissance_Center%2C_Detroit%2C_Michigan_from_S_2014-12-07.jpg/1920px-Renaissance_Center%2C_Detroit%2C_Michigan_from_S_2014-12-07.jpg",
+    // Guardian Building — iconic Art Deco skyscraper (2025)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Guardian_Building_2025.jpg/1920px-Guardian_Building_2025.jpg",
+    // Campus Martius — downtown plaza framed by surrounding skyscrapers
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Campus_Martius%2C_Detroit%2C_MI.jpg/1920px-Campus_Martius%2C_Detroit%2C_MI.jpg",
+  ],
 };
 
 const ROTATE_MS = 5 * 60 * 1000;
