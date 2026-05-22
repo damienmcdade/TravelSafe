@@ -4,12 +4,18 @@ import { aiConfigured, getAIModel } from "./provider";
 import { crimeData } from "../crime-data";
 import { CITIES, cityBySlug } from "../crime-data/cities";
 
-// FBI Crime in the Nation 2023 — most recent published national rates, used
-// for the city-vs-national comparison tool. Kept here next to the assistant
-// instead of importing from a UI component.
+// FBI Crime in the Nation 2024 — most recent published national rates
+// (released October 2025), used for the city-vs-national comparison tool.
+// Per-100k rates round to the same figures across recent years so the
+// numbers are stable; the YEAR label is what gets refreshed when the FBI
+// publishes a new annual release.
 const NATIONAL_PER_100K = { PERSONS: 364, PROPERTY: 1896 };
-const NATIONAL_YEAR = 2023;
+const NATIONAL_YEAR = 2024;
 
+// US Census Bureau Vintage 2023 Population Estimates — covers every city
+// the app's adapters support. Previously this map only had 11 entries,
+// silently dropping any per-100k city-vs-national tool call for the other
+// 18. Now mirrors the canonical map in safety-score.ts.
 const CITY_POPULATION: Record<string, number> = {
   "san-diego":     1_381_611,
   "los-angeles":   3_820_914,
@@ -22,6 +28,24 @@ const CITY_POPULATION: Record<string, number> = {
   "washington-dc":   678_972,
   "boston":          650_706,
   "philadelphia":  1_550_542,
+  "oakland":         430_553,
+  "cincinnati":      311_097,
+  "new-orleans":     364_136,
+  "baton-rouge":     217_665,
+  "cambridge":       118_488,
+  "dallas":        1_302_868,
+  "charlotte":       897_720,
+  "nashville":       687_788,
+  "minneapolis":     421_874,
+  "cleveland":       362_656,
+  "montgomery-county": 1_058_812,
+  "las-vegas":       660_929,
+  "boise":           237_446,
+  "buffalo":         272_140,
+  "tucson":          544_417,
+  "kansas-city":     510_704,
+  "saint-paul":      303_820,
+  "pittsburgh":      303_255,
 };
 
 const SYSTEM_PROMPT = `
@@ -30,7 +54,7 @@ US states, cities, and neighborhoods that TravelSafe supports, drawing only
 on the live tools available to you. The tools wrap official police data
 feeds (SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD,
 Seattle SPD, NYPD Complaint Data, Denver Crime Offenses, Detroit RMS, DC
-MPD, Boston BPD, Philadelphia PPD) and the FBI's Crime in the Nation 2023
+MPD, Boston BPD, Philadelphia PPD) and the FBI's Crime in the Nation 2024
 national averages. Always call a tool before reporting a number — don't
 guess.
 
@@ -172,7 +196,7 @@ export async function streamAssistant(messages: Array<{ role: "user" | "assistan
   const tools = {
     list_supported_cities: tool({
       description:
-        "Return the list of all 11 cities TravelSafe currently supports, with their slugs and 2023 population estimates. Call this when the user asks 'what cities do you support?' or hasn't named one yet.",
+        "Return the list of every city TravelSafe currently supports, with their slugs and US Census Vintage 2023 population estimates. Call this when the user asks 'what cities do you support?' or hasn't named one yet.",
       inputSchema: z.object({}),
       execute: async () => listSupportedCities(),
     }),
@@ -195,7 +219,7 @@ export async function streamAssistant(messages: Array<{ role: "user" | "assistan
     }),
     compare_city_to_national: tool({
       description:
-        "Compute the city's per-100,000 rates for Persons (violent) and Property crime from the recent cached window and compare them to the FBI Crime in the Nation 2023 national averages. Use this when the user asks 'is X safer than the rest of the country' or for any city-vs-national comparison.",
+        "Compute the city's per-100,000 rates for Persons (violent) and Property crime from the recent cached window and compare them to the FBI Crime in the Nation 2024 national averages. Use this when the user asks 'is X safer than the rest of the country' or for any city-vs-national comparison.",
       inputSchema: z.object({
         city_slug: z.string().describe("One of: " + citySlugList().join(", ")),
       }),
