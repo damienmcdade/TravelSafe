@@ -50,6 +50,11 @@ const Env = z.object({
   GOOGLE_GENERATIVE_AI_API_KEY: z.string().optional(),
   GEMINI_API_KEY:               z.string().optional(),
   GOOGLE_API_KEY:               z.string().optional(),
+  // Groq is a second free AI provider. Llama 3.3 70B Versatile is free at
+  // 30 RPM / 14,400 RPD — totally separate quota from Gemini, so it's a clean
+  // backup when a Gemini key hits its zero-quota project trap. Get a free
+  // key at https://console.groq.com/keys.
+  GROQ_API_KEY:                 z.string().optional(),
   AI_GATEWAY_API_KEY:           z.string().optional(),
 
   // Cloudflare Worker that proxies data.boston.gov for the Boston adapter.

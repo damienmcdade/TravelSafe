@@ -21,15 +21,25 @@ function geminiKey(): string | undefined {
 /// generateText, or null if no AI provider is configured. Callers must guard
 /// for null and degrade gracefully (assistant returns 503; tip generator
 /// returns []).
+///
+/// Provider preference order:
+///  1. Groq — free, fast, broad quota (30 RPM / 14,400 RPD)
+///  2. Google Gemini — free tier (15 RPM / 1,500 RPD per project) but the
+///     AI-Studio "Create key" flow sometimes mints keys against projects
+///     with zero quota; we try it second to avoid surprise 429s.
+///  3. Vercel AI Gateway — legacy paid fallback.
 export async function getAIModel(): Promise<unknown | null> {
+  if (env.GROQ_API_KEY) {
+    const { createGroq } = await import("@ai-sdk/groq");
+    const provider = createGroq({ apiKey: env.GROQ_API_KEY });
+    // Llama 3.3 70B Versatile — current free flagship on Groq, supports tool
+    // calling + structured JSON output (all the prompts we use).
+    return provider("llama-3.3-70b-versatile");
+  }
   const key = geminiKey();
   if (key) {
     const { createGoogleGenerativeAI } = await import("@ai-sdk/google");
-    // Pass the key explicitly — covers cases where the user named the env var
-    // GEMINI_API_KEY or GOOGLE_API_KEY instead of the SDK default.
     const provider = createGoogleGenerativeAI({ apiKey: key });
-    // gemini-2.0-flash: 1M-token context, supports streaming + tool calling,
-    // ~sub-second TTFB for most queries.
     return provider("gemini-2.0-flash");
   }
   if (env.AI_GATEWAY_API_KEY) {
@@ -39,5 +49,5 @@ export async function getAIModel(): Promise<unknown | null> {
 }
 
 export function aiConfigured(): boolean {
-  return Boolean(geminiKey() || env.AI_GATEWAY_API_KEY);
+  return Boolean(env.GROQ_API_KEY || geminiKey() || env.AI_GATEWAY_API_KEY);
 }
