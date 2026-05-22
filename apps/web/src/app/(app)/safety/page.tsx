@@ -6,6 +6,7 @@ import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { CityBanner } from "@/components/CitySelector";
 import { LocationSearch } from "@/components/LocationSearch";
 import { useCity } from "@/lib/use-city";
+import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -45,6 +46,7 @@ export default function PersonalSafetyPage() {
 
   return (
     <main className="space-y-8">
+      <SafeZoneSubNav />
       {showDisclaimer && (
         <div className="surface p-5 border-amber2-500/40">
           <h2 className="font-display text-lg text-slate2-900">Before you use this tab</h2>

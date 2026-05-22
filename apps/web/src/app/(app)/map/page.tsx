@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useCity } from "@/lib/use-city";
+import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 
 const CrimeMap = dynamic(() => import("./CrimeMap"), {
   ssr: false,
@@ -46,8 +47,9 @@ export default function MapPage() {
   const { city } = useCity();
   return (
     <main className="space-y-6">
+      <SafeZoneSubNav />
       <header className="page-hero">
-        <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Crime Map · {city.label}</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">SafeZone · Crime Map · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
           Where recent police reports are <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">concentrated in {city.label}</span>
         </h1>
