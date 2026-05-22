@@ -26,7 +26,7 @@ export type CitySlug =
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
   | "charlotte" | "nashville" | "minneapolis" | "cleveland"
   | "montgomery-county" | "las-vegas" | "boise" | "buffalo" | "tucson"
-  | "kansas-city" | "saint-paul";
+  | "kansas-city" | "saint-paul" | "pittsburgh";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
 export interface SafetyTip {
@@ -77,6 +77,7 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   "tucson":        { line: "520-791-4444", label: "TPD non-emergency",    url: "https://www.tucsonaz.gov/Departments/Police" },
   "kansas-city":   { line: "816-234-5111", label: "KCPD non-emergency",   url: "https://kcpolice.org/" },
   "saint-paul":    { line: "651-291-1111", label: "SPPD non-emergency",   url: "https://www.stpaul.gov/departments/police" },
+  "pittsburgh":    { line: "412-255-2828", label: "PBP non-emergency",    url: "https://pittsburghpa.gov/publicsafety/police" },
 };
 
 // City-specific official resource links. These get joined into one or more
@@ -114,6 +115,7 @@ export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; progr
   "tucson":        { name: "Tucson Police Department", url: "https://www.tucsonaz.gov/Departments/Police", programName: "TPD Crime Prevention", programUrl: "https://www.tucsonaz.gov/Departments/Police/Crime-Prevention" },
   "kansas-city":   { name: "Kansas City Missouri Police Department", url: "https://kcpolice.org/", programName: "KCPD Community Outreach", programUrl: "https://kcpolice.org/community/" },
   "saint-paul":    { name: "Saint Paul Police Department", url: "https://www.stpaul.gov/departments/police", programName: "Saint Paul Police Department", programUrl: "https://www.stpaul.gov/departments/police" },
+  "pittsburgh":    { name: "Pittsburgh Bureau of Police", url: "https://pittsburghpa.gov/publicsafety/police", programName: "Pittsburgh Bureau of Police", programUrl: "https://pittsburghpa.gov/publicsafety/police" },
 };
 
 const PREVENTION_TIPS: SafetyTip[] = [

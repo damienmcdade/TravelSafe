@@ -29,6 +29,7 @@ import { buffaloAdapter, getDiscoveredAreasBuffalo } from "./adapters/buffalo-so
 import { tucsonAdapter, getDiscoveredAreasTucson } from "./adapters/tucson-arcgis";
 import { kansasCityAdapter, getDiscoveredAreasKansasCity } from "./adapters/kansas-city-socrata";
 import { saintPaulAdapter, getDiscoveredAreasSaintPaul } from "./adapters/saint-paul-arcgis";
+import { pittsburghAdapter, getDiscoveredAreasPittsburgh } from "./adapters/pittsburgh-ckan";
 
 // City registry.
 //
@@ -245,6 +246,13 @@ export const CITIES: CityEntry[] = [
     adapter: saintPaulAdapter,
     discover: getDiscoveredAreasSaintPaul,
   },
+  {
+    slug: "pittsburgh",
+    label: "Pittsburgh",
+    bbox: { south: 40.36, west: -80.10, north: 40.50, east: -79.86 },
+    adapter: pittsburghAdapter,
+    discover: getDiscoveredAreasPittsburgh,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -286,6 +294,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("tuc-")  || slug === "tucson")       return CITIES[25];
   if (slug.startsWith("kc-")   || slug === "kansas-city")  return CITIES[26];
   if (slug.startsWith("sp-")   || slug === "saint-paul")   return CITIES[27];
+  if (slug.startsWith("pgh-")  || slug === "pittsburgh")   return CITIES[28];
   return CITIES[0];
 }
 

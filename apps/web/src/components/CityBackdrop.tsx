@@ -290,6 +290,16 @@ const PHOTOS: Record<string, string[]> = {
     // Saint Paul City Hall
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Saint_Paul_City_Hall.jpg/1920px-Saint_Paul_City_Hall.jpg",
   ],
+  "pittsburgh": [
+    // Pittsburgh skyline at night
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Pittsburgh_skyline_panorama_at_night.jpg/1920px-Pittsburgh_skyline_panorama_at_night.jpg",
+    // Duquesne Incline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Ascending_the_Duquesne_Incline.jpg/1920px-Ascending_the_Duquesne_Incline.jpg",
+    // Pittsburgh from North Hills
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Pittsburgh_%28view_from_the_North_Hills%29.JPG/1920px-Pittsburgh_%28view_from_the_North_Hills%29.JPG",
+    // Acrisure Stadium and downtown skyline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Pittsburgh_-_Acrisure_Stadium_and_Skyline_%2853910936115%29.jpg/1920px-Pittsburgh_-_Acrisure_Stadium_and_Skyline_%2853910936115%29.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

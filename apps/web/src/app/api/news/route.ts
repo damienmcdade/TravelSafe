@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 // Strip a city's own slug prefix from neighborhood slugs so the Google News
 // query reads naturally (e.g. "la-hollywood" → "Hollywood Los Angeles ...").
 function denormalize(slug: string): string {
-  return slug.replace(/^(la|sf|sd|chi|ny|sea|bos|phl|dc|den|det|oak|cin|nola|br|cam|dal|clt|nas|mpls|cle|moco|lv|bzi|buf|tuc|kc|sp)-/, "").replace(/-/g, " ").replace(/\bcluster\s*\d+\s*/, "");
+  return slug.replace(/^(la|sf|sd|chi|ny|sea|bos|phl|dc|den|det|oak|cin|nola|br|cam|dal|clt|nas|mpls|cle|moco|lv|bzi|buf|tuc|kc|sp|pgh)-/, "").replace(/-/g, " ").replace(/\bcluster\s*\d+\s*/, "");
 }
 
 export const GET = wrap(async (req: NextRequest) => {

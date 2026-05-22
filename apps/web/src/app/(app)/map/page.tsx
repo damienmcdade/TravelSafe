@@ -40,6 +40,7 @@ const SOURCES: Record<string, string> = {
   "tucson":        "Tucson Police Incidents — Last 45 Days (City of Tucson Open Data, ArcGIS). Rolling 45-day window; administrative entries filtered at ingest; aggregated to one of ~140 Tucson neighborhood associations using TPD's NHA_NAME tag.",
   "kansas-city":   "KCPD Crime Data 2026 (Open Data KC, Socrata). Demographic columns excluded at request time; geocoded to one of 145 named Kansas City neighborhoods since KCPD's `area` field has only 6 patrol divisions.",
   "saint-paul":    "Saint Paul Crime Incident Report (City of Saint Paul Open Data, ArcGIS). Aggregated to one of 17 District Council planning districts; administrative entries (Proactive Police Visit, Community Event) filtered at ingest.",
+  "pittsburgh":    "Pittsburgh Bureau of Police Monthly Criminal Activity (WPRDC, CKAN). NIBRS-classified per row by PBP and aggregated to one of 90 official Pittsburgh neighborhoods.",
 };
 
 export default function MapPage() {
