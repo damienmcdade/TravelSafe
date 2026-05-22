@@ -37,7 +37,7 @@ export const CITIES: CityInfo[] = [
   // state/city wheel (greyed-out) so users see where TravelSafe is heading.
   // When each adapter lands they flip to status: "live".
   { slug: "new-york",      label: "New York City", state: "NY", stateLabel: "New York",       defaultArea: "ny-manhattan",   centroid: { lat: 40.71,  lng: -74.01  }, status: "coming-soon", source: "NYPD Complaint Data · data.cityofnewyork.us" },
-  { slug: "seattle",       label: "Seattle",       state: "WA", stateLabel: "Washington",     defaultArea: "sea-downtown",   centroid: { lat: 47.61,  lng: -122.33 }, status: "coming-soon", source: "Seattle Police crime data · data.seattle.gov" },
+  { slug: "seattle",       label: "Seattle",       state: "WA", stateLabel: "Washington",     defaultArea: "sea-downtown",   centroid: { lat: 47.61,  lng: -122.33 }, status: "live",        source: "SPD Crime Data · data.seattle.gov" },
   { slug: "boston",        label: "Boston",        state: "MA", stateLabel: "Massachusetts",  defaultArea: "bos-downtown",   centroid: { lat: 42.36,  lng: -71.06  }, status: "coming-soon", source: "BPD Crime Incident Reports · data.boston.gov" },
   { slug: "philadelphia",  label: "Philadelphia",  state: "PA", stateLabel: "Pennsylvania",   defaultArea: "phl-center",     centroid: { lat: 39.95,  lng: -75.17  }, status: "coming-soon", source: "PPD Crime Incidents · phl.gov / CARTO" },
   { slug: "washington-dc", label: "Washington",    state: "DC", stateLabel: "District of Columbia", defaultArea: "dc-downtown", centroid: { lat: 38.91, lng: -77.04 }, status: "coming-soon", source: "MPD Crime Incidents · opendata.dc.gov" },

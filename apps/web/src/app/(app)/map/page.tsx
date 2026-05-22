@@ -16,6 +16,7 @@ const SOURCES: Record<string, string> = {
   "los-angeles":   "Los Angeles Police Department Crime Data, 2020 to present (City of Los Angeles Open Data).",
   "san-francisco": "San Francisco Police Department Incident Reports, 2018 to present (DataSF).",
   "chicago":       "Chicago Police Department Crimes 2001 to present (City of Chicago Open Data).",
+  "seattle":       "Seattle Police Department Crime Data, NIBRS-coded (City of Seattle Open Data).",
 };
 
 export default function MapPage() {
