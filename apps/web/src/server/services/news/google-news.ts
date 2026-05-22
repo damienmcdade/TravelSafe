@@ -1,11 +1,11 @@
 import "server-only";
 
-// Pulls San Diego–scoped safety news from Google News' public RSS feed.
-// Google News allows light RSS use without an API key. Cache 30 min to be
-// polite + keep latency low. Results are returned as plain JSON the UI
-// renders as link-out cards — we never re-host article bodies.
+// Pulls city-scoped safety news from Google News' public RSS feed.
+// Cache 60s so a quick reload picks up fresh headlines without exhausting the
+// rate limit. Results are returned as plain JSON the UI renders as link-out
+// cards; we never re-host article bodies.
 
-const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_TTL_MS = 60 * 1000;
 let cache: { fetchedAt: number; query: string; items: NewsItem[] } | null = null;
 
 export interface NewsItem {
@@ -56,9 +56,58 @@ function parseGoogleNewsRss(xml: string): NewsItem[] {
       publishedAt: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
       snippet: description.slice(0, 240),
     });
-    if (items.length >= 12) break;
+    if (items.length >= 30) break;
   }
   return items;
+}
+
+/// Strip noise from a headline to compare for duplicates: lowercase, drop
+/// the " - Source" suffix Google News appends, collapse whitespace, drop
+/// punctuation.
+function normalizeTitle(t: string): string {
+  return t
+    .toLowerCase()
+    .replace(/\s+-\s+[^-]+$/, "") // " - The Source"
+    .replace(/[^a-z0-9 ]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function trigrams(s: string): Set<string> {
+  const out = new Set<string>();
+  const t = s.replace(/\s+/g, " ");
+  for (let i = 0; i + 3 <= t.length; i++) out.add(t.slice(i, i + 3));
+  return out;
+}
+
+function similarity(a: string, b: string): number {
+  const ta = trigrams(a);
+  const tb = trigrams(b);
+  if (ta.size === 0 || tb.size === 0) return 0;
+  let shared = 0;
+  for (const t of ta) if (tb.has(t)) shared += 1;
+  return shared / Math.min(ta.size, tb.size);
+}
+
+/// Dedupe two headlines that cover the same underlying story (same outlet
+/// reprint, same wire story, same press release picked up by multiple
+/// outlets). Threshold is forgiving — better to lose a near-duplicate
+/// than show two cards of the same story.
+function dedupeNews(items: NewsItem[]): NewsItem[] {
+  const out: NewsItem[] = [];
+  const kept: string[] = [];
+  for (const item of items) {
+    const n = normalizeTitle(item.title);
+    let dup = false;
+    for (const k of kept) {
+      if (similarity(n, k) > 0.55) { dup = true; break; }
+    }
+    if (!dup) {
+      out.push(item);
+      kept.push(n);
+    }
+  }
+  return out;
 }
 
 export async function getNews(query: string = DEFAULT_QUERY): Promise<NewsItem[]> {
@@ -78,7 +127,7 @@ export async function getNews(query: string = DEFAULT_QUERY): Promise<NewsItem[]
     });
     if (!res.ok) return cache?.items ?? [];
     const xml = await res.text();
-    const items = parseGoogleNewsRss(xml);
+    const items = dedupeNews(parseGoogleNewsRss(xml));
     cache = { fetchedAt: now, query, items };
     return items;
   } catch {

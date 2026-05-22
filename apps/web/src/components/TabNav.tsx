@@ -7,7 +7,6 @@ const TABS = [
   { href: "/map",          label: "Crime Map" },
   { href: "/safety",       label: "Personal Safety" },
   { href: "/community",    label: "CommunitySafe" },
-  { href: "/neighborhood", label: "Neighborhood Watch" },
 ];
 
 export function TabNav() {

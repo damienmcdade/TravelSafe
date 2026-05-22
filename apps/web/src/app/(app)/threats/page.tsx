@@ -13,6 +13,7 @@ import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
 import { CityBanner } from "@/components/CitySelector";
+import { NationalAverageCard } from "@/components/NationalAverageCard";
 
 interface Area { slug: string; label: string; jurisdiction: string }
 interface PerArea { slug: string; label: string; incidentCount: number; riskLevel: 1|2|3|4|5; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number }; dominantCategory: "PERSONS"|"PROPERTY"|"SOCIETY"|null }
@@ -104,6 +105,7 @@ export default function ThreatsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">
+          <NationalAverageCard />
           <AreaInsightsPanel areaQueryString={showingCitywide ? `jurisdiction=${city.defaultArea}` : `neighborhood=${area!.slug}`} />
           <CategoryBreakdown
             counts={showingCitywide ? citywideCounts : selectedCounts}

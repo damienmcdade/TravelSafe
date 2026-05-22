@@ -101,11 +101,29 @@ export default function CommunityPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">
-          <AreaInsightsPanel areaQueryString={area ? `neighborhood=${areaSlug}` : "jurisdiction=${city.defaultArea}"} />
+          {/* Neighbor reports first — primary purpose of the tab. */}
+          <section className="space-y-3">
+            <header className="flex items-center justify-between">
+              <h2 className="font-display text-xl text-slate2-900">Neighbor reports</h2>
+              {livePulse > 0 && <span className="text-xs text-sage-700 animate-pulse">{livePulse} new since you arrived</span>}
+            </header>
+            {(posts ?? []).length === 0 && (
+              <div className="surface-muted p-4 text-sm text-slate2-500">
+                No posts yet for this area. Share the first heads-up below — anonymous, no sign-in required.
+              </div>
+            )}
+            {(posts ?? []).map((p) => <PostCard key={p.id} post={p} />)}
+          </section>
+
+          {/* Anonymous composer directly under the feed. */}
+          <PostComposer areaSlug={areaSlug} onPosted={reload} />
+
+          {/* Supporting context below the social surface. */}
+          <AreaInsightsPanel areaQueryString={area ? `neighborhood=${areaSlug}` : `jurisdiction=${city.defaultArea}`} />
           <CategoryBreakdown
             counts={counts}
             title={area ? `${area.label} — incident mix` : `${city.label} incident mix`}
-            subtitle="SDPD NIBRS, recent cached window."
+            subtitle={`${city.label} police data, recent cached window.`}
           />
           <CrimeMixCard
             areaSlug={area?.slug}
@@ -121,27 +139,13 @@ export default function CommunityPage() {
           <section className="surface p-6 border-amber2-500/30">
             <h2 className="font-display text-lg text-slate2-900">Official registries</h2>
             <p className="text-sm text-slate2-700 mt-1">
-              For sex-offender information, TravelSafe sends you to the official public registry. We don&apos;t re-host or display individuals here.
+              For sex-offender information, TravelSafe links to the official public registry. We do not re-host or display individuals here.
             </p>
             <a href={REGISTRY_URL} target="_blank" rel="noreferrer" className="mt-3 inline-block underline text-slate2-900 hover:text-bay-700 transition-colors">
               Open Megan&apos;s Law (California) →
             </a>
           </section>
 
-          <PostComposer areaSlug={areaSlug} onPosted={reload} />
-
-          <section className="space-y-3">
-            <header className="flex items-center justify-between">
-              <h2 className="font-display text-xl text-slate2-900">Neighbor reports</h2>
-              {livePulse > 0 && <span className="text-xs text-sage-700 animate-pulse">{livePulse} new since you arrived</span>}
-            </header>
-            {(posts ?? []).length === 0 && (
-              <div className="surface-muted p-4 text-sm text-slate2-500">
-                No posts yet for this area. Be the first to share a heads-up below — anonymous, no sign-in required.
-              </div>
-            )}
-            {(posts ?? []).map((p) => <PostCard key={p.id} post={p} />)}
-          </section>
           <DataProvenanceBanner provenance={stats?.provenance ?? null} />
         </div>
         <aside className="space-y-4">
