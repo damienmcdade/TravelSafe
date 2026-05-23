@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, useAnonymousAuth, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
@@ -88,21 +88,53 @@ export default function PersonalSafetyPage() {
 // Delete operations the privacy policy promises. Shows for everyone with
 // a session (anonymous device sessions included — they're still User
 // rows server-side and the user has the same right to remove them).
+//
+// The delete-confirmation is treated as a true dialog: it has role/
+// aria-modal/aria-labelledby, focuses the first input on open, returns
+// focus to the trigger on close, and dismisses on Escape. The audit
+// flagged the previous inline panel for failing every one of these.
 function AccountPanel() {
   const { ready: signedIn } = useAnonymousAuth();
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [confirmEmail, setConfirmEmail] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
+
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const emailRef = useRef<HTMLInputElement | null>(null);
+
+  // Focus the email field when the dialog opens.
+  useEffect(() => {
+    if (showConfirm) emailRef.current?.focus();
+  }, [showConfirm]);
+
+  // Escape dismisses; focus returns to the trigger button so a keyboard
+  // user lands back where they were.
+  useEffect(() => {
+    if (!showConfirm) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") closeDialog();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showConfirm]);
+
+  function closeDialog() {
+    setShowConfirm(false);
+    setConfirmEmail("");
+    setConfirmText("");
+    setDeleteError(null);
+    triggerRef.current?.focus();
+  }
 
   async function exportData() {
     setExporting(true);
+    setExportError(null);
     try {
-      // Bypass the api() helper because we want the raw blob, not parsed JSON.
-      // We still need the Authorization header — read it via the same token
-      // accessor the helper uses.
       const res = await fetch("/api/account/export", {
         headers: { Authorization: `Bearer ${localStorage.getItem("travelsafe.token") ?? ""}` },
       });
@@ -115,7 +147,7 @@ function AccountPanel() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert(`Export failed: ${(err as Error).message}`);
+      setExportError(`Export failed: ${(err as Error).message}. Try again in a moment.`);
     } finally {
       setExporting(false);
     }
@@ -135,8 +167,10 @@ function AccountPanel() {
       });
       // Local cleanup — drop the session token and everything else.
       localStorage.clear();
-      alert("Your account and all associated data have been deleted. The page will now reload.");
-      window.location.href = "/";
+      setDeleteSuccess(true);
+      // Brief pause so the screen-reader announces the success state
+      // before navigation, then bounce to home.
+      window.setTimeout(() => { window.location.href = "/"; }, 1500);
     } catch (err) {
       const e = err as Error & { body?: { message?: string } };
       setDeleteError(e.body?.message ?? e.message);
@@ -145,6 +179,17 @@ function AccountPanel() {
   }
 
   if (!signedIn) return null;
+
+  if (deleteSuccess) {
+    return (
+      <section className="surface p-6" role="status" aria-live="polite">
+        <h2 className="font-display text-xl text-slate2-900">Account deleted</h2>
+        <p className="mt-2 text-sm text-slate2-700">
+          Your account and all associated data have been removed from TravelSafe&apos;s servers. Returning to home…
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="surface p-6">
@@ -162,48 +207,69 @@ function AccountPanel() {
           {exporting ? "Preparing export…" : "Export my data (JSON)"}
         </button>
         <button
+          ref={triggerRef}
           onClick={() => setShowConfirm(true)}
+          aria-haspopup="dialog"
+          aria-expanded={showConfirm}
           className="text-sm px-4 py-2 rounded-xl border border-dusk-700 text-dusk-800 hover:bg-dusk-50"
         >
           Delete my account
         </button>
       </div>
 
+      {exportError && (
+        <p role="alert" className="mt-3 text-xs text-dusk-700">{exportError}</p>
+      )}
+
       {showConfirm && (
-        <div className="mt-4 surface-muted p-4 border border-dusk-300">
-          <p className="text-sm text-slate2-900 font-medium">This is irreversible.</p>
-          <p className="mt-1 text-xs text-slate2-700">
-            Deletes your account, your posts, your comments, your check-in timers, your trusted contacts, your push subscriptions, and your live-share links. Posts that other users have replied to will be removed along with their replies. To confirm, type your account email and the literal word DELETE.
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-confirm-title"
+          aria-describedby="delete-confirm-desc"
+          className="mt-4 surface-muted p-4 border border-dusk-300"
+        >
+          <p id="delete-confirm-title" className="text-sm text-slate2-900 font-medium">This is irreversible.</p>
+          <p id="delete-confirm-desc" className="mt-1 text-xs text-slate2-700">
+            Deletes your account, your posts, your comments, your check-in timers, your trusted contacts, your push subscriptions, and your live-share links. Posts that other users have replied to will be removed along with their replies. To confirm, type your account email and the literal word DELETE. Press Escape to cancel.
           </p>
           <div className="mt-3 grid gap-2">
-            <input
-              type="email"
-              placeholder="Your account email"
-              value={confirmEmail}
-              onChange={(e) => setConfirmEmail(e.target.value)}
-              className="rounded-xl border border-sand-300 px-3 py-1.5 text-sm"
-              autoComplete="email"
-            />
-            <input
-              type="text"
-              placeholder='Type DELETE to confirm'
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              className="rounded-xl border border-sand-300 px-3 py-1.5 text-sm font-mono"
-            />
+            <label className="text-xs text-slate2-700">
+              <span className="block mb-1">Your account email</span>
+              <input
+                ref={emailRef}
+                type="email"
+                value={confirmEmail}
+                onChange={(e) => setConfirmEmail(e.target.value)}
+                className="w-full rounded-xl border border-sand-300 px-3 py-2 text-sm"
+                autoComplete="email"
+                required
+              />
+            </label>
+            <label className="text-xs text-slate2-700">
+              <span className="block mb-1">Type <code className="font-mono">DELETE</code> to confirm</span>
+              <input
+                type="text"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                className="w-full rounded-xl border border-sand-300 px-3 py-2 text-sm font-mono"
+                aria-describedby="delete-confirm-desc"
+                required
+              />
+            </label>
           </div>
-          {deleteError && <p className="mt-2 text-xs text-dusk-700">{deleteError}</p>}
+          {deleteError && <p role="alert" className="mt-2 text-xs text-dusk-700">{deleteError}</p>}
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               onClick={confirmDelete}
               disabled={deleting || !confirmEmail || confirmText !== "DELETE"}
-              className="text-sm px-4 py-1.5 rounded-xl bg-dusk-700 text-sand-50 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="text-sm px-4 py-2 rounded-xl bg-dusk-700 text-sand-50 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {deleting ? "Deleting…" : "Permanently delete my account"}
             </button>
             <button
-              onClick={() => { setShowConfirm(false); setConfirmEmail(""); setConfirmText(""); setDeleteError(null); }}
-              className="text-sm px-4 py-1.5 rounded-xl border border-sand-300 text-slate2-700"
+              onClick={closeDialog}
+              className="text-sm px-4 py-2 rounded-xl border border-sand-300 text-slate2-700"
             >
               Cancel
             </button>

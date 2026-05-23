@@ -61,6 +61,7 @@ export function CitySelector() {
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-slate2-700 hover:bg-bay-100 hover:text-bay-700 transition-colors"
         aria-label="Change city"
+        aria-haspopup="dialog"
         aria-expanded={open}
       >
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-bay-500" />
@@ -72,6 +73,8 @@ export function CitySelector() {
 
       {open && (
         <div
+          role="dialog"
+          aria-label="Change city"
           className="absolute right-0 mt-2 w-[22rem] surface p-3 z-30 animate-pop-in"
           onClick={(e) => e.stopPropagation()}
         >

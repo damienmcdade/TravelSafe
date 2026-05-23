@@ -383,6 +383,7 @@ function CategoryFilterChips({
             key={c.id}
             onClick={() => onChange(c.id)}
             title={c.sublabel}
+            aria-pressed={value === c.id}
             className={`px-2.5 py-1 rounded-md transition-colors ${
               value === c.id ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-100"
             }`}

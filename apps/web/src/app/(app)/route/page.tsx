@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { api, useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
@@ -204,7 +204,8 @@ export default function SafeRoutePage() {
                   key={m.value}
                   onClick={() => setMode(m.value)}
                   title={m.hint}
-                  className={`text-xs px-3 py-1.5 rounded-lg transition-colors ${
+                  aria-pressed={mode === m.value}
+                  className={`text-sm px-3 py-2 rounded-lg transition-colors ${
                     mode === m.value ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-50"
                   }`}
                 >
@@ -313,6 +314,13 @@ function NeighborhoodCombobox({
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  // Stable per-instance ids for the listbox and the active option, used
+  // by the WAI-ARIA 1.2 combobox pattern: aria-controls links the input
+  // to its listbox, aria-activedescendant links to the focused option
+  // without moving DOM focus off the input.
+  const reactId = useId();
+  const listboxId = `combobox-${reactId}`;
+  const optionId = (i: number) => `${listboxId}-opt-${i}`;
 
   // Sync the displayed text whenever the committed value changes from above
   // (e.g., city switch wipes it). We don't sync on every keystroke since the
@@ -383,13 +391,18 @@ function NeighborhoodCombobox({
           placeholder={placeholder}
           className="mt-1 input"
           autoComplete="off"
+          role="combobox"
           aria-autocomplete="list"
           aria-expanded={open}
+          aria-controls={listboxId}
+          aria-activedescendant={open && matches.length > 0 ? optionId(focusIdx) : undefined}
           aria-label={ariaLabel}
         />
       </label>
       {open && matches.length > 0 && (
         <ul
+          id={listboxId}
+          aria-label={ariaLabel}
           className="absolute z-30 left-0 right-0 mt-1 surface shadow-card-lift max-h-72 overflow-auto p-1"
           role="listbox"
         >
@@ -397,6 +410,7 @@ function NeighborhoodCombobox({
             <li key={m.slug}>
               <button
                 type="button"
+                id={optionId(i)}
                 onMouseEnter={() => setFocusIdx(i)}
                 onMouseDown={(e) => { e.preventDefault(); pick(m); }}
                 className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${

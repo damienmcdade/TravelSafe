@@ -107,6 +107,11 @@ export default function CommunityPage() {
         <LiveActivityBadge />
       </header>
 
+      <aside role="note" className="surface-muted px-4 py-3 text-xs text-slate2-700 leading-snug">
+        Posts here are user-submitted observations, not professional safety advice and not a substitute for 911.
+        Reports are area-level; TravelSafe never identifies, tracks, or geolocates individual people.
+        In an emergency, call 911.
+      </aside>
 
       <LocationSearch current={area} onResolved={setArea} />
 
@@ -216,8 +221,10 @@ function PostCard({ post }: { post: PostListItem }) {
     setBusy("REPORT");
     try {
       await api(`/moderation/posts/${post.id}/report`, { method: "POST", body: JSON.stringify({}) });
+      // The button itself flips to "Reported ✓" via setConfirmed below
+      // — no need for a native alert(), which steals focus on iOS and
+      // shows the bare hostname as a confidence-killing last impression.
       setConfirmed("REPORT");
-      alert("Reported — a moderator will re-review.");
     } finally {
       setBusy(null);
     }

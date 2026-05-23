@@ -434,6 +434,7 @@ export default function CrimeMap() {
             <button
               type="button"
               onClick={() => setMapMode("count")}
+              aria-pressed={mapMode === "count"}
               className={`px-2 py-1 rounded transition-colors ${mapMode === "count" ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-100"}`}
               title="Shade polygons by raw incident count"
             >
@@ -442,6 +443,7 @@ export default function CrimeMap() {
             <button
               type="button"
               onClick={() => setMapMode("density")}
+              aria-pressed={mapMode === "density"}
               className={`px-2 py-1 rounded transition-colors ${mapMode === "density" ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-100"}`}
               title="Shade polygons by incidents per square kilometer"
             >

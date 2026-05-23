@@ -156,13 +156,13 @@ export default function ThreatsPage() {
           while looking at a specific area (or vice versa) would mis-blame
           the wrong stream. */}
       {showingCitywide && citywideErr && !citywideLoading && (
-        <div className="surface p-4 text-sm text-dusk-700">
+        <div role="alert" className="surface p-4 text-sm text-dusk-700">
           Couldn&apos;t reach the {city.label} citywide police feed just now. Cards below may
           show stale cached data — try again in ~10 seconds. ({citywideErr.message})
         </div>
       )}
       {!showingCitywide && areaStatsErr && (
-        <div className="surface p-4 text-sm text-dusk-700">
+        <div role="alert" className="surface p-4 text-sm text-dusk-700">
           Couldn&apos;t reach the police feed for {area!.label} just now. Cards below may
           show stale cached data — try again in ~10 seconds. ({areaStatsErr.message})
         </div>
