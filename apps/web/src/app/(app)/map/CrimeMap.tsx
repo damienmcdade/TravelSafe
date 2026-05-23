@@ -514,32 +514,87 @@ function NeighborhoodSearch({ value, onChange, suggestions, onSelect, onClear, s
   onClear: () => void; selectedName: string | null; cityLabel: string;
 }) {
   const [focused, setFocused] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(0);
   const blurTimer = useRef<number | null>(null);
+
+  // Keyboard navigation through the suggestion list — Arrow keys move
+  // active index, Enter commits, Escape closes. This is the keyboard
+  // equivalent of clicking a polygon on the map; without it, users
+  // without a mouse couldn't select a neighborhood at all.
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!focused || suggestions.length === 0) {
+      if (e.key === "Enter" && value.trim()) {
+        // Allow Enter to pick the first match even when the dropdown
+        // hasn't rendered yet (e.g., user typed rapidly and pressed Enter).
+        if (suggestions[0]) { e.preventDefault(); onSelect(suggestions[0]); }
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.min(suggestions.length - 1, i + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIdx((i) => Math.max(0, i - 1));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const pick = suggestions[activeIdx];
+      if (pick) onSelect(pick);
+    } else if (e.key === "Escape") {
+      setFocused(false);
+    }
+  }
+
   return (
     <section className="surface p-4">
       <div className="flex items-baseline justify-between flex-wrap gap-2">
         <div>
           <h2 className="font-display text-base text-slate2-900">Look up a {cityLabel} neighborhood</h2>
-          <p className="text-xs text-slate2-500 mt-0.5">Start typing — pick a name to zoom into that neighborhood and see its individual offenses.</p>
+          <p className="text-xs text-slate2-500 mt-0.5">
+            Type a name and pick one to zoom in. Keyboard users: Arrow keys move the highlight, Enter commits, Escape closes. This is the full keyboard equivalent of clicking a polygon on the map.
+          </p>
         </div>
         <div className="relative w-full sm:w-80">
           <input
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => { onChange(e.target.value); setActiveIdx(0); }}
             onFocus={() => { if (blurTimer.current) window.clearTimeout(blurTimer.current); setFocused(true); }}
             onBlur={() => { blurTimer.current = window.setTimeout(() => setFocused(false), 120); }}
+            onKeyDown={onKeyDown}
             placeholder="e.g. Mission, Hollywood, Hillcrest"
             className="input text-sm pr-16"
             autoComplete="off"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={focused && suggestions.length > 0}
+            aria-controls="map-search-listbox"
+            aria-activedescendant={focused && suggestions[activeIdx] ? `map-opt-${suggestions[activeIdx]}` : undefined}
+            aria-label={`Search ${cityLabel} neighborhoods`}
           />
           {(value || selectedName) && (
-            <button onClick={onClear} className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate2-500 hover:text-bay-700">Clear</button>
+            <button
+              onClick={onClear}
+              aria-label="Clear neighborhood search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate2-500 hover:text-bay-700"
+            >
+              Clear
+            </button>
           )}
           {focused && suggestions.length > 0 && (
-            <ul className="absolute z-30 mt-1 w-full surface bg-white max-h-72 overflow-auto shadow-card-lift">
-              {suggestions.map((name) => (
-                <li key={name}>
-                  <button onMouseDown={(e) => { e.preventDefault(); onSelect(name); }} className="w-full text-left px-3 py-2 text-sm hover:bg-bay-50">
+            <ul
+              id="map-search-listbox"
+              role="listbox"
+              aria-label={`Matching ${cityLabel} neighborhoods`}
+              className="absolute z-30 mt-1 w-full surface bg-white max-h-72 overflow-auto shadow-card-lift"
+            >
+              {suggestions.map((name, i) => (
+                <li key={name} role="option" id={`map-opt-${name}`} aria-selected={i === activeIdx}>
+                  <button
+                    onMouseDown={(e) => { e.preventDefault(); onSelect(name); }}
+                    onMouseEnter={() => setActiveIdx(i)}
+                    tabIndex={-1}
+                    className={`w-full text-left px-3 py-2 text-sm transition-colors ${i === activeIdx ? "bg-bay-100 text-slate2-900" : "hover:bg-bay-50"}`}
+                  >
                     {name}
                   </button>
                 </li>

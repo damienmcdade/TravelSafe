@@ -47,7 +47,13 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="mt-4 text-sm text-slate2-500">
-        New here? <Link className="underline hover:text-bay-700 transition-colors" href="/register">Create an account</Link>.
+        New to TravelSafe? You don&apos;t need an account to browse —
+        every device gets an anonymous session automatically. Sign-in
+        is only needed if you previously created an account.{" "}
+        <Link className="underline hover:text-bay-700 transition-colors" href="/threats">
+          Skip to the app
+        </Link>
+        .
       </p>
     </main>
   );

@@ -109,6 +109,46 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
     if (item.value !== value) onChange(item.value);
   }
 
+  // Find the next non-disabled index in a direction (+1/-1), skipping
+  // disabled rows. Returns -1 if none found in that direction.
+  function nextEnabled(from: number, dir: 1 | -1): number {
+    let i = from + dir;
+    while (i >= 0 && i < filtered.length) {
+      if (!filtered[i].disabled) return i;
+      i += dir;
+    }
+    return -1;
+  }
+
+  function onListKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+    if (filtered.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = nextEnabled(activeIdx, 1);
+      if (next >= 0) tap(next);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = nextEnabled(activeIdx, -1);
+      if (prev >= 0) tap(prev);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      const first = filtered.findIndex((it) => !it.disabled);
+      if (first >= 0) tap(first);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      let last = -1;
+      for (let i = filtered.length - 1; i >= 0; i--) if (!filtered[i].disabled) { last = i; break; }
+      if (last >= 0) tap(last);
+    } else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      tap(activeIdx);
+    }
+  }
+
+  const activeOptionId = filtered[activeIdx]
+    ? `wheelopt-${ariaLabel.replace(/[^a-z0-9]+/gi, "-")}-${filtered[activeIdx].value}`
+    : undefined;
+
   return (
     <div className="w-full select-none">
       {searchable && (
@@ -138,7 +178,15 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
           )}
         </div>
       )}
-      <div className="relative w-full" style={{ height }} role="listbox" aria-label={ariaLabel}>
+      <div
+        className="relative w-full focus:outline-none focus:ring-2 focus:ring-bay-300 focus:ring-offset-2 rounded-md"
+        style={{ height }}
+        role="listbox"
+        aria-label={ariaLabel}
+        aria-activedescendant={activeOptionId}
+        tabIndex={0}
+        onKeyDown={onListKeyDown}
+      >
       {/* Center indicator — two horizontal lines framing the selection row. */}
       <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: padding, height: rowHeight }}>
         <div className="h-full mx-1 rounded-md border border-bay-200 bg-bay-50/60" />
@@ -158,19 +206,23 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
           const dist = Math.abs(i - activeIdx);
           const opacity = dist === 0 ? 1 : dist === 1 ? 0.6 : dist === 2 ? 0.35 : 0.18;
           const scale = dist === 0 ? 1 : 0.92;
+          const optionId = `wheelopt-${ariaLabel.replace(/[^a-z0-9]+/gi, "-")}-${item.value}`;
           return (
             <li
               key={item.value}
               className="[scroll-snap-align:center] flex items-center justify-center"
               style={{ height: rowHeight }}
+              role="option"
+              id={optionId}
+              aria-selected={i === activeIdx}
             >
               <button
                 type="button"
                 onClick={() => tap(i)}
                 disabled={item.disabled}
+                tabIndex={-1}
                 className={`w-full text-center transition-all px-3 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-slate2-900 font-medium" : "text-slate2-700"}`}
                 style={{ opacity, transform: `scale(${scale})` }}
-                aria-selected={i === activeIdx}
               >
                 <div className="truncate">{item.label}</div>
                 {item.detail && (

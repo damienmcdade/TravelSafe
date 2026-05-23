@@ -25,6 +25,8 @@ export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([INTRO]);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const launcherRef = useRef<HTMLButtonElement | null>(null);
 
   // Persist + restore conversation between page nav.
   useEffect(() => {
@@ -47,10 +49,55 @@ export function AIAssistant() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, busy]);
 
-  // Focus input when panel opens.
+  // Focus input when panel opens. When it closes, restore focus to the
+  // launcher pill so keyboard users don't get dumped at the top of the
+  // page.
   useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 100);
+    if (open) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    } else {
+      // Skip on first mount (no previous open state to return from).
+      launcherRef.current?.focus({ preventScroll: true });
+    }
+    // launcherRef is intentionally not in deps — restoring focus on
+    // close is the only goal; we don't want to refocus on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Esc closes the panel. Listen at document level so the user can hit
+  // Esc from anywhere inside the dialog (input, scrollable transcript).
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") { e.preventDefault(); setOpen(false); }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
+  // Focus loop: Tab from the last focusable element wraps to the first,
+  // Shift+Tab from the first wraps to the last. This is a "soft" trap —
+  // the dialog is intentionally non-modal (no backdrop, page still
+  // interactive) so we don't block focus from escaping if the user
+  // really wants to leave; we just make Tab cycle predictably WITHIN
+  // the dialog as a usability convenience.
+  function onPanelKeyDown(e: React.KeyboardEvent<HTMLElement>) {
+    if (e.key !== "Tab" || !panelRef.current) return;
+    const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, textarea, select, [tabindex]:not([tabindex="-1"])'
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    if (e.shiftKey && active === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
 
   async function send() {
     const trimmed = input.trim();
@@ -115,8 +162,11 @@ export function AIAssistant() {
       {/* Floating launcher pill, bottom-right. Z-index above the map (Leaflet
           uses 400-1000) but below modals. */}
       <button
+        ref={launcherRef}
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? "Close TravelSafe assistant" : "Open TravelSafe assistant"}
+        aria-expanded={open}
+        aria-controls="travelsafe-assistant-panel"
         className="fixed bottom-5 right-5 z-[1500] flex items-center gap-2 px-4 py-2.5 rounded-full bg-slate2-900 text-white shadow-card-lift hover:shadow-glow-bay hover:-translate-y-0.5 active:scale-[0.97] transition-all"
       >
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-bay-400 animate-pulse" />
@@ -131,8 +181,12 @@ export function AIAssistant() {
         // shrink on short screens. The dialog stays clear of the launcher
         // pill at the bottom-right so both are reachable at once.
         <section
+          ref={panelRef}
+          id="travelsafe-assistant-panel"
           role="dialog"
           aria-label="TravelSafe assistant"
+          aria-modal="false"
+          onKeyDown={onPanelKeyDown}
           className="fixed top-5 right-5 z-[1500] w-[min(24rem,calc(100vw-2.5rem))] max-h-[min(34rem,calc(100vh-2.5rem))] flex flex-col surface bg-white animate-pop-in"
         >
           <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-sand-200">
@@ -140,7 +194,13 @@ export function AIAssistant() {
               <h2 className="font-display text-sm text-slate2-900">TravelSafe assistant</h2>
               <p className="text-[10px] uppercase tracking-wider text-slate2-500">Official data only · no personal advice</p>
             </div>
-            <button onClick={clear} className="text-[11px] text-slate2-500 hover:text-bay-700 transition-colors">Clear</button>
+            <button
+              onClick={clear}
+              aria-label="Clear conversation history"
+              className="text-[11px] text-slate2-500 hover:text-bay-700 transition-colors"
+            >
+              Clear
+            </button>
           </header>
 
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">

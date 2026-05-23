@@ -24,8 +24,9 @@ export default function SharePage() {
           <p>A contact is sharing their location with you.</p>
           <p className="mt-2">Active until <strong>{new Date(view.expiresAt).toLocaleString()}</strong>.</p>
           <p className="mt-4 text-slate2-500 text-xs">
-            Live coordinate streaming is not yet implemented in this open-source scaffold.
-            TODO: wire in a periodic-update channel (poll or WebSocket) and a map view here.
+            Live coordinate streaming is on the roadmap. For now, this link confirms an active
+            Live Share session — the sender&apos;s device knows you have this URL and can revoke
+            it at any time. In an emergency, contact local authorities directly.
           </p>
         </section>
       )}

@@ -8,15 +8,20 @@ import Link from "next/link";
 export default function RegisterPage() {
   return (
     <main className="max-w-md mx-auto px-6 py-16 animate-rise-in">
-      <h1 className="font-display text-3xl text-slate2-900">Account creation is closed</h1>
+      <h1 className="font-display text-3xl text-slate2-900">No account needed</h1>
       <p className="mt-3 text-slate2-700 text-sm">
-        New accounts are no longer needed. CommunitySafe accepts anonymous posts (only profanity and threats are blocked), and the Crime Map, Awareness, and Neighborhood Watch tabs are all open to browse without signing in.
+        TravelSafe doesn&apos;t require sign-up. Every device gets an anonymous
+        session automatically on first visit, and that session powers
+        CommunitySafe posts, the Check-In timer, Live Share, and saved
+        neighborhoods — all without an email address or password.
       </p>
       <p className="mt-3 text-slate2-700 text-sm">
-        If you previously created an account, you can still <Link className="underline hover:text-bay-700 transition-colors" href="/login">sign in</Link> to access the check-in timer and live-share tools.
+        If you previously created an account, you can still
+        {" "}<Link className="underline hover:text-bay-700 transition-colors" href="/login">sign in</Link>{" "}
+        to access it.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/threats" className="btn-primary">Browse {/* dynamic city label lives in the awareness page */}safety data</Link>
+        <Link href="/threats" className="btn-primary">Browse safety data</Link>
         <Link href="/community" className="btn-secondary">Post anonymously</Link>
       </div>
     </main>
