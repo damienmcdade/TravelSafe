@@ -2,6 +2,7 @@ import "server-only";
 import { crimeData } from "../crime-data";
 import { cityForArea } from "../crime-data/cities";
 import { loadPolygonAreas, lookupAreaKm2, totalCityKm2 } from "../../lib/polygon-areas";
+import { HttpError } from "../../lib/http";
 
 /// Safety Score — compares the user's selected area against the FBI's most
 /// recent national rates per 100,000 residents. Returns the raw local and
@@ -277,9 +278,11 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // want a citywide score must use getCitywideSafetyScore (or the
   // ?city= variant of /safezone/safety-score).
   if (areaIncidents.length === 0 && idx < 0) {
-    const err = new Error(`Unknown area slug "${areaSlug}" — not found in ${city.label} adapter's discovered neighborhoods. If you want a citywide score, call getCitywideSafetyScore() or pass ?city= instead of ?area=.`) as Error & { status?: number };
-    err.status = 404;
-    throw err;
+    throw new HttpError(
+      404,
+      "unknown_area",
+      `Unknown area slug "${areaSlug}" — not found in ${city.label} adapter's discovered neighborhoods. If you want a citywide score, call getCitywideSafetyScore() or pass ?city= instead of ?area=.`,
+    );
   }
 
   let persons = 0, property = 0;
