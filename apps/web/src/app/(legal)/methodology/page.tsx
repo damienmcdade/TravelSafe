@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "How TravelSafe computes the Safety Index, where the data comes from, and the limitations of the math.",
 };
 
-const LAST_UPDATED = "2026-05-22";
+const LAST_UPDATED = "2026-05-23";
 
 export default function MethodologyPage() {
   return (
@@ -28,11 +28,11 @@ export default function MethodologyPage() {
         <ol className="list-decimal pl-5 space-y-2">
           <li>
             <strong className="text-slate2-900">City open-data portals.</strong> Each of TravelSafe&apos;s
-            29 supported cities publishes police-incident records through an official open-data feed
+            30 supported cities publishes police-incident records through an official open-data feed
             (SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD, NYPD Complaint Data,
             Seattle SPD, Boston BPD, DC MPD, Philadelphia PPD, Denver, Detroit, Oakland, Cincinnati,
             New Orleans, Baton Rouge, Cambridge, Dallas, Charlotte, Nashville, Minneapolis, Cleveland,
-            Milwaukee, Las Vegas, Boise, Buffalo, Tucson, Kansas City, Saint Paul, Pittsburgh).
+            Milwaukee, Las Vegas, Boise, Buffalo, Tucson, Kansas City, Saint Paul, Pittsburgh, Phoenix).
             We pull the raw records via the same public API the city itself documents.
           </li>
           <li>
