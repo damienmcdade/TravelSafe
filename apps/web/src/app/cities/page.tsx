@@ -1,0 +1,59 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { CITIES } from "@/server/services/crime-data/cities";
+
+export const metadata: Metadata = {
+  title: "All supported cities",
+  description:
+    "TravelSafe surfaces neighborhood-level safety data for 30 US cities. Browse the full list and drill into any city's safety overview.",
+  alternates: { canonical: "/cities" },
+};
+
+export const revalidate = 3600;
+
+/// /cities — directory index of every supported city. Each link drops
+/// the user on the city's landing page (/cities/<slug>) which then
+/// fans into per-neighborhood pages. Optimized for search-engine
+/// crawl: every link is a real anchor with descriptive text and the
+/// metadata.alternates.canonical pins this URL as the master.
+export default function CitiesIndexPage() {
+  const sorted = [...CITIES].sort((a, b) => a.label.localeCompare(b.label));
+  return (
+    <main className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+      <header>
+        <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Cities</p>
+        <h1 className="mt-1 font-display text-3xl text-slate2-900">
+          {sorted.length} US cities covered
+        </h1>
+        <p className="mt-2 text-sm text-slate2-700 max-w-2xl">
+          Pick a city to see neighborhood-level safety data drawn from that city&apos;s
+          official police open-data feed, compared to the FBI Crime in the Nation 2024
+          national average.
+        </p>
+      </header>
+
+      <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
+        {sorted.map((c) => (
+          <li key={c.slug}>
+            <Link
+              href={`/cities/${c.slug}`}
+              className="surface block px-3 py-2 hover:bg-bay-50 transition-colors"
+            >
+              {c.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+        <strong className="text-slate2-900">How this works:</strong>{" "}
+        Each city page summarizes the police-feed coverage and links to the live
+        Safety Index, Crime Map, Trend Feed, and Neighborhood Watch tabs. See{" "}
+        <Link href="/coverage" className="text-bay-700 hover:underline">/coverage</Link>{" "}
+        for live system status and{" "}
+        <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}
+        for how scores are computed.
+      </p>
+    </main>
+  );
+}
