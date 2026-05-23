@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CITIES, cityBySlug } from "@/server/services/crime-data/cities";
 import { getCitywideSafetyScore } from "@/server/services/watch/safety-score";
+import { CityCompare } from "@/components/CityCompare";
 
 interface Props {
   params: Promise<{ city: string }>;
@@ -121,6 +122,12 @@ export default async function CityLandingPage({ params }: Props) {
           </p>
         </section>
       )}
+
+      {/* City-vs-city compare. Default-collapsed: shows the base score
+          only until the user picks another city; then both render
+          side-by-side. Helpful for users considering a move between
+          cities or pulling together a multi-city safety brief. */}
+      <CityCompare baseCitySlug={slug} baseCityLabel={city.label} />
 
       <section>
         <h2 className="font-display text-xl text-slate2-900">Neighborhoods</h2>
