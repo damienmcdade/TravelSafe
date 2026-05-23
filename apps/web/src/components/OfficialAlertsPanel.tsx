@@ -1,5 +1,6 @@
 "use client";
 import { useApi } from "@/lib/api-client";
+import { useCity } from "@/lib/use-city";
 
 interface OfficialAlert {
   id: string;
@@ -24,7 +25,11 @@ const SEVERITY_CLASS: Record<OfficialAlert["severity"], string> = {
 };
 
 export function OfficialAlertsPanel() {
-  const { data, error } = useApi<Resp>("/official-alerts");
+  // City scopes both the NWS state-area pull and the USGS earthquake
+  // radius. Without it the route falls back to the legacy CA/San
+  // Diego defaults, which gave non-SD users an empty card.
+  const { city } = useCity();
+  const { data, error } = useApi<Resp>(`/official-alerts?city=${encodeURIComponent(city.slug)}`, [city.slug]);
   const alerts = data?.alerts ?? [];
 
   return (

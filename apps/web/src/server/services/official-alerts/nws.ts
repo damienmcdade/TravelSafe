@@ -1,12 +1,16 @@
-// National Weather Service active alerts for the San Diego region.
-// api.weather.gov is a free, public, no-key US gov API. Caches the response
-// for 5 minutes per their rate-limit guidance.
-//
-// TODO: add SDPD press-release RSS, City of SD street-closure data, and
-//   CHP traffic incidents as additional adapters behind the same interface.
+// National Weather Service active alerts. api.weather.gov is a free,
+// public, no-key US gov API. We pull the state's active alerts and
+// narrow client-side to anything mentioning the user's city — the NWS
+// state feed is dense enough that filtering is necessary to stay
+// relevant. Cached for 5 minutes per state per their rate-limit
+// guidance.
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; alerts: OfficialAlert[] } | null = null;
+// Per-state cache. Switching cities (and therefore states) shouldn't
+// nuke the prior state's cache — multiple users on different states
+// share the same Node instance via Fluid Compute reuse, so per-state
+// caching avoids one user's hop invalidating another's hit.
+const cache = new Map<string, { fetchedAt: number; alerts: OfficialAlert[] }>();
 
 export interface OfficialAlert {
   id: string;
@@ -35,23 +39,36 @@ interface NwsFeature {
   };
 }
 
-export async function getOfficialAlerts(): Promise<OfficialAlert[]> {
+/// Pull active NWS alerts for the given USPS state code and narrow to
+/// the city label. If state is missing we fall back to a national pull
+/// (which is fine for a card titled "From official sources" — better
+/// to show SOMETHING than nothing).
+export async function getNwsAlerts(state: string | null, cityLabel: string | null): Promise<OfficialAlert[]> {
+  const key = `${state ?? "US"}|${cityLabel ?? ""}`.toLowerCase();
   const now = Date.now();
-  if (cache && now - cache.fetchedAt < CACHE_TTL_MS) return cache.alerts;
+  const hit = cache.get(key);
+  if (hit && now - hit.fetchedAt < CACHE_TTL_MS) return hit.alerts;
   try {
-    // Filter to California; client-side narrow to anything mentioning San Diego.
-    const res = await fetch("https://api.weather.gov/alerts/active?area=CA", {
+    const path = state
+      ? `https://api.weather.gov/alerts/active?area=${encodeURIComponent(state)}`
+      : `https://api.weather.gov/alerts/active`;
+    const res = await fetch(path, {
       headers: {
         Accept: "application/geo+json",
         "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
       },
     });
-    if (!res.ok) return cache?.alerts ?? [];
+    if (!res.ok) return hit?.alerts ?? [];
     const json = (await res.json()) as { features?: NwsFeature[] };
+    const cityNeedle = cityLabel?.toLowerCase() ?? null;
     const alerts: OfficialAlert[] = (json.features ?? [])
       .filter((f) => {
+        if (!cityNeedle) return true;
         const area = f.properties.areaDesc?.toLowerCase() ?? "";
-        return area.includes("san diego") || area.includes("southern california");
+        // Keep alerts that mention the city by name OR are state-wide
+        // (no county-level qualifier in areaDesc means it likely covers
+        // the whole state — those are relevant to everyone).
+        return area.includes(cityNeedle) || area.split(";").length > 5;
       })
       .map((f) => ({
         id: f.id,
@@ -64,9 +81,16 @@ export async function getOfficialAlerts(): Promise<OfficialAlert[]> {
         expires: f.properties.expires ?? null,
         url: `https://alerts.weather.gov/cap/wwacapget.php?x=${encodeURIComponent(f.id)}`,
       }));
-    cache = { fetchedAt: now, alerts };
+    cache.set(key, { fetchedAt: now, alerts });
     return alerts;
   } catch {
-    return cache?.alerts ?? [];
+    return hit?.alerts ?? [];
   }
+}
+
+/// Back-compat shim — the original module exported `getOfficialAlerts`
+/// with no arguments and a hardcoded San Diego / California filter.
+/// Routes that still call it get the legacy behavior.
+export async function getOfficialAlerts(): Promise<OfficialAlert[]> {
+  return getNwsAlerts("CA", "San Diego");
 }
