@@ -56,7 +56,7 @@ export default function PrivacyPage() {
           <li>Your CommunitySafe post bodies, comments, and reports — and an append-only edit log if you revise a post.</li>
           <li>Moderation records: post flags, suspensions, and any blocks/mutes you set.</li>
         </ul>
-        <p>You can request export or deletion of your account and the data above by emailing the address in <strong>Contact</strong> below. We&apos;ll process the request within 30 days. Local browser data is not part of the server-side account and can be cleared at any time from your browser settings.</p>
+        <p>You can export or delete your account directly from inside the app: go to <strong>Personal Safety → Your account &amp; data</strong>. Export downloads a single JSON file with every record we hold about you. Delete is irreversible — it wipes your account, posts, comments, check-in timers, trusted contacts, push subscriptions, and live-share links in one transaction. If you can&apos;t access your account, use the contact path in <strong>Contact</strong> below and we&apos;ll process the request within 30 days. Local browser data is not part of the server-side account and can be cleared at any time from your browser settings.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
@@ -103,11 +103,11 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Access</strong> — request a copy of the personal data we hold about you.</li>
           <li><strong>Rectification</strong> — correct any inaccurate data.</li>
-          <li><strong>Erasure</strong> — request deletion of your account and the associated records listed under &quot;When you create a TravelSafe account&quot; above. CommunitySafe posts that other users have already replied to may be retained in redacted form (your post body removed) to preserve the integrity of those replies.</li>
+          <li><strong>Erasure</strong> — delete your account and the associated records listed under &quot;When you create a TravelSafe account&quot; above. The fastest path is the <strong>Delete my account</strong> button in Personal Safety; it runs immediately and is irreversible. Replies left by other users on your deleted posts are removed along with the parent post, since the conversation is unintelligible without it.</li>
           <li><strong>Portability</strong> — request a machine-readable export.</li>
           <li><strong>Withdraw consent</strong> — disable Push, delete Trusted Contacts, or cancel pending Check-Ins from within the app at any time.</li>
         </ul>
-        <p>To exercise any of these rights, email the address in <strong>Contact</strong>. We&apos;ll respond within 30 days. If you only browse the app without an account, the only server-side data tied to you is the standard hosting log retained per our provider&apos;s policy — there is no account profile to delete in that case. To clear browser-side preferences, see <strong>What is stored on your device</strong>.</p>
+        <p>Access, portability, and erasure are self-service from the Personal Safety page. For rectification or any other request, or if you can&apos;t access your account, use the contact path in <strong>Contact</strong> below — we&apos;ll respond within 30 days. Note that even without an explicit account, browsing TravelSafe creates an anonymous device session (a server-side User row keyed by a random device token, with a synthetic <code className="text-xs">device-*@travelsafe.local</code> email). That anonymous session is also a valid target for export and erasure through the same Personal Safety controls.</p>
       </section>
 
       <section className="surface p-6 space-y-2 text-sm text-slate2-700 leading-relaxed">
@@ -122,7 +122,7 @@ export default function PrivacyPage() {
 
       <section className="surface p-6 space-y-2 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Contact</h2>
-        <p>For privacy requests, data deletion, or any question about this policy, email <a href="mailto:privacy@travelsafe.app" className="text-bay-700 hover:underline">privacy@travelsafe.app</a>. For content concerns inside the app, use the Report button on the specific post.</p>
+        <p>The fastest paths are in-app: <strong>Personal Safety → Your account &amp; data</strong> for export / erasure, and the <strong>Report</strong> button on any post for content concerns. For anything else — corrections, questions about this policy, or DSAR requests you can&apos;t fulfill via the in-app controls — open a privacy issue on the project&apos;s code repository at <a href="https://github.com/damienmcdade/TravelSafe/issues/new" target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">github.com/damienmcdade/TravelSafe/issues</a>. Mark it &quot;PRIVACY&quot; in the title and we&apos;ll respond within 30 days.</p>
       </section>
 
       <p className="text-xs text-slate2-500">

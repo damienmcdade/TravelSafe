@@ -79,7 +79,138 @@ export default function PersonalSafetyPage() {
       />
       <CheckInPanel />
       <LiveSharePanel />
+      <AccountPanel />
     </main>
+  );
+}
+
+// Account / DSAR controls. Surfaces the GDPR/CCPA-compliant Export and
+// Delete operations the privacy policy promises. Shows for everyone with
+// a session (anonymous device sessions included — they're still User
+// rows server-side and the user has the same right to remove them).
+function AccountPanel() {
+  const { ready: signedIn } = useAnonymousAuth();
+  const [exporting, setExporting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [confirmText, setConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  async function exportData() {
+    setExporting(true);
+    try {
+      // Bypass the api() helper because we want the raw blob, not parsed JSON.
+      // We still need the Authorization header — read it via the same token
+      // accessor the helper uses.
+      const res = await fetch("/api/account/export", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("travelsafe.token") ?? ""}` },
+      });
+      if (!res.ok) throw new Error(`http_${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `travelsafe-account-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert(`Export failed: ${(err as Error).message}`);
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function confirmDelete() {
+    setDeleteError(null);
+    if (confirmText !== "DELETE") {
+      setDeleteError("Type DELETE exactly to confirm.");
+      return;
+    }
+    setDeleting(true);
+    try {
+      await api("/account/delete", {
+        method: "POST",
+        body: JSON.stringify({ confirmEmail, confirmText }),
+      });
+      // Local cleanup — drop the session token and everything else.
+      localStorage.clear();
+      alert("Your account and all associated data have been deleted. The page will now reload.");
+      window.location.href = "/";
+    } catch (err) {
+      const e = err as Error & { body?: { message?: string } };
+      setDeleteError(e.body?.message ?? e.message);
+      setDeleting(false);
+    }
+  }
+
+  if (!signedIn) return null;
+
+  return (
+    <section className="surface p-6">
+      <h2 className="font-display text-xl text-slate2-900">Your account &amp; data</h2>
+      <p className="mt-1 text-sm text-slate2-700">
+        TravelSafe stores a session for your device so check-ins, contacts, and posts can be associated with you. Below are the controls the <a href="/privacy" className="text-bay-700 hover:underline">privacy policy</a> describes.
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <button
+          onClick={exportData}
+          disabled={exporting}
+          className="btn-secondary text-sm px-4 py-2 disabled:opacity-60 disabled:cursor-wait"
+        >
+          {exporting ? "Preparing export…" : "Export my data (JSON)"}
+        </button>
+        <button
+          onClick={() => setShowConfirm(true)}
+          className="text-sm px-4 py-2 rounded-xl border border-dusk-700 text-dusk-800 hover:bg-dusk-50"
+        >
+          Delete my account
+        </button>
+      </div>
+
+      {showConfirm && (
+        <div className="mt-4 surface-muted p-4 border border-dusk-300">
+          <p className="text-sm text-slate2-900 font-medium">This is irreversible.</p>
+          <p className="mt-1 text-xs text-slate2-700">
+            Deletes your account, your posts, your comments, your check-in timers, your trusted contacts, your push subscriptions, and your live-share links. Posts that other users have replied to will be removed along with their replies. To confirm, type your account email and the literal word DELETE.
+          </p>
+          <div className="mt-3 grid gap-2">
+            <input
+              type="email"
+              placeholder="Your account email"
+              value={confirmEmail}
+              onChange={(e) => setConfirmEmail(e.target.value)}
+              className="rounded-xl border border-sand-300 px-3 py-1.5 text-sm"
+              autoComplete="email"
+            />
+            <input
+              type="text"
+              placeholder='Type DELETE to confirm'
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              className="rounded-xl border border-sand-300 px-3 py-1.5 text-sm font-mono"
+            />
+          </div>
+          {deleteError && <p className="mt-2 text-xs text-dusk-700">{deleteError}</p>}
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={confirmDelete}
+              disabled={deleting || !confirmEmail || confirmText !== "DELETE"}
+              className="text-sm px-4 py-1.5 rounded-xl bg-dusk-700 text-sand-50 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {deleting ? "Deleting…" : "Permanently delete my account"}
+            </button>
+            <button
+              onClick={() => { setShowConfirm(false); setConfirmEmail(""); setConfirmText(""); setDeleteError(null); }}
+              className="text-sm px-4 py-1.5 rounded-xl border border-sand-300 text-slate2-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
 
