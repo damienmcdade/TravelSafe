@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useDocumentTitle } from "@/lib/use-document-title";
+import { useCity } from "@/lib/use-city";
 
 interface CityStatus {
   slug: string;
@@ -34,6 +35,15 @@ const HEALTH_TONE: Record<CityStatus["health"], { dot: string; label: string; ri
 /// data is.
 export default function CoveragePage() {
   useDocumentTitle("Coverage & system status");
+  // Use the hook's setter so the city change broadcasts to every
+  // useCity subscriber (TabNav, the destination page, etc.) AND
+  // updates the in-memory `current` cache. The previous version
+  // wrote localStorage directly, which left use-city's module-level
+  // cache stale — destination pages would read the OLD city for the
+  // first render and only refresh after some other interaction
+  // triggered a re-load. That looked like "Open Awareness for
+  // Chicago" → lands on San Diego (the city the user came from).
+  const { setCity } = useCity();
   const [data, setData] = useState<CoverageResp | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -136,24 +146,24 @@ export default function CoveragePage() {
                   <div className="mt-4 flex flex-wrap gap-2 text-xs">
                     <Link
                       href="/threats"
-                      onClick={() => setCityInStorage(c.slug)}
+                      onClick={() => setCity(c.slug)}
                       className="text-bay-700 hover:underline"
                     >
-                      Open Awareness →
+                      Open Awareness for {c.label} →
                     </Link>
                     <Link
                       href="/safety-score"
-                      onClick={() => setCityInStorage(c.slug)}
+                      onClick={() => setCity(c.slug)}
                       className="text-bay-700 hover:underline"
                     >
-                      Safety Index →
+                      Safety Index for {c.label} →
                     </Link>
                     <Link
                       href="/map"
-                      onClick={() => setCityInStorage(c.slug)}
+                      onClick={() => setCity(c.slug)}
                       className="text-bay-700 hover:underline"
                     >
-                      Crime Map →
+                      Crime Map for {c.label} →
                     </Link>
                   </div>
                 </article>
@@ -176,13 +186,6 @@ export default function CoveragePage() {
       </p>
     </main>
   );
-}
-
-// Set the city slug in localStorage so the destination page lands on
-// the right city without a tab switch.
-function setCityInStorage(slug: string) {
-  if (typeof window === "undefined") return;
-  try { window.localStorage.setItem("travelsafe.city.v1", slug); } catch { /* ignore */ }
 }
 
 function relativeAgo(diffMs: number): string {

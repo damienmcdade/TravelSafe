@@ -89,8 +89,18 @@ const listeners = new Set<(c: CityInfo) => void>();
 let current: CityInfo | null = null;
 
 function load(): CityInfo {
-  if (current) return current;
-  if (typeof window === "undefined") return CITIES[0];
+  // Server render: no localStorage available. Hold onto whatever the
+  // module-level cache has (set by a prior client save()) so SSR and
+  // first client paint don't disagree.
+  if (typeof window === "undefined") return current ?? CITIES[0];
+  // ALWAYS re-read localStorage on the client. Previously this short-
+  // circuited on `current` and returned the cached CityInfo without
+  // checking storage — any direct localStorage write (e.g., a sibling
+  // page setting the city without going through save()) was invisible
+  // and the destination page rendered the stale city. The Coverage
+  // page hit this. Re-reading every load() keeps the module cache as
+  // a write-through and means save() is the only path that broadcasts
+  // to listeners, but readers never get a stale snapshot.
   const stored = window.localStorage.getItem(STORAGE_KEY);
   const found = CITIES.find((c) => c.slug === stored && c.status === "live");
   current = found ?? CITIES[0];
