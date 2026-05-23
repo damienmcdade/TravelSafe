@@ -3,12 +3,16 @@ import { z } from "zod";
 import { wrap } from "@/server/lib/http";
 import { getSafeRoute, type Mode } from "@/server/services/route/safe-route";
 
+// Walking + driving only. The Mode type in safe-route.ts still includes
+// "transit" as a driving-leg proxy for legacy callers, but we no longer
+// accept it through the public API — transit was retired from the UI and
+// we want the API surface to match the product surface.
 const Query = z.object({
   fromLat: z.coerce.number().finite(),
   fromLng: z.coerce.number().finite(),
   toLat:   z.coerce.number().finite(),
   toLng:   z.coerce.number().finite(),
-  mode:    z.enum(["walking", "driving", "transit"]).default("walking"),
+  mode:    z.enum(["walking", "driving"]).default("walking"),
 });
 
 export const dynamic = "force-dynamic";

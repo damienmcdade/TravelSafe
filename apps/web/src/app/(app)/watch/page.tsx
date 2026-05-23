@@ -35,6 +35,11 @@ const GROUP_TAG: Record<WatchCard["group"], { label: string; tone: string; ring:
   "ai":        { label: "AI brief",  tone: "text-sage-700", ring: "ring-sage-200" },
   "civic":     { label: "Get involved", tone: "text-slate2-700", ring: "ring-sand-300" },
 };
+// Defensive fallback used when a cached response from an older deploy
+// surfaces a card with a group label this build doesn't know about. Without
+// this guard the render would throw and the whole page would render the
+// AppError boundary ("Something went wrong").
+const DEFAULT_TAG = { label: "Note", tone: "text-slate2-700", ring: "ring-sand-300" };
 
 export default function NeighborhoodWatchPage() {
   const { city } = useCity();
@@ -57,7 +62,9 @@ export default function NeighborhoodWatchPage() {
   const cityAreas = useMemo(() => {
     const areas = areasResp?.areas ?? [];
     return areas
-      .filter((a) => a.jurisdiction.toLowerCase() === city.label.toLowerCase())
+      // Tolerate adapters that omit `jurisdiction` (older cached payloads,
+      // partial bootstraps) so a single bad row doesn't crash render.
+      .filter((a) => (a?.jurisdiction ?? "").toLowerCase() === city.label.toLowerCase())
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [areasResp, city.label]);
   const isStale = areasResp?.stale === true;
@@ -113,7 +120,7 @@ export default function NeighborhoodWatchPage() {
           Awareness cards <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">tailored to a specific {city.label} neighborhood</span>
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
-          Spin the wheel below to pick a neighborhood in {city.label}. The cards on this tab name your actual police department, the verified non-emergency line, what gets reported in this area, and how to plug into a real neighborhood-watch program. Every card cites an official source.
+          The cards below name your actual police department, the verified non-emergency line, what gets reported in this area, and how to plug into a real neighborhood-watch program. Every card cites an official source. Pick a different {city.label} neighborhood from the selector at the bottom of the page to rebuild the cards.
         </p>
       </header>
 
@@ -125,10 +132,84 @@ export default function NeighborhoodWatchPage() {
         </aside>
       )}
 
+      {/* Cards section — rendered FIRST so the value of the page is visible
+          immediately on landing. The neighborhood selector is now below
+          (users overwhelmingly hit this page already wanting cards for the
+          area they last picked elsewhere; the wheel is for changing, not
+          for first-time discovery). */}
+      {!selectedArea && !areasLoading && (
+        <section className="surface p-5 text-sm text-slate2-700">
+          <p>
+            Pick a {city.label} neighborhood from the selector below to see your tailored watch cards.
+            The selection syncs with the rest of the app, so if you choose somewhere here you&apos;ll see
+            the same area on the Crime Map, Safety Index, and Trend Feed tabs.
+          </p>
+        </section>
+      )}
+
+      {selectedArea && (
+        <section className="space-y-3">
+          <header className="flex items-baseline justify-between flex-wrap gap-2">
+            <h2 className="font-display text-xl text-slate2-900">
+              {selectedArea.label}, {city.label}
+            </h2>
+            {watch && (
+              <span className="text-xs text-slate2-500 tabular-nums">
+                {watch.totalIncidents.toLocaleString()} incidents in cache
+                {watch.windowDays > 0 && ` · ~${watch.windowDays} days`}
+              </span>
+            )}
+          </header>
+
+          {watchLoading && <CardGridSkeleton />}
+          {watchErr && !watchLoading && (
+            <p className="surface p-4 text-sm text-dusk-700">
+              Couldn&apos;t load the watch cards for {selectedArea.label}. Try again in a moment — the police feed may be warming up.
+            </p>
+          )}
+          {watch && !watchLoading && (
+            <>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {watch.cards.map((c) => {
+                  const tag = GROUP_TAG[c.group] ?? DEFAULT_TAG;
+                  return (
+                    <li key={c.id}>
+                      <article className={`surface p-5 h-full bg-gradient-to-br from-white to-sand-50 ring-1 ${tag.ring} hover:shadow-glow-bay transition-all animate-rise-in`}>
+                        <header className="flex items-baseline justify-between gap-2">
+                          <h3 className="font-display text-base text-slate2-900">{c.title}</h3>
+                          <span className={`text-[10px] uppercase tracking-wider font-medium ${tag.tone}`}>{tag.label}</span>
+                        </header>
+                        <p className="mt-2 text-sm text-slate2-700 leading-snug whitespace-pre-wrap">{c.body}</p>
+                        <a
+                          href={c.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 inline-flex items-center gap-1 text-xs text-bay-700 hover:underline"
+                        >
+                          Source: {c.source} →
+                        </a>
+                      </article>
+                    </li>
+                  );
+                })}
+              </ul>
+
+              <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+                <strong className="text-slate2-900">Methodology:</strong> {watch.disclaimer}
+              </p>
+              <DataDisclaimer prefix="How to read this:" />
+            </>
+          )}
+        </section>
+      )}
+
+      {/* Neighborhood selector — moved to the bottom of the page so the
+          watch cards land above the fold on entry. The wheel still drives
+          the global area store, so picking here updates every other tab. */}
       <section className="surface p-4 sm:p-6">
         <div className="flex items-baseline justify-between flex-wrap gap-2">
           <div>
-            <h2 className="font-display text-lg text-slate2-900">Pick a {city.label} neighborhood</h2>
+            <h2 className="font-display text-lg text-slate2-900">Pick a different {city.label} neighborhood</h2>
             <p className="text-xs text-slate2-500 mt-0.5">
               {cityAreas.length} supported neighborhood{cityAreas.length === 1 ? "" : "s"}. The wheel only shows neighborhoods TravelSafe tracks for {city.label}.
             </p>
@@ -187,62 +268,6 @@ export default function NeighborhoodWatchPage() {
           </div>
         </div>
       </section>
-
-      {selectedArea && (
-        <section className="space-y-3">
-          <header className="flex items-baseline justify-between flex-wrap gap-2">
-            <h2 className="font-display text-xl text-slate2-900">
-              {selectedArea.label}, {city.label}
-            </h2>
-            {watch && (
-              <span className="text-xs text-slate2-500 tabular-nums">
-                {watch.totalIncidents.toLocaleString()} incidents in cache
-                {watch.windowDays > 0 && ` · ~${watch.windowDays} days`}
-              </span>
-            )}
-          </header>
-
-          {watchLoading && <CardGridSkeleton />}
-          {watchErr && !watchLoading && (
-            <p className="surface p-4 text-sm text-dusk-700">
-              Couldn&apos;t load the watch cards for {selectedArea.label}. Try again in a moment — the police feed may be warming up.
-            </p>
-          )}
-          {watch && !watchLoading && (
-            <>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {watch.cards.map((c) => {
-                  const tag = GROUP_TAG[c.group];
-                  return (
-                    <li key={c.id}>
-                      <article className={`surface p-5 h-full bg-gradient-to-br from-white to-sand-50 ring-1 ${tag.ring} hover:shadow-glow-bay transition-all animate-rise-in`}>
-                        <header className="flex items-baseline justify-between gap-2">
-                          <h3 className="font-display text-base text-slate2-900">{c.title}</h3>
-                          <span className={`text-[10px] uppercase tracking-wider font-medium ${tag.tone}`}>{tag.label}</span>
-                        </header>
-                        <p className="mt-2 text-sm text-slate2-700 leading-snug whitespace-pre-wrap">{c.body}</p>
-                        <a
-                          href={c.sourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="mt-3 inline-flex items-center gap-1 text-xs text-bay-700 hover:underline"
-                        >
-                          Source: {c.source} →
-                        </a>
-                      </article>
-                    </li>
-                  );
-                })}
-              </ul>
-
-              <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
-                <strong className="text-slate2-900">Methodology:</strong> {watch.disclaimer}
-              </p>
-              <DataDisclaimer prefix="How to read this:" />
-            </>
-          )}
-        </section>
-      )}
     </main>
   );
 }
