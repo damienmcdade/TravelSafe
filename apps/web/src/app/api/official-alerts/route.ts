@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { wrap } from "@/server/lib/http";
 import { getNwsAlerts, type OfficialAlert } from "@/server/services/official-alerts/nws";
 import { getUsgsEarthquakes } from "@/server/services/official-alerts/usgs";
-import { CITIES } from "@/lib/use-city";
+import { OFFICIAL_ALERTS_CITY_META } from "@/server/services/official-alerts/city-meta";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,10 @@ export const dynamic = "force-dynamic";
 export const GET = wrap(async (req: Request) => {
   const url = new URL(req.url);
   const citySlug = url.searchParams.get("city");
-  const city = citySlug ? CITIES.find((c) => c.slug === citySlug) ?? null : null;
+  // City lookup is intentionally against a server-safe meta map. We
+  // can't import the client-bundle CITIES (use-city.ts is
+  // "use client"); doing so threw at runtime under Fluid Compute.
+  const city = citySlug ? OFFICIAL_ALERTS_CITY_META[citySlug] ?? null : null;
 
   const [nws, usgs] = await Promise.all([
     getNwsAlerts(city?.state ?? null, city?.label ?? null),
