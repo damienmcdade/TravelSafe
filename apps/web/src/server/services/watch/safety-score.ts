@@ -140,6 +140,18 @@ export interface SafetyScoreResponse {
   /// Optional human-readable explanation when dataConfidence < "high".
   /// UI surfaces this verbatim as a caveat banner near the grade card.
   dataConfidenceNote?: string;
+  /// Source type of the underlying feed.
+  ///   "nibrs"  — closed NIBRS incident reports (most cities)
+  ///   "cfs"    — calls-for-service / dispatched calls, rate-calibrated
+  ///              to approximate NIBRS-equivalent volumes (Cleveland,
+  ///              NOLA, Las Vegas)
+  /// UI shows a small badge near the score so users know what they're
+  /// looking at. The calibration scale is in cfsScale when source=cfs.
+  dataSourceType: "nibrs" | "cfs";
+  /// Calibration multiplier applied to localPer100k / cityPer100k when
+  /// dataSourceType=cfs. Always 1.0 for nibrs. Useful for the UI
+  /// tooltip on the CFS badge.
+  cfsScale: number;
 }
 
 /// Compute a confidence signal for the score. A small/short data window
@@ -383,6 +395,8 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
         ? ` ${city.label} publishes calls-for-service rather than closed NIBRS reports; rates are scaled by ${CFS_CALIBRATION[city.slug]}× to approximate NIBRS-equivalent volumes (CFS is structurally 2–3× inflated because each crime spawns multiple dispatches and many dispatches are unfounded).`
         : ""),
     ...confidence,
+    dataSourceType: CFS_CALIBRATION[city.slug] ? "cfs" : "nibrs",
+    cfsScale: CFS_CALIBRATION[city.slug] ?? 1.0,
   };
 }
 
@@ -627,5 +641,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
         `${city.label}'s citywide vs FBI ${FBI_NATIONAL_SOURCE.publishedYear} national is shown below for context. ` +
         "Society / public-order offenses are excluded because the FBI doesn't publish a national rate for them.",
     ...confidence,
+    dataSourceType: CFS_CALIBRATION[city.slug] ? "cfs" : "nibrs",
+    cfsScale: CFS_CALIBRATION[city.slug] ?? 1.0,
   };
 }

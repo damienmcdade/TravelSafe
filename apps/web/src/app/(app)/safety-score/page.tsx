@@ -30,6 +30,8 @@ interface ScoreResp {
   disclaimer: string;
   dataConfidence?: "high" | "medium" | "low";
   dataConfidenceNote?: string;
+  dataSourceType?: "nibrs" | "cfs";
+  cfsScale?: number;
 }
 
 // Five-step grade tone with a gentle green → sand → terracotta gradient.
@@ -211,10 +213,21 @@ function ScoreReport({ score, accent, categoryFilter }: { score: ScoreResp; acce
             <p className="mt-1 text-sm text-slate2-700 max-w-2xl">{score.headline}</p>
           </div>
         </div>
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate2-500 tabular-nums">
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate2-500 tabular-nums items-center">
           <span>~{score.populationEstimate.toLocaleString()} residents (estimated, US Census Vintage 2024)</span>
           {score.windowDays > 0 && <span>·  window: ~{score.windowDays} days</span>}
           {score.asOf && <span>·  newest report: {new Date(score.asOf).toLocaleDateString()}</span>}
+          {/* CFS calibration badge — surfaces the per-city scaling
+              applied to Cleveland / NOLA / LV. NIBRS cities get no
+              badge (default state). */}
+          {score.dataSourceType === "cfs" && (
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bay-50 border border-bay-200 text-bay-700 text-[10px] uppercase tracking-wider font-medium"
+              title={`This city publishes calls-for-service rather than closed NIBRS reports. Rates are calibrated ×${score.cfsScale ?? 1.0} to approximate NIBRS-equivalent volumes (CFS is structurally 2–3× inflated because each crime spawns multiple dispatches and many dispatches are unfounded).`}
+            >
+              CFS-calibrated × {(score.cfsScale ?? 1).toFixed(2)}
+            </span>
+          )}
         </div>
         {/* Data-confidence caveat — shown when the underlying data is
             short of what's needed for a stable grade. Prevents users

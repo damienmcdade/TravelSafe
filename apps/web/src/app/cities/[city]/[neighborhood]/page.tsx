@@ -156,6 +156,15 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
             {score.asOf && <>newest report {new Date(score.asOf).toLocaleDateString()} · </>}
             <a href={score.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">{score.source.label}</a>
           </p>
+          {/* CFS calibration badge — only renders for Cleveland, NOLA,
+              Las Vegas where dataSourceType === "cfs". The score's
+              already been scaled; the badge keeps the methodology
+              transparent on the SEO page just like in the app. */}
+          {score.dataSourceType === "cfs" && (
+            <p className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bay-50 border border-bay-200 text-bay-700 text-[10px] uppercase tracking-wider font-medium">
+              CFS-calibrated × {(score.cfsScale ?? 1).toFixed(2)}
+            </p>
+          )}
           {score.dataConfidence && score.dataConfidence !== "high" && score.dataConfidenceNote && (
             <p
               role="status"
