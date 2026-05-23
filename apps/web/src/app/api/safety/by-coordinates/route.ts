@@ -125,12 +125,32 @@ export const GET = wrap(async (req: NextRequest) => {
     .map((r) => (r.nationalPer100k > 0 ? r.localPer100k / r.nationalPer100k : 1))
     .filter((r) => Number.isFinite(r));
   const avgRatio = ratios.length > 0 ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 1;
-  // Mirror the BlockScore band thresholds: score≥80 (below avg), 50–79
-  // (near), <50 (above). avgRatio≤0.5→score~90; ≤1.0→score~50; ≥2.0→score~10.
+
+  // BlockScore: 5–100, where 100 = near-zero reported incidents and 5 =
+  // the floor for extremely incident-dense areas. Bands the response
+  // surfaces as fbiComparison: ≥80 BELOW, 50-79 NEAR, <50 ABOVE.
+  //
+  // The previous formula decayed linearly past ratio=1 and hit the floor
+  // at ratio ≈ 2.125 — meaning every dense downtown collapsed to score 5
+  // regardless of whether it was 2× or 20× the national rate. Comparing
+  // Times Square (5) to Pacific Beach (5) to Downtown Phoenix (5)
+  // taught the user nothing. Fix: replace the upper branch with a
+  // hyperbolic decay that spreads ratios 1×–20× across scores 5–50
+  // without any artificial cliff.
+  //
+  //   ratio  →  score (new)   |  score (old)
+  //   0.5      90             |  90
+  //   1.0      50             |  50
+  //   1.5      38             |  30
+  //   2.0      31             |  10
+  //   3.0      23             |   5 ← cliff
+  //   5.0      15             |   5
+  //   10.0      8             |   5
+  //   20.0      5             |   5
   const derivedScore =
     avgRatio <= 0.5 ? 90
     : avgRatio <= 1.0 ? Math.round(100 - 50 * avgRatio)
-    : Math.max(5, Math.round(50 - 40 * (avgRatio - 1)));
+    : Math.max(5, Math.round(50 / (1 + (avgRatio - 1) * 0.6)));
   const blockScore = Math.min(100, Math.max(5, derivedScore));
 
   const body: ByCoordinatesResponse = {
