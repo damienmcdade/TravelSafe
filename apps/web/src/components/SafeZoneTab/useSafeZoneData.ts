@@ -91,6 +91,7 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
       band: "safe",
       headline: `No recent reports in the cached window for ${api.area.label}. This is common for quieter neighborhoods — the score will refresh whenever new reports publish.`,
       benchmark: { label: api.source.label, url: api.source.url, year: api.source.publishedYear },
+      asOf: api.asOf,
     };
   }
 

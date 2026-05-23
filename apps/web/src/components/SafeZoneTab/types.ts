@@ -18,6 +18,9 @@ export interface BlockScore {
   headline: string;
   /// Citation for the comparison benchmark.
   benchmark: { label: string; url: string; year: number };
+  /// ISO timestamp of the most recent incident in the cached window —
+  /// drives the "Verified · synced X ago" trust badge on the widget.
+  asOf?: string | null;
 }
 
 export interface ThreatItem {

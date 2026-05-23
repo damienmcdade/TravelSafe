@@ -1,5 +1,6 @@
 "use client";
 import type { BlockScore, BlockScoreBand } from "./types";
+import { DataFreshnessBadge } from "../DataFreshnessBadge";
 
 export interface BlockScoreWidgetProps {
   /// Normalized 0–100 index. Pass null while loading.
@@ -114,9 +115,12 @@ export function BlockScoreWidget({ score, loading, unavailable, contextLabel }: 
         </div>
 
         <div className="flex-1 min-w-[14rem]">
-          <span className={`inline-block text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full ring-1 ${style.chip} ${style.tone}`}>
-            {style.label}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-block text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full ring-1 ${style.chip} ${style.tone}`}>
+              {style.label}
+            </span>
+            <DataFreshnessBadge asOf={score.asOf} sourceLabel={score.benchmark.label} size="sm" />
+          </div>
           <h3 className="mt-2 font-display text-lg text-slate2-900">{contextLabel}</h3>
           <p className="mt-1 text-sm text-slate2-700 leading-snug">{score.headline}</p>
           <p className="mt-2 text-xs text-slate2-500 leading-snug">
