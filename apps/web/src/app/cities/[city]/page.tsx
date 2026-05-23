@@ -46,8 +46,42 @@ export default async function CityLandingPage({ params }: Props) {
     getCitywideSafetyScore(slug).catch(() => null),
   ]);
 
+  // JSON-LD structured data. Schema.org Place + BreadcrumbList lets
+  // search engines understand the page as a location overview and
+  // surface rich snippets (breadcrumb chips, citywide metadata) in
+  // results. Inlined as a single <script> in the page body so it
+  // ships with the SSR HTML — no extra round trip.
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://travel-safe-chi.vercel.app";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Place",
+        name: city.label,
+        url: `${base}/cities/${slug}`,
+        description: `Neighborhood-level safety data for ${city.label}, sourced from the official ${city.label} police open-data feed.`,
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: city.bbox ? (city.bbox.south + city.bbox.north) / 2 : undefined,
+          longitude: city.bbox ? (city.bbox.west + city.bbox.east) / 2 : undefined,
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Cities", item: `${base}/cities` },
+          { "@type": "ListItem", position: 2, name: city.label, item: `${base}/cities/${slug}` },
+        ],
+      },
+    ],
+  };
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav aria-label="Breadcrumb" className="text-xs text-slate2-500">
         <Link href="/cities" className="text-bay-700 hover:underline">Cities</Link>
         {" / "}

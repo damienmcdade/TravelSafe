@@ -66,8 +66,42 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
     getTrendForArea(areaSlug, area.label).catch(() => null),
   ]);
 
+  // JSON-LD structured data: Place + BreadcrumbList. Gives Google
+  // enough signal to surface rich snippets (breadcrumb chips, place
+  // description) for shared neighborhood links. Inlined in SSR HTML so
+  // crawlers see it on first paint.
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://travel-safe-chi.vercel.app";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Place",
+        name: `${area.label}, ${city.label}`,
+        url: `${base}/cities/${citySlug}/${areaSlug}`,
+        description: `Recent police-feed safety data for ${area.label} in ${city.label}, compared to the FBI Crime in the Nation ${score?.source.publishedYear ?? 2024} national average.`,
+        containedInPlace: {
+          "@type": "Place",
+          name: city.label,
+          url: `${base}/cities/${citySlug}`,
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Cities", item: `${base}/cities` },
+          { "@type": "ListItem", position: 2, name: city.label, item: `${base}/cities/${citySlug}` },
+          { "@type": "ListItem", position: 3, name: area.label, item: `${base}/cities/${citySlug}/${areaSlug}` },
+        ],
+      },
+    ],
+  };
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-10 space-y-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav aria-label="Breadcrumb" className="text-xs text-slate2-500">
         <Link href="/cities" className="text-bay-700 hover:underline">Cities</Link>
         {" / "}
