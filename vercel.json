@@ -12,6 +12,10 @@
     {
       "path": "/api/cron/warm-cache",
       "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/cron/audit-ratios",
+      "schedule": "7 9 * * *"
     }
   ]
 }
