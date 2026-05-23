@@ -187,9 +187,14 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
         tabIndex={0}
         onKeyDown={onListKeyDown}
       >
-      {/* Center indicator — two horizontal lines framing the selection row. */}
+      {/* Center indicator — a deliberately bold band around the active row.
+          Earlier this was a 1px bay-200 border with bg-bay-50/60 fill, which
+          was easy to miss when the user was scanning. Now: 2px bay-500
+          border + bay-100 fill + an inset shadow that visually pops the
+          row forward. The active row's TEXT also goes bay-700 + bold via
+          the per-row className below (changed in the same commit). */}
       <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: padding, height: rowHeight }}>
-        <div className="h-full mx-1 rounded-md border border-bay-200 bg-bay-50/60" />
+        <div className="h-full mx-1 rounded-md border-2 border-bay-500 bg-bay-100 shadow-[inset_0_0_0_1px_rgba(74,111,203,0.15)]" />
       </div>
       {/* Top + bottom gradient fades for the drum effect. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b from-white to-transparent" />
@@ -221,7 +226,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
                 onClick={() => tap(i)}
                 disabled={item.disabled}
                 tabIndex={-1}
-                className={`w-full text-center transition-all px-3 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-slate2-900 font-medium" : "text-slate2-700"}`}
+                className={`w-full text-center transition-all px-3 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-bay-700 font-semibold" : "text-slate2-700"}`}
                 style={{ opacity, transform: `scale(${scale})` }}
               >
                 <div className="truncate">{item.label}</div>

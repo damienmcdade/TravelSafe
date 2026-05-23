@@ -10,9 +10,9 @@ interface Mix { area: string; windowDays: number; asOf: string | null; totalInci
 // PROPERTY = sand-gold, SOCIETY = slate-teal. The previous mapping shuffled
 // the category-color pairs AND used the old bright-saturation tones.
 const COLOR: Record<Slice["category"], { bar: string; chip: string; iconBg: string }> = {
-  PERSONS:  { bar: "linear-gradient(90deg, #D9A18C, #C47C62)",  chip: "bg-coral-100 text-coral-700",   iconBg: "bg-coral-100" },
-  PROPERTY: { bar: "linear-gradient(90deg, #E0C290, #CBA56C)",  chip: "bg-amber2-100 text-amber2-700", iconBg: "bg-amber2-100" },
-  SOCIETY:  { bar: "linear-gradient(90deg, #8FB1C8, #5C8AA7)",  chip: "bg-bay-100 text-bay-700",       iconBg: "bg-bay-100" },
+  PERSONS:  { bar: "linear-gradient(90deg, #FCA5A5, #DC2626)",  chip: "bg-coral-100 text-coral-700",   iconBg: "bg-coral-100" },
+  PROPERTY: { bar: "linear-gradient(90deg, #FCD34D, #F59E0B)",  chip: "bg-amber2-100 text-amber2-700", iconBg: "bg-amber2-100" },
+  SOCIETY:  { bar: "linear-gradient(90deg, #93C5FD, #2563EB)",  chip: "bg-bay-100 text-bay-700",       iconBg: "bg-bay-100" },
 };
 
 const SOURCE_LABEL: Record<string, string> = {

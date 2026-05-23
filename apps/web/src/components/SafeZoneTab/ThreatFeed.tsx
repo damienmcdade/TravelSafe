@@ -18,9 +18,9 @@ export interface ThreatFeedProps {
 }
 
 const CAT_DOT: Record<ThreatItem["category"], string> = {
-  PERSONS:  "bg-[#C47C62]",
-  PROPERTY: "bg-[#CBA56C]",
-  SOCIETY:  "bg-[#5C8AA7]",
+  PERSONS:  "bg-[#DC2626]",
+  PROPERTY: "bg-[#F59E0B]",
+  SOCIETY:  "bg-[#2563EB]",
 };
 
 const FEED_CAP = 12;

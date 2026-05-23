@@ -28,17 +28,18 @@ interface Citywide { city: string; totalIncidents: number; appliedOffense: strin
 interface RecentIncident { id: string; nibrsCategory: "PERSONS" | "PROPERTY" | "SOCIETY"; ibrOffenseDescription: string; occurredAt: string; lat?: number; lng?: number; blockLabel?: string }
 interface RecentResp { area: string; reports: RecentIncident[] }
 
-// Three muted, premium-feeling category colors. We deliberately avoid the
-// red end of the spectrum so a high-incident neighborhood doesn't read as
-// emergency-alert. PERSONS lands at a warm terracotta, PROPERTY at sand-
-// gold, SOCIETY at slate-teal — all desaturated to give the map a calm,
-// data-dashboard feel instead of a hazard map. Tweaked the alpha curve at
-// the same time so saturation rises gracefully with incident density
-// instead of jumping to full-intensity.
+// Three high-saturation category colors from completely different hue
+// families. Red / amber / blue maximally distinct on the color wheel,
+// each pure enough that the color-blend in fuseColor() produces
+// recognizable orange-red, magenta-ish, and indigo-amber tones for
+// mixed-category neighborhoods. Deliberate lightness offsets keep them
+// distinguishable under deuteranopia/protanopia colorblindness.
+// RGB and hex MUST stay in sync — the blend math reads the rgb tuple,
+// the legend/swatch reads the hex.
 const CATEGORY_COLOR = {
-  PERSONS:  { rgb: [196, 124,  98], label: "Violent (persons)", hex: "#C47C62" },
-  PROPERTY: { rgb: [203, 165, 108], label: "Property",          hex: "#CBA56C" },
-  SOCIETY:  { rgb: [ 92, 138, 167], label: "Society / other",   hex: "#5C8AA7" },
+  PERSONS:  { rgb: [220,  38,  38], label: "Violent (persons)", hex: "#DC2626" },
+  PROPERTY: { rgb: [245, 158,  11], label: "Property",          hex: "#F59E0B" },
+  SOCIETY:  { rgb: [ 37,  99, 235], label: "Society / other",   hex: "#2563EB" },
 } as const;
 const NO_DATA_RGB = [210, 213, 219] as const;
 type Cat = keyof typeof CATEGORY_COLOR;
@@ -633,24 +634,78 @@ function ZoomController({ polygons, selectedName, fallbackCenter }: { polygons: 
 }
 
 function CityLegend() {
+  // Compute the blend example colors using the same fuseColor math the
+  // map uses, so the legend example swatches are literally what the
+  // user sees on a polygon with that category mix.
+  const blend = (w: { PERSONS: number; PROPERTY: number; SOCIETY: number }) => {
+    const r = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[0] + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[0] + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[0]);
+    const g = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[1] + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[1] + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[1]);
+    const b = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[2] + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[2] + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[2]);
+    return `rgb(${r},${g},${b})`;
+  };
   return (
     <section className="surface p-5 text-sm bg-gradient-to-br from-white to-bay-50">
-      <h2 className="font-display text-lg text-slate2-900">Reading the colors</h2>
-      <p className="mt-2 text-xs text-slate2-500">
-        Each neighborhood is filled with a single color that blends together the recent crime mix. Saturation rises with the number of incidents — paler areas have fewer reports, vivid areas have more.
+      <h2 className="font-display text-lg text-slate2-900">How to read this map</h2>
+      <p className="mt-2 text-sm text-slate2-700">
+        Every neighborhood gets ONE color that mixes together three things at once: which
+        crime types were reported, how the mix splits, and how many reports there were.
+        Three steps to read a polygon:
       </p>
-      <ul className="mt-4 space-y-1.5 text-sm">
+
+      <ol className="mt-3 space-y-2 text-sm text-slate2-700 list-decimal pl-5">
+        <li>
+          <strong className="text-slate2-900">Hue</strong> tells you the dominant crime
+          category. Pure red = mostly violent, pure amber = mostly property, pure blue =
+          mostly society/public-order.
+        </li>
+        <li>
+          <strong className="text-slate2-900">Mixed colors</strong> mean a mixed crime
+          profile. A neighborhood with both violent and property crime renders as a
+          red-orange blend. Mostly property + some society reads as a yellow-green.
+          The exact tint reflects the share of each category.
+        </li>
+        <li>
+          <strong className="text-slate2-900">Saturation/opacity</strong> rises with
+          report volume. A faded polygon = few recent reports. A vivid polygon = many
+          recent reports.
+        </li>
+      </ol>
+
+      <p className="mt-4 text-xs uppercase tracking-wider text-slate2-500 font-medium">Category swatches</p>
+      <ul className="mt-2 space-y-1.5 text-sm">
         <LegendRow color={CATEGORY_COLOR.PERSONS.hex}  label="Violent (persons)" detail="Assault, robbery, etc." />
         <LegendRow color={CATEGORY_COLOR.PROPERTY.hex} label="Property"          detail="Theft, burglary, vandalism, vehicle theft" />
         <LegendRow color={CATEGORY_COLOR.SOCIETY.hex}  label="Society / other"   detail="Drug offenses, weapons, public order" />
       </ul>
-      <p className="mt-4 text-xs text-slate2-500">Mixed colors mean a mixed crime profile. A neighborhood with mostly property crime but some violent crime appears as a warmer orange, not pure amber.</p>
-      <div className="mt-3 flex items-center gap-2 text-xs text-slate2-500">
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: "#cbd5e1" }} />no data</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.55 }} />few</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.75 }} />some</span>
-        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-4 h-2 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.95 }} />many</span>
+
+      <p className="mt-4 text-xs uppercase tracking-wider text-slate2-500 font-medium">Mixed-crime example blends</p>
+      <ul className="mt-2 space-y-1.5 text-xs text-slate2-700">
+        <li className="flex items-center gap-2">
+          <span className="inline-block w-6 h-3 rounded-sm" style={{ background: blend({ PERSONS: 0.5, PROPERTY: 0.5, SOCIETY: 0 }) }} />
+          ≈50% violent + ≈50% property
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block w-6 h-3 rounded-sm" style={{ background: blend({ PERSONS: 0.25, PROPERTY: 0.5, SOCIETY: 0.25 }) }} />
+          mixed across all three
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-block w-6 h-3 rounded-sm" style={{ background: blend({ PERSONS: 0, PROPERTY: 0.5, SOCIETY: 0.5 }) }} />
+          ≈50% property + ≈50% society
+        </li>
+      </ul>
+
+      <p className="mt-4 text-xs uppercase tracking-wider text-slate2-500 font-medium">Report volume</p>
+      <div className="mt-2 flex items-center gap-2 text-xs text-slate2-700">
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-5 h-3 rounded-sm" style={{ background: "#cbd5e1" }} />none</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-5 h-3 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.45 }} />few</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-5 h-3 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.7 }} />some</span>
+        <span className="inline-flex items-center gap-1.5"><span className="inline-block w-5 h-3 rounded-sm" style={{ background: CATEGORY_COLOR.PROPERTY.hex, opacity: 0.95 }} />many</span>
       </div>
+
+      <p className="mt-4 text-xs text-slate2-500 leading-snug">
+        Hover any polygon for the exact mix and report count. Click to drill in and see
+        individual recent dispatches.
+      </p>
     </section>
   );
 }

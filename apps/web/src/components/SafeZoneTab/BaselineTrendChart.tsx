@@ -49,8 +49,8 @@ export function BaselineTrendChart({ points, metric = "weekly reported incidents
       >
         <defs>
           <linearGradient id="szt-baseline-gradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#5C8AA7" stopOpacity="0.28" />
-            <stop offset="100%" stopColor="#5C8AA7" stopOpacity="0" />
+            <stop offset="0%"   stopColor="#2563EB" stopOpacity="0.28" />
+            <stop offset="100%" stopColor="#2563EB" stopOpacity="0" />
           </linearGradient>
         </defs>
         {/* Average reference line */}
@@ -74,7 +74,7 @@ export function BaselineTrendChart({ points, metric = "weekly reported incidents
         </text>
 
         <path d={areaPath} fill="url(#szt-baseline-gradient)" />
-        <path d={linePath} fill="none" stroke="#5C8AA7" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path d={linePath} fill="none" stroke="#2563EB" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       <p className="text-xs text-slate2-500 leading-snug">
         Analytical baseline — {points.length}-week rolling history of {metric} for this area.

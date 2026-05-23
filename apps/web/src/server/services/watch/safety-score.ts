@@ -258,6 +258,30 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   const areaIncidents = idx >= 0
     ? incidentsPerArea[idx]
     : await crimeData.getIncidents(areaSlug, { limit: 5000 }).catch(() => []);
+
+  // INCIDENT-PREVENTION INVARIANT (2026-05-22):
+  // Earlier we silently returned a score of 100 whenever the per-area
+  // function couldn't find any incidents for `areaSlug` (because, e.g.,
+  // a caller passed a city slug as if it were a neighborhood slug,
+  // which is what /threats was doing via city.defaultArea). The rate
+  // math collapsed to localPer100k=0 → ratio=0 → ratioToScore(0)=100
+  // = "Lower than national rate". A 100 score that actually meant
+  // "we don't have data for this area" was a credibility-destroying
+  // bug: users saw 'safer than national' for an area we hadn't even
+  // queried.
+  //
+  // We now fail loudly when the area is unrecognized: if NO incidents
+  // came back AND the slug isn't in the city's discovered area list,
+  // throw 404. The client treats 404 as "area unknown, show nothing"
+  // rather than rendering a misleading 100. Callers that legitimately
+  // want a citywide score must use getCitywideSafetyScore (or the
+  // ?city= variant of /safezone/safety-score).
+  if (areaIncidents.length === 0 && idx < 0) {
+    const err = new Error(`Unknown area slug "${areaSlug}" — not found in ${city.label} adapter's discovered neighborhoods. If you want a citywide score, call getCitywideSafetyScore() or pass ?city= instead of ?area=.`) as Error & { status?: number };
+    err.status = 404;
+    throw err;
+  }
+
   let persons = 0, property = 0;
   for (const i of areaIncidents) {
     const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";

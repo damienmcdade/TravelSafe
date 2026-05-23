@@ -150,11 +150,25 @@ function deriveBaseline(api: InsightsApi | null): BaselinePoint[] {
 /// the first one we see — partial UI keeps rendering for whichever feed
 /// did return. Both `selection.city` and `selection.area` shape the URLs.
 export function useSafeZoneData(selection: SafeZoneSelection): SafeZoneDataState {
+  // Score + trend support BOTH per-area and citywide queries — we MUST
+  // route citywide when no area is picked, because passing the city's
+  // slug as a "neighborhood" returns zero incidents from the adapter
+  // (city.defaultArea is the city slug, not a neighborhood slug). That
+  // produced the all-100 Safety Index regression: zero incidents →
+  // ratio 0/364 → ratioToScore(0) = 100 → "Lower than national rate".
+  // The 100 score was a false positive masking a missing-data path.
+  // INCIDENT: never use a city slug as if it were an area slug. If no
+  // area is picked, route to the citywide endpoint variant.
   const areaForApi = selection.area
     ? `area=${encodeURIComponent(selection.area.slug)}&label=${encodeURIComponent(selection.area.label)}`
     : null;
-  const scorePath = areaForApi ? `/safezone/safety-score?${areaForApi}` : null;
-  const trendPath = areaForApi ? `/safezone/trend?${areaForApi}` : null;
+  const cityForApi = `city=${encodeURIComponent(selection.city.slug)}`;
+  const scorePath = areaForApi
+    ? `/safezone/safety-score?${areaForApi}`
+    : `/safezone/safety-score?${cityForApi}`;
+  const trendPath = areaForApi
+    ? `/safezone/trend?${areaForApi}`
+    : `/safezone/trend?${cityForApi}`;
   const insightsQ = selection.area
     ? `neighborhood=${encodeURIComponent(selection.area.slug)}`
     : `jurisdiction=${encodeURIComponent(selection.city.slug)}`;

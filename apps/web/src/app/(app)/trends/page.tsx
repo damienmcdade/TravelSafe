@@ -35,9 +35,9 @@ interface TrendResp {
 // slate-teal. Tailwind utilities don't have these exact tones so we use
 // inline style colors via plain hex.
 const CAT_DOT: Record<NonNullable<TrendBullet["category"]>, string> = {
-  PERSONS:  "bg-[#C47C62]",
-  PROPERTY: "bg-[#CBA56C]",
-  SOCIETY:  "bg-[#5C8AA7]",
+  PERSONS:  "bg-[#DC2626]",
+  PROPERTY: "bg-[#F59E0B]",
+  SOCIETY:  "bg-[#2563EB]",
 };
 
 export default function TrendFeedPage() {
@@ -347,10 +347,10 @@ function downloadDispatchCsv(trend: TrendResp, dispatches: TrendBullet[]) {
 }
 
 const PERIOD_META: Record<NonNullable<TrendResp["timeOfDay"]>["dominantPeriod"], { label: string; sublabel: string; tone: string }> = {
-  late_night: { label: "Late night", sublabel: "12am – 6am", tone: "#5C8AA7" },
+  late_night: { label: "Late night", sublabel: "12am – 6am", tone: "#2563EB" },
   morning:    { label: "Morning",    sublabel: "6am – 12pm", tone: "#7BA86E" },
-  afternoon:  { label: "Afternoon",  sublabel: "12pm – 6pm", tone: "#CBA56C" },
-  evening:    { label: "Evening",    sublabel: "6pm – 12am", tone: "#C47C62" },
+  afternoon:  { label: "Afternoon",  sublabel: "12pm – 6pm", tone: "#F59E0B" },
+  evening:    { label: "Evening",    sublabel: "6pm – 12am", tone: "#DC2626" },
 };
 
 /// Hour-of-day distribution chart — four horizontal bars showing the

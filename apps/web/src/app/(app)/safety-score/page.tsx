@@ -229,7 +229,7 @@ function ScoreReport({ score, accent, categoryFilter }: { score: ScoreResp; acce
                 <svg viewBox="0 0 200 56" className="mt-3 w-full h-14" role="img" aria-label={`${CAT_LABEL[r.category]}: ${r.localPer100k} per 100k locally, ${r.nationalPer100k} per 100k national`}>
                   <text x="0" y="11" style={{ fontSize: 6 }} fill="#475569">{score.area.label}</text>
                   <rect x="0" y="14" width="200" height="8" rx="2" fill="#e9eef3" />
-                  <rect x="0" y="14" width={(r.localPer100k / max) * 200} height="8" rx="2" fill={above ? "#C47C62" : below ? "#7BA86E" : "#5C8AA7"} />
+                  <rect x="0" y="14" width={(r.localPer100k / max) * 200} height="8" rx="2" fill={above ? "#DC2626" : below ? "#7BA86E" : "#2563EB"} />
                   <text x="200" y="11" textAnchor="end" style={{ fontSize: 6 }} fill="#475569">{r.localPer100k.toLocaleString()} / 100k</text>
                   <text x="0" y="38" style={{ fontSize: 6 }} fill="#475569">National (FBI {score.source.publishedYear})</text>
                   <rect x="0" y="41" width="200" height="8" rx="2" fill="#e9eef3" />

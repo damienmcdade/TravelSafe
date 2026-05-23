@@ -236,14 +236,20 @@ function SafeZoneTabSection({
   city: { slug: string; label: string; defaultArea: string };
   area: { slug: string; label: string; jurisdiction: string } | null;
 }) {
-  // If no neighborhood is picked, use the city's default area so the
-  // module always has a real selection to score. The label falls back
-  // to the city name.
-  const effectiveArea = area ?? { slug: city.defaultArea, label: city.label, jurisdiction: city.label };
+  // CRITICAL — pass `area: null` (NOT a city-slug fallback) when no
+  // neighborhood is picked. The previous code fell back to
+  // `city.defaultArea` which is a city slug, not a neighborhood slug.
+  // Adapters returned zero incidents for it, the per-100k math
+  // collapsed to 0, and the Safety Index always read 100 ("safer than
+  // national") instead of the citywide score. useSafeZoneData now
+  // detects `selection.area === null` and routes to the citywide
+  // endpoint variant of /safezone/safety-score, which produces the
+  // correct city-wide BlockScore.
   const data = useSafeZoneData({
     city: { slug: city.slug, label: city.label },
-    area: { slug: effectiveArea.slug, label: effectiveArea.label },
+    area: area ? { slug: area.slug, label: area.label } : null,
   });
+  const displayLabel = area ? `${area.label}, ${city.label}` : `${city.label} (citywide)`;
   const sourceLabel = `${city.label} official police open-data feed`;
   return (
     <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -251,7 +257,8 @@ function SafeZoneTabSection({
         <BlockScoreWidget
           score={data.blockScore}
           loading={data.loading}
-          contextLabel={`${effectiveArea.label}, ${city.label}`}
+          unavailable={!data.loading && !data.blockScore && data.error != null}
+          contextLabel={displayLabel}
         />
       </div>
       <div>
@@ -259,7 +266,7 @@ function SafeZoneTabSection({
           threats={data.threats}
           baseline={data.baseline}
           windowDays={data.windowDays}
-          contextLabel={effectiveArea.label}
+          contextLabel={area?.label ?? `${city.label} citywide`}
           source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
           loading={data.loading}
         />

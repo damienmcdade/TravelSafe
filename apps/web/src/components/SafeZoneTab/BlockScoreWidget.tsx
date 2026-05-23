@@ -6,6 +6,11 @@ export interface BlockScoreWidgetProps {
   score: BlockScore | null;
   /// Loading shim; renders a skeleton ring when true.
   loading?: boolean;
+  /// True when the score could not be computed (e.g., unknown area, fetch
+  /// error). Renders an explicit "data unavailable" panel instead of the
+  /// skeleton or a misleading default ring. Prevents the all-100 incident
+  /// from recurring: a failed score MUST NOT render as 100.
+  unavailable?: boolean;
   /// Subtitle. Typically the area or city label.
   contextLabel: string;
 }
@@ -15,8 +20,8 @@ export interface BlockScoreWidgetProps {
 // at a glance what the number means without learning a new vocabulary.
 const BAND_STYLE: Record<BlockScoreBand, { stroke: string; fill: string; tone: string; chip: string; label: string }> = {
   safe:     { stroke: "#7BA86E", fill: "#EAF4E6", tone: "text-sage-700",    chip: "bg-sage-100 ring-sage-200",    label: "Fewer reports than national average" },
-  moderate: { stroke: "#CBA56C", fill: "#FAF1DD", tone: "text-amber2-700",  chip: "bg-amber2-50 ring-amber2-300", label: "About the national average" },
-  elevated: { stroke: "#C47C62", fill: "#F4E1D9", tone: "text-coral-700",   chip: "bg-coral-100 ring-coral-200",  label: "More reports than national average" },
+  moderate: { stroke: "#F59E0B", fill: "#FAF1DD", tone: "text-amber2-700",  chip: "bg-amber2-50 ring-amber2-300", label: "About the national average" },
+  elevated: { stroke: "#DC2626", fill: "#F4E1D9", tone: "text-coral-700",   chip: "bg-coral-100 ring-coral-200",  label: "More reports than national average" },
 };
 
 // SVG ring geometry — single source of truth used by both the full and
@@ -29,7 +34,28 @@ const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 /// Stateless presentation widget. Renders a circular progress ring with the
 /// normalized BlockScore index in the center, a band chip, and a citation
 /// link to the benchmark source. No data fetching, no global access.
-export function BlockScoreWidget({ score, loading, contextLabel }: BlockScoreWidgetProps) {
+export function BlockScoreWidget({ score, loading, unavailable, contextLabel }: BlockScoreWidgetProps) {
+  // Explicit unavailable state takes precedence over the skeleton —
+  // showing a skeleton forever when the data load failed is worse than
+  // saying "we couldn't compute this". This is the second invariant
+  // that prevents the all-100 incident from recurring: a failed score
+  // MUST render visibly-unavailable instead of falling through to a
+  // default ring.
+  if (unavailable && !loading) {
+    return (
+      <section className="surface p-6 bg-gradient-to-br from-white to-sand-50 min-h-[200px] flex flex-col items-center justify-center text-center">
+        <p className="text-xs uppercase tracking-wider text-slate2-500">Safety Index unavailable</p>
+        <h3 className="mt-1 font-display text-base text-slate2-900">{contextLabel}</h3>
+        <p className="mt-2 text-sm text-slate2-700 max-w-md">
+          The Safety Index for this area could not be computed — most likely the
+          police adapter is warming up or this area slug isn&apos;t in the city&apos;s
+          discovered neighborhood list. Try a different neighborhood, or refresh
+          in a moment.
+        </p>
+      </section>
+    );
+  }
+
   if (loading || !score) {
     return (
       <section className="surface p-6 bg-gradient-to-br from-white to-sand-50">
