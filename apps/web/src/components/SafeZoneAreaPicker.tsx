@@ -1,7 +1,8 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
+import { AreaCombobox } from "./AreaCombobox";
 
 interface Area { slug: string; label: string; jurisdiction: string }
 
@@ -174,7 +175,7 @@ export function SafeZoneAreaPicker({
             onPick={setPending}
             query={q}
             onQueryChange={setQ}
-            cityLabel={city.label}
+            scopeLabel={city.label}
             commitLabel={commitLabel}
             committedSlug={committed?.slug ?? null}
             onCommit={commit}
@@ -185,135 +186,3 @@ export function SafeZoneAreaPicker({
   );
 }
 
-/// Tight autofill combobox. Filters the supplied option list by substring
-/// as the user types, surfaces up to 30 matches when typing (so the
-/// scrollable dropdown is actually useful for big cities), 8 when the
-/// input is empty (preview without overwhelming). Arrow keys move focus
-/// through the list; Enter commits the focused match.
-function AreaCombobox({
-  options, value, onPick, query, onQueryChange,
-  cityLabel, commitLabel, committedSlug, onCommit,
-}: {
-  options: Area[];
-  value: Area | null;
-  onPick: (a: Area | null) => void;
-  query: string;
-  onQueryChange: (q: string) => void;
-  cityLabel: string;
-  commitLabel: string;
-  committedSlug: string | null;
-  onCommit: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [focusIdx, setFocusIdx] = useState(0);
-  const wrapRef = useRef<HTMLDivElement | null>(null);
-
-  // Outside-click closer.
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
-    }
-    if (open) document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, [open]);
-
-  // Show ALL options (alphabetical from the parent's sort) regardless
-  // of query state — the dropdown's max-h-72 overflow-auto scrolls
-  // through them. The earlier 8-row cap on empty input blocked the
-  // "browse all neighborhoods" use case, which is critical on the
-  // compare picker where users want to see what cities/areas exist.
-  const matches = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return options;
-    return options.filter((a) => a.label.toLowerCase().includes(needle));
-  }, [query, options]);
-
-  function pick(a: Area) {
-    onPick(a);
-    onQueryChange(a.label);
-    setOpen(false);
-  }
-
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setOpen(true);
-      setFocusIdx((i) => Math.min(matches.length - 1, i + 1));
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setFocusIdx((i) => Math.max(0, i - 1));
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const p = matches[focusIdx];
-      if (p) pick(p);
-    } else if (e.key === "Escape") {
-      setOpen(false);
-    }
-  }
-
-  const commitDisabled = !value || value.slug === committedSlug;
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-end gap-2">
-      <div ref={wrapRef} className="relative flex-1 min-w-0">
-        <label className="block text-sm">
-          <span className="sr-only">Search {cityLabel} neighborhoods</span>
-          <input
-            value={query}
-            onChange={(e) => {
-              onQueryChange(e.target.value);
-              setOpen(true);
-              setFocusIdx(0);
-              // Typing invalidates the previously-picked area; the parent
-              // should not commit until the user re-picks.
-              if (value && e.target.value !== value.label) onPick(null);
-            }}
-            onFocus={() => setOpen(true)}
-            onKeyDown={onKeyDown}
-            placeholder={`Search ${options.length} ${cityLabel} neighborhoods…`}
-            className="input text-sm"
-            autoComplete="off"
-            aria-autocomplete="list"
-            aria-expanded={open}
-            aria-label={`Search ${cityLabel} neighborhoods`}
-          />
-        </label>
-        {open && matches.length > 0 && (
-          <ul
-            className="absolute z-30 left-0 right-0 mt-1 surface shadow-card-lift max-h-72 overflow-auto p-1"
-            role="listbox"
-          >
-            {matches.map((m, i) => (
-              <li key={m.slug}>
-                <button
-                  type="button"
-                  onMouseEnter={() => setFocusIdx(i)}
-                  onMouseDown={(e) => { e.preventDefault(); pick(m); }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                    i === focusIdx ? "bg-bay-100 text-slate2-900" : "hover:bg-sand-100 text-slate2-900"
-                  }`}
-                  role="option"
-                  aria-selected={i === focusIdx}
-                >
-                  {m.label}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-        {open && matches.length === 0 && (
-          <div className="absolute z-30 left-0 right-0 mt-1 surface shadow-card-lift p-3 text-xs text-slate2-500">
-            No matching neighborhood in {cityLabel}.
-          </div>
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onCommit}
-        disabled={commitDisabled}
-        className="btn-primary text-xs px-3 py-2 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-      >
-        {value && value.slug === committedSlug ? "Showing" : commitLabel}
-      </button>
-    </div>
-  );
-}

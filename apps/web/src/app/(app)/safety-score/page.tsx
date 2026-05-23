@@ -4,9 +4,9 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
-import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 import { SaveAreaStar } from "@/components/SavedAreasRail";
+import { TrendPanel } from "@/components/TrendPanel";
 
 interface ScoreRow {
   category: "PERSONS" | "PROPERTY";
@@ -86,7 +86,6 @@ export default function SafetyScorePage() {
 
   return (
     <main className="space-y-6">
-      <SafeZoneSubNav />
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">SafeZone · Safety Score · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
@@ -174,6 +173,13 @@ export default function SafetyScorePage() {
           </p>
         </>
       )}
+
+      {/* Trend section — same component the /trends URL alias renders.
+          Lives below the Score so users land on the index first, then
+          scroll into the timeline detail without switching tabs.
+          Section id="trends" so /trends#trends and the in-page anchor
+          both work for deep-linking. */}
+      <TrendPanel />
     </main>
   );
 }

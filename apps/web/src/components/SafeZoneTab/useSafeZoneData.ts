@@ -19,6 +19,13 @@ interface SafetyScoreApi {
     category: "PERSONS" | "PROPERTY";
     count: number;
     localPer100k: number;
+    /// Citywide annualized rate — the PRIMARY comparison anchor for
+    /// per-area scoring. Added in the methodology rebase (commit
+    /// b284f06). Citywide-mode responses set this equal to localPer100k.
+    cityPer100k: number;
+    cityDeltaPct: number;
+    /// FBI national rate — kept for citywide comparisons where it's
+    /// the right anchor, and as a secondary reference in the UI.
     nationalPer100k: number;
     deltaPct: number;
   }>;
@@ -95,22 +102,42 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
     };
   }
 
-  // Average the per-category ratios so a spike in one category doesn't
-  // single-handedly tank the index.
+  // P0 SCORING FIX (2026-05-23): the BlockScore previously averaged
+  // local/NATIONAL ratios. For most urban neighborhoods the national
+  // anchor produced ratios of 3–30× (cities concentrate reportable
+  // activity, neighborhoods concentrate further; national averages
+  // rural+suburban+urban into one denominator). ratioToScore floors
+  // at 5 above ratio 2, so the vast majority of areas registered
+  // a 5/100 score regardless of how they actually compared to peers.
+  //
+  // Fix: per-area scoring uses local/CITY ratios — the nearest
+  // official baseline available everywhere. Citywide-mode responses
+  // (where area === city) get cityPer100k === localPer100k by
+  // construction, which would always yield ratio 1.0 and score 50.
+  // For citywide we instead fall back to the national anchor — that
+  // IS the right comparison when the area being scored is the city
+  // itself. Same anchor logic the letter-grade rebase already used.
+  const isCitywide = api.area.slug === api.city.slug;
   const ratios = api.rows
-    .map((r) => (r.nationalPer100k > 0 ? r.localPer100k / r.nationalPer100k : 1))
+    .map((r) => {
+      if (isCitywide) {
+        return r.nationalPer100k > 0 ? r.localPer100k / r.nationalPer100k : 1;
+      }
+      return r.cityPer100k > 0 ? r.localPer100k / r.cityPer100k : 1;
+    })
     .filter((r) => Number.isFinite(r));
   if (ratios.length === 0) return null;
   const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
   const score = ratioToScore(avg);
   const band = bandFor(score);
   const mult = avg > 0 && Number.isFinite(avg) ? avg : 1;
+  const anchor = isCitywide ? "the FBI national rate" : `${api.city.label} citywide`;
   const headline =
     band === "safe"
-      ? `${api.area.label} reports below the FBI national rate (about ${mult.toFixed(2)}× national across tracked categories).`
+      ? `${api.area.label} reports below ${anchor} (about ${mult.toFixed(2)}× across tracked categories).`
       : band === "moderate"
-        ? `${api.area.label} reports close to the FBI national rate (about ${mult.toFixed(2)}× national).`
-        : `${api.area.label} reports above the FBI national rate (about ${mult.toFixed(1)}× national).`;
+        ? `${api.area.label} reports close to ${anchor} (about ${mult.toFixed(2)}×).`
+        : `${api.area.label} reports above ${anchor} (about ${mult.toFixed(1)}×).`;
   return {
     score,
     band,

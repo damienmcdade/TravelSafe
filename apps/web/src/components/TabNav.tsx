@@ -52,14 +52,16 @@ const WORKFLOWS: WorkflowDef[] = [
     label: "Investigate",
     tagline: "Deep-dive on one area: score, trends, map, watch",
     tabs: [
-      { href: "/safety-score", label: "Safety Index",
+      // SafeZone (Score + Trends) — one tab, one page. The /trends
+      // URL still works as an alias for SEO/bookmarks, but the
+      // Investigate sub-nav advertises a single SafeZone entry to
+      // avoid the "two tabs, same product" confusion the old IA had.
+      { href: "/safety-score", label: "SafeZone", subroutes: ["/trends"],
         warm: ({ citySlug, areaSlug }) => areaSlug
-          ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
-          : [`/api/safezone/safety-score?city=${citySlug}`] },
-      { href: "/trends", label: "Trends",
-        warm: ({ citySlug, areaSlug }) => areaSlug
-          ? [`/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
-          : [`/api/safezone/trend?city=${citySlug}`] },
+          ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`,
+             `/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
+          : [`/api/safezone/safety-score?city=${citySlug}`,
+             `/api/safezone/trend?city=${citySlug}`] },
       { href: "/watch", label: "Neighborhood Watch",
         warm: ({ citySlug }) => [`/api/geo/areas?city=${citySlug}`] },
       { href: "/map", label: "Crime Map",
