@@ -206,7 +206,9 @@ export default function CommunityPage() {
           <DataProvenanceBanner provenance={stats?.provenance ?? null} />
         </div>
         <aside className="space-y-4">
-          <NewsPanel areaSlug={area?.slug ?? city.slug} />
+          {/* NewsPanel handles citywide internally — see threats/page.tsx
+              for the matching cleanup. */}
+          <NewsPanel areaSlug={area?.slug} />
           <OfficialAlertsPanel />
         </aside>
       </div>

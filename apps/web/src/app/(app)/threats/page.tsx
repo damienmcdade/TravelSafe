@@ -222,7 +222,11 @@ export default function ThreatsPage() {
         </div>
         <aside className="space-y-4">
           <UptickTile />
-          <NewsPanel areaSlug={area?.slug ?? city.slug} />
+          {/* NewsPanel handles citywide internally via its ?city= path —
+              passing `area?.slug ?? city.slug` doubled up and produced
+              "san diego San Diego crime …" Google News queries. Now we
+              only pass areaSlug when an area is actually picked. */}
+          <NewsPanel areaSlug={area?.slug} />
           <OfficialAlertsPanel />
         </aside>
       </div>
