@@ -22,6 +22,16 @@ async function tryAdapter<T>(adapter: CrimeDataAdapter, run: (a: CrimeDataAdapte
   }
 }
 
+// The mock adapter ships sample San Diego rows (Pacific Beach / Downtown)
+// dated to "now - N days" so they always look recent. It exists so local
+// developers can spin up the app without provisioning every upstream
+// city's API access. It MUST NEVER serve real users in production —
+// fabricated rows would otherwise appear with provenance "about:blank"
+// and pass through the UI as if they were authoritative police data.
+// The audit caught the dispatcher quietly falling back to mock when the
+// real adapter was empty AND no LKG cache existed.
+const MOCK_FALLBACK_ALLOWED = process.env.NODE_ENV !== "production" || env.CRIME_DATA_ADAPTER === "mock";
+
 // ----- Last-known-good cache --------------------------------------------
 // Generalizes the SDPD lastDiscovered pattern to every adapter at the
 // dispatcher layer. When an adapter returns empty or null for a query
@@ -69,6 +79,7 @@ export const crimeData = {
     // beats a synthetic mock when the upstream is briefly down.
     const lkg = lkgAreaStats.get(area);
     if (lkg) return lkg;
+    if (!MOCK_FALLBACK_ALLOWED) return null;
     return mockAdapter.getAreaStats(area);
   },
 
@@ -83,6 +94,7 @@ export const crimeData = {
     }
     const lkg = lkgIncidents.get(area);
     if (lkg && lkg.length > 0) return lkg;
+    if (!MOCK_FALLBACK_ALLOWED) return incidents ?? [];
     return incidents ?? (await mockAdapter.getIncidents(area, opts));
   },
 
@@ -97,6 +109,7 @@ export const crimeData = {
     }
     const lkg = lkgRecentReports.get(area);
     if (lkg && lkg.length > 0) return lkg;
+    if (!MOCK_FALLBACK_ALLOWED) return reports ?? [];
     return reports ?? (await mockAdapter.getRecentReports(area, opts));
   },
 

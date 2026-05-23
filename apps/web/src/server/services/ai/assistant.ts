@@ -3,6 +3,7 @@ import { z } from "zod";
 import { aiConfigured, getAIModel } from "./provider";
 import { crimeData } from "../crime-data";
 import { CITIES, cityBySlug } from "../crime-data/cities";
+import { CITY_POPULATION, POPULATION_VINTAGE } from "../crime-data/population";
 import { getSafetyScore, getCitywideSafetyScore } from "../watch/safety-score";
 
 // FBI Crime in the Nation 2024 — most recent published national rates
@@ -15,40 +16,11 @@ const NATIONAL_YEAR = 2024;
 const FBI_SOURCE_URL = "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend";
 const METHODOLOGY_URL = "/methodology";
 
-// US Census Bureau Vintage 2024 Population Estimates — covers every city
-// the app's adapters support. Mirrors the canonical map in safety-score.ts.
-const CITY_POPULATION: Record<string, number> = {
-  "san-diego":     1_381_611,
-  "los-angeles":   3_820_914,
-  "san-francisco":   808_988,
-  "chicago":       2_664_452,
-  "seattle":         755_078,
-  "new-york":      8_258_035,
-  "denver":          716_577,
-  "detroit":         633_218,
-  "washington-dc":   678_972,
-  "boston":          650_706,
-  "philadelphia":  1_550_542,
-  "oakland":         430_553,
-  "cincinnati":      311_097,
-  "new-orleans":     364_136,
-  "baton-rouge":     217_665,
-  "cambridge":       118_488,
-  "dallas":        1_302_868,
-  "charlotte":       897_720,
-  "nashville":       687_788,
-  "minneapolis":     421_874,
-  "cleveland":       362_656,
-  "milwaukee":         561_385,
-  "las-vegas":       660_929,
-  "boise":           237_446,
-  "buffalo":         272_140,
-  "tucson":          544_417,
-  "kansas-city":     510_704,
-  "saint-paul":      303_820,
-  "pittsburgh":      303_255,
-  "phoenix":       1_650_070,
-};
+// CITY_POPULATION is imported from the shared module above so the
+// assistant, the scoring engine, and the National Average card all see
+// the same numbers. POPULATION_VINTAGE renders the label that goes with
+// them (currently "Vintage 2023" — the V2024 refresh is tracked
+// separately; year-over-year drift for these cities is typically <2%).
 
 // Cities whose adapters publish calls-for-service rather than closed
 // NIBRS reports. Scores for these cities are calibrated server-side
@@ -144,7 +116,7 @@ async function listSupportedCities() {
     cities: CITIES.map((c) => ({
       slug: c.slug,
       label: c.label,
-      population_2024: CITY_POPULATION[c.slug] ?? null,
+      population_2023: CITY_POPULATION[c.slug] ?? null,
       data_source_type: CFS_CITIES[c.slug] ? "calls-for-service" : "nibrs",
       cfs_calibration: CFS_CITIES[c.slug] ?? null,
     })),
@@ -264,7 +236,7 @@ async function compareCityToNational(slug: string) {
     const score = await getCitywideSafetyScore(slug);
     return {
       city: city.label,
-      population_2024: pop,
+      population_2023: pop,
       window_days: score.windowDays,
       grade: score.grade,
       headline: score.headline,
@@ -302,7 +274,7 @@ export async function streamAssistant(messages: Array<{ role: "user" | "assistan
   const tools = {
     list_supported_cities: tool({
       description:
-        `Return the ${CITIES.length} TravelSafe-supported cities with slugs, Vintage 2024 population, data-source type (NIBRS vs calls-for-service), and CFS calibration factor where applicable. Call when the user asks "what cities do you support?" or hasn't named one yet.`,
+        `Return the ${CITIES.length} TravelSafe-supported cities with slugs, ${POPULATION_VINTAGE} population (US Census Bureau), data-source type (NIBRS vs calls-for-service), and CFS calibration factor where applicable. Call when the user asks "what cities do you support?" or hasn't named one yet.`,
       inputSchema: z.object({}),
       execute: async () => listSupportedCities(),
     }),

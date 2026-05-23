@@ -185,7 +185,7 @@ function HowItsCalculated({ benchmark }: { benchmark: BlockScore["benchmark"] })
           <li>
             <strong className="text-slate2-900">Express it as a rate per 100,000 residents.</strong>{" "}
             The same denominator the FBI uses for its city-vs-national comparisons,
-            scaled by US Census Vintage 2024 city population.
+            scaled by US Census Vintage 2023 city population.
           </li>
           <li>
             <strong className="text-slate2-900">Compare to the national average.</strong>{" "}

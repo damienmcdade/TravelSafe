@@ -2,89 +2,58 @@
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 
-// FBI Crime in the Nation 2024 — the most recent national rate release from
-// the FBI Uniform Crime Reporting program. The legacy crime-data-explorer
-// .fr.cloud.gov host has been retired; the live source moved to cde.ucr
-// .cjis.gov, which always reflects the most current published year. NIBRS
-// has three groups but the FBI's published national rates cover only Violent
-// (≈ Persons) and Property crime, so we hide Society.
+// City-vs-national comparison card. Reads from /api/safezone/safety-score
+// which is the SAME endpoint the citywide Safety Index uses. That gives
+// us:
+//   - properly annualized per-100k rates (raw cached-window counts get
+//     scaled by 365/windowDays)
+//   - 365-day window cap so massive-volume cities (NYC, Chicago) don't
+//     show inflated rates
+//   - CFS calibration applied for Cleveland / NOLA / Las Vegas
+//   - dataConfidence flag we can surface when the upstream feed is thin
 //
-// 2024 national estimated rates per 100,000 people (Crime in the Nation
-// 2024, released October 2025):
-//   Violent crime  — 363.8 (≈ NIBRS Persons)
-//   Property crime — 1,895.8
-// The CDE link below opens the same trend view a user can verify these
-// numbers against.
-const NATIONAL_PER_100K = { PERSONS: 364, PROPERTY: 1896 };
-const NATIONAL_YEAR = 2024;
+// Before this refactor the card did its own math (sum the cached
+// window's raw counts, divide by population, compare to annual FBI
+// rate) — that produced wildly wrong rates whenever the window
+// wasn't ~365 days, and never applied CFS scaling.
+
 const NATIONAL_SOURCE_URL = "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend";
 
-// US Census Bureau Vintage 2024 Population Estimates (released May 2025) —
-// the most recent official population estimates available for these cities.
-// Source: https://www.census.gov/programs-surveys/popest.html
-// US Census Bureau Vintage 2024 Population Estimates (released May 2025).
-const CITY_POPULATION: Record<string, number> = {
-  "san-diego":     1_381_611,
-  "los-angeles":   3_820_914,
-  "san-francisco":   808_988,
-  "chicago":       2_664_452,
-  "seattle":         755_078,
-  "new-york":      8_258_035,
-  "denver":          716_577,
-  "detroit":         633_218,
-  "washington-dc":   678_972,
-  "boston":          650_706,
-  "philadelphia":  1_550_542,
-  "oakland":         430_553,
-  "cincinnati":      311_097,
-  "new-orleans":     364_136,
-  "baton-rouge":     217_665,
-  "cambridge":       118_488,
-  "dallas":        1_302_868,
-  "charlotte":       897_720,
-  "nashville":       687_788,
-  "minneapolis":     421_874,
-  "cleveland":       362_656,
-  "milwaukee":         561_385,
-  "las-vegas":       660_929,
-  "boise":           237_446,
-  "buffalo":         272_140,
-  "tucson":          544_417,
-  "kansas-city":     510_704,
-  "saint-paul":      303_820,
-  "pittsburgh":      303_255,
-  "phoenix":       1_650_070,
-};
-
-interface PerArea { incidentCount: number; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number } }
-interface Citywide { city: string; perArea: PerArea[] }
+interface SafetyScoreRow {
+  category: "PERSONS" | "PROPERTY";
+  localPer100k: number;
+  nationalPer100k: number;
+  deltaPct: number;
+}
+interface SafetyScoreResponse {
+  city: { slug: string; label: string };
+  rows: SafetyScoreRow[];
+  source: { label: string; url: string; publishedYear: number };
+  dataConfidence: "high" | "medium" | "low";
+  dataConfidenceNote?: string;
+}
 
 export function NationalAverageCard() {
   const { city } = useCity();
-  const { data: citywide, loading, error } = useApi<Citywide>(`/crime-data/citywide?city=${city.slug}`, [city.slug]);
+  const { data: score, loading, error } = useApi<SafetyScoreResponse>(`/safezone/safety-score?city=${city.slug}`, [city.slug]);
 
-  const population = CITY_POPULATION[city.slug] ?? 0;
-  const totals = (citywide?.perArea ?? []).reduce(
-    (acc, p) => ({ PERSONS: acc.PERSONS + p.byCategory.PERSONS, PROPERTY: acc.PROPERTY + p.byCategory.PROPERTY }),
-    { PERSONS: 0, PROPERTY: 0 },
-  );
-  const rate = (count: number) => (population > 0 ? (count / population) * 100_000 : 0);
-
+  const persons = score?.rows.find((r) => r.category === "PERSONS");
+  const property = score?.rows.find((r) => r.category === "PROPERTY");
   const rows = [
-    { key: "PERSONS",  label: "Violent (persons)", local: rate(totals.PERSONS),  national: NATIONAL_PER_100K.PERSONS },
-    { key: "PROPERTY", label: "Property",          local: rate(totals.PROPERTY), national: NATIONAL_PER_100K.PROPERTY },
-  ];
+    persons && { key: "PERSONS",  label: "Violent (persons)", local: persons.localPer100k,  national: persons.nationalPer100k,  deltaPct: persons.deltaPct },
+    property && { key: "PROPERTY", label: "Property",          local: property.localPer100k, national: property.nationalPer100k, deltaPct: property.deltaPct },
+  ].filter((r): r is { key: string; label: string; local: number; national: number; deltaPct: number } => r != null);
 
   return (
     <section className="surface p-5">
       <header className="flex items-baseline justify-between flex-wrap gap-2">
         <h3 className="font-display text-lg text-slate2-900">{city.label} vs. national average</h3>
         <a href={NATIONAL_SOURCE_URL} target="_blank" rel="noreferrer" className="text-xs text-bay-700 hover:underline">
-          FBI Crime in the Nation, {NATIONAL_YEAR}
+          FBI Crime in the Nation, {score?.source.publishedYear ?? 2024}
         </a>
       </header>
       <p className="mt-1 text-xs text-slate2-500">
-        Bars compare {city.label}&apos;s recent per-100,000 rate against the FBI&apos;s national average for the same category. Longer bar = more incidents per resident.
+        Bars compare {city.label}&apos;s annualized per-100,000 rate against the FBI&apos;s national average for the same category. Longer bar = more incidents per resident.
       </p>
 
       {loading ? (
@@ -98,8 +67,13 @@ export function NationalAverageCard() {
       ) : (
         <div className="mt-5 space-y-6">
           {rows.map((r) => (
-            <CompareRow key={r.key} label={r.label} cityLabel={city.label} local={r.local} national={r.national} />
+            <CompareRow key={r.key} label={r.label} cityLabel={city.label} local={r.local} national={r.national} deltaPct={r.deltaPct} />
           ))}
+          {score && score.dataConfidence !== "high" && score.dataConfidenceNote && (
+            <p className="text-xs text-amber2-700 border-t border-sand-200 pt-3 italic">
+              Note: {score.dataConfidenceNote}
+            </p>
+          )}
         </div>
       )}
 
@@ -108,13 +82,12 @@ export function NationalAverageCard() {
   );
 }
 
-function CompareRow({ label, cityLabel, local, national }: { label: string; cityLabel: string; local: number; national: number }) {
+function CompareRow({ label, cityLabel, local, national, deltaPct }: { label: string; cityLabel: string; local: number; national: number; deltaPct: number }) {
   const max = Math.max(local, national) * 1.15 || 1;
   const localPct = (local / max) * 100;
   const nationalPct = (national / max) * 100;
-  const delta = national === 0 ? null : ((local - national) / national) * 100;
-  const worse = delta != null && delta > 5;
-  const better = delta != null && delta < -5;
+  const worse = deltaPct > 5;
+  const better = deltaPct < -5;
   const cityBarClass = worse ? "fill-coral-500" : better ? "fill-sage-500" : "fill-bay-500";
   const deltaTone = worse ? "text-coral-700" : better ? "text-sage-700" : "text-slate2-500";
 
@@ -123,7 +96,7 @@ function CompareRow({ label, cityLabel, local, national }: { label: string; city
       <div className="flex items-baseline justify-between">
         <span className="text-sm font-medium text-slate2-900">{label}</span>
         <span className={`text-xs font-medium ${deltaTone}`}>
-          {delta == null ? "—" : `${delta > 0 ? "+" : ""}${delta.toFixed(0)}% vs national`}
+          {`${deltaPct > 0 ? "+" : ""}${deltaPct.toFixed(0)}% vs national`}
         </span>
       </div>
       <svg viewBox="0 0 200 56" className="mt-2 w-full h-14" role="img" aria-label={`${label}: ${cityLabel} ${local.toFixed(0)} per 100k, national ${national.toFixed(0)} per 100k`}>
@@ -148,7 +121,7 @@ function Legend() {
       <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-bay-500" /> near national</span>
       <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-coral-500" /> above national</span>
       <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-slate2-400" /> national reference</span>
-      <span className="ml-auto italic">Rolling window — directional, not a calendar-year rate.</span>
+      <span className="ml-auto italic">Annualized rate from the recent cached window.</span>
     </div>
   );
 }

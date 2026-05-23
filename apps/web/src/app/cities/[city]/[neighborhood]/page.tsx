@@ -151,7 +151,7 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
             ))}
           </ul>
           <p className="mt-4 text-xs text-slate2-500">
-            ~{score.populationEstimate.toLocaleString()} residents (estimated, US Census Vintage 2024) ·{" "}
+            ~{score.populationEstimate.toLocaleString()} residents (estimated, US Census Vintage 2023) ·{" "}
             window ~{score.windowDays} days ·{" "}
             {score.asOf && <>newest report {new Date(score.asOf).toLocaleDateString()} · </>}
             <a href={score.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">{score.source.label}</a>

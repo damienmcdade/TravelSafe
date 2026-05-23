@@ -21,14 +21,11 @@ export const FBI_NATIONAL_SOURCE = {
   publishedYear: 2024,
 };
 
-// US Census Bureau Vintage 2024 city population estimates — official
-// annual estimates for July 1, 2024, released May 2025. Used both for
-// citywide and as a per-area baseline (population per area is
-// approximated by polygon-area weighting or even distribution across
-// the city's named neighborhoods).
-// TODO: numbers below are still V2023 values pending the V2024 refresh
-// pass; year-over-year drift for these cities is typically <2%, well
-// within the noise of "newest N incidents" data sampling.
+// Population estimates and FBI national rates live in shared modules so
+// the AI assistant, this scoring engine, and the citywide-comparison card
+// all reference the same numbers (the audit caught us drifting across
+// three independent copies labeled different vintages).
+import { CITY_POPULATION, POPULATION_VINTAGE } from "../crime-data/population";
 
 // CFS calibration factors. Cleveland, NOLA, and Las Vegas publish
 // calls-for-service feeds rather than closed NIBRS reports. CFS is
@@ -46,38 +43,9 @@ const CFS_CALIBRATION: Record<string, number> = {
   "new-orleans":   0.40,
   "las-vegas":     0.50,
 };
-const CITY_POPULATION: Record<string, number> = {
-  "san-diego":     1_381_611,
-  "los-angeles":   3_820_914,
-  "san-francisco":   808_988,
-  "chicago":       2_664_452,
-  "seattle":         755_078,
-  "new-york":      8_258_035,
-  "denver":          716_577,
-  "detroit":         633_218,
-  "washington-dc":   678_972,
-  "boston":          650_706,
-  "philadelphia":  1_550_542,
-  "oakland":         430_553,
-  "cincinnati":      311_097,
-  "new-orleans":     364_136,
-  "baton-rouge":     217_665,
-  "cambridge":       118_488,
-  "dallas":        1_302_868,
-  "charlotte":       897_720,
-  "nashville":       687_788,
-  "minneapolis":     421_874,
-  "cleveland":       362_656,
-  "milwaukee":           561_385,
-  "las-vegas":       660_929,
-  "boise":           237_446,
-  "buffalo":         272_140,
-  "tucson":          544_417,
-  "kansas-city":     510_704,
-  "saint-paul":      303_820,
-  "pittsburgh":      303_255,
-  "phoenix":       1_650_070,
-};
+// POPULATION_VINTAGE is re-exported so consumers can render the label
+// without reaching into the shared module independently.
+export { POPULATION_VINTAGE };
 
 export interface SafetyScoreRow {
   category: "PERSONS" | "PROPERTY";
@@ -168,6 +136,12 @@ function computeDataConfidence(
   windowDays: number,
   totalIncidents: number,
   pop: number,
+  // CFS-calibration scale (Cleveland 0.35 / NOLA 0.40 / LV 0.50, else 1.0).
+  // Without this, the ratio check for CFS cities sees raw calls-for-service
+  // counts which are structurally 2-3× inflated vs NIBRS, so the "low
+  // confidence" tripwire never fires for them even when data is genuinely
+  // thin — the audit caught this drift.
+  cfsScale: number = 1,
 ): { dataConfidence: SafetyScoreResponse["dataConfidence"]; dataConfidenceNote?: string } {
   if (windowDays === 0 || totalIncidents === 0) {
     return {
@@ -184,9 +158,12 @@ function computeDataConfidence(
     };
   }
   // Annualized observed rate vs combined FBI national (persons + property).
+  // For CFS-calibrated cities, apply the same scale we apply to the rates
+  // shown to users; otherwise the ratio is on a different yardstick from
+  // the national reference.
   const nationalCombined = FBI_NATIONAL_PER_100K_2024.PERSONS + FBI_NATIONAL_PER_100K_2024.PROPERTY;
   const observedAnnual = pop > 0
-    ? (totalIncidents * (365 / windowDays) / pop) * 100_000
+    ? (totalIncidents * (365 / windowDays) / pop) * 100_000 * cfsScale
     : 0;
   const ratio = nationalCombined > 0 ? observedAnnual / nationalCombined : 1;
   // Major cities (>500k) almost never run < 25% of the FBI national rate;
@@ -371,7 +348,7 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   const grade = gradeFromNationalDeltas(rows);
   const cityLabel = `${city.label} (citywide)`;
   const headline = headlineForCity(grade, cityLabel);
-  const confidence = computeDataConfidence(windowDays, persons + property, pop);
+  const confidence = computeDataConfidence(windowDays, persons + property, pop, cfsScale);
 
   return {
     city: { slug: city.slug, label: city.label },
@@ -614,7 +591,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // we couldn't estimate it (no polygon, no peer-share basis), volume-vs-
   // population doesn't carry a stable signal so we fall back to a window-
   // only heuristic via computeDataConfidence's first branches.
-  const confidence = computeDataConfidence(windowDays, persons + property, popDenominator);
+  const confidence = computeDataConfidence(windowDays, persons + property, popDenominator, cfsScalePerArea);
   return {
     city: { slug: city.slug, label: city.label },
     area: { slug: areaSlug, label: areaLabel },
