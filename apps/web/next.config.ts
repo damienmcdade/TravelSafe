@@ -25,12 +25,43 @@ import type { NextConfig } from "next";
 //     external assets (Wikimedia CDN, OSM tile servers) before the
 //     user clicks through to the map / city page.
 //
-// What's NOT included yet:
-//   Content-Security-Policy — needs dedicated testing across the
-//     map (Leaflet inline styles), OSRM (route planner), AI SDK
-//     streaming, Wikimedia images, and every open-data domain.
-//     A misconfigured CSP would silently break the map without
-//     surfacing in dev. Tracked separately.
+// Content Security Policy — REPORT-ONLY for now. Violations are logged
+// to the browser DevTools console (and to the report-to endpoint if a
+// CSP reporting collector is configured) without actually blocking the
+// resource. This lets us observe what would break before flipping
+// enforcement on. The baseline allows:
+//   - default 'self' for all non-listed fetch types
+//   - img-src adds CartoDB tile subdomains (Leaflet map tiles) and
+//     Wikimedia (next/image source for city backdrops, though Next's
+//     optimizer normally proxies them through same-origin)
+//   - script-src needs 'unsafe-inline' for Next.js hydration scripts +
+//     'unsafe-eval' for some client libs; 'self' covers the bundled
+//     chunks
+//   - style-src needs 'unsafe-inline' for Leaflet's runtime-injected
+//     styles and for Tailwind's any inline arbitrary-value classes
+//   - connect-src is 'self' only — we don't make any browser-side
+//     third-party fetches today; AI streaming + all data fetches are
+//     proxied through /api/*
+//   - frame-ancestors 'none' duplicates X-Frame-Options: DENY in the
+//     modern CSP form
+//   - worker-src 'self' blob: covers the service worker (/sw.js)
+const CSP_REPORT_ONLY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "img-src 'self' data: blob: https://upload.wikimedia.org https://*.basemaps.cartocdn.com",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+].join("; ");
+
+// When we're ready to enforce, change the header key to
+// `Content-Security-Policy`. Until then this is observation-only.
 const SECURITY_HEADERS = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options",    value: "nosniff" },
@@ -39,6 +70,7 @@ const SECURITY_HEADERS = [
   { key: "Permissions-Policy",        value: "geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "X-DNS-Prefetch-Control",    value: "on" },
+  { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
 ];
 
 const config: NextConfig = {

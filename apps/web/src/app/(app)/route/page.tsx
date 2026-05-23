@@ -140,6 +140,10 @@ export default function SafeRoutePage() {
 
   return (
     <main className="space-y-6">
+      {/* Warm CartoDB tile-server connections — see /map for full rationale.
+          The route view loads the same Leaflet tiles as the crime map. */}
+      <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossOrigin="" />
+      <link rel="preconnect" href="https://c.basemaps.cartocdn.com" crossOrigin="" />
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Safe Route · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">

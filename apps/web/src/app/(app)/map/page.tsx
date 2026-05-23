@@ -51,6 +51,13 @@ export default function MapPage() {
   useDocumentTitle(`Crime Map · ${area?.label ?? city.label}`);
   return (
     <main className="space-y-6">
+      {/* Warm DNS + TCP + TLS to CartoDB's tile servers in parallel with the
+          dynamic-imported Leaflet bundle. Leaflet round-robins across four
+          subdomains (a/b/c/d) so preconnecting to two gives us parallel
+          early connections without burning all four browser connection
+          slots. React 19 hoists these <link>s into <head> automatically. */}
+      <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossOrigin="" />
+      <link rel="preconnect" href="https://c.basemaps.cartocdn.com" crossOrigin="" />
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Crime Map · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
