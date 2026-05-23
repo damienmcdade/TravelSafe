@@ -163,9 +163,16 @@ export default async function CityLandingPage({ params }: Props) {
         </p>
       </section>
 
-      <p className="text-xs text-slate2-500 leading-snug">
-        TravelSafe summarizes publicly published police reports. Scores reflect historical reporting,
-        not predictions of future risk. See{" "}
+      {/* Full Fair Housing / lending / insurance / hiring disclaimer.
+          This is an indexed SEO page so the legal language must be
+          present in the rendered HTML, not just on the in-app routes. */}
+      <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+        <strong className="text-slate2-900">How to read this:</strong>{" "}
+        TravelSafe summarizes publicly published police reports. Scores reflect
+        historical reporting only — not predictions of future risk, and not a
+        substitute for professional safety advice. Should not be used as the sole
+        basis for housing, lending, insurance, or hiring decisions — verify each
+        statistic with the cited official source before acting on it. See{" "}
         <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}
         for how the index is computed.
       </p>

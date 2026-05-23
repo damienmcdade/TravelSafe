@@ -114,6 +114,36 @@ export default function MethodologyPage() {
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Calls-for-service calibration</h2>
+        <p>
+          Three cities &mdash; <strong>Cleveland</strong>, <strong>New Orleans</strong>, and{" "}
+          <strong>Las Vegas</strong> &mdash; publish <em>calls-for-service</em> (CFS) feeds
+          rather than closed NIBRS incident reports. CFS counts each dispatched call separately,
+          so it is structurally 2&ndash;3&times; inflated relative to NIBRS:
+        </p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>One real crime often generates multiple dispatches (initial 911 call, follow-up, supplemental).</li>
+          <li>Many dispatches are unfounded after investigation (false alarms, mistaken reports).</li>
+          <li>Some categories include non-crime calls (welfare checks, business checks, traffic complaints) that we filter, but the noise floor remains higher than NIBRS.</li>
+        </ul>
+        <p>
+          To keep these three cities comparable to NIBRS-based cities, the per-100k rate is
+          multiplied by a per-city calibration factor before grading:
+        </p>
+        <ul className="list-disc pl-5 space-y-1 tabular-nums">
+          <li>Cleveland: <strong>&times; 0.35</strong></li>
+          <li>New Orleans: <strong>&times; 0.40</strong></li>
+          <li>Las Vegas: <strong>&times; 0.50</strong></li>
+        </ul>
+        <p>
+          Factors reflect empirical CFS-to-NIBRS ratios reported in criminology literature for
+          general-purpose dispatch feeds. The score card on each of these cities renders an explicit
+          &ldquo;CFS-calibrated &times; <em>scale</em>&rdquo; badge so the adjustment is transparent
+          to users. NIBRS-based cities are passed through with a calibration of 1.0 (no scaling).
+        </p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What the score IS</h2>
         <ul className="list-disc pl-5 space-y-1">
           <li>A descriptive summary of historical police-report volume per resident.</li>

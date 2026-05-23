@@ -82,27 +82,35 @@ async function fetchNypd(): Promise<Incident[]> {
   });
   if (!res.ok) throw new Error(`NYPD SODA ${res.status} ${url}`);
   const rows = (await res.json()) as SodaRow[];
-  return rows.map((r, i) => {
+  // Drop rows with no parseable date BEFORE constructing Incidents. The
+  // earlier `new Date(0).toISOString()` fallback survived row mapping
+  // but was filtered out by the citywide aggregator's `t > 0` invariant,
+  // collapsing windowDays → 0 → 0/100k → misleading "below national"
+  // score. Same fix as Charlotte/DC/MPLS/KC/Cincinnati earlier.
+  const out: Incident[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const datePart = (r.cmplnt_fr_dt ?? "").slice(0, 10); // YYYY-MM-DD
+    if (!datePart) continue;
+    const timePart = r.cmplnt_fr_tm ?? "00:00:00";
+    const d = new Date(`${datePart}T${timePart}`);
+    if (Number.isNaN(d.getTime()) || d.getTime() <= 0) continue;
     const lat = Number(r.latitude);
     const lon = Number(r.longitude);
     const area = precinctName(r.addr_pct_cd) ?? "Unknown";
-    // NYPD splits date + time into two columns. Combine them so occurredAt
-    // is a proper ISO timestamp instead of always landing at midnight.
-    const datePart = (r.cmplnt_fr_dt ?? "").slice(0, 10); // YYYY-MM-DD
-    const timePart = r.cmplnt_fr_tm ?? "00:00:00";
-    const occurred = datePart ? `${datePart}T${timePart}` : new Date(0).toISOString();
-    return {
+    out.push({
       id: `ny-${r.cmplnt_num ?? i}`,
       area,
-      occurredAt: occurred,
+      occurredAt: d.toISOString(),
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: r.pd_desc?.trim() || r.ofns_desc?.trim() || "Unknown",
       beat: null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,
       lng: !isNaN(lon) && lon !== 0 ? lon : undefined,
-    };
-  });
+    });
+  }
+  return out;
 }
 
 export async function getRowsNYC(): Promise<Incident[]> {

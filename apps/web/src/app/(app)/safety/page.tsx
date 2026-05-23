@@ -222,7 +222,15 @@ function formatRemaining(ms: number) {
 function LiveSharePanel() {
   const { ready: signedIn } = useAnonymousAuth();
   const { data, reload } = useApi<LiveShare[]>(signedIn ? "/safety/live-share" : null, [signedIn]);
-  const active = (data ?? []).filter((s) => !s.revokedAt && new Date(s.expiresAt) > new Date());
+  // Defensive: drop rows with missing/invalid expiresAt before the
+  // date comparison so a malformed cached row doesn't crash render
+  // via `new Date(undefined) > new Date()` → invalid Date NaN flow.
+  const active = (data ?? []).filter((s) => {
+    if (s.revokedAt) return false;
+    if (!s.expiresAt) return false;
+    const t = new Date(s.expiresAt).getTime();
+    return Number.isFinite(t) && t > Date.now();
+  });
 
   const [duration, setDuration] = useState(30);
   const [contactEmail, setContactEmail] = useState("");

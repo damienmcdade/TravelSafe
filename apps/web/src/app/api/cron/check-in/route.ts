@@ -9,11 +9,13 @@ export const dynamic = "force-dynamic";
 // the long-running worker the Express service used to run. If CRON_SECRET is
 // set, require it as a Bearer header so the endpoint isn't a public trigger.
 export async function GET(req: NextRequest) {
-  if (env.CRON_SECRET) {
-    const auth = req.headers.get("authorization");
-    if (auth !== `Bearer ${env.CRON_SECRET}`) {
-      return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-    }
+  // CRON_SECRET is REQUIRED — see /api/cron/audit-ratios for rationale.
+  if (!env.CRON_SECRET) {
+    return NextResponse.json({ error: "cron_secret_required" }, { status: 503 });
+  }
+  const auth = req.headers.get("authorization");
+  if (auth !== `Bearer ${env.CRON_SECRET}`) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const due = await prisma.checkInTimer.findMany({
     where: { status: CheckInStatus.ACTIVE, scheduledFor: { lte: new Date() } },

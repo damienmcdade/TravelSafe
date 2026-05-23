@@ -74,7 +74,11 @@ export default function SafeRoutePage() {
   const cityAreas = useMemo(() => {
     const areas = areasResp?.areas ?? [];
     return areas
-      .filter((a) => a.jurisdiction.toLowerCase() === city.label.toLowerCase())
+      // Defensive: a single row with missing `jurisdiction` would crash
+      // the whole render via toLowerCase() on undefined — same class of
+      // bug as the watch/safety-score AppError boundary triggers we've
+      // patched. Match the optional-chain + nullish-fallback pattern.
+      .filter((a) => (a?.jurisdiction ?? "").toLowerCase() === city.label.toLowerCase())
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [areasResp, city.label]);
 

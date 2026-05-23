@@ -21,13 +21,21 @@ export function CitySelector() {
   const { city, setCity } = useCity();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  // Close on outside click / Escape.
+  // Close on outside click / Escape. On Escape, return focus to the
+  // trigger button so keyboard users land back on a recognizable
+  // affordance rather than nowhere (WCAG focus-management).
   useEffect(() => {
     function onClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
+    }
     if (open) {
       document.addEventListener("click", onClick);
       document.addEventListener("keydown", onKey);
@@ -41,11 +49,15 @@ export function CitySelector() {
   function pick(slug: string) {
     setCity(slug);
     setOpen(false);
+    // Return focus to the trigger after pick so the user can continue
+    // with keyboard nav from a known location.
+    triggerRef.current?.focus();
   }
 
   return (
     <div ref={ref} className="relative">
       <button
+        ref={triggerRef}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-slate2-700 hover:bg-bay-100 hover:text-bay-700 transition-colors"
         aria-label="Change city"

@@ -58,7 +58,9 @@ export default function CoveragePage() {
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Coverage · System status</p>
         <h1 className="mt-1 font-display text-3xl text-slate2-900">
-          {data ? `${data.liveCities} of ${data.totalCities} cities` : "Loading coverage…"} live
+          {data
+            ? `${data.liveCities} of ${data.totalCities} cities live`
+            : "System status loading…"}
         </h1>
         {data && (
           <p className="mt-2 text-sm text-slate2-700 max-w-2xl">

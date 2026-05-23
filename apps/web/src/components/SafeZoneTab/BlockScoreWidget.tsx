@@ -48,10 +48,9 @@ export function BlockScoreWidget({ score, loading, unavailable, contextLabel }: 
         <p className="text-xs uppercase tracking-wider text-slate2-500">Safety Index unavailable</p>
         <h3 className="mt-1 font-display text-base text-slate2-900">{contextLabel}</h3>
         <p className="mt-2 text-sm text-slate2-700 max-w-md">
-          The Safety Index for this area could not be computed — most likely the
-          police adapter is warming up or this area slug isn&apos;t in the city&apos;s
-          discovered neighborhood list. Try a different neighborhood, or refresh
-          in a moment.
+          No data is available for this neighborhood right now — the police data
+          adapter may still be loading, or this neighborhood isn&apos;t yet
+          tracked. Pick a different neighborhood or refresh in a moment.
         </p>
       </section>
     );

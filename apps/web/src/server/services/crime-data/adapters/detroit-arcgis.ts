@@ -76,25 +76,33 @@ async function fetchDetroit(): Promise<Incident[]> {
     Array.from({ length: PAGES }, (_, i) => fetchPage(i * PAGE_SIZE).catch(() => [] as DetroitRow[])),
   );
   const rows = pages.flat();
-  return rows.map((r, i) => {
+  // Drop rows with no parseable date — see nypd-socrata for rationale.
+  // Epoch fallback would collapse Detroit citywide windowDays to 0.
+  const out: Incident[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (r.incident_occurred_at == null) continue;
+    const d = new Date(r.incident_occurred_at);
+    if (Number.isNaN(d.getTime()) || d.getTime() <= 0) continue;
     const lat = r.latitude;
     const lon = r.longitude;
     const area = r.neighborhood?.trim() || "Unknown";
     // Detroit prints offense_description with trailing whitespace padding —
     // trim it so the autocomplete + drill-down read cleanly.
     const desc = r.offense_description?.trim().replace(/\s+/g, " ") || r.offense_category?.trim() || "Unknown";
-    return {
+    out.push({
       id: `det-${r.crime_id ?? i}`,
       area,
-      occurredAt: r.incident_occurred_at ? new Date(r.incident_occurred_at).toISOString() : new Date(0).toISOString(),
+      occurredAt: d.toISOString(),
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: desc,
       beat: r.police_precinct ?? null,
       blockLabel: undefined,
       lat: typeof lat === "number" && lat !== 0 ? lat : undefined,
       lng: typeof lon === "number" && lon !== 0 ? lon : undefined,
-    };
-  });
+    });
+  }
+  return out;
 }
 
 export async function getRowsDetroit(): Promise<Incident[]> {

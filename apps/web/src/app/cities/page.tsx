@@ -56,6 +56,20 @@ export default function CitiesIndexPage() {
         <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}
         for how scores are computed.
       </p>
+
+      {/* Fair Housing / lending / insurance / hiring disclaimer.
+          Indexed SEO page must carry the same legal language the (app)
+          layout DataDisclaimer provides on authenticated routes —
+          otherwise a user landing from search sees scores without the
+          guardrail. */}
+      <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+        <strong className="text-slate2-900">How to read this:</strong>{" "}
+        TravelSafe summarizes publicly published police reports. Scores reflect
+        historical reporting only — not predictions of future risk, and not a
+        substitute for professional safety advice. Should not be used as the sole
+        basis for housing, lending, insurance, or hiring decisions — verify each
+        statistic with the cited official source before acting on it.
+      </p>
     </main>
   );
 }
