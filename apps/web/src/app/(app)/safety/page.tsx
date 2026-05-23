@@ -77,7 +77,7 @@ export default function PersonalSafetyPage() {
 
       <SafetyTipsPanel
         areaSlug={area?.slug}
-        jurisdictionSlug={!area ? city.defaultArea : undefined}
+        jurisdictionSlug={!area ? city.slug : undefined}
       />
       <CheckInPanel />
       <LiveSharePanel />

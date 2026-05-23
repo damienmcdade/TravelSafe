@@ -55,19 +55,30 @@ export default function CommunityPage() {
   // with Awareness, SafeZone, Trend Feed, Personal Safety, etc.
   const { area, setArea } = useArea(city.slug);
   useDocumentTitle(`CommunitySafe · ${area?.label ?? city.label}`);
-  const areaSlug = area?.slug ?? city.defaultArea;
 
-  // Always pass `area=` — otherwise the DB query drops the filter and returns
-  // every Verified post across every city (which would surface San Diego
-  // posts in a Chicago view, etc.). `areaSlug` falls back to the city's
-  // default area when no specific neighborhood is selected.
+  // P0 INCIDENT (2026-05-22) class of bug: never substitute `city.defaultArea`
+  // for the area slug. For several cities (san-diego, cin-downtown, lv-
+  // downtown, etc.) defaultArea is a synthetic placeholder that the
+  // adapter doesn't recognize — querying with it returns an empty result
+  // set that looks like "sync didn't carry over the picked neighborhood"
+  // when really we sent the wrong slug.
+  //
+  // Posts query: when no area is picked, scope by city slug instead so
+  // we still filter out other cities' posts. The server understands
+  // `?city=<slug>` for citywide post listings.
+  const postsPath = area
+    ? `/community/posts?area=${encodeURIComponent(area.slug)}`
+    : `/community/posts?city=${encodeURIComponent(city.slug)}`;
   const { data: posts, reload, error: postsError } = useApi<PostListItem[]>(
-    `/community/posts?area=${areaSlug}`,
-    [areaSlug],
+    postsPath,
+    [postsPath],
   );
+  // area-stats: only query when an area is actually selected. The
+  // citywide view doesn't need a per-area stats card; the citywide
+  // aggregate below covers that case.
   const { data: stats } = useApi<AreaStats | null>(
-    `/crime-data/area-stats?${area ? `neighborhood=${areaSlug}` : `jurisdiction=${city.defaultArea}`}`,
-    [areaSlug, city.slug],
+    area ? `/crime-data/area-stats?neighborhood=${encodeURIComponent(area.slug)}` : null,
+    [area?.slug ?? ""],
   );
   const { data: citywide } = useApi<Citywide>(`/crime-data/citywide?city=${city.slug}`, [city.slug]);
 
@@ -82,7 +93,11 @@ export default function CommunityPage() {
 
   const [livePulse, setLivePulse] = useState(0);
   useCommunityStream((e) => {
-    if (e.type === "post.verified" && (!area || e.areaSlug === areaSlug)) {
+    // Pulse fires when a new post is verified for the area we're
+    // showing. When no area is picked we're in citywide mode, so any
+    // post in this city counts (server-side stream events scope by
+    // city in that case).
+    if (e.type === "post.verified" && (!area || e.areaSlug === area.slug)) {
       setLivePulse((n) => n + 1);
       reload();
     }
@@ -133,29 +148,50 @@ export default function CommunityPage() {
             {(posts ?? []).map((p) => <PostCard key={p.id} post={p} />)}
           </section>
 
-          {/* Anonymous composer directly under the feed. */}
-          <PostComposer areaSlug={areaSlug} onPosted={reload} />
+          {/* Anonymous composer directly under the feed. Composer requires
+              an area to post against — if none is picked, the composer
+              prompts the user to pick one rather than defaulting to a
+              broken city-slug-as-area. */}
+          {area
+            ? <PostComposer areaSlug={area.slug} onPosted={reload} />
+            : (
+              <section className="surface-muted p-4 text-sm text-slate2-700">
+                Pick a {city.label} neighborhood above to post a heads-up. Anonymous, no sign-in required.
+              </section>
+            )}
 
-          {/* Per-neighborhood community signals from the city's subreddit. */}
-          <CommunitySignalsPanel areaSlug={areaSlug} />
+          {/* Per-neighborhood community signals from the city's subreddit.
+              Only renders when an area is picked — citywide subreddit
+              signals don't map cleanly to a single feed. */}
+          {area && <CommunitySignalsPanel areaSlug={area.slug} />}
 
-          {/* Supporting context below the social surface. */}
-          <AreaInsightsPanel areaQueryString={area ? `neighborhood=${areaSlug}` : `jurisdiction=${city.defaultArea}`} />
+          {/* Insights panel only renders when an area is picked — the
+              insights service queries per-area, doesn't have a real
+              citywide aggregate yet. */}
+          {area && <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(area.slug)}`} />}
           <CategoryBreakdown
             counts={counts}
             title={area ? `${area.label} — incident mix` : `${city.label} incident mix`}
             subtitle={`${city.label} police data, recent cached window.`}
           />
-          <CrimeMixCard
-            areaSlug={area?.slug}
-            jurisdictionSlug={!area ? city.defaultArea : undefined}
-            title={area ? `${area.label} — specific offenses, last 30 days` : `${city.label} specific offenses, last 30 days`}
-          />
-          <RecentIncidentsCards
-            area={area?.slug}
-            jurisdiction={!area ? city.defaultArea : undefined}
-            title={area ? `Recently reported in ${area.label}` : `Recently reported across ${city.label}`}
-          />
+          {/* Per-area cards only render when an area is picked. The
+              adapters can't fulfill a city-slug "area" query (it's not a
+              real neighborhood), so previously these collapsed to empty
+              states that read as "data missing" — the citywide context
+              above (CategoryBreakdown using the citywide aggregate) is
+              enough until the user drills in. */}
+          {area && (
+            <>
+              <CrimeMixCard
+                areaSlug={area.slug}
+                title={`${area.label} — specific offenses, last 30 days`}
+              />
+              <RecentIncidentsCards
+                area={area.slug}
+                title={`Recently reported in ${area.label}`}
+              />
+            </>
+          )}
 
           <section className="surface p-6 border-amber2-500/30">
             <h2 className="font-display text-lg text-slate2-900">Official registries</h2>

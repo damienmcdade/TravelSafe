@@ -172,7 +172,7 @@ export default function ThreatsPage() {
       )}
 
       <SafeZoneTabSection
-        city={{ slug: city.slug, label: city.label, defaultArea: city.defaultArea }}
+        city={{ slug: city.slug, label: city.label }}
         area={area}
       />
 
@@ -208,11 +208,16 @@ export default function ThreatsPage() {
               </ol>
             </section>
           )}
-          <CrimeMixCard
-            areaSlug={area?.slug}
-            jurisdictionSlug={!area ? city.defaultArea : undefined}
-            title={showingCitywide ? `Specific offenses across ${city.label} — last 30 days` : `${area!.label} — last 30 days`}
-          />
+          {/* CrimeMixCard requires a real neighborhood slug — adapters
+              don't recognize city slugs as areas. Hidden in citywide
+              mode (the CategoryBreakdown above covers the citywide
+              picture). */}
+          {area && (
+            <CrimeMixCard
+              areaSlug={area.slug}
+              title={`${area.label} — last 30 days`}
+            />
+          )}
           <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? selectedAreaStats?.alerts[0]?.provenance ?? null} />
         </div>
         <aside className="space-y-4">
@@ -233,7 +238,7 @@ function SafeZoneTabSection({
   city,
   area,
 }: {
-  city: { slug: string; label: string; defaultArea: string };
+  city: { slug: string; label: string };
   area: { slug: string; label: string; jurisdiction: string } | null;
 }) {
   // CRITICAL — pass `area: null` (NOT a city-slug fallback) when no

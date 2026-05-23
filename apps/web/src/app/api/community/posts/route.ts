@@ -45,9 +45,21 @@ export const dynamic = "force-dynamic";
 
 export const GET = wrap(async (req: NextRequest) => {
   const areaSlug = req.nextUrl.searchParams.get("area") ?? "";
+  const citySlug = req.nextUrl.searchParams.get("city") ?? "";
+  // Three modes:
+  //   ?area=<slug>  → posts in that one neighborhood
+  //   ?city=<slug>  → all posts citywide (across every neighborhood in that city's jurisdiction)
+  //   neither      → ALL VERIFIED posts globally (admin / debug view only)
+  // The citywide path is what (app)/community/page.tsx hits when no
+  // neighborhood is picked. Previously the page fell back to
+  // city.defaultArea which the adapter doesn't recognize as a real
+  // neighborhood; the endpoint returned every VERIFIED post across
+  // every city — a Chicago user could see San Diego posts.
   const where = areaSlug
     ? { status: PostStatus.VERIFIED, area: { slug: areaSlug } }
-    : { status: PostStatus.VERIFIED };
+    : citySlug
+      ? { status: PostStatus.VERIFIED, area: { parentSlug: citySlug } }
+      : { status: PostStatus.VERIFIED };
   const posts = await prisma.post.findMany({
     where,
     orderBy: { createdAt: "desc" },
