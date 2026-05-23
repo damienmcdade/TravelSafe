@@ -168,7 +168,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
                 type="button"
                 onClick={() => tap(i)}
                 disabled={item.disabled}
-                className={`w-full text-center transition-all px-3 leading-tight ${item.disabled ? "text-slate2-300 cursor-not-allowed" : i === activeIdx ? "text-slate2-900 font-medium" : "text-slate2-700"}`}
+                className={`w-full text-center transition-all px-3 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-slate2-900 font-medium" : "text-slate2-700"}`}
                 style={{ opacity, transform: `scale(${scale})` }}
                 aria-selected={i === activeIdx}
               >

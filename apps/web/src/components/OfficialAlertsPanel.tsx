@@ -24,7 +24,7 @@ const SEVERITY_CLASS: Record<OfficialAlert["severity"], string> = {
 };
 
 export function OfficialAlertsPanel() {
-  const { data } = useApi<Resp>("/official-alerts");
+  const { data, error } = useApi<Resp>("/official-alerts");
   const alerts = data?.alerts ?? [];
 
   return (
@@ -36,8 +36,13 @@ export function OfficialAlertsPanel() {
       <p className="mt-1 text-xs text-slate2-500">
         {data?.disclaimer ?? "Independent of TravelSafe community posts."}
       </p>
+      {error && !data && (
+        <p className="mt-4 text-sm text-dusk-700">
+          Couldn&apos;t reach the official-alerts feed right now. Try again in a moment.
+        </p>
+      )}
       <ul className="mt-4 space-y-3">
-        {alerts.length === 0 && (
+        {!error && alerts.length === 0 && (
           <li className="text-sm text-slate2-500 surface-muted p-3">
             No active official alerts right now. Quiet is good news.
           </li>

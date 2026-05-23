@@ -94,8 +94,9 @@ export function BlockScoreWidget({ score, loading, contextLabel }: BlockScoreWid
           <h3 className="mt-2 font-display text-lg text-slate2-900">{contextLabel}</h3>
           <p className="mt-1 text-sm text-slate2-700 leading-snug">{score.headline}</p>
           <p className="mt-2 text-xs text-slate2-500 leading-snug">
-            A higher number means fewer police reports per resident than the FBI national average.
-            100 means no recent reports; 50 roughly matches the national rate.
+            Higher means fewer police reports per resident than the FBI national average.
+            100 = no recent reports; 50 = roughly matches the national rate;
+            below 50 = more reports per resident than the national average.
           </p>
           <a
             href={score.benchmark.url}

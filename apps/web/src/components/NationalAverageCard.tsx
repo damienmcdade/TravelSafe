@@ -60,7 +60,7 @@ interface Citywide { city: string; perArea: PerArea[] }
 
 export function NationalAverageCard() {
   const { city } = useCity();
-  const { data: citywide, loading } = useApi<Citywide>(`/crime-data/citywide?city=${city.slug}`, [city.slug]);
+  const { data: citywide, loading, error } = useApi<Citywide>(`/crime-data/citywide?city=${city.slug}`, [city.slug]);
 
   const population = CITY_POPULATION[city.slug] ?? 0;
   const totals = (citywide?.perArea ?? []).reduce(
@@ -90,6 +90,10 @@ export function NationalAverageCard() {
         <div className="mt-4 space-y-5">
           {[0, 1].map((i) => (<div key={i} className="space-y-2"><div className="skel h-3 w-1/2" /><div className="skel h-5 w-full" /><div className="skel h-5 w-full" /></div>))}
         </div>
+      ) : error ? (
+        <p className="mt-4 text-sm text-dusk-700">
+          Couldn&apos;t reach the {city.label} police feed to compute the comparison. Try again in a moment — the upstream feed may be warming up.
+        </p>
       ) : (
         <div className="mt-5 space-y-6">
           {rows.map((r) => (

@@ -71,7 +71,7 @@ export function SaveAreaStar({ area }: { area: { slug: string; label: string; ju
         saved_
           ? "bg-amber2-100 text-amber2-700 hover:bg-amber2-200"
           : atCap
-            ? "text-slate2-400 cursor-not-allowed"
+            ? "text-slate2-500 cursor-not-allowed"
             : "text-slate2-700 hover:bg-bay-100"
       }`}
     >

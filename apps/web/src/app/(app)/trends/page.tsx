@@ -8,6 +8,7 @@ import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 import { SaveAreaStar } from "@/components/SavedAreasRail";
+import { DataDisclaimer } from "@/components/DataDisclaimer";
 
 interface TrendBullet {
   kind: "trend" | "dispatch";
@@ -147,9 +148,10 @@ export default function TrendFeedPage() {
             onClearCompare={() => setCompareArea(null)}
           />
 
-          <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug">
-            {trend.disclaimer}
+          <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+            <strong className="text-slate2-900">Methodology:</strong> {trend.disclaimer}
           </p>
+          <DataDisclaimer prefix="How to read this:" />
         </>
       )}
     </main>

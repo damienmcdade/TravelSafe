@@ -4,6 +4,7 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
+import { DataDisclaimer } from "@/components/DataDisclaimer";
 import { CityBanner } from "@/components/CitySelector";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
 
@@ -227,9 +228,10 @@ export default function NeighborhoodWatchPage() {
                 })}
               </ul>
 
-              <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug">
-                {watch.disclaimer}
+              <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+                <strong className="text-slate2-900">Methodology:</strong> {watch.disclaimer}
               </p>
+              <DataDisclaimer prefix="How to read this:" />
             </>
           )}
         </section>

@@ -105,11 +105,11 @@ function gradeFromDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["grade"] {
 
 function headlineFor(grade: SafetyScoreResponse["grade"], areaLabel: string, cityLabel: string): string {
   switch (grade) {
-    case "A": return `${areaLabel} sits well below the FBI national rate for ${cityLabel}-area neighborhoods.`;
+    case "A": return `${areaLabel} reports lower per-100k rates than the FBI national average for ${cityLabel}-area neighborhoods.`;
     case "B": return `${areaLabel} reports below the FBI national rate.`;
-    case "C": return `${areaLabel} tracks roughly the FBI national rate — neither markedly safer nor more active.`;
-    case "D": return `${areaLabel} reports above the FBI national rate. Use the cards below to see which category drives the gap.`;
-    case "E": return `${areaLabel} reports substantially above the FBI national rate. Use the Awareness tab for the offense mix.`;
+    case "C": return `${areaLabel} reports close to the FBI national rate.`;
+    case "D": return `${areaLabel} reports higher per-100k rates than the FBI national average. Use the cards below to see which category drives the gap.`;
+    case "E": return `${areaLabel} reports notably higher per-100k rates than the FBI national average. Use the Awareness tab for the offense mix.`;
   }
 }
 

@@ -61,7 +61,7 @@ export default function CommunityPage() {
   // every Verified post across every city (which would surface San Diego
   // posts in a Chicago view, etc.). `areaSlug` falls back to the city's
   // default area when no specific neighborhood is selected.
-  const { data: posts, reload } = useApi<PostListItem[]>(
+  const { data: posts, reload, error: postsError } = useApi<PostListItem[]>(
     `/community/posts?area=${areaSlug}`,
     [areaSlug],
   );
@@ -114,9 +114,18 @@ export default function CommunityPage() {
           <section className="space-y-3">
             <header className="flex items-center justify-between">
               <h2 className="font-display text-xl text-slate2-900">Neighbor reports</h2>
-              {livePulse > 0 && <span className="text-xs text-sage-700 animate-pulse">{livePulse} new since you arrived</span>}
+              {livePulse > 0 && (
+                <span className="text-xs text-sage-700 animate-pulse" aria-live="polite">
+                  {livePulse} new since you arrived
+                </span>
+              )}
             </header>
-            {(posts ?? []).length === 0 && (
+            {postsError && !posts && (
+              <div className="surface p-4 text-sm text-dusk-700" role="alert">
+                Couldn&apos;t load community posts right now. Try again in a moment.
+              </div>
+            )}
+            {!postsError && (posts ?? []).length === 0 && (
               <div className="surface-muted p-4 text-sm text-slate2-500">
                 No posts yet for this area. Share the first heads-up below — anonymous, no sign-in required.
               </div>

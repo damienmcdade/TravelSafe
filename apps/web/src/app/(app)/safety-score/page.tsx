@@ -8,6 +8,7 @@ import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 import { SaveAreaStar } from "@/components/SavedAreasRail";
+import { DataDisclaimer } from "@/components/DataDisclaimer";
 
 interface ScoreRow {
   category: "PERSONS" | "PROPERTY";
@@ -32,12 +33,17 @@ interface ScoreResp {
 // Five-step grade tone with a gentle green → sand → terracotta gradient.
 // No alarming reds — the worst grade (E) lands at a muted terracotta that
 // reads "noteworthy" rather than "emergency".
+// Labels reflect "reports relative to the national rate" rather than
+// "this neighborhood is safer/more dangerous" — the latter framing
+// invites Fair-Housing-adjacent interpretation when reports cluster in
+// historically disadvantaged areas. We compare report VOLUME against
+// the FBI national average; the label phrasing makes that scope clear.
 const GRADE_TONE: Record<ScoreResp["grade"], { bg: string; ring: string; tone: string; label: string }> = {
-  A: { bg: "bg-sage-100",   ring: "ring-sage-300",   tone: "text-sage-700",    label: "Well below national" },
-  B: { bg: "bg-sage-50",    ring: "ring-sage-200",   tone: "text-sage-700",    label: "Below national" },
-  C: { bg: "bg-sand-50",    ring: "ring-sand-300",   tone: "text-slate2-700",  label: "Near national average" },
-  D: { bg: "bg-amber2-50",  ring: "ring-amber2-300", tone: "text-amber2-700",  label: "Above national" },
-  E: { bg: "bg-amber2-100", ring: "ring-amber2-400", tone: "text-coral-700",   label: "Well above national" },
+  A: { bg: "bg-sage-100",   ring: "ring-sage-300",   tone: "text-sage-700",    label: "Lower than national rate" },
+  B: { bg: "bg-sage-50",    ring: "ring-sage-200",   tone: "text-sage-700",    label: "Below national rate" },
+  C: { bg: "bg-sand-50",    ring: "ring-sand-300",   tone: "text-slate2-700",  label: "Near national rate" },
+  D: { bg: "bg-amber2-50",  ring: "ring-amber2-300", tone: "text-amber2-700",  label: "Above national rate" },
+  E: { bg: "bg-amber2-100", ring: "ring-amber2-400", tone: "text-coral-700",   label: "Higher than national rate" },
 };
 
 const CAT_LABEL: Record<ScoreRow["category"], string> = {
@@ -159,12 +165,13 @@ export default function SafetyScorePage() {
             onClearCompare={() => setCompareArea(null)}
           />
 
-          <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug">
-            {score.disclaimer} Verify the national rate at{" "}
+          <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
+            <strong className="text-slate2-900">Methodology:</strong> {score.disclaimer} Verify the national rate at{" "}
             <a href={score.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">
               {score.source.label}
             </a>.
           </p>
+          <DataDisclaimer prefix="How to read this:" />
         </>
       )}
     </main>

@@ -160,9 +160,10 @@ export function LocationSearch({
 
   return (
     <div ref={wrapRef} className="surface p-4 relative">
-      <label className="text-sm text-slate2-700">Show me</label>
+      <label htmlFor="location-search-input" className="text-sm text-slate2-700">Show me</label>
       <div className="mt-1 flex gap-2">
         <input
+          id="location-search-input"
           ref={inputRef}
           value={q}
           onChange={(e) => onChange(e.target.value)}
@@ -170,11 +171,18 @@ export function LocationSearch({
           onKeyDown={onKeyDown}
           placeholder={placeholder ?? `Search a ${city.label} neighborhood, ZIP, or landmark`}
           className="flex-1 input"
+          role="combobox"
           aria-autocomplete="list"
           aria-expanded={open}
+          aria-controls="location-search-listbox"
+          aria-activedescendant={open && suggestions[focusIdx] ? `loc-opt-${suggestions[focusIdx].slug}` : undefined}
         />
         {current && (
-          <button onClick={clear} className="btn-ghost text-xs">
+          <button
+            onClick={clear}
+            className="btn-ghost text-xs"
+            aria-label={`Clear search and return to ${city.label} citywide view`}
+          >
             ← {city.label}
           </button>
         )}
@@ -182,11 +190,16 @@ export function LocationSearch({
 
       {/* Dropdown ---------------------------------------------------- */}
       {open && suggestions.length > 0 && (
-        <ul className="absolute left-4 right-4 mt-1 surface shadow-card-lift z-30 max-h-72 overflow-auto animate-pop-in p-1">
+        <ul
+          id="location-search-listbox"
+          role="listbox"
+          aria-label="Matching neighborhoods"
+          className="absolute left-4 right-4 mt-1 surface shadow-card-lift z-30 max-h-72 overflow-auto animate-pop-in p-1"
+        >
           {suggestions.map((s, i) => {
             const inCity = s.jurisdiction.toLowerCase() === city.label.toLowerCase();
             return (
-              <li key={s.slug}>
+              <li key={s.slug} role="option" id={`loc-opt-${s.slug}`} aria-selected={i === focusIdx}>
                 <button
                   onMouseEnter={() => setFocusIdx(i)}
                   onClick={() => pickArea(s)}
@@ -201,7 +214,7 @@ export function LocationSearch({
                   {inCity ? (
                     <span className="text-[10px] text-slate2-500">in {city.label}</span>
                   ) : (
-                    <span className="text-[10px] text-slate2-500">other city</span>
+                    <span className="text-[10px] text-slate2-500">different city</span>
                   )}
                 </button>
               </li>

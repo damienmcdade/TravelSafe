@@ -14,6 +14,7 @@ import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
 import { UptickTile } from "@/components/UptickTile";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
+import { DataDisclaimer } from "@/components/DataDisclaimer";
 import { CityBanner } from "@/components/CitySelector";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
 // SafeZoneTab — modular drop-in widgets. The page is now a thin layout
@@ -175,13 +176,7 @@ export default function ThreatsPage() {
         area={area}
       />
 
-      <p className="surface-muted p-3 text-xs text-slate2-600 leading-snug">
-        <strong className="text-slate2-900">How to read this:</strong>{" "}
-        TravelSafe summarizes publicly published police reports. Scores reflect historical reporting,
-        not predictions of future risk, and are not a substitute for professional safety advice.
-        Should not be used as the sole basis for housing, lending, insurance, or hiring decisions —
-        verify each statistic with the cited official source before acting on it.
-      </p>
+      <DataDisclaimer prefix="How to read this:" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">

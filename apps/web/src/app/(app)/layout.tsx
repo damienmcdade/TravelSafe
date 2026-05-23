@@ -24,10 +24,32 @@ export default function AppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <TabNav />
-      <div key={typeof window === "undefined" ? "ssr" : window.location.pathname} className="max-w-5xl mx-auto px-4 py-8 animate-fade-in space-y-4">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-bay-500 focus:text-white focus:px-3 focus:py-2 focus:rounded-md focus:shadow-card"
+      >
+        Skip to main content
+      </a>
+      <main
+        id="main"
+        key={typeof window === "undefined" ? "ssr" : window.location.pathname}
+        className="max-w-5xl mx-auto px-4 py-8 animate-fade-in space-y-4"
+      >
         <SavedAreasRail />
         {children}
-      </div>
+      </main>
+      <footer className="mt-12 border-t border-sand-200 bg-white/60 backdrop-blur">
+        <div className="max-w-5xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate2-500">
+          <p>
+            TravelSafe surfaces official city police-incident data and the FBI Crime in the Nation 2024 national rate.
+            Historical reporting only — not a substitute for emergency services.
+          </p>
+          <nav aria-label="Legal" className="flex gap-3">
+            <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link>
+            <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>
+          </nav>
+        </div>
+      </footer>
       <AIAssistant />
     </>
   );

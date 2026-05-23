@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
+import { DataDisclaimer } from "@/components/DataDisclaimer";
 
 const CrimeMap = dynamic(() => import("./CrimeMap"), {
   ssr: false,
@@ -64,6 +65,7 @@ export default function MapPage() {
       <p className="text-xs text-slate2-500">
         Data source for {city.label}: {SOURCES[city.slug] ?? "city open-data portal"} Map tiles are served by CARTO with OpenStreetMap contributors.
       </p>
+      <DataDisclaimer prefix="How to read this:" />
     </main>
   );
 }
