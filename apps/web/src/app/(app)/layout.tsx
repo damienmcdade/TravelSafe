@@ -45,6 +45,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             Historical reporting only — not a substitute for emergency services.
           </p>
           <nav aria-label="Legal" className="flex gap-3">
+            <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>
             <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link>
             <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>
           </nav>

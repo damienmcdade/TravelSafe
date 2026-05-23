@@ -1,6 +1,16 @@
 "use client";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 
+/// Respect the user's OS-level prefers-reduced-motion setting. CSS
+/// already kills CSS animations/transitions globally (globals.css), but
+/// JS-driven smooth scrolls (this file calls scrollTo(.., {behavior:
+/// "smooth"})) need a parallel check at the call site. This helper
+/// reads matchMedia at call time so a mid-session OS change is honored.
+function scrollBehavior(): ScrollBehavior {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return "smooth";
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+}
+
 export interface WheelItem {
   value: string;
   label: string;
@@ -60,7 +70,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
     const idx = filtered.findIndex((i) => i.value === value);
     if (idx < 0) return;
     setActiveIdx(idx);
-    el.scrollTo({ top: idx * rowHeight, behavior: "smooth" });
+    el.scrollTo({ top: idx * rowHeight, behavior: scrollBehavior() });
   }, [value, filtered, rowHeight]);
 
   // When the query changes, snap to the first match so the user sees results
@@ -69,7 +79,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
     if (!query) return;
     const el = ref.current; if (!el) return;
     if (filtered.length === 0) return;
-    el.scrollTo({ top: 0, behavior: "smooth" });
+    el.scrollTo({ top: 0, behavior: scrollBehavior() });
     setActiveIdx(0);
   }, [query, filtered.length]);
 
@@ -87,13 +97,13 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
       const item = filtered[finalIdx];
       if (!item) return;
       const target = finalIdx * rowHeight;
-      if (Math.abs(el.scrollTop - target) > 1) el.scrollTo({ top: target, behavior: "smooth" });
+      if (Math.abs(el.scrollTop - target) > 1) el.scrollTo({ top: target, behavior: scrollBehavior() });
       if (item.disabled) {
         const direction = el.scrollTop >= activeIdx * rowHeight ? 1 : -1;
         let next = finalIdx + direction;
         while (next >= 0 && next < filtered.length && filtered[next].disabled) next += direction;
         if (next >= 0 && next < filtered.length) {
-          el.scrollTo({ top: next * rowHeight, behavior: "smooth" });
+          el.scrollTo({ top: next * rowHeight, behavior: scrollBehavior() });
           onChange(filtered[next].value);
         }
         return;
@@ -105,7 +115,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
   function tap(i: number) {
     const item = filtered[i];
     if (!item || item.disabled) return;
-    ref.current?.scrollTo({ top: i * rowHeight, behavior: "smooth" });
+    ref.current?.scrollTo({ top: i * rowHeight, behavior: scrollBehavior() });
     if (item.value !== value) onChange(item.value);
   }
 
@@ -187,14 +197,16 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
         tabIndex={0}
         onKeyDown={onListKeyDown}
       >
-      {/* Center indicator — a deliberately bold band around the active row.
-          Earlier this was a 1px bay-200 border with bg-bay-50/60 fill, which
-          was easy to miss when the user was scanning. Now: 2px bay-500
-          border + bay-100 fill + an inset shadow that visually pops the
-          row forward. The active row's TEXT also goes bay-700 + bold via
-          the per-row className below (changed in the same commit). */}
-      <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: padding, height: rowHeight }}>
-        <div className="h-full mx-1 rounded-md border-2 border-bay-500 bg-bay-100 shadow-[inset_0_0_0_1px_rgba(74,111,203,0.15)]" />
+      {/* Center indicator — TRANSPARENT band so the active row's text
+          shows through cleanly. The previous solid `bg-bay-100` fill
+          covered the neighborhood name on hover. The visual highlight
+          now comes from (1) a thin 2px border around the band and (2)
+          bold + bay-700-colored TEXT on the active row (via the per-row
+          className below), while non-active rows fade via the opacity
+          scale. z-0 so the band sits BEHIND the text in the same
+          stacking context. */}
+      <div className="pointer-events-none absolute inset-x-0 z-0" style={{ top: padding, height: rowHeight }}>
+        <div className="h-full mx-1 rounded-md border-2 border-bay-500" />
       </div>
       {/* Top + bottom gradient fades for the drum effect. */}
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b from-white to-transparent" />

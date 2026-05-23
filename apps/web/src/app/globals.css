@@ -141,7 +141,17 @@ body {
 }
 .surface:hover::after { transform: translateX(100%); opacity: 1; }
 
-/* Reduced-motion respect -------------------------------------------------- */
+/* Reduced-motion respect — honors the OS-level prefers-reduced-motion
+   setting. Disables CSS animations, transitions, smooth scrolls, and
+   marquee-style gradients across the app. JS that calls scrollIntoView
+   or .scrollTo({ behavior: "smooth" }) reads the same media query via
+   matchMedia and skips the smooth-scroll variant. */
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  html, body { scroll-behavior: auto !important; }
 }

@@ -75,6 +75,25 @@ function bandFor(score: number): BlockScoreBand {
 
 function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
   if (!api || api.rows.length === 0) return null;
+
+  // INCIDENT-PREVENTION HEADLINE (2026-05-22 follow-up): legitimately
+  // zero-incident neighborhoods land at score 100, which used to share a
+  // headline with "well below national average". That conflated "no
+  // reports" with "very low rate" — a meaningful distinction for a
+  // quiet suburb (real zero) vs an active area (low rate). When all
+  // row counts are 0, surface an explicit "no recent reports" message
+  // instead of the multiplier headline ("0.00× national" is not useful
+  // copy for an empty window).
+  const totalCount = api.rows.reduce((s, r) => s + (r.count || 0), 0);
+  if (totalCount === 0) {
+    return {
+      score: 100,
+      band: "safe",
+      headline: `No recent reports in the cached window for ${api.area.label}. This is common for quieter neighborhoods — the score will refresh whenever new reports publish.`,
+      benchmark: { label: api.source.label, url: api.source.url, year: api.source.publishedYear },
+    };
+  }
+
   // Average the per-category ratios so a spike in one category doesn't
   // single-handedly tank the index.
   const ratios = api.rows
@@ -84,9 +103,6 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
   const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
   const score = ratioToScore(avg);
   const band = bandFor(score);
-  // Use the actual averaged ratio to make the headline specific instead of
-  // generic — "1.8× the national average" reads as a fact, "tracks roughly"
-  // reads as filler.
   const mult = avg > 0 && Number.isFinite(avg) ? avg : 1;
   const headline =
     band === "safe"
