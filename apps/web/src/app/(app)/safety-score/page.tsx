@@ -23,7 +23,11 @@ interface ScoreResp {
   populationEstimate: number;
   windowDays: number;
   asOf: string | null;
-  grade: "A" | "B" | "C" | "D" | "E";
+  // "N/A" is returned when the underlying adapter has no usable recent
+  // data for this area — counts are zero AND confidence is low. The UI
+  // renders a neutral "Data unavailable" card rather than a misleading
+  // letter grade.
+  grade: "A" | "B" | "C" | "D" | "E" | "N/A";
   headline: string;
   rows: ScoreRow[];
   source: { label: string; url: string; publishedYear: number };
@@ -43,11 +47,12 @@ interface ScoreResp {
 // historically disadvantaged areas. We compare report VOLUME against
 // the FBI national average; the label phrasing makes that scope clear.
 const GRADE_TONE: Record<ScoreResp["grade"], { bg: string; ring: string; tone: string; label: string }> = {
-  A: { bg: "bg-sage-100",   ring: "ring-sage-300",   tone: "text-sage-700",    label: "Lower than national rate" },
-  B: { bg: "bg-sage-50",    ring: "ring-sage-200",   tone: "text-sage-700",    label: "Below national rate" },
-  C: { bg: "bg-sand-50",    ring: "ring-sand-300",   tone: "text-slate2-700",  label: "Near national rate" },
-  D: { bg: "bg-amber2-50",  ring: "ring-amber2-300", tone: "text-amber2-700",  label: "Above national rate" },
-  E: { bg: "bg-amber2-100", ring: "ring-amber2-400", tone: "text-coral-700",   label: "Higher than national rate" },
+  A:     { bg: "bg-sage-100",   ring: "ring-sage-300",   tone: "text-sage-700",   label: "Lower than national rate" },
+  B:     { bg: "bg-sage-50",    ring: "ring-sage-200",   tone: "text-sage-700",   label: "Below national rate" },
+  C:     { bg: "bg-sand-50",    ring: "ring-sand-300",   tone: "text-slate2-700", label: "Near national rate" },
+  D:     { bg: "bg-amber2-50",  ring: "ring-amber2-300", tone: "text-amber2-700", label: "Above national rate" },
+  E:     { bg: "bg-amber2-100", ring: "ring-amber2-400", tone: "text-coral-700",  label: "Higher than national rate" },
+  "N/A": { bg: "bg-slate2-50",  ring: "ring-slate2-200", tone: "text-slate2-500", label: "Data unavailable" },
 };
 
 const CAT_LABEL: Record<ScoreRow["category"], string> = {

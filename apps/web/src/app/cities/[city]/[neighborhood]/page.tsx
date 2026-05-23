@@ -47,6 +47,7 @@ const GRADE_TONE: Record<string, string> = {
   C: "text-slate2-700 bg-sand-50 ring-sand-300",
   D: "text-amber2-700 bg-amber2-50 ring-amber2-300",
   E: "text-coral-700 bg-coral-50 ring-coral-400",
+  "N/A": "text-slate2-500 bg-slate2-50 ring-slate2-200",
 };
 
 export default async function NeighborhoodLandingPage({ params }: Props) {

@@ -91,7 +91,12 @@ export interface SafetyScoreResponse {
   /// A or D. Local ≤ 60% of national → A; ≤ 90% → B; ≤ 130% → C; ≤ 200% → D;
   /// > 200% → E. Computed on the average percentile across the two reported
   /// categories so a property-crime spike alone can't tank the grade.
-  grade: "A" | "B" | "C" | "D" | "E";
+  // "N/A" is returned when the underlying adapter has no usable
+  // recent data for this area — count is zero AND confidence is low.
+  // Previously these areas were graded "C" (because the no-data math
+  // collapsed to ratio≈1), which falsely told users "this area is
+  // close to average" when the truth was "we don't know yet."
+  grade: "A" | "B" | "C" | "D" | "E" | "N/A";
   /// Plain-English headline the UI can drop straight into a card.
   headline: string;
   rows: SafetyScoreRow[];
@@ -223,6 +228,7 @@ function headlineForArea(grade: SafetyScoreResponse["grade"], areaLabel: string,
     case "C": return `${areaLabel} reports close to ${cityLabel}'s citywide rate.`;
     case "D": return `${areaLabel} reports higher per-capita rates than ${cityLabel} citywide. Use the cards below to see which category drives the gap.`;
     case "E": return `${areaLabel} reports notably higher per-capita rates than ${cityLabel} citywide. Use the Awareness tab for the offense mix.`;
+    case "N/A": return `We don't have recent data for ${areaLabel} right now. The ${cityLabel} feed may be temporarily unavailable — check Coverage for live status.`;
   }
 }
 
@@ -233,7 +239,36 @@ function headlineForCity(grade: SafetyScoreResponse["grade"], cityLabel: string)
     case "C": return `${cityLabel} reports close to the FBI national rate.`;
     case "D": return `${cityLabel} reports higher per-capita rates than the FBI national average. Use the cards below to see which category drives the gap.`;
     case "E": return `${cityLabel} reports notably higher per-capita rates than the FBI national average.`;
+    case "N/A": return `We don't have recent data for ${cityLabel} right now. The upstream feed may be temporarily unavailable — check Coverage for live status.`;
   }
+}
+
+// Detect the "data unavailable" case the audit caught. When counts are
+// zero AND the confidence pipeline already flagged low confidence with
+// a note, we shouldn't slap an A-E grade on the area — the grade math
+// collapses to a meaningless "near average" C, which is the LA
+// regression the audit surfaced. Return "N/A" so the UI can render
+// "data unavailable" instead of a misleading letter.
+function gradeWithNullGuard(
+  derivedGrade: SafetyScoreResponse["grade"],
+  totalCount: number,
+  confidence: SafetyScoreResponse["dataConfidence"],
+): SafetyScoreResponse["grade"] {
+  if (totalCount === 0 && confidence === "low") return "N/A";
+  return derivedGrade;
+}
+
+// Round windowDays to the nearest 7-day boundary so a small drift in
+// the adapter's oldest cached row (a hours-level shift between cache
+// refresh cycles) doesn't change the annualization divisor at all.
+// The audit caught San Diego drifting 141 → 143 over 8 minutes — a
+// 1.4% rate move with no real-world change. Rounded windowDays
+// absorbs that drift while preserving the annualization signal.
+// For very sparse caches (<14 days), keep the actual value so we
+// don't false-claim a full week's coverage.
+function roundWindowDays(raw: number): number {
+  if (raw < 14) return raw;
+  return Math.round(raw / 7) * 7;
 }
 
 /// Citywide variant. Aggregates every tracked neighborhood's incidents into
@@ -318,9 +353,12 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   // with multi-year caches this clamps to 365 (which means annualization
   // is the identity — count IS the annual rate). Stable across refreshes
   // because dataEarliestMs barely moves between cache cycles.
-  const windowDays = dataEarliestMs < nowMs
+  // Rounded to a 7-day boundary to absorb sub-day cache drift; see
+  // roundWindowDays for the rationale.
+  const rawWindowDays = dataEarliestMs < nowMs
     ? Math.min(RATE_WINDOW_DAYS, Math.max(1, Math.round((nowMs - dataEarliestMs) / MS_PER_DAY)))
     : 0;
+  const windowDays = roundWindowDays(rawWindowDays);
   // Full city population — no per-area division. The Vintage 2024 Census
   // total is the canonical denominator the FBI itself uses to publish
   // city-vs-national rates.
@@ -364,11 +402,17 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   ];
 
   // Citywide IS the comparison vs national — grade against the national
-  // baseline using the legacy thresholds.
-  const grade = gradeFromNationalDeltas(rows);
+  // baseline using the legacy thresholds. We compute confidence first so
+  // gradeWithNullGuard can demote a no-data area to "N/A" instead of
+  // the misleading "near average" C the raw math would produce.
   const cityLabel = `${city.label} (citywide)`;
-  const headline = headlineForCity(grade, cityLabel);
   const confidence = computeDataConfidence(windowDays, persons + property, pop, cfsScale);
+  const grade = gradeWithNullGuard(
+    gradeFromNationalDeltas(rows),
+    persons + property,
+    confidence.dataConfidence,
+  );
+  const headline = headlineForCity(grade, cityLabel);
 
   return {
     city: { slug: city.slug, label: city.label },
@@ -512,10 +556,12 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
 
   // windowDays from clock + adapter's oldest row (same stable formula
   // as the citywide variant). The per-area count above shares this
-  // window via the per-area incident loop.
-  const windowDays = dataEarliestMsArea < nowMsArea
+  // window via the per-area incident loop. Rounded to a 7-day boundary
+  // to absorb sub-day cache drift; see roundWindowDays for rationale.
+  const rawWindowDays = dataEarliestMsArea < nowMsArea
     ? Math.min(PER_AREA_RATE_WINDOW_DAYS, Math.max(1, Math.round((nowMsArea - dataEarliestMsArea) / PER_AREA_MS_PER_DAY)))
     : 0;
+  const windowDays = roundWindowDays(rawWindowDays);
 
   // Citywide annualized rate per 100k — uses the actual US Census Vintage
   // 2024 city population. Same CFS calibration as getCitywideSafetyScore
@@ -610,17 +656,24 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     },
   ];
 
-  // Per-area grade compares to the CITY rate, not the national rate.
-  // See gradeFromCityDeltas comment for the rationale.
-  const grade = gradeFromCityDeltas(rows);
-  const headline = headlineForArea(grade, areaLabel, city.label);
-
   const usedPolygonWeight = ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0;
   // Confidence uses the per-area POP denominator (popDenominator). When
   // we couldn't estimate it (no polygon, no peer-share basis), volume-vs-
   // population doesn't carry a stable signal so we fall back to a window-
   // only heuristic via computeDataConfidence's first branches.
+  // Computed before the grade so gradeWithNullGuard can demote a
+  // no-data area to "N/A" instead of the misleading C the raw math
+  // would yield.
   const confidence = computeDataConfidence(windowDays, persons + property, popDenominator, cfsScalePerArea);
+
+  // Per-area grade compares to the CITY rate, not the national rate.
+  // See gradeFromCityDeltas comment for the rationale.
+  const grade = gradeWithNullGuard(
+    gradeFromCityDeltas(rows),
+    persons + property,
+    confidence.dataConfidence,
+  );
+  const headline = headlineForArea(grade, areaLabel, city.label);
   return {
     city: { slug: city.slug, label: city.label },
     area: { slug: areaSlug, label: areaLabel },
