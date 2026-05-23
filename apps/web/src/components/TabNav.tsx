@@ -45,7 +45,11 @@ const WORKFLOWS: WorkflowDef[] = [
         warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
       { href: "/community", label: "Community" },
       { href: "/coverage", label: "Coverage" },
-      { href: "/cities", label: "All cities" },
+      // /cities is intentionally NOT in the sub-nav. It still exists as
+      // a public SEO route (linked from the homepage, sitemap, 404 page,
+      // and city pickers) but it duplicated the city picker that lives
+      // in the header on every page — the audit + tab-restructure goal
+      // was to remove duplicate surfaces, not add them.
     ],
   },
   {
