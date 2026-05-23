@@ -44,12 +44,18 @@ const CAT_DOT: Record<NonNullable<TrendBullet["category"]>, string> = {
   SOCIETY:  "bg-[#2563EB]",
 };
 
-export function TrendPanel() {
+/// `headingLevel` lets the parent control the section heading rank so
+/// TrendPanel slots into different hierarchies cleanly: on /trends
+/// (its own page) it's h2 under the page's h1; on /safety-score
+/// (mounted under ScoreReport's h2) it should be h3 to avoid skipping.
+export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) {
   const { city } = useCity();
   const { area } = useArea(city.slug);
   const [compareArea, setCompareArea] = useState<AreaSelection | null>(null);
   const [showComparePicker, setShowComparePicker] = useState(false);
   const [windowDays, setWindowDays] = useState<number>(30);
+  const HeadingTag = headingLevel === 3 ? "h3" : "h2";
+  const headingClass = headingLevel === 3 ? "font-display text-xl text-slate2-900" : "font-display text-2xl text-slate2-900";
 
   const windowSuffix = `&days=${windowDays}`;
   const path = area
@@ -66,9 +72,9 @@ export function TrendPanel() {
   return (
     <section id="trends" className="space-y-4 scroll-mt-24">
       <header>
-        <h2 className="font-display text-2xl text-slate2-900">
+        <HeadingTag className={headingClass}>
           What&apos;s shifted in {area?.label ?? `${city.label} citywide`} over the past {windowDays} days
-        </h2>
+        </HeadingTag>
         <p className="mt-1 text-sm text-slate2-500 max-w-2xl">
           Rolling timeline of police reports. Same official feed that powers the Crime Map and the Safety Index above.
         </p>
@@ -86,10 +92,10 @@ export function TrendPanel() {
       {trend && !loading && (
         <>
           <div className={compareMode ? "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start" : "space-y-4"}>
-            <TrendReport trend={trend} />
+            <TrendReport trend={trend} sectionHeadingLevel={headingLevel} />
             {compareMode && (
               compareTrend
-                ? <TrendReport trend={compareTrend} accent="compare" />
+                ? <TrendReport trend={compareTrend} accent="compare" sectionHeadingLevel={headingLevel} />
                 : compareLoading
                   ? <TrendSkeleton />
                   : (
@@ -122,7 +128,12 @@ export function TrendPanel() {
 /// Stateless TrendReport — renders the WoW shift bullets, time-of-day
 /// chart, and recent dispatches list for a single TrendResponse.
 /// Reused for both the primary view and the compare panel.
-function TrendReport({ trend, accent }: { trend: TrendResp; accent?: "compare" }) {
+function TrendReport({ trend, accent, sectionHeadingLevel = 2 }: { trend: TrendResp; accent?: "compare"; sectionHeadingLevel?: 2 | 3 }) {
+  // When the parent panel is at h2, our subsections (Week-over-week
+  // shift / Recent dispatches / When reports happen) are h3. When
+  // the panel is at h3 (mounted under another h2), we bump our
+  // subsections to h4 so the hierarchy stays well-formed.
+  const SubHeading = sectionHeadingLevel === 3 ? "h4" : "h3";
   const trendBullets = trend.bullets.filter((b) => b.kind === "trend");
   const dispatchBullets = trend.bullets.filter((b) => b.kind === "dispatch");
   return (
@@ -135,7 +146,7 @@ function TrendReport({ trend, accent }: { trend: TrendResp; accent?: "compare" }
       {trendBullets.length > 0 && (
         <section className="surface p-5 bg-gradient-to-br from-white to-bay-50">
           <header className="flex items-baseline justify-between flex-wrap gap-2">
-            <h3 className="font-display text-lg text-slate2-900">Week-over-week shift</h3>
+            <SubHeading className="font-display text-lg text-slate2-900">Week-over-week shift</SubHeading>
             <span className="text-xs text-slate2-500">{trend.area.label}</span>
           </header>
           <ul className="mt-3 space-y-2">
@@ -150,12 +161,12 @@ function TrendReport({ trend, accent }: { trend: TrendResp; accent?: "compare" }
       )}
 
       {trend.timeOfDay && (
-        <TimeOfDayChart data={trend.timeOfDay} areaLabel={trend.area.label} />
+        <TimeOfDayChart data={trend.timeOfDay} areaLabel={trend.area.label} headingTag={SubHeading} />
       )}
 
       <section className="surface p-5">
         <header className="flex items-baseline justify-between flex-wrap gap-2">
-          <h3 className="font-display text-lg text-slate2-900">Recent dispatches in {trend.area.label}</h3>
+          <SubHeading className="font-display text-lg text-slate2-900">Recent dispatches in {trend.area.label}</SubHeading>
           <div className="flex items-center gap-3 text-xs text-slate2-500">
             <span>{trend.totalIncidents.toLocaleString()} in last 30 days</span>
             {dispatchBullets.length > 0 && (
@@ -314,9 +325,10 @@ const PERIOD_META: Record<NonNullable<TrendResp["timeOfDay"]>["dominantPeriod"],
   evening:    { label: "Evening",    sublabel: "6pm – 12am", tone: "#DC2626" },
 };
 
-function TimeOfDayChart({ data, areaLabel }: {
+function TimeOfDayChart({ data, areaLabel, headingTag: H = "h3" }: {
   data: NonNullable<TrendResp["timeOfDay"]>;
   areaLabel: string;
+  headingTag?: "h3" | "h4";
 }) {
   const total =
     data.buckets.late_night + data.buckets.morning + data.buckets.afternoon + data.buckets.evening;
@@ -331,7 +343,7 @@ function TimeOfDayChart({ data, areaLabel }: {
   return (
     <section className="surface p-5 bg-gradient-to-br from-white to-sand-50">
       <header className="flex items-baseline justify-between flex-wrap gap-1">
-        <h3 className="font-display text-lg text-slate2-900">When reports happen</h3>
+        <H className="font-display text-lg text-slate2-900">When reports happen</H>
         <span className="text-xs text-slate2-500">{areaLabel} · 30-day window</span>
       </header>
       <p className="mt-1 text-xs text-slate2-500">

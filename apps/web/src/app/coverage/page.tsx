@@ -51,6 +51,34 @@ export default function CoveragePage() {
   }, []);
 
   return (
+    <>
+      {/* /coverage lives outside the (app) route group so it doesn't
+          inherit the TabNav header. Without this sticky top bar users
+          who deep-linked or arrived via /cities cross-link have no
+          nav to get back to the main app. Renders a TravelSafe brand
+          link on the left + an explicit "Back to app" close button on
+          the right so the exit is obvious from any viewport. */}
+      <header className="bg-white/90 backdrop-blur border-b border-sand-200 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <Link
+            href="/"
+            className="font-display text-xl text-slate2-900 transition-colors hover:text-bay-700"
+            aria-label="Back to TravelSafe home"
+          >
+            <span className="bg-gradient-to-r from-bay-700 to-coral-500 bg-clip-text text-transparent">Travel</span>Safe
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-slate2-700 hover:bg-bay-100 hover:text-bay-700 transition-colors"
+            aria-label="Close coverage page and return to home"
+          >
+            <span>Back to app</span>
+            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4l8 8M12 4l-8 8" />
+            </svg>
+          </Link>
+        </div>
+      </header>
     <main className="max-w-5xl mx-auto px-4 py-10 space-y-6">
       <header>
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Coverage · System status</p>
@@ -168,6 +196,7 @@ export default function CoveragePage() {
         for the full breakdown.
       </p>
     </main>
+    </>
   );
 }
 

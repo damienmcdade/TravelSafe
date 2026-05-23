@@ -65,19 +65,26 @@ export function CityStatusInline({ citySlug }: { citySlug: string }) {
   const tone = TONE[status.health];
   const newest = status.newestIncidentAt ? new Date(status.newestIncidentAt) : null;
   const newestRel = newest ? relativeAgo(Date.now() - newest.getTime()) : null;
+  // Single screen-reader-friendly summary so AT users hear the status
+  // as one coherent phrase rather than orphaned dot + label + count.
+  const srSummary = [
+    `Status: ${tone.label}`,
+    `${status.neighborhoodCount} ${status.neighborhoodCount === 1 ? "neighborhood" : "neighborhoods"} tracked`,
+    newestRel ? `newest report ${newestRel}` : null,
+  ].filter(Boolean).join(", ");
   return (
-    <span className="mt-1 flex items-center gap-1.5 text-[11px] text-slate2-500">
+    <span className="mt-1 flex items-center gap-1.5 text-[11px] text-slate2-500" aria-label={srSummary}>
       <span
         className={`inline-block w-1.5 h-1.5 rounded-full ${tone.dot} ${status.health === "live" ? "animate-pulse" : ""}`}
         aria-hidden
       />
-      <span>{tone.label}</span>
+      <span aria-hidden>{tone.label}</span>
       <span aria-hidden>·</span>
-      <span className="tabular-nums">{status.neighborhoodCount} areas</span>
+      <span className="tabular-nums" aria-hidden>{status.neighborhoodCount} areas</span>
       {newestRel && (
         <>
           <span aria-hidden>·</span>
-          <span className="tabular-nums">{newestRel}</span>
+          <span className="tabular-nums" aria-hidden>{newestRel}</span>
         </>
       )}
     </span>

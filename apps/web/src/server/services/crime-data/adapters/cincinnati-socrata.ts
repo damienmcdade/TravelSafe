@@ -20,6 +20,15 @@ interface CinRow {
   incident_no?: string;
   offense?: string;
   ucr_group?: string;
+  /// Date the incident actually occurred. Preferred over date_reported
+  /// because Cincinnati publishes a significant cold-case backlog —
+  /// reports with recent date_reported but date_from from years ago.
+  /// Using date_from gives a representative "recent activity" signal
+  /// in the 365-day rate window.
+  date_from?: string;
+  /// Date the report was filed. Cincinnati backlog skews this recent
+  /// while the actual incident may be years old. Kept as a fallback
+  /// for rows that have date_reported but no date_from.
   date_reported?: string;
   cpd_neighborhood?: string;
   latitude_x?: string;
@@ -69,9 +78,12 @@ function safeIso(raw: string | null | undefined): string | null {
 }
 
 async function fetchCin(): Promise<Incident[]> {
-  // Explicit $select — never request demographic columns.
-  const select = "incident_no,offense,ucr_group,date_reported,cpd_neighborhood,latitude_x,longitude_x";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_reported%20DESC&$where=date_reported%20IS%20NOT%20NULL%20AND%20cpd_neighborhood%20IS%20NOT%20NULL`;
+  // Explicit $select — never request demographic columns. Order by
+  // date_from (incident occurrence) DESC so the newest-50k pull covers
+  // recent activity rather than the cold-case backlog that skews
+  // date_reported.
+  const select = "incident_no,offense,ucr_group,date_from,date_reported,cpd_neighborhood,latitude_x,longitude_x";
+  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_from%20DESC&$where=date_from%20IS%20NOT%20NULL%20AND%20cpd_neighborhood%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
     headers: { Accept: "application/json", "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
@@ -80,7 +92,9 @@ async function fetchCin(): Promise<Incident[]> {
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
-    const occurredAt = safeIso(r.date_reported);
+    // Prefer date_from (incident occurrence) over date_reported (filing
+    // date). See CinRow comment for the cold-case backlog rationale.
+    const occurredAt = safeIso(r.date_from ?? r.date_reported);
     if (!occurredAt) continue;
     const lat = Number(r.latitude_x);
     const lng = Number(r.longitude_x);

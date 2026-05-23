@@ -180,8 +180,10 @@ export default function SafetyScorePage() {
           Lives below the Score so users land on the index first, then
           scroll into the timeline detail without switching tabs.
           Section id="trends" so /trends#trends and the in-page anchor
-          both work for deep-linking. */}
-      <TrendPanel />
+          both work for deep-linking. headingLevel=3 because the
+          ScoreReport above already uses h2 — TrendPanel slots in as a
+          subsection rather than a peer. */}
+      <TrendPanel headingLevel={3} />
     </main>
   );
 }

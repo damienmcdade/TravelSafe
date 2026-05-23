@@ -48,6 +48,12 @@ export function AreaCombobox<T extends AreaComboboxOption>({
   const [open, setOpen] = useState(false);
   const [focusIdx, setFocusIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  // Stable ids so the input can announce listbox + active option via
+  // aria-controls + aria-activedescendant (WAI-ARIA 1.2 combobox).
+  // Scope-derived so multiple comboboxes on a page don't collide.
+  const sanitized = scopeLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "combobox";
+  const listboxId = `combobox-list-${sanitized}`;
+  const optionId = (slug: string) => `combobox-opt-${sanitized}-${slug}`;
 
   // Outside-click closer.
   useEffect(() => {
@@ -111,20 +117,26 @@ export function AreaCombobox<T extends AreaComboboxOption>({
             placeholder={`Search ${options.length} ${scopeLabel} neighborhoods…`}
             className="input text-sm"
             autoComplete="off"
+            role="combobox"
             aria-autocomplete="list"
             aria-expanded={open}
+            aria-controls={listboxId}
+            aria-activedescendant={open && matches[focusIdx] ? optionId(matches[focusIdx].slug) : undefined}
             aria-label={`Search ${scopeLabel} neighborhoods`}
           />
         </label>
         {open && matches.length > 0 && (
           <ul
+            id={listboxId}
             className="absolute z-30 left-0 right-0 mt-1 surface shadow-card-lift max-h-72 overflow-auto p-1"
             role="listbox"
+            aria-label={`${scopeLabel} neighborhoods`}
           >
             {matches.map((m, i) => (
               <li key={m.slug}>
                 <button
                   type="button"
+                  id={optionId(m.slug)}
                   onMouseEnter={() => setFocusIdx(i)}
                   onMouseDown={(e) => { e.preventDefault(); pick(m); }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
