@@ -32,6 +32,12 @@ function writePrefs(p: { hidden: string[] }) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(p));
 }
 
+// Default visible count. Keeps the panel a predictable height so the
+// right-side aside doesn't tower over the left-side analytics column —
+// the audit caught the gap that pattern created. Users who want more
+// can expand via the "Show all" disclosure below.
+const DEFAULT_VISIBLE = 5;
+
 export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
   const { city } = useCity();
   const path = areaSlug
@@ -42,7 +48,12 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
 
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
   const [showPicker, setShowPicker] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   useEffect(() => { setHidden(new Set(readPrefs().hidden)); }, []);
+  // Reset to collapsed whenever the city changes — switching cities
+  // brings in a brand-new feed and the user should re-decide whether
+  // to expand.
+  useEffect(() => { setExpanded(false); }, [city.slug, areaSlug]);
 
   const sourceCounts = useMemo(() => {
     const m = new Map<string, number>();
@@ -70,8 +81,11 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
     writePrefs({ hidden: [] });
   }
 
+  const displayItems = expanded ? visibleItems : visibleItems.slice(0, DEFAULT_VISIBLE);
+  const hiddenCount = visibleItems.length - displayItems.length;
+
   return (
-    <section className="surface p-5 min-h-[240px] flex flex-col">
+    <section className="surface p-5 flex flex-col">
       <header className="flex items-baseline justify-between flex-wrap gap-1">
         <h3 className="font-display text-lg text-slate2-900">What&apos;s being reported</h3>
         <button
@@ -136,20 +150,34 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
         <p className="mt-3 text-sm text-slate2-500">No matching headlines in the past week for {city.label}. Quiet news is generally good news.</p>
       )}
       {!loading && visibleItems.length > 0 && (
-        <ul className="mt-4 divide-y divide-sand-200">
-          {visibleItems.map((item, i) => (
-            <li key={`${item.link}-${i}`} className="py-3">
-              <a href={item.link} target="_blank" rel="noreferrer" className="block group">
-                <span className="block text-sm text-slate2-900 group-hover:text-bay-700 transition-colors leading-snug">
-                  {item.title}
-                </span>
-                <span className="block mt-1 text-xs text-slate2-500">
-                  {item.source} · {relativeTime(item.publishedAt)}
-                </span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="mt-4 divide-y divide-sand-200">
+            {displayItems.map((item, i) => (
+              <li key={`${item.link}-${i}`} className="py-3">
+                <a href={item.link} target="_blank" rel="noreferrer" className="block group">
+                  <span className="block text-sm text-slate2-900 group-hover:text-bay-700 transition-colors leading-snug">
+                    {item.title}
+                  </span>
+                  <span className="block mt-1 text-xs text-slate2-500">
+                    {item.source} · {relativeTime(item.publishedAt)}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          {(hiddenCount > 0 || expanded) && (
+            <button
+              type="button"
+              onClick={() => setExpanded((e) => !e)}
+              aria-expanded={expanded}
+              className="mt-2 text-xs text-bay-700 hover:underline self-start"
+            >
+              {expanded
+                ? `Show fewer (back to ${DEFAULT_VISIBLE})`
+                : `Show ${hiddenCount} more ${hiddenCount === 1 ? "article" : "articles"}`}
+            </button>
+          )}
+        </>
       )}
     </section>
   );

@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import type { BaselinePoint, ThreatItem } from "./types";
 import { BaselineTrendChart } from "./BaselineTrendChart";
 
@@ -23,14 +24,24 @@ const CAT_DOT: Record<ThreatItem["category"], string> = {
   SOCIETY:  "bg-[#2563EB]",
 };
 
-const FEED_CAP = 12;
+// Default visible rows. The previous FEED_CAP of 12 made the panel
+// dominate the analytics column and threw off the column-height
+// balance with the right-side news/alerts. Users who want the full
+// recent window can expand via the disclosure below.
+const DEFAULT_VISIBLE = 5;
+const HARD_CAP = 50;
 
 /// Stateless presentation widget. Renders a chronological list of sanitized
 /// dispatches; if the list is empty for the active window, falls back to
 /// the analytical baseline chart instead of an empty textual line.
 export function ThreatFeed({ threats, baseline, windowDays, contextLabel, source, loading }: ThreatFeedProps) {
+  const [expanded, setExpanded] = useState(false);
   if (loading && threats.length === 0) return <ThreatFeedSkeleton />;
-  const visible = threats.slice(0, FEED_CAP);
+  // Hard cap on what we'll ever render — even when expanded — so the
+  // page can't blow up if an adapter returns thousands of rows.
+  const eligible = threats.slice(0, HARD_CAP);
+  const visible = expanded ? eligible : eligible.slice(0, DEFAULT_VISIBLE);
+  const hiddenCount = eligible.length - visible.length;
 
   return (
     <section className="surface p-5">
@@ -54,14 +65,28 @@ export function ThreatFeed({ threats, baseline, windowDays, contextLabel, source
           </div>
         </div>
       ) : (
-        <ol className="mt-3 space-y-1.5">
-          {visible.map((t) => (
-            <li key={t.id} className="flex items-start gap-2 text-sm text-slate2-700">
-              <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${CAT_DOT[t.category]}`} aria-hidden />
-              <span className="flex-1">{t.description}</span>
-            </li>
-          ))}
-        </ol>
+        <>
+          <ol className="mt-3 space-y-1.5">
+            {visible.map((t) => (
+              <li key={t.id} className="flex items-start gap-2 text-sm text-slate2-700">
+                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${CAT_DOT[t.category]}`} aria-hidden />
+                <span className="flex-1">{t.description}</span>
+              </li>
+            ))}
+          </ol>
+          {(hiddenCount > 0 || expanded) && (
+            <button
+              type="button"
+              onClick={() => setExpanded((e) => !e)}
+              aria-expanded={expanded}
+              className="mt-3 text-xs text-bay-700 hover:underline"
+            >
+              {expanded
+                ? `Show fewer (back to ${DEFAULT_VISIBLE})`
+                : `Show ${hiddenCount} more ${hiddenCount === 1 ? "dispatch" : "dispatches"}${threats.length > HARD_CAP ? ` (of ${threats.length} total)` : ""}`}
+            </button>
+          )}
+        </>
       )}
 
       <p className="mt-4 text-[11px] text-slate2-500">
