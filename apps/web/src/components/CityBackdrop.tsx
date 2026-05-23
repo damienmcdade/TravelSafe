@@ -299,6 +299,16 @@ const PHOTOS: Record<string, string[]> = {
     // Acrisure Stadium and downtown skyline
     "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Pittsburgh_-_Acrisure_Stadium_and_Skyline_%2853910936115%29.jpg/1920px-Pittsburgh_-_Acrisure_Stadium_and_Skyline_%2853910936115%29.jpg",
   ],
+  "phoenix": [
+    // Phoenix skyline (Arizona USA)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Phoenix_skyline_Arizona_USA.jpg/1920px-Phoenix_skyline_Arizona_USA.jpg",
+    // Downtown Phoenix skyline lights
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Downtown_Phoenix_Skyline_Lights.jpg/1920px-Downtown_Phoenix_Skyline_Lights.jpg",
+    // Phoenix skyline from South Mountain at night
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Phoenix_Skyline_from_South_Mountain_at_Night.2010.jpg/1920px-Phoenix_Skyline_from_South_Mountain_at_Night.2010.jpg",
+    // Downtown Phoenix aerial looking northeast
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Downtown_Phoenix_Aerial_Looking_Northeast.jpg/1920px-Downtown_Phoenix_Aerial_Looking_Northeast.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting

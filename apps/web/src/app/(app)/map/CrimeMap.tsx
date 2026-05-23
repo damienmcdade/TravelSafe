@@ -462,9 +462,13 @@ export default function CrimeMap() {
               onEachFeature={onEachFeature}
             />
           )}
-          {/* Per-incident drill-down dots only show inside the selected neighborhood. */}
+          {/* Per-incident drill-down dots only show inside the selected
+              neighborhood. Range-validate lat/lng so a malformed upstream
+              row can't plot a marker outside world bounds. */}
           {selectedName && (recent?.reports ?? []).map((r) => {
             if (typeof r.lat !== "number" || typeof r.lng !== "number") return null;
+            if (!Number.isFinite(r.lat) || !Number.isFinite(r.lng)) return null;
+            if (r.lat < -90 || r.lat > 90 || r.lng < -180 || r.lng > 180) return null;
             const c = CATEGORY_COLOR[r.nibrsCategory];
             return (
               <CircleMarker

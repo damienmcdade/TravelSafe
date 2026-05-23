@@ -20,8 +20,19 @@ function FitBounds({ from, to, routes }: Pick<Props, "from" | "to" | "routes">) 
       return;
     }
     // Build a bbox over both endpoints + all route polyline points.
-    const lats = [from.lat, to.lat, ...routes.flatMap((r) => r.coordinates.map((c) => c[1]))];
-    const lngs = [from.lng, to.lng, ...routes.flatMap((r) => r.coordinates.map((c) => c[0]))];
+    // Defensive: filter to finite, valid lat/lng. A single NaN/Infinity
+    // in the routes coordinates (malformed upstream response) would
+    // produce NaN bounds, which Leaflet's fitBounds either crashes on
+    // or silently locks to an invalid view.
+    const rawLats = [from.lat, to.lat, ...routes.flatMap((r) => (r?.coordinates ?? []).map((c) => c?.[1]))];
+    const rawLngs = [from.lng, to.lng, ...routes.flatMap((r) => (r?.coordinates ?? []).map((c) => c?.[0]))];
+    const lats = rawLats.filter((n): n is number => Number.isFinite(n) && n >= -90 && n <= 90);
+    const lngs = rawLngs.filter((n): n is number => Number.isFinite(n) && n >= -180 && n <= 180);
+    if (lats.length === 0 || lngs.length === 0) {
+      // Nothing valid to fit — fall back to centering on `from`.
+      map.setView([from.lat, from.lng], 13);
+      return;
+    }
     const minLat = Math.min(...lats), maxLat = Math.max(...lats);
     const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
     map.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [40, 40] });
@@ -50,12 +61,12 @@ export default function RouteMap({ from, to, routes, selectedIdx, ratingStrokes 
             />
           );
         })}
-        {routes[selectedIdx] && (
+        {routes[selectedIdx]?.coordinates?.length ? (
           <Polyline
             positions={routes[selectedIdx].coordinates.map(([lng, lat]) => [lat, lng] as [number, number])}
             pathOptions={{ color: ratingStrokes[routes[selectedIdx].rating].stroke, weight: 6, opacity: 1 }}
           />
-        )}
+        ) : null}
 
         <CircleMarker center={[from.lat, from.lng]} radius={7} pathOptions={{ color: "#0E4F73", fillColor: "#0E4F73", fillOpacity: 1, weight: 2 }}>
           <Tooltip permanent direction="top" offset={[0, -10]}>From</Tooltip>

@@ -102,6 +102,10 @@ export async function getDiscoveredAreasSeattle(): Promise<KnownArea[]> {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
+    // SPD publishes some rows with neighborhood = literal "-" which
+    // titlecases to "-" and produces a bogus `sea-` slug. Drop any
+    // label that has no alphanumerics so the wheel never surfaces it.
+    if (!/[a-z0-9]/i.test(r.area)) continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat; e.lngSum += r.lng; e.count += 1;
@@ -109,12 +113,19 @@ export async function getDiscoveredAreasSeattle(): Promise<KnownArea[]> {
   }
   return Array.from(agg.entries())
     .filter(([, e]) => e.count >= 3)
-    .map(([name, e]) => ({
-      slug: `sea-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
-      jurisdiction: "Seattle",
-      centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
-    }))
+    .map(([name, e]) => {
+      const slugSuffix = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      return {
+        slug: `sea-${slugSuffix}`,
+        label: name,
+        jurisdiction: "Seattle",
+        centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
+      };
+    })
+    // Belt-and-braces: drop any entry whose slug somehow normalized to
+    // just "sea-" (empty suffix). The alphanumeric filter above should
+    // catch every case but this is the defensive backstop.
+    .filter((a) => a.slug !== "sea-" && a.slug.length > 4)
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
