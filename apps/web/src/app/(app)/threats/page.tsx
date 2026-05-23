@@ -14,8 +14,6 @@ import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
 import { UptickTile } from "@/components/UptickTile";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
-import { DataDisclaimer } from "@/components/DataDisclaimer";
-import { CityBanner } from "@/components/CitySelector";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
 // SafeZoneTab — modular drop-in widgets. The page is now a thin layout
 // orchestrator: it owns the city/area selection and hands those down to
@@ -129,7 +127,6 @@ export default function ThreatsPage() {
         <LiveActivityBadge />
       </header>
 
-      <CityBanner />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2"><LocationSearch current={area} onResolved={setArea} /></div>
@@ -176,7 +173,6 @@ export default function ThreatsPage() {
         area={area}
       />
 
-      <DataDisclaimer prefix="How to read this:" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">

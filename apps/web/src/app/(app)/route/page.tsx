@@ -5,7 +5,6 @@ import { api, useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
-import { CityBanner } from "@/components/CitySelector";
 
 const RouteMap = dynamic(() => import("./RouteMap"), {
   ssr: false,
@@ -147,7 +146,6 @@ export default function SafeRoutePage() {
         </p>
       </header>
 
-      <CityBanner />
 
       {/* The "this is not turn-by-turn navigation" disclaimer is part of
           the value prop — Safe Route is a neighborhood-level analytical

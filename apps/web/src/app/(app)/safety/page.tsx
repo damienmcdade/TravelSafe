@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { api, useAnonymousAuth, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
-import { CityBanner } from "@/components/CitySelector";
 import { LocationSearch } from "@/components/LocationSearch";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
@@ -63,7 +62,6 @@ export default function PersonalSafetyPage() {
       )}
 
       <EmergencyPanel />
-      <CityBanner />
 
       <section className="surface p-5">
         <h2 className="font-display text-lg text-slate2-900">Tailor safety tips to your area</h2>

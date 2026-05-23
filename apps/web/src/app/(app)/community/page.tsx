@@ -12,7 +12,6 @@ import { AreaInsightsPanel } from "@/components/AreaInsightsPanel";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { CommunitySignalsPanel } from "@/components/CommunitySignalsPanel";
-import { CityBanner } from "@/components/CitySelector";
 import { useCity } from "@/lib/use-city";
 
 const REGISTRY_URL = process.env.NEXT_PUBLIC_SEX_OFFENDER_REGISTRY_URL || "https://www.meganslaw.ca.gov/";
@@ -108,7 +107,6 @@ export default function CommunityPage() {
         <LiveActivityBadge />
       </header>
 
-      <CityBanner />
 
       <LocationSearch current={area} onResolved={setArea} />
 

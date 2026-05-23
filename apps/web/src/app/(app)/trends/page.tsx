@@ -4,11 +4,9 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
-import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 import { SaveAreaStar } from "@/components/SavedAreasRail";
-import { DataDisclaimer } from "@/components/DataDisclaimer";
 
 interface TrendBullet {
   kind: "trend" | "dispatch";
@@ -83,7 +81,6 @@ export default function TrendFeedPage() {
           Defaults to a citywide 30-day rolling timeline. Drill into a specific {city.label} neighborhood below if you want a per-area view. Both modes use the same official police open-data feed that powers the Crime Map.
         </p>
       </header>
-      <CityBanner />
 
       {area && (
         <div className="flex items-center justify-between flex-wrap gap-2 surface-muted px-4 py-3">
@@ -151,7 +148,6 @@ export default function TrendFeedPage() {
           <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
             <strong className="text-slate2-900">Methodology:</strong> {trend.disclaimer}
           </p>
-          <DataDisclaimer prefix="How to read this:" />
         </>
       )}
     </main>

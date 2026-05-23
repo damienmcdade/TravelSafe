@@ -4,11 +4,9 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
-import { CityBanner } from "@/components/CitySelector";
 import { SafeZoneSubNav } from "@/components/SafeZoneSubNav";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
 import { SaveAreaStar } from "@/components/SavedAreasRail";
-import { DataDisclaimer } from "@/components/DataDisclaimer";
 
 interface ScoreRow {
   category: "PERSONS" | "PROPERTY";
@@ -98,7 +96,6 @@ export default function SafetyScorePage() {
           Defaults to a citywide score against the FBI Crime in the Nation 2024 national rate. Drill into a specific {city.label} neighborhood below if you want a per-area comparison, or use Compare to put two neighborhoods side-by-side.
         </p>
       </header>
-      <CityBanner />
 
       {area && (
         <div className="flex items-center justify-between flex-wrap gap-2 surface-muted px-4 py-3">
@@ -175,7 +172,6 @@ export default function SafetyScorePage() {
               {score.source.label}
             </a>.
           </p>
-          <DataDisclaimer prefix="How to read this:" />
         </>
       )}
     </main>

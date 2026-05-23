@@ -5,6 +5,7 @@ import { TabNav } from "@/components/TabNav";
 import { CitySelector } from "@/components/CitySelector";
 import { AIAssistant } from "@/components/AIAssistant";
 import { SavedAreasRail } from "@/components/SavedAreasRail";
+import { DataDisclaimer } from "@/components/DataDisclaimer";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -37,6 +38,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       >
         <SavedAreasRail />
         {children}
+        {/* Single-mount DataDisclaimer for the entire (app) shell —
+            previously every tab imported and rendered its own copy.
+            Lifting it here means the legal "historical reporting only,
+            not for housing/lending/insurance/hiring decisions" notice
+            is shown on every authenticated page exactly once, and a
+            future copy change touches one file instead of seven. */}
+        <DataDisclaimer prefix="How to read this:" />
       </main>
       <footer className="mt-12 border-t border-sand-200 bg-white/60 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate2-500">

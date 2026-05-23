@@ -4,8 +4,6 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
-import { DataDisclaimer } from "@/components/DataDisclaimer";
-import { CityBanner } from "@/components/CitySelector";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
 
 interface Area { slug: string; label: string; jurisdiction: string }
@@ -124,7 +122,6 @@ export default function NeighborhoodWatchPage() {
         </p>
       </header>
 
-      <CityBanner />
 
       {isStale && staleMessage && (
         <aside role="status" className="surface-muted px-4 py-3 text-xs text-amber2-700 border border-amber2-300/40 rounded-xl">
@@ -197,7 +194,6 @@ export default function NeighborhoodWatchPage() {
               <p className="surface-muted p-3 text-xs text-slate2-700 leading-snug" role="note">
                 <strong className="text-slate2-900">Methodology:</strong> {watch.disclaimer}
               </p>
-              <DataDisclaimer prefix="How to read this:" />
             </>
           )}
         </section>
