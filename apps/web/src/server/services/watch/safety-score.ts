@@ -602,23 +602,28 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // polygon) OR as a floor when polygon-weighting produces an
   // implausibly low population for dense neighborhoods.
   const peerSharePop = cityPop > 0 ? cityPop / N : 0;
-  // DENSITY-BIAS GUARD (2026-05-23 audit fix): the polygon-area
-  // formula assumes UNIFORM density across the city, which is
-  // wildly wrong for dense downtowns vs sprawling suburbs. A 0.9 km²
-  // downtown polygon in a 600 km² city was being assigned ~1,500
-  // residents (1.39M × 0.9/600 × peer-correction) when its actual
-  // population is closer to 30,000. The undersized denominator
-  // inflated per-capita rates by ~20×, forcing the downtown to
-  // grade E from polygon-weighting alone, regardless of what the
-  // crime data said. Fix: when polygon-derived pop falls below
-  // half of peer-share, fall back to peer-share. Polygon weighting
-  // still drives the population estimate when it's in a plausible
-  // range; the floor only kicks in for the downtown-style
-  // anomalies where the uniform-density assumption breaks.
+  // DENSITY-BIAS FLOOR. The polygon-area formula assumes uniform
+  // density across the city, which is wildly wrong for dense
+  // downtowns and moderately wrong for any neighborhood that's
+  // denser than the city average (beach districts, transit-oriented
+  // cores, etc.). A 0.9 km² downtown polygon in a 600 km² city was
+  // being assigned ~1,500 residents when its actual population is
+  // closer to 30k; even a moderately-dense neighborhood like
+  // Pacific Beach (~50k real, ~14 km²) was being assigned ~18k.
+  // Both produce per-capita rates that are too high and force
+  // grades worse than the data warrants.
+  //
+  // The floor: areaPop = max(polygon, peer-share). Polygon weighting
+  // can still INCREASE the estimate for genuinely large polygons
+  // (where uniform density understates them); the floor only
+  // prevents the polygon from DECREASING the estimate below the
+  // city's per-neighborhood average, which is the structural bias
+  // the uniform-density assumption causes. This is more aggressive
+  // than the prior 0.5×-peer-share trigger and trades a small loss
+  // of density signal for a much larger correctness win.
   if (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0) {
     const polygonAreaPop = cityPop * (ourAreaKm2 / cityTotalKm2);
-    const usePolygon = polygonAreaPop >= peerSharePop * 0.5;
-    const areaPop = usePolygon ? polygonAreaPop : peerSharePop;
+    const areaPop = Math.max(polygonAreaPop, peerSharePop);
     popDenominator = Math.round(areaPop);
     // Apply CFS scaling here too — otherwise (raw_local / scaled_city)
     // ratio cancels the scaling out and per-area persons100k ends up
@@ -674,16 +679,17 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     },
   ];
 
-  // True when polygon weighting drove the population estimate. False
-  // when (a) no polygon was available OR (b) the density-bias guard
-  // demoted us to peer-share. The disclaimer reflects which model
-  // actually shaped the score so users know whether the per-area
-  // population is geometry-based or peer-averaged.
+  // True when polygon weighting drove the population estimate (i.e.,
+  // polygon-pop was already at or above the peer-share floor). False
+  // when the density-bias floor kicked in OR no polygon was
+  // available. The disclaimer reflects which model actually shaped
+  // the score so users know whether the per-area population came
+  // from geometry, peer-averaging, or the floor.
   const polygonAreaPopForDisclaimer = (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0)
     ? cityPop * (ourAreaKm2 / cityTotalKm2)
     : 0;
   const usedPolygonWeight = ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0
-    && polygonAreaPopForDisclaimer >= peerSharePop * 0.5;
+    && polygonAreaPopForDisclaimer >= peerSharePop;
   // Confidence uses the per-area POP denominator (popDenominator). When
   // we couldn't estimate it (no polygon, no peer-share basis), volume-vs-
   // population doesn't carry a stable signal so we fall back to a window-
