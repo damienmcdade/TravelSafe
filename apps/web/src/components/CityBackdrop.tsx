@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useCity } from "@/lib/use-city";
 
 // Verified Wikimedia Commons photos of the actual cities. Each URL has been
@@ -329,13 +330,20 @@ export function CityBackdrop() {
           key={`${city.slug}-${i}`}
           className={`absolute inset-0 transition-opacity duration-[2000ms] ${i === idx && !imgError[i] ? "opacity-100" : "opacity-0"}`}
         >
-          <img
+          {/* Next/Image with fill so it covers the full backdrop pane.
+              priority on the first photo so it lands in the LCP budget;
+              the rest lazy-load. sizes=100vw because backdrop spans the
+              full viewport. unoptimized would skip AVIF conversion —
+              we deliberately allow optimization via the remotePatterns
+              entry in next.config.ts. */}
+          <Image
             src={url}
             alt=""
-            loading={i === 0 ? "eager" : "lazy"}
-            decoding="async"
+            fill
+            sizes="100vw"
+            priority={i === 0}
             onError={() => setImgError((e) => ({ ...e, [i]: true }))}
-            className={`w-full h-full object-cover ${i === idx ? "animate-kenburns" : ""}`}
+            className={`object-cover ${i === idx ? "animate-kenburns" : ""}`}
           />
         </div>
       ))}
