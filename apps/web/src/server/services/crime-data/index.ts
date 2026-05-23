@@ -118,10 +118,13 @@ export const crimeData = {
   /// category so users get a city-of-San-Diego overview without picking an area.
   /// Per-area payload now carries a category breakdown so the Crime Map can
   /// surface "what kind of incidents drive this area's score" in its tooltip.
-  async getCitywide(citySlug: string = "san-diego", opts: { offense?: string } = {}): Promise<{
+  async getCitywide(citySlug: string = "san-diego", opts: { offense?: string; windowDays?: number } = {}): Promise<{
     city: string;
     totalIncidents: number;
     appliedOffense: string | null;
+    /// The window applied when counting incidents. null = no window
+    /// (every cached incident counts, the legacy behavior).
+    windowDays: number | null;
     topOffenses: Array<{ offense: string; count: number }>;
     alerts: AreaRiskAlert[];
     perArea: Array<{
@@ -137,6 +140,17 @@ export const crimeData = {
     const city = cityBySlug(citySlug) ?? CITIES[0];
     const areas = await city.discover().catch(() => [] as Awaited<ReturnType<typeof city.discover>>);
     const offenseFilter = opts.offense?.toLowerCase().trim();
+    // Wall-clock window. Anchored to Date.now() so the cutoff doesn't
+    // drift between refreshes — same pattern the safety-score
+    // annualization uses (commit 1f7d7d9). null means "no window",
+    // matching the legacy behavior for backwards compat.
+    const windowDays = opts.windowDays && opts.windowDays > 0 ? Math.floor(opts.windowDays) : null;
+    const windowCutoffMs = windowDays != null ? Date.now() - windowDays * 24 * 60 * 60 * 1000 : null;
+    const inWindow = (occurredAt: string): boolean => {
+      if (windowCutoffMs == null) return true;
+      const t = +new Date(occurredAt);
+      return Number.isFinite(t) && t >= windowCutoffMs;
+    };
     const perArea: Awaited<ReturnType<typeof crimeData.getCitywide>>["perArea"] = [];
     const totalByCategory = new Map<string, Incident[]>();
     const offenseCounts = new Map<string, number>();
@@ -156,7 +170,12 @@ export const crimeData = {
     );
     for (let i = 0; i < areas.length; i++) {
       const area = areas[i];
-      const incidentsAll = incidentsAllPerArea[i];
+      // Apply the recency window BEFORE offense / category counting
+      // so the totals + breakdowns reflect the user-selected interval.
+      // No window → keep every cached incident (legacy behavior).
+      const incidentsAll = windowCutoffMs == null
+        ? incidentsAllPerArea[i]
+        : incidentsAllPerArea[i].filter((inc) => inWindow(inc.occurredAt));
       // Accumulate the full top-offenses list across the city so the UI's
       // offense-dropdown can show all options.
       for (const inc of incidentsAll) {
@@ -203,6 +222,7 @@ export const crimeData = {
       city: city.label,
       totalIncidents,
       appliedOffense: offenseFilter ?? null,
+      windowDays,
       topOffenses,
       alerts,
       perArea: perArea.sort((a, b) => b.incidentCount - a.incidentCount),

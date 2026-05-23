@@ -9,7 +9,7 @@ import { useDocumentTitle } from "@/lib/use-document-title";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
-import { CategoryBreakdown } from "@/components/CategoryBreakdown";
+import { CrimeChart } from "@/components/CrimeChart";
 import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
 import { UptickTile } from "@/components/UptickTile";
@@ -77,19 +77,6 @@ export default function ThreatsPage() {
     [area?.slug ?? ""],
     { refreshIntervalMs: REFRESH_MS },
   );
-
-  const citywideCounts = (citywide?.perArea ?? []).reduce(
-    (acc, p) => ({
-      PERSONS: acc.PERSONS + p.byCategory.PERSONS,
-      PROPERTY: acc.PROPERTY + p.byCategory.PROPERTY,
-      SOCIETY: acc.SOCIETY + p.byCategory.SOCIETY,
-    }),
-    { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 },
-  );
-  const selectedCounts = (() => {
-    if (!area) return { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 };
-    return citywide?.perArea.find((p) => p.slug === area.slug)?.byCategory ?? { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 };
-  })();
 
   async function useMyLocation() {
     if (locBusy) return;
@@ -165,7 +152,6 @@ export default function ThreatsPage() {
           citywide={citywide ?? null}
           citywideErr={citywideErr}
           citywideLoading={citywideLoading}
-          citywideCounts={citywideCounts}
           onPickNeighborhood={selectNeighborhood}
         />
       ) : (
@@ -173,7 +159,6 @@ export default function ThreatsPage() {
           city={{ slug: city.slug, label: city.label }}
           area={area}
           setArea={setArea}
-          selectedCounts={selectedCounts}
           areaStatsErr={areaStatsErr}
           areaAlertsProvenance={selectedAreaStats?.alerts[0]?.provenance ?? null}
           onUseMyLocation={useMyLocation}
@@ -231,14 +216,12 @@ function CityAwareness({
   citywide,
   citywideErr,
   citywideLoading,
-  citywideCounts,
   onPickNeighborhood,
 }: {
   city: { slug: string; label: string };
   citywide: Citywide | null;
   citywideErr: Error | null;
   citywideLoading: boolean;
-  citywideCounts: { PERSONS: number; PROPERTY: number; SOCIETY: number };
   onPickNeighborhood: (slug: string, label: string) => void;
 }) {
   return (
@@ -259,10 +242,10 @@ function CityAwareness({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">
-          <CategoryBreakdown
-            counts={citywideCounts}
-            title={`${city.label} category mix`}
-            subtitle="Recent cached window — see source banner below for refresh cadence."
+          <CrimeChart
+            mode="city"
+            citySlug={city.slug}
+            cityLabel={city.label}
           />
           {citywide && (
             <section className="surface p-5">
@@ -308,7 +291,6 @@ function NeighborhoodAwareness({
   city,
   area,
   setArea,
-  selectedCounts,
   areaStatsErr,
   areaAlertsProvenance,
   onUseMyLocation,
@@ -325,7 +307,6 @@ function NeighborhoodAwareness({
   // already handles the null case by removing the city's entry from
   // its per-city map.
   setArea: (a: { slug: string; label: string; jurisdiction: string } | null) => void;
-  selectedCounts: { PERSONS: number; PROPERTY: number; SOCIETY: number };
   areaStatsErr: Error | null;
   areaAlertsProvenance: ProvenanceLike | null;
   onUseMyLocation: () => void;
@@ -390,10 +371,12 @@ function NeighborhoodAwareness({
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 space-y-6">
               <AreaBriefPanel areaSlug={area.slug} />
-              <CategoryBreakdown
-                counts={selectedCounts}
-                title={`${area.label} — category mix`}
-                subtitle="Recent cached window — see source banner below for refresh cadence."
+              <CrimeChart
+                mode="area"
+                citySlug={city.slug}
+                cityLabel={city.label}
+                areaSlug={area.slug}
+                areaLabel={area.label}
               />
               <CrimeMixCard
                 areaSlug={area.slug}

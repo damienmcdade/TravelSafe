@@ -13,5 +13,12 @@ const CACHE_HEADERS = {
 export const GET = wrap(async (req: NextRequest) => {
   const city = req.nextUrl.searchParams.get("city") ?? "san-diego";
   const offense = req.nextUrl.searchParams.get("offense") ?? undefined;
-  return NextResponse.json(await crimeData.getCitywide(city, { offense }), { headers: CACHE_HEADERS });
+  // windowDays narrows the in-window incident set so the Crime Chart's
+  // interval picker (7d / 30d / 90d / 365d) returns aggregates that
+  // match the chosen window. Omitted → unfiltered (legacy behavior).
+  const windowDaysRaw = req.nextUrl.searchParams.get("windowDays");
+  const windowDays = windowDaysRaw && Number.isFinite(Number(windowDaysRaw)) && Number(windowDaysRaw) > 0
+    ? Number(windowDaysRaw)
+    : undefined;
+  return NextResponse.json(await crimeData.getCitywide(city, { offense, windowDays }), { headers: CACHE_HEADERS });
 });
