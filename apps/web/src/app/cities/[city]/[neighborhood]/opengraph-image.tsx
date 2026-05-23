@@ -2,15 +2,16 @@ import { ImageResponse } from "next/og";
 import { cityBySlug } from "@/server/services/crime-data/cities";
 
 /// Programmatic OG image for /cities/[city]/[neighborhood]. Renders the
-/// neighborhood label, parent city, and the city's CITYWIDE Safety
-/// grade as a social-card hero.
+/// neighborhood label, parent city, and the AREA's per-neighborhood
+/// Safety grade as a social-card hero.
 ///
-/// Why citywide grade (not per-area): the per-area grade requires
-/// polygon-area weighting which imports node:fs via polygon-areas, and
-/// the OG-image route's edge runtime can't resolve that. Citywide grade
-/// is honest at OG scale — it's still a meaningful signal of the city's
-/// overall safety profile, and we fetch it through our public API
-/// rather than importing the service directly to keep the bundle tiny.
+/// Grade source: fetched via /api/safezone/safety-score?area= which is
+/// the same endpoint /safety-score consumes. Going through the API
+/// instead of importing getSafetyScore directly keeps the OG runtime
+/// free of polygon-areas + node:fs deps (those are evaluated inside
+/// the Node-runtime API route). Falls back to citywide grade when the
+/// area-level lookup returns 404 or any other error so cards still
+/// render for cold-cache or unknown-slug cases.
 export const runtime = "edge";
 export const revalidate = 3600;
 export const size = { width: 1200, height: 630 };
@@ -28,23 +29,44 @@ const GRADE_THEME: Record<string, { bg: string; tile: string; word: string }> = 
   E: { bg: "linear-gradient(135deg,#7A3A2C 0%,#C66B58 100%)", tile: "#FDEBE3", word: "Higher than national" },
 };
 
-/// Fetch the citywide grade via our public API. Edge-safe (just fetch),
-/// reuses our existing compute + cache, and degrades to null on any
-/// failure so the OG card falls back to a neutral neutral-blue card.
-/// Absolute URL is derived from NEXT_PUBLIC_SITE_URL (set in env) with
-/// VERCEL_URL as a backstop — same pattern as sitemap.ts.
-async function fetchCityGrade(citySlug: string): Promise<keyof typeof GRADE_THEME | null> {
-  const base =
+type GradeLetter = keyof typeof GRADE_THEME;
+type GradeSource = "area" | "city";
+interface GradeResult { grade: GradeLetter; source: GradeSource }
+
+function baseUrl(): string {
+  return (
     process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://travel-safe-chi.vercel.app");
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://travel-safe-chi.vercel.app")
+  );
+}
+
+function parseGrade(v: unknown): GradeLetter | null {
+  return v === "A" || v === "B" || v === "C" || v === "D" || v === "E" ? v : null;
+}
+
+/// Fetch grade in two tiers: try the AREA endpoint first (per-neighborhood
+/// rate vs city baseline), fall back to CITYWIDE if the area is unknown
+/// or the call fails. Both calls go through the public API so this OG
+/// route stays free of polygon-areas / node:fs imports.
+async function fetchGrade(citySlug: string, areaSlug: string, areaLabel: string): Promise<GradeResult | null> {
+  const base = baseUrl();
   try {
-    const res = await fetch(`${base}/api/safezone/safety-score?city=${citySlug}`, {
+    const areaUrl = `${base}/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel)}`;
+    const res = await fetch(areaUrl, { next: { revalidate: 3600 } });
+    if (res.ok) {
+      const data: { grade?: string } = await res.json();
+      const g = parseGrade(data.grade);
+      if (g) return { grade: g, source: "area" };
+    }
+  } catch { /* fall through to citywide */ }
+  try {
+    const res = await fetch(`${base}/api/safezone/safety-score?city=${encodeURIComponent(citySlug)}`, {
       next: { revalidate: 3600 },
     });
     if (!res.ok) return null;
     const data: { grade?: string } = await res.json();
-    const g = data.grade;
-    return g === "A" || g === "B" || g === "C" || g === "D" || g === "E" ? g : null;
+    const g = parseGrade(data.grade);
+    return g ? { grade: g, source: "city" } : null;
   } catch {
     return null;
   }
@@ -65,8 +87,14 @@ export default async function NeighborhoodOgImage({
   const area = areas.find((a) => a.slug === params.neighborhood);
   if (!area) return fallback(`${city.label} neighborhood`, city.label);
 
-  const grade = await fetchCityGrade(params.city);
+  const gradeResult = await fetchGrade(params.city, area.slug, area.label);
+  const grade = gradeResult?.grade ?? null;
   const theme = grade ? GRADE_THEME[grade] : GRADE_THEME.C;
+  // Caveat copy switches based on whether we got the area-level grade
+  // or fell back to citywide. Area-level is now the primary path.
+  const gradeCaveat = gradeResult?.source === "city"
+    ? `(${city.label} citywide)`
+    : `(${area.label})`;
 
   return new ImageResponse(
     (
@@ -142,7 +170,7 @@ export default async function NeighborhoodOgImage({
               {theme.word}
             </div>
             <div style={{ display: "flex", marginTop: 6, fontSize: 16, opacity: 0.7, textAlign: "center" }}>
-              ({city.label} citywide)
+              {gradeCaveat}
             </div>
           </div>
         )}

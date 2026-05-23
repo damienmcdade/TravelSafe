@@ -22,6 +22,27 @@ async function tryAdapter<T>(adapter: CrimeDataAdapter, run: (a: CrimeDataAdapte
   }
 }
 
+// ----- Last-known-good cache --------------------------------------------
+// Generalizes the SDPD lastDiscovered pattern to every adapter at the
+// dispatcher layer. When an adapter returns empty or null for a query
+// we've previously satisfied with non-empty data, serve the last
+// successful response instead of an empty list. Bounded by Vercel
+// instance lifetime (module memory) so cold starts always re-pull
+// fresh from the upstream — the LKG only protects against transient
+// upstream failures within a warm instance.
+//
+// Cache key omits opts (limit/since) on purpose: the LKG is a
+// "something is better than nothing" fallback, not a precise replay
+// of the original query. Callers asking for limit=50 from a 500-row
+// LKG will get 500 rows — slightly more than asked, never silently
+// empty. The Crime Map / Watch UIs apply their own slicing.
+const lkgIncidents = new Map<string, Incident[]>();
+const lkgAreaStats = new Map<string, AreaStats>();
+const lkgRecentReports = new Map<string, Incident[]>();
+// No standalone LKG for getCitywide — it composes getIncidents per area,
+// which already benefits from lkgIncidents. The citywide aggregator
+// naturally inherits the LKG fallback via its component calls.
+
 /// Picks adapter(s) per CRIME_DATA_ADAPTER. In "auto" mode, real adapters are
 /// tried in order and fall through to the mock if both fail — guaranteeing
 /// the UI always renders something.
@@ -32,12 +53,22 @@ export const crimeData = {
     // Route by city: LA-prefixed slugs hit LAPD, others hit SDPD primary.
     const cityAdapter = cityForArea(area).adapter;
     const stats = await tryAdapter(cityAdapter, (a) => a.getAreaStats(area));
-    if (stats) return stats;
+    if (stats) {
+      lkgAreaStats.set(area, stats);
+      return stats;
+    }
     // SANDAG jurisdiction-level stats still answer for city-of-SD overview.
     if (cityAdapter === sdpdNibrsAdapter) {
       const sandag = await tryAdapter(sandagSocrataAdapter, (a) => a.getAreaStats(area));
-      if (sandag) return sandag;
+      if (sandag) {
+        lkgAreaStats.set(area, sandag);
+        return sandag;
+      }
     }
+    // LKG fallback before mock — a previously-cached real response
+    // beats a synthetic mock when the upstream is briefly down.
+    const lkg = lkgAreaStats.get(area);
+    if (lkg) return lkg;
     return mockAdapter.getAreaStats(area);
   },
 
@@ -46,6 +77,12 @@ export const crimeData = {
     if (mode !== "auto") return adapters[mode].getIncidents(area, opts);
     const cityAdapter = cityForArea(area).adapter;
     const incidents = await tryAdapter(cityAdapter, (a) => a.getIncidents(area, opts));
+    if (incidents && incidents.length > 0) {
+      lkgIncidents.set(area, incidents);
+      return incidents;
+    }
+    const lkg = lkgIncidents.get(area);
+    if (lkg && lkg.length > 0) return lkg;
     return incidents ?? (await mockAdapter.getIncidents(area, opts));
   },
 
@@ -54,6 +91,12 @@ export const crimeData = {
     if (mode !== "auto") return adapters[mode].getRecentReports(area, opts);
     const cityAdapter = cityForArea(area).adapter;
     const reports = await tryAdapter(cityAdapter, (a) => a.getRecentReports(area, opts));
+    if (reports && reports.length > 0) {
+      lkgRecentReports.set(area, reports);
+      return reports;
+    }
+    const lkg = lkgRecentReports.get(area);
+    if (lkg && lkg.length > 0) return lkg;
     return reports ?? (await mockAdapter.getRecentReports(area, opts));
   },
 
