@@ -54,15 +54,17 @@ interface InsightsApi {
   }>;
 }
 
-/// Convert a local-vs-national ratio into a 0–100 safety index. The mapping
-/// is anchored so the user-perceived comparison aligns with what the FBI's
-/// own visualizations show:
-///   ratio ≤ 0.5  →  score 90 (well below national)
-///   ratio = 1.0  →  score 50 (matches national)
-///   ratio ≥ 2.0  →  score 10 (well above national)
-/// Beyond 2× national the score still has a small floor so the worst case
-/// reads as "elevated" rather than nothing, and below 0.5 it caps near 100
-/// rather than overshooting.
+/// Convert a local-vs-baseline ratio into a 0–100 safety index. The
+/// piecewise-linear mapping anchors three points:
+///   ratio 0.0  →  score 100 (zero reported activity)
+///   ratio 1.0  →  score  50 (matches baseline)
+///   ratio 2.0  →  score  10 (twice the baseline)
+/// Between those anchors the score is linear in `ratio`. Specifically:
+///   ratio in [0, 1] → raw = 100 - 50*ratio  (e.g. ratio 0.5 → 75)
+///   ratio in (1, ∞] → raw = max(5, 50 - 40*(ratio-1))  (floored at 5)
+/// Output is rounded and clamped to [5, 100]. The floor at 5 prevents
+/// extreme ratios (>2.1×) from all reading as 0 — they all read as 5,
+/// which the widget renders as the "elevated" band.
 function ratioToScore(ratio: number): number {
   if (!Number.isFinite(ratio) || ratio < 0) return 50;
   if (ratio <= 0) return 100;

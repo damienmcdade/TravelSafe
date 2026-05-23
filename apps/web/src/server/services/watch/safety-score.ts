@@ -598,10 +598,27 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   let personsScale: number;
   let propertyScale: number;
   let popDenominator: number;
+  // Peer-share baseline used either as the primary estimator (no
+  // polygon) OR as a floor when polygon-weighting produces an
+  // implausibly low population for dense neighborhoods.
+  const peerSharePop = cityPop > 0 ? cityPop / N : 0;
+  // DENSITY-BIAS GUARD (2026-05-23 audit fix): the polygon-area
+  // formula assumes UNIFORM density across the city, which is
+  // wildly wrong for dense downtowns vs sprawling suburbs. A 0.9 km²
+  // downtown polygon in a 600 km² city was being assigned ~1,500
+  // residents (1.39M × 0.9/600 × peer-correction) when its actual
+  // population is closer to 30,000. The undersized denominator
+  // inflated per-capita rates by ~20×, forcing the downtown to
+  // grade E from polygon-weighting alone, regardless of what the
+  // crime data said. Fix: when polygon-derived pop falls below
+  // half of peer-share, fall back to peer-share. Polygon weighting
+  // still drives the population estimate when it's in a plausible
+  // range; the floor only kicks in for the downtown-style
+  // anomalies where the uniform-density assumption breaks.
   if (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0) {
-    // Polygon-weighted: per-area pop estimate, then ratio of (this area's
-    // count / its pop) to (citywide count / citywide pop).
-    const areaPop = cityPop * (ourAreaKm2 / cityTotalKm2);
+    const polygonAreaPop = cityPop * (ourAreaKm2 / cityTotalKm2);
+    const usePolygon = polygonAreaPop >= peerSharePop * 0.5;
+    const areaPop = usePolygon ? polygonAreaPop : peerSharePop;
     popDenominator = Math.round(areaPop);
     // Apply CFS scaling here too — otherwise (raw_local / scaled_city)
     // ratio cancels the scaling out and per-area persons100k ends up
@@ -611,8 +628,9 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     personsScale = cityPersons100k > 0 ? localPersonsRate / cityPersons100k : 0;
     propertyScale = cityProperty100k > 0 ? localPropertyRate / cityProperty100k : 0;
   } else {
-    // Peer-share fallback (unchanged from before).
-    popDenominator = cityPop > 0 ? Math.round(cityPop / N) : 0;
+    // Peer-share fallback (no polygon available, or polygon coverage
+    // doesn't include this area's name).
+    popDenominator = cityPop > 0 ? Math.round(peerSharePop) : 0;
     const expectedPersons = cityPersons / N;
     const expectedProperty = cityProperty / N;
     personsScale = expectedPersons > 0 ? persons / expectedPersons : 0;
@@ -656,7 +674,16 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     },
   ];
 
-  const usedPolygonWeight = ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0;
+  // True when polygon weighting drove the population estimate. False
+  // when (a) no polygon was available OR (b) the density-bias guard
+  // demoted us to peer-share. The disclaimer reflects which model
+  // actually shaped the score so users know whether the per-area
+  // population is geometry-based or peer-averaged.
+  const polygonAreaPopForDisclaimer = (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0)
+    ? cityPop * (ourAreaKm2 / cityTotalKm2)
+    : 0;
+  const usedPolygonWeight = ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0
+    && polygonAreaPopForDisclaimer >= peerSharePop * 0.5;
   // Confidence uses the per-area POP denominator (popDenominator). When
   // we couldn't estimate it (no polygon, no peer-share basis), volume-vs-
   // population doesn't carry a stable signal so we fall back to a window-
