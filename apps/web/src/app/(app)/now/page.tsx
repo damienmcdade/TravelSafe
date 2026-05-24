@@ -152,26 +152,32 @@ export default function NowPage() {
 
         <CitywideSafeZoneSection city={{ slug: city.slug, label: city.label }} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 space-y-3">
-            <IncidentSummaryCard
-              citySlug={city.slug}
-              contextLabel={`${city.label} (citywide)`}
-            />
-            <CrimeChart mode="city" citySlug={city.slug} cityLabel={city.label} />
-            <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? null} />
-          </div>
-          <aside className="space-y-3">
-            <HotspotCard
-              citySlug={city.slug}
-              cityLabel={city.label}
-              onPickArea={selectNeighborhood}
-            />
-            <UptickTile />
-            <NewsPanel />
-            <OfficialAlertsPanel />
-          </aside>
+        {/* Restructured to eliminate the dead space the prior 2/3 + 1/3
+            grid produced when the main column's CrimeChart outgrew the
+            sidebar (or vice versa). Long bars now get full width;
+            smaller cards pair up in 2-column mini-grids that always
+            balance. No more sidebar gaps. */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <IncidentSummaryCard
+            citySlug={city.slug}
+            contextLabel={`${city.label} (citywide)`}
+          />
+          <HotspotCard
+            citySlug={city.slug}
+            cityLabel={city.label}
+            onPickArea={selectNeighborhood}
+          />
         </div>
+
+        <CrimeChart mode="city" citySlug={city.slug} cityLabel={city.label} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <NewsPanel />
+          <OfficialAlertsPanel />
+        </div>
+
+        <UptickTile />
+        <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? null} />
       </section>
 
       {/* --- DIVIDER --- */}
@@ -239,25 +245,31 @@ export default function NowPage() {
               area={area}
             />
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-              <div className="lg:col-span-2 space-y-3">
-                <IncidentSummaryCard areaSlug={area.slug} contextLabel={area.label} />
-                <AreaBriefPanel areaSlug={area.slug} />
-                <CrimeChart
-                  mode="area"
-                  citySlug={city.slug}
-                  cityLabel={city.label}
-                  areaSlug={area.slug}
-                  areaLabel={area.label}
-                />
-                <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />
-                <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} />
-                <DataProvenanceBanner provenance={selectedAreaStats?.alerts[0]?.provenance ?? null} />
-              </div>
-              <aside className="space-y-3">
-                <NewsPanel areaSlug={area.slug} />
-              </aside>
+            {/* Pair compact analytics cards 2-up so the page balances
+                instead of leaving the side rail empty when the main
+                column outgrows it. Long bars (CrimeChart, AreaBrief)
+                take full width since they need it. */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <IncidentSummaryCard areaSlug={area.slug} contextLabel={area.label} />
+              <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />
             </div>
+
+            <AreaBriefPanel areaSlug={area.slug} />
+
+            <CrimeChart
+              mode="area"
+              citySlug={city.slug}
+              cityLabel={city.label}
+              areaSlug={area.slug}
+              areaLabel={area.label}
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} />
+              <NewsPanel areaSlug={area.slug} />
+            </div>
+
+            <DataProvenanceBanner provenance={selectedAreaStats?.alerts[0]?.provenance ?? null} />
           </>
         )}
       </section>
@@ -271,26 +283,25 @@ function CitywideSafeZoneSection({ city }: { city: { slug: string; label: string
     area: null,
   });
   const sourceLabel = `${city.label} official police open-data feed`;
+  // Stacked rather than 2/3 + 1/3 — BlockScore is short, ThreatFeed
+  // can grow tall, so a side-by-side layout left dead space below
+  // the BlockScore on most loads.
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-      <div className="lg:col-span-2">
-        <BlockScoreWidget
-          score={data.blockScore}
-          loading={data.loading}
-          unavailable={!data.loading && !data.blockScore}
-          contextLabel={`${city.label} (citywide)`}
-        />
-      </div>
-      <div>
-        <ThreatFeed
-          threats={data.threats}
-          baseline={data.baseline}
-          windowDays={data.windowDays}
-          contextLabel={`${city.label} citywide`}
-          source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
-          loading={data.loading}
-        />
-      </div>
+    <div className="space-y-3">
+      <BlockScoreWidget
+        score={data.blockScore}
+        loading={data.loading}
+        unavailable={!data.loading && !data.blockScore}
+        contextLabel={`${city.label} (citywide)`}
+      />
+      <ThreatFeed
+        threats={data.threats}
+        baseline={data.baseline}
+        windowDays={data.windowDays}
+        contextLabel={`${city.label} citywide`}
+        source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
+        loading={data.loading}
+      />
     </div>
   );
 }
@@ -308,25 +319,21 @@ function AreaSafeZoneSection({
   });
   const sourceLabel = `${city.label} official police open-data feed`;
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-      <div className="lg:col-span-2">
-        <BlockScoreWidget
-          score={data.blockScore}
-          loading={data.loading}
-          unavailable={!data.loading && !data.blockScore}
-          contextLabel={`${area.label}, ${city.label}`}
-        />
-      </div>
-      <div>
-        <ThreatFeed
-          threats={data.threats}
-          baseline={data.baseline}
-          windowDays={data.windowDays}
-          contextLabel={area.label}
-          source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
-          loading={data.loading}
-        />
-      </div>
+    <div className="space-y-3">
+      <BlockScoreWidget
+        score={data.blockScore}
+        loading={data.loading}
+        unavailable={!data.loading && !data.blockScore}
+        contextLabel={`${area.label}, ${city.label}`}
+      />
+      <ThreatFeed
+        threats={data.threats}
+        baseline={data.baseline}
+        windowDays={data.windowDays}
+        contextLabel={area.label}
+        source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
+        loading={data.loading}
+      />
     </div>
   );
 }
