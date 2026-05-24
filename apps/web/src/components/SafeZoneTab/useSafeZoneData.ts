@@ -161,16 +161,32 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
   };
 }
 
+// Threshold for marking a fresh adapter row as "developing" instead
+// of "verified". 2 hours mirrors how the original incident report
+// typically takes to be reviewed + augmented with follow-up
+// information; before that point, the description may be revised
+// or even retracted as officers update the case file. After 2 hours
+// the row is stable enough to carry the full "verified" badge.
+const DEVELOPING_THRESHOLD_MS = 2 * 60 * 60 * 1000;
+
 function deriveThreats(api: TrendApi | null): ThreatItem[] {
   if (!api) return [];
+  const now = Date.now();
   return api.bullets
     .filter((b) => b.kind === "dispatch")
-    .map((b, i) => ({
-      id: `${b.at}-${i}`,
-      at: b.at,
-      description: b.text,
-      category: (b.category ?? "SOCIETY") as ThreatItem["category"],
-    }));
+    .map((b, i) => {
+      const at = +new Date(b.at);
+      const age = Number.isFinite(at) ? now - at : Number.MAX_SAFE_INTEGER;
+      const confidence: ThreatItem["confidence"] =
+        age >= 0 && age < DEVELOPING_THRESHOLD_MS ? "developing" : "verified";
+      return {
+        id: `${b.at}-${i}`,
+        at: b.at,
+        description: b.text,
+        category: (b.category ?? "SOCIETY") as ThreatItem["category"],
+        confidence,
+      };
+    });
 }
 
 function deriveBaseline(api: InsightsApi | null): BaselinePoint[] {

@@ -23,6 +23,12 @@ export interface BlockScore {
   asOf?: string | null;
 }
 
+export type ThreatConfidence =
+  | "verified"            // Official police adapter; report is closed/published.
+  | "community-confirmed" // Multiple community signals OR moderator-approved post.
+  | "developing"          // Adapter row but very recent — initial report only.
+  | "unverified";         // Single community signal, not yet moderated.
+
 export interface ThreatItem {
   id: string;
   /// ISO timestamp.
@@ -34,6 +40,13 @@ export interface ThreatItem {
   category: "PERSONS" | "PROPERTY" | "SOCIETY";
   /// Block-level location string if the upstream feed published one.
   block?: string;
+  /// Trust signal for this individual incident. Drives the badge in
+  /// the threat-feed row. Defaults to "verified" for adapter rows
+  /// older than 2 hours; "developing" for fresh adapter rows where
+  /// the initial report may still be subject to investigation/
+  /// correction. Community-sourced rows can carry "community-
+  /// confirmed" or "unverified" depending on moderation status.
+  confidence: ThreatConfidence;
 }
 
 export interface BaselinePoint {

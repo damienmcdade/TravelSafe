@@ -10,6 +10,7 @@ import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProv
 import { LocationSearch } from "@/components/LocationSearch";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { CrimeChart } from "@/components/CrimeChart";
+import { IncidentSummaryCard } from "@/components/IncidentSummaryCard";
 import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
 import { UptickTile } from "@/components/UptickTile";
@@ -290,6 +291,10 @@ function CityAwareness({
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 space-y-6">
+          <IncidentSummaryCard
+            citySlug={city.slug}
+            contextLabel={`${city.label} (citywide)`}
+          />
           <CrimeChart
             mode="city"
             citySlug={city.slug}
@@ -421,6 +426,10 @@ function NeighborhoodAwareness({
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 space-y-6">
+              <IncidentSummaryCard
+                areaSlug={area.slug}
+                contextLabel={area.label}
+              />
               <AreaBriefPanel areaSlug={area.slug} />
               <CrimeChart
                 mode="area"

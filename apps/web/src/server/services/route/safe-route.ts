@@ -160,17 +160,56 @@ async function osrmRoute(
 
 interface AreaIntensity { area: KnownArea; intensity: number }
 
-async function loadCityIntensity(citySlug: string): Promise<AreaIntensity[]> {
+// Time-of-day boundaries for "nighttime" — 8pm to 6am. Routes
+// planned for this window weight incidents that ALSO occurred at
+// night more heavily, on the theory that crime patterns are
+// shift-correlated and a daytime-friendly area can be meaningfully
+// busier after dark. Boundaries are intentionally inclusive of
+// dusk/dawn so 7pm and 6am don't fall in a no-mans-land.
+function isNightHour(hour: number): boolean {
+  return hour >= 20 || hour < 6;
+}
+
+// Weight multipliers applied per-incident when scoring a route.
+// Defaults to 1.0 (no weighting). Nighttime travel + nighttime
+// incident → 1.5× weight. Active incidents (last 24h) → 2× weight
+// regardless of time-of-travel — recent activity is the strongest
+// signal that an area is currently hot.
+const NIGHT_INCIDENT_WEIGHT = 1.5;
+const ACTIVE_INCIDENT_WEIGHT = 2.0;
+const ACTIVE_INCIDENT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+async function loadCityIntensity(citySlug: string, timeOfTravel?: Date): Promise<AreaIntensity[]> {
   const { cityBySlug } = await import("../crime-data/cities");
   const city = cityBySlug(citySlug);
   if (!city) return [];
   const areas = await city.discover().catch(() => [] as KnownArea[]);
+  const isNightTravel = timeOfTravel ? isNightHour(timeOfTravel.getHours()) : false;
+  const activeCutoff = Date.now() - ACTIVE_INCIDENT_WINDOW_MS;
   // Pull each area's recent incident count in parallel — the adapter caches
   // the city-wide pull so all 100 areas share one upstream fetch.
   const intensities = await Promise.all(
     areas.map(async (a) => {
       const incidents = await crimeData.getIncidents(a.slug, { limit: 5000 }).catch(() => []);
-      return { area: a, intensity: incidents.length };
+      let intensity = 0;
+      for (const inc of incidents) {
+        let weight = 1;
+        const incTime = +new Date(inc.occurredAt);
+        if (Number.isFinite(incTime)) {
+          // Nighttime weighting: incident occurred at night AND user
+          // is planning to travel at night → boost.
+          if (isNightTravel) {
+            const incHour = new Date(incTime).getHours();
+            if (isNightHour(incHour)) weight *= NIGHT_INCIDENT_WEIGHT;
+          }
+          // Active-incident avoidance: anything in the last 24h
+          // gets a 2× boost regardless of travel time. Catches the
+          // "shooting on this block tonight" pattern.
+          if (incTime > activeCutoff) weight *= ACTIVE_INCIDENT_WEIGHT;
+        }
+        intensity += weight;
+      }
+      return { area: a, intensity };
     }),
   );
   return intensities;
@@ -216,12 +255,17 @@ export async function getSafeRoute(
   from: { lat: number; lng: number },
   to: { lat: number; lng: number },
   mode: Mode,
+  /// Optional planned travel time. When falls in the night window
+  /// (20:00-06:00), the scorer boosts the weight of nighttime
+  /// incidents. Active incidents (last 24h) are always boosted
+  /// regardless of this value.
+  timeOfTravel?: Date,
 ): Promise<SafeRouteResponse> {
   // Pick the city the route mostly belongs to (use the midpoint).
   const mid = { lat: (from.lat + to.lat) / 2, lng: (from.lng + to.lng) / 2 };
   const city = cityFromLatLng(mid) ?? cityForArea("");
 
-  const intensity = await loadCityIntensity(city.slug);
+  const intensity = await loadCityIntensity(city.slug, timeOfTravel);
 
   // OSRM doesn't support transit. For mode=transit, score the driving
   // alternative and mark it clearly in the UI / source labels.

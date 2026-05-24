@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { BaselinePoint, ThreatItem } from "./types";
+import type { BaselinePoint, ThreatConfidence, ThreatItem } from "./types";
 import { BaselineTrendChart } from "./BaselineTrendChart";
 
 export interface ThreatFeedProps {
@@ -22,6 +22,34 @@ const CAT_DOT: Record<ThreatItem["category"], string> = {
   PERSONS:  "bg-[#DC2626]",
   PROPERTY: "bg-[#F59E0B]",
   SOCIETY:  "bg-[#2563EB]",
+};
+
+// Per-confidence badge styling. Uses the muted palette tokens
+// already in the design system so badges sit alongside the other
+// chips/pills without competing for attention. Title attribute
+// carries the full description so users hovering the badge get
+// the trust rationale.
+const CONFIDENCE_BADGE: Record<ThreatConfidence, { label: string; cls: string; title: string }> = {
+  verified: {
+    label: "Verified",
+    cls: "bg-sage-100 text-sage-700 ring-sage-200",
+    title: "From an official police data feed; report has stabilized (older than 2 hours).",
+  },
+  "community-confirmed": {
+    label: "Community confirmed",
+    cls: "bg-bay-100 text-bay-700 ring-bay-200",
+    title: "Multiple community signals OR moderator-approved community post.",
+  },
+  developing: {
+    label: "Developing",
+    cls: "bg-amber2-50 text-amber2-700 ring-amber2-300",
+    title: "Fresh initial report (under 2 hours old) — description may be revised as the case file is updated.",
+  },
+  unverified: {
+    label: "Unverified",
+    cls: "bg-sand-100 text-slate2-500 ring-sand-300",
+    title: "Single community signal, not yet reviewed by a moderator.",
+  },
 };
 
 // Default visible rows. The previous FEED_CAP of 12 made the panel
@@ -67,12 +95,21 @@ export function ThreatFeed({ threats, baseline, windowDays, contextLabel, source
       ) : (
         <>
           <ol className="mt-3 space-y-1.5">
-            {visible.map((t) => (
-              <li key={t.id} className="flex items-start gap-2 text-sm text-slate2-700">
-                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${CAT_DOT[t.category]}`} aria-hidden />
-                <span className="flex-1">{t.description}</span>
-              </li>
-            ))}
+            {visible.map((t) => {
+              const badge = CONFIDENCE_BADGE[t.confidence];
+              return (
+                <li key={t.id} className="flex items-start gap-2 text-sm text-slate2-700">
+                  <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${CAT_DOT[t.category]}`} aria-hidden />
+                  <span className="flex-1">{t.description}</span>
+                  <span
+                    className={`shrink-0 text-[10px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded-full ring-1 ${badge.cls}`}
+                    title={badge.title}
+                  >
+                    {badge.label}
+                  </span>
+                </li>
+              );
+            })}
           </ol>
           {(hiddenCount > 0 || expanded) && (
             <button

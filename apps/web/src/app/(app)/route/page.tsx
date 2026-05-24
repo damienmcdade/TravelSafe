@@ -110,6 +110,13 @@ export default function SafeRoutePage() {
     setGlobalArea(a ? { slug: a.slug, label: a.label, jurisdiction: a.jurisdiction } : null);
   }
   const [mode, setMode] = useState<"walking" | "driving">("walking");
+  // Planned travel time. "now" = no extra weighting; "tonight" weighs
+  // nighttime-occurring incidents 1.5× (helpful for routes planned
+  // after dark). Active-incident avoidance (last 24h) always fires
+  // regardless of this pick. Default "now" keeps the existing
+  // behavior so users who don't engage the chip get the same scoring
+  // they used to.
+  const [travelWhen, setTravelWhen] = useState<"now" | "tonight">("now");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RouteResp | null>(null);
@@ -125,9 +132,19 @@ export default function SafeRoutePage() {
     try {
       if (!from || !to) { setError("Pick a starting neighborhood and a destination neighborhood from the lists."); return; }
       if (from.slug === to.slug) { setError("Starting neighborhood and destination must be different."); return; }
+      // Resolve travel time. "tonight" anchors to tonight at 10pm
+      // local; that lands squarely in the night window (20:00-06:00)
+      // so the scorer's nighttime weighting fires. "now" sends no
+      // travelAt param so the scorer doesn't apply night weighting.
+      let travelAtParam = "";
+      if (travelWhen === "tonight") {
+        const tonight = new Date();
+        tonight.setHours(22, 0, 0, 0);
+        travelAtParam = `&travelAt=${encodeURIComponent(tonight.toISOString())}`;
+      }
       const r = await api<RouteResp>(
         `/route/safe?fromLat=${from.centroid.lat}&fromLng=${from.centroid.lng}` +
-        `&toLat=${to.centroid.lat}&toLng=${to.centroid.lng}&mode=${mode}`,
+        `&toLat=${to.centroid.lat}&toLng=${to.centroid.lng}&mode=${mode}${travelAtParam}`,
       );
       setResult(r);
       setSelectedIdx(0);
@@ -210,6 +227,28 @@ export default function SafeRoutePage() {
                   }`}
                 >
                   {m.label}
+                </button>
+              ))}
+              {/* Time-of-travel picker. "Now" keeps the existing
+                  scoring (no nighttime weighting). "Tonight"
+                  anchors the planned travel to 10pm local, which
+                  triggers a 1.5× boost on the weight of incidents
+                  that ALSO occurred at night — incidents in the
+                  last 24h still get a 2× boost regardless. */}
+              <span className="text-xs uppercase tracking-wider text-slate2-500 ml-2 mr-1">When:</span>
+              {(["now", "tonight"] as const).map((w) => (
+                <button
+                  key={w}
+                  onClick={() => setTravelWhen(w)}
+                  title={w === "now"
+                    ? "Score the route against today's average incident pattern."
+                    : "Add a 1.5× weight to incidents that occurred at night (20:00-06:00)."}
+                  aria-pressed={travelWhen === w}
+                  className={`text-sm px-3 py-2 rounded-lg transition-colors ${
+                    travelWhen === w ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-50"
+                  }`}
+                >
+                  {w === "now" ? "Now" : "Tonight"}
                 </button>
               ))}
               <button
