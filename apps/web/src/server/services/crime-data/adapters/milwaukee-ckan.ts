@@ -41,22 +41,22 @@ interface RawRow {
 // Milwaukee's planning documents and community area profiles. Unknown
 // ZIPs render as "Milwaukee 53xxx" via the fallback path.
 const ZIP_NEIGHBORHOOD: Record<string, string> = {
-  "53202": "Downtown / East Town",
+  "53202": "East Town",
   "53203": "Downtown",
-  "53204": "Walker's Point / Clarke Square",
-  "53205": "King Park / Concordia",
+  "53204": "Walker's Point",
+  "53205": "Concordia",
   "53206": "Sherman Park North",
   "53207": "Bay View",
   "53208": "Washington Park",
   "53209": "Granville",
   "53210": "West Park",
-  "53211": "Riverwest / UWM",
-  "53212": "Riverwest / Harambee",
+  "53211": "UWM",
+  "53212": "Riverwest",
   "53213": "Tosa East",
   "53214": "West Side",
   "53215": "Lincoln Village",
   "53216": "Sherman Park West",
-  "53217": "Bayside / Fox Point",
+  "53217": "Fox Point",
   "53218": "Capitol Heights",
   "53219": "Jackson Park",
   "53220": "Greenfield Adjacent",
@@ -68,7 +68,7 @@ const ZIP_NEIGHBORHOOD: Record<string, string> = {
   "53226": "Wauwatosa Mayfair",
   "53227": "West Allis North",
   "53228": "Greenfield",
-  "53233": "Marquette / Westown",
+  "53233": "Marquette",
 };
 
 const PROVENANCE: DataProvenance = {
@@ -167,7 +167,7 @@ async function fetchAndParse(): Promise<Cache> {
     .sort((a, b) => b[1] - a[1])
     .map(([zip]) => ({
       slug: `mke-${zip}`,
-      label: ZIP_NEIGHBORHOOD[zip] ? `${ZIP_NEIGHBORHOOD[zip]} (${zip})` : `Milwaukee ${zip}`,
+      label: ZIP_NEIGHBORHOOD[zip] ?? `Milwaukee ${zip}`,
       jurisdiction: "Milwaukee",
       centroid: milwaukeeCentroid,
     }));
@@ -210,7 +210,7 @@ export const milwaukeeAdapter: CrimeDataAdapter = {
     if (incs.length === 0) return null;
     const zip = area.replace(/^mke-/, "");
     return {
-      area: ZIP_NEIGHBORHOOD[zip] ? `${ZIP_NEIGHBORHOOD[zip]} (${zip})` : `Milwaukee ${zip}`,
+      area: ZIP_NEIGHBORHOOD[zip] ?? `Milwaukee ${zip}`,
       crimeRate: null,
       violentCrimeRate: null,
       propertyCrimeRate: null,

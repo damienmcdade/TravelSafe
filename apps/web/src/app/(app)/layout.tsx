@@ -73,6 +73,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Link href="/cities" className="text-bay-700 hover:underline">Cities</Link>
             <Link href="/settings/privacy" className="text-bay-700 hover:underline">Settings</Link>
             <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>
+            <Link href="/credits" className="text-bay-700 hover:underline">Photo credits</Link>
             <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link>
             <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>
           </nav>

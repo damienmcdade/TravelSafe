@@ -42,13 +42,13 @@ interface RawRow {
 const ZIP_NEIGHBORHOOD: Record<string, string> = {
   "85003": "Downtown Phoenix",
   "85004": "Downtown East",
-  "85006": "Garfield / Eastlake Park",
+  "85006": "Garfield",
   "85007": "Capitol",
-  "85008": "Eastlake / Phoenix College",
+  "85008": "Eastlake Park",
   "85009": "Maryvale East",
   "85013": "Encanto",
   "85014": "North Central",
-  "85015": "Encanto / Fairway",
+  "85015": "Encanto Fairway",
   "85016": "Camelback East",
   "85017": "Estrella",
   "85018": "Arcadia",
@@ -57,7 +57,7 @@ const ZIP_NEIGHBORHOOD: Record<string, string> = {
   "85021": "Sunnyslope",
   "85022": "Paradise Valley South",
   "85023": "Deer Valley",
-  "85024": "Cave Creek / Tatum Ranch",
+  "85024": "Tatum Ranch",
   "85027": "Anthem South",
   "85028": "Paradise Valley Village",
   "85029": "Moon Valley",
@@ -80,7 +80,7 @@ const ZIP_NEIGHBORHOOD: Record<string, string> = {
   "85054": "Desert Ridge East",
   "85083": "Anthem North",
   "85085": "Anthem East",
-  "85086": "Cave Creek / Carefree",
+  "85086": "Cave Creek",
 };
 
 const PROVENANCE: DataProvenance = {
@@ -184,7 +184,7 @@ async function fetchAndParse(): Promise<Cache> {
     .sort((a, b) => b[1] - a[1])
     .map(([zip]) => ({
       slug: `phx-${zip}`,
-      label: ZIP_NEIGHBORHOOD[zip] ? `${ZIP_NEIGHBORHOOD[zip]} (${zip})` : `Phoenix ${zip}`,
+      label: ZIP_NEIGHBORHOOD[zip] ?? `Phoenix ${zip}`,
       jurisdiction: "Phoenix",
       centroid: phoenixCentroid,
     }));
@@ -244,7 +244,7 @@ export const phoenixAdapter: CrimeDataAdapter = {
     if (incs.length === 0) return null;
     const zip = area.replace(/^phx-/, "");
     return {
-      area: ZIP_NEIGHBORHOOD[zip] ? `${ZIP_NEIGHBORHOOD[zip]} (${zip})` : `Phoenix ${zip}`,
+      area: ZIP_NEIGHBORHOOD[zip] ?? `Phoenix ${zip}`,
       // Per-1,000 rates would require a per-ZIP population denominator
       // we don't carry today. Leave null and let the higher-level
       // citywide aggregator handle ratemath against the Census total.

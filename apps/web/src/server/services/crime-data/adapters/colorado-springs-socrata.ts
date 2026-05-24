@@ -2,18 +2,19 @@ import "server-only";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import { coSpPolygons } from "../../../data/colorado-springs-neighborhoods";
 
 // Colorado Springs PD — "Crime Level Data" on policedata.coloradosprings.gov.
 // Socrata dataset bc88-hemr. Public, no auth required. Replaces Denver
 // after Denver's ArcGIS feed went token-gated.
 // Doc: https://policedata.coloradosprings.gov/Public-Safety/Crime-Level-Data/bc88-hemr
 //
-// Granularity: CSPD's 4 patrol divisions (Sand Creek, Gold Hill, Stetson
-// Hills, Falcon). Coarser than the polygon-based geocoding other
-// adapters use; CSPD doesn't publish a finer neighborhood polygon set
-// publicly. Divisions are real names users recognize from CSPD
-// communications, so we surface them directly rather than fabricating
-// finer "neighborhood" labels.
+// Granularity: point-in-polygon geocoding against Colorado Springs'
+// 78 named neighborhood polygons (Roswell, The Farm, Old Colorado
+// City, etc.) — sourced from the public city ArcGIS Hub item
+// 8b3a02c167a34174b4697e5973b6763e. Matches the Oakland / NOLA
+// pattern. When a point doesn't fall in a known polygon we fall
+// back to the patrol_division name so we never lose the row.
 
 const BASE = "https://policedata.coloradosprings.gov/resource/bc88-hemr.json";
 const ROW_LIMIT = 5_000;
@@ -41,11 +42,9 @@ function mapToNibrs(row: CoSpRow): CrimeCategory {
   return CrimeCategory.SOCIETY;
 }
 
-// CSPD patrol division centroids — approximate centers of each
-// division's coverage area. Used so the neighborhood-discovery code
-// has a stable point per division even if a particular fetch returns
-// no rows for that area. Values eyeball-checked against CSPD's
-// published patrol-division map.
+// CSPD patrol division centroids — used only as a last-resort
+// fallback when a row's coords don't fall in any known neighborhood
+// polygon AND we can't read the patrol_division.
 const DIVISION_CENTROIDS: Record<string, { lat: number; lng: number }> = {
   "Sand Creek":    { lat: 38.835, lng: -104.731 },
   "Gold Hill":     { lat: 38.835, lng: -104.825 },
@@ -53,15 +52,54 @@ const DIVISION_CENTROIDS: Record<string, { lat: number; lng: number }> = {
   "Falcon":        { lat: 38.970, lng: -104.640 },
 };
 
+// ---- Point-in-polygon ------------------------------------------------------
+
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = coSpPolygons.map((p) => {
+  const rings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of rings) for (const [x, y] of ring) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+});
+
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+function geocodeCoSp(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
+}
+
 const PROVENANCE: DataProvenance = {
   source: "Colorado Springs Police Department Crime Level Data (CSPD Open Data)",
   datasetUrl: "https://policedata.coloradosprings.gov/Public-Safety/Crime-Level-Data/bc88-hemr",
   recency: "Refreshed daily by CSPD; ~1-2 day reporting lag",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Colorado Springs Police Department and " +
-    "aggregated to CSPD's 4 patrol divisions (Sand Creek, Gold Hill, Stetson " +
-    "Hills, Falcon) — not live, not street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Colorado Springs Police Department, with " +
+    "neighborhood assigned by point-in-polygon geocoding against Colorado " +
+    "Springs' 78 named neighborhood polygons. When a row lacks coordinates " +
+    "we fall back to CSPD's patrol division (Sand Creek, Gold Hill, Stetson " +
+    "Hills, Falcon). Not live, not street-level. CommunitySafe does not track " +
+    "individuals.",
 };
 
 function safeIso(raw: string | null | undefined): string {
@@ -85,7 +123,19 @@ async function fetchCoSp(): Promise<Incident[]> {
     const c = r.location_point?.coordinates;
     const lng = Array.isArray(c) ? Number(c[0]) : NaN;
     const lat = Array.isArray(c) ? Number(c[1]) : NaN;
-    const area = r.patrol_division?.trim() || "Unknown";
+    // Try polygon geocoding first → named neighborhood. Fall back
+    // to patrol_division when the point doesn't fall in any
+    // polygon (e.g., incidents on highway overpasses near city
+    // edges, or rows with imprecise coords). Last-resort
+    // "Unknown" preserves the row for raw counts but the
+    // discovery filter (count >= 3) drops it from the
+    // neighborhood list automatically.
+    let area = "Unknown";
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      area = geocodeCoSp(lng, lat) ?? r.patrol_division?.trim() ?? "Unknown";
+    } else if (r.patrol_division) {
+      area = r.patrol_division.trim();
+    }
     return {
       id: `cosp-${r.casenumber ?? i}`,
       area,
@@ -129,9 +179,10 @@ export async function getDiscoveredAreasCoSp(): Promise<KnownArea[]> {
       slug: `cosp-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
       label: name,
       jurisdiction: "Colorado Springs",
-      // Prefer the row-derived centroid when we have one; fall back
-      // to the hardcoded DIVISION_CENTROIDS so a quiet division
-      // doesn't get a (0, 0) centroid.
+      // Row-derived centroid (polygon geocoding guarantees we have
+      // real lat/lng for the area). DIVISION_CENTROIDS fallback only
+      // applies if every row for an area happened to lack coords —
+      // very unlikely once geocoding is on.
       centroid: e.count > 0
         ? { lat: e.latSum / e.count, lng: e.lngSum / e.count }
         : (DIVISION_CENTROIDS[name] ?? { lat: 38.835, lng: -104.825 }),
@@ -158,9 +209,10 @@ export const coloradoSpringsAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    // Risk thresholds tuned to the typical CSPD per-division volume
-    // (~25k-150k incidents per division across the full dataset).
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 1500 ? 5 : inArea.length > 800 ? 4 : inArea.length > 400 ? 3 : inArea.length > 150 ? 2 : 1;
+    // Risk thresholds for per-neighborhood counts (78 polygons,
+    // typical neighborhood holds 50-2000 incidents in the cached
+    // 5k-row slice). Aligned with the Oakland scale.
+    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 300 ? 5 : inArea.length > 160 ? 4 : inArea.length > 80 ? 3 : inArea.length > 30 ? 2 : 1;
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 
