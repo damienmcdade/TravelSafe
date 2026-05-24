@@ -121,9 +121,9 @@ export default function SafeRoutePage() {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<RouteResp | null>(null);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  // Heatmap overlay — opt-in toggle. Off by default so users who
-  // just want the polyline aren't visually overloaded.
-  const [heatVisible, setHeatVisible] = useState(false);
+  // Heatmap visibility now lives inside RouteMap (in-map control,
+  // mobile UX audit M4). The page just supplies the data points;
+  // RouteMap owns whether they render.
 
   // Reset selections when the user switches city in the header. A
   // neighborhood from one city's adapter doesn't exist in another's
@@ -292,21 +292,10 @@ export default function SafeRoutePage() {
 
       {result && (
         <>
-          <div className="flex items-center justify-end -mb-2">
-            <button
-              type="button"
-              onClick={() => setHeatVisible((v) => !v)}
-              aria-pressed={heatVisible}
-              className={`text-xs px-3 py-1.5 rounded-md transition-colors ${
-                heatVisible
-                  ? "bg-bay-500 text-white"
-                  : "surface-muted text-slate2-700 hover:bg-bay-100"
-              }`}
-              title="Toggle the city-wide neighborhood-activity density heatmap on top of the route map."
-            >
-              {heatVisible ? "Hide activity heatmap" : "Show activity heatmap"}
-            </button>
-          </div>
+          {/* Heatmap toggle is now an in-map Leaflet control (rendered
+              inside RouteMap), saving vertical screen real-estate on
+              mobile where the external button used to push the map
+              below the fold. Mobile UX audit M4. */}
           <RouteMap
             from={result.from}
             to={result.to}
@@ -314,7 +303,6 @@ export default function SafeRoutePage() {
             selectedIdx={selectedIdx}
             ratingStrokes={RATING_TONE}
             heatPoints={heatPoints}
-            heatVisible={heatVisible}
           />
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-3">

@@ -27,25 +27,31 @@ interface TabDef {
   warm?: (ctx: { citySlug: string; areaSlug: string | null }) => string[];
 }
 
+// Tab labels picked for distinctiveness over genericness — generic verbs
+// (Now / Plan / Act) read as filler in nav strips; concrete instrument
+// nouns give each tab a memorable mental anchor. Cohesive metaphor
+// family: a navigator's toolkit — Pulse (vital-signs of the area now),
+// Compass (orient + plan a route), Circle (your trusted people + tools),
+// Atlas (geographic exploration).
 const PRIMARY: TabDef[] = [
-  // /now — unified Awareness (replaces /threats City+Neighborhood toggle)
-  { href: "/now", label: "Now",
+  // Pulse — unified Awareness (replaces /threats City+Neighborhood toggle)
+  { href: "/now", label: "Pulse",
     subroutes: ["/threats"],
     warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
-  // /plan — Safety Score + Trend + Compare + Route. Subroutes cover the
-  // legacy URLs so a bookmark to /safety-score still highlights this tab.
-  { href: "/plan", label: "Plan",
+  // Compass — Safety Score + Trend + Compare + Route. Subroutes cover
+  // the legacy URLs so a bookmark to /safety-score still highlights this.
+  { href: "/plan", label: "Compass",
     subroutes: ["/safety-score", "/trends", "/route"],
     warm: ({ citySlug, areaSlug }) => areaSlug
       ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`,
          `/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
       : [`/api/safezone/safety-score?city=${citySlug}`,
          `/api/safezone/trend?city=${citySlug}`] },
-  // /act — Personal Safety + Community
-  { href: "/act", label: "Act",
+  // Circle — Personal Safety + Community
+  { href: "/act", label: "Circle",
     subroutes: ["/safety", "/community"] },
-  // /map — geographic exploration
-  { href: "/map", label: "Map",
+  // Atlas — geographic exploration
+  { href: "/map", label: "Atlas",
     warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
 ];
 
@@ -118,10 +124,16 @@ export function TabNav() {
               <li key={t.href}>
                 <Link
                   href={t.href}
-                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-md transition-colors whitespace-nowrap ${
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm rounded-md transition-all whitespace-nowrap ${
                     active
-                      ? "text-slate2-900 font-semibold bg-sand-50 ring-1 ring-sand-200"
-                      : "text-slate2-500 hover:text-bay-700 hover:bg-sand-50/60"
+                      // Solid bay pill for the active tab — high enough
+                      // contrast against the white-ish nav bar that users
+                      // can tell at a glance which tab they're on. The
+                      // prior sand-50 background read as basically the
+                      // same color as the nav strip and was effectively
+                      // invisible.
+                      ? "bg-bay-500 text-white font-semibold shadow-card"
+                      : "text-slate2-700 hover:text-bay-700 hover:bg-sand-100/80"
                   }`}
                   aria-current={active ? "page" : undefined}
                   onMouseEnter={onPreload}
@@ -140,10 +152,10 @@ export function TabNav() {
               aria-expanded={drawerOpen}
               aria-haspopup="menu"
               aria-label="More"
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-md transition-colors whitespace-nowrap ${
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-md transition-all whitespace-nowrap ${
                 drawerActive || drawerOpen
-                  ? "text-slate2-900 font-semibold bg-sand-50 ring-1 ring-sand-200"
-                  : "text-slate2-500 hover:text-bay-700 hover:bg-sand-50/60"
+                  ? "bg-bay-500 text-white font-semibold shadow-card"
+                  : "text-slate2-700 hover:text-bay-700 hover:bg-sand-100/80"
               }`}
             >
               <span aria-hidden>⋯</span>

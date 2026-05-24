@@ -164,7 +164,7 @@ export default function ThreatsPage() {
   const heroTitle = tab === "neighborhood" && area ? area.label : city.label;
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-5">
       <header className="page-hero flex flex-wrap items-center gap-3 justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Awareness · {city.label}</p>
@@ -280,7 +280,7 @@ function CityAwareness({
       id="awareness-panel-city"
       role="tabpanel"
       aria-labelledby="awareness-tab-city"
-      className="space-y-8"
+      className="space-y-5"
     >
       {citywideErr && !citywideLoading && (
         <div role="alert" className="surface p-4 text-sm text-dusk-700">
@@ -366,7 +366,7 @@ function NeighborhoodAwareness({
       id="awareness-panel-neighborhood"
       role="tabpanel"
       aria-labelledby="awareness-tab-neighborhood"
-      className="space-y-8"
+      className="space-y-5"
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2"><LocationSearch current={area} onResolved={setArea} /></div>

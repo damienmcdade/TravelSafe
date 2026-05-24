@@ -112,7 +112,7 @@ export default function NeighborhoodWatchPage() {
   );
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-5">
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Neighborhood Watch · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">

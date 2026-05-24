@@ -86,6 +86,48 @@ html.dark .text-slate2-900 { color: #E7ECF1; }
 html.dark .text-slate2-700 { color: #C9D2DD; }
 html.dark .text-slate2-500 { color: #8A95A4; }
 
+/* Dark-mode polish: residual bg-white / border-sand usage outside the
+   .surface helper. These cover the navigation chrome (sticky header,
+   tabnav backdrop) and cards/inputs that don't use .surface. */
+html.dark .bg-white { background-color: #1A2330; }
+html.dark .bg-white\/80 { background-color: rgba(26, 35, 48, 0.85); }
+html.dark .bg-white\/60 { background-color: rgba(26, 35, 48, 0.65); }
+html.dark .border-sand-200 { border-color: #2A3445; }
+html.dark .border-sand-100 { border-color: #1F2937; }
+html.dark .bg-sand-50 { background-color: #131A24; }
+html.dark .bg-sand-100 { background-color: #1A2330; }
+html.dark .divide-sand-200 > * + * { border-color: #2A3445; }
+
+/* Leaflet popup / control dark-mode overrides — Leaflet ships with
+   hardcoded light styles; we override the most-visible ones so map
+   chrome doesn't read as a bright punch-out against a dark page. */
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-popup-tip {
+  background-color: #1A2330;
+  color: #E7ECF1;
+  border: 1px solid #2A3445;
+}
+html.dark .leaflet-container {
+  background-color: #0E1620;
+}
+html.dark .leaflet-control-zoom a,
+html.dark .leaflet-control-attribution {
+  background-color: rgba(26, 35, 48, 0.92);
+  color: #E7ECF1;
+  border-color: #2A3445;
+}
+html.dark .leaflet-control-zoom a:hover {
+  background-color: rgba(15, 23, 42, 1);
+}
+
+/* Dark-mode polish for inline SVG charts. The hex fills are baked into
+   bar/text elements (CrimeChart, ScoreReport, NationalAverageCard);
+   :where() lets us retarget by raw fill attribute without forcing
+   every component to read theme state. Background bars use
+   #e9eef3 (light sand) and text labels use #475569 (slate-700 hex). */
+html.dark svg rect[fill="#e9eef3"] { fill: #2A3445; }
+html.dark svg text[fill="#475569"] { fill: #C9D2DD; }
+
 /* Section header with gradient title underline --------------------------- */
 .section-title {
   @apply relative font-display text-2xl text-slate2-900 pb-3;
@@ -93,6 +135,18 @@ html.dark .text-slate2-500 { color: #8A95A4; }
 .section-title::after {
   content: "";
   @apply absolute left-0 bottom-0 h-1 w-16 rounded-full bg-title-stripe bg-[length:200%_100%] animate-gradient-x;
+}
+
+/* Page-hero H1 default: tighter leading + gradient spans treated as
+   inline-block so mobile word-wrap doesn't split a letter across a
+   line break (the gradient clip is per-element, so a mid-letter break
+   produces a visual artifact). Mobile UX audit M1. */
+.page-hero h1 {
+  line-height: 1.15;
+}
+.page-hero h1 span {
+  display: inline-block;
+  vertical-align: baseline;
 }
 
 /* Page header with ambient gradient bloom -------------------------------- */

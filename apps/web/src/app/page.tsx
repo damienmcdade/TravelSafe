@@ -1,8 +1,17 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function WelcomePage() {
   return (
     <main className="min-h-screen">
+      {/* Floating top-right utility bar — theme toggle lives here so
+          first-time visitors can flip themes without diving into
+          settings. Absolute-positioned so it doesn't push the hero
+          down on small viewports. */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-10">
+        <ThemeToggle align="right" size="sm" />
+      </div>
+
       {/* Hero — glass card so the city backdrop shows through. */}
       <section className="relative">
         <div className="relative max-w-5xl mx-auto px-6 py-24 sm:py-32">
@@ -15,7 +24,7 @@ export default function WelcomePage() {
               Calm, neighborhood-level safety context for major California cities. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 animate-rise-in">
-              <Link href="/threats" className="btn-coral text-base px-6 py-3">Explore TravelSafe →</Link>
+              <Link href="/now" className="btn-coral text-base px-6 py-3">Explore TravelSafe →</Link>
               <Link href="/map" className="btn-secondary text-base px-6 py-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
                 Open the Crime Map
               </Link>

@@ -4,6 +4,7 @@ import { HttpError } from "../../lib/http";
 import { evaluateSuspension } from "./suspension";
 import { REPORT_AUTO_REVERT_THRESHOLD } from "./post-prevet";
 import { communityEvents } from "../community/events";
+import { applyTrustLevel } from "../community/trust";
 
 export async function listPendingPosts(limit = 50) {
   return prisma.post.findMany({
@@ -51,6 +52,17 @@ export async function reviewPost(reviewerId: string, postId: string, action: Rev
 
   if (action === ReviewActionKind.REJECT) {
     await evaluateSuspension(post.authorId);
+  }
+  // Recompute the author's trust level on every state-changing review
+  // (VERIFY or REJECT). Both events shift the verified/rejected counts
+  // the trust formula reads, so it's the right place to land
+  // promotions and demotions. Wrapped in try/catch so a transient
+  // trust-recompute failure can't fail the actual moderation action —
+  // the moderation result is the user-facing operation; trust is a
+  // derived signal that catches up on the next review.
+  if (action === ReviewActionKind.VERIFY || action === ReviewActionKind.REJECT) {
+    try { await applyTrustLevel(post.authorId); }
+    catch (err) { console.warn("[moderation] trust recompute failed:", (err as Error).message); }
   }
   if (nextStatus === PostStatus.VERIFIED) {
     const area = await prisma.area.findUnique({ where: { id: post.areaId }, select: { slug: true } });

@@ -65,7 +65,7 @@ export const GET = wrap(async (req: NextRequest) => {
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      author: { select: { id: true, displayName: true } },
+      author: { select: { id: true, displayName: true, trustLevel: true } },
       area: true,
       reactions: true,
       _count: { select: { comments: true, reactions: true, reports: true } },

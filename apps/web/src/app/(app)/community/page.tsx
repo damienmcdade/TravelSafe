@@ -9,6 +9,7 @@ import { useCommunityStream, relativeTime } from "@/lib/sse";
 import { DataProvenanceBanner, CommunityReportedLabel, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
 import { AreaInsightsPanel } from "@/components/AreaInsightsPanel";
+import { TrustBadge } from "@/components/TrustBadge";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { RecentIncidentsCards } from "@/components/RecentIncidentsCards";
 import { CommunitySignalsPanel } from "@/components/CommunitySignalsPanel";
@@ -25,7 +26,7 @@ interface PostListItem {
   createdAt: string;
   reviewedAt: string | null;
   area: { id: string; name: string; slug: string };
-  author: { id: string; displayName: string | null };
+  author: { id: string; displayName: string | null; trustLevel?: "NEW" | "REGULAR" | "TRUSTED" | "MODERATOR" };
   _count: { comments: number; reactions: number };
 }
 const KIND_LABEL: Record<PostListItem["kind"], string> = {
@@ -92,7 +93,7 @@ export default function CommunityPage() {
   });
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-5">
       <header className="page-hero flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-coral-700 font-medium">CommunitySafe</p>
@@ -241,8 +242,20 @@ function PostCard({ post }: { post: PostListItem }) {
   }
   return (
     <article className={`surface p-5 border-l-4 ${KIND_TONE[post.kind]} transition-transform hover:-translate-y-0.5 animate-rise-in`}>
-      <header className="flex justify-between items-center text-xs">
-        <span className="text-slate2-700">{post.area.name} · <span className="text-bay-700 font-medium">{KIND_LABEL[post.kind]}</span> · {relativeTime(post.createdAt)}</span>
+      <header className="flex justify-between items-center gap-2 text-xs flex-wrap">
+        <span className="text-slate2-700 flex items-center gap-1.5 flex-wrap">
+          {post.area.name}
+          <span className="text-slate2-500">·</span>
+          <span className="text-bay-700 font-medium">{KIND_LABEL[post.kind]}</span>
+          <span className="text-slate2-500">·</span>
+          <span>{relativeTime(post.createdAt)}</span>
+          {/* Trust badge sits inline with the post chrome — readers
+              can weigh a NEW contributor's claim against a TRUSTED
+              one. NEW renders as nothing per TrustBadge's own logic. */}
+          {post.author.trustLevel && post.author.trustLevel !== "NEW" && (
+            <TrustBadge level={post.author.trustLevel} />
+          )}
+        </span>
         <CommunityReportedLabel reviewedAt={post.reviewedAt} />
       </header>
       <pre className="mt-3 whitespace-pre-wrap text-slate2-900 font-sans">{post.body}</pre>

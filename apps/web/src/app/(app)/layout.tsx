@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { TabNav } from "@/components/TabNav";
 import { CitySelector } from "@/components/CitySelector";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { AIAssistant } from "@/components/AIAssistant";
 import { SavedAreasRail } from "@/components/SavedAreasRail";
 import { DataDisclaimer } from "@/components/DataDisclaimer";
@@ -20,6 +21,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <span className="bg-gradient-to-r from-bay-700 to-coral-500 bg-clip-text text-transparent">Travel</span>Safe
           </Link>
           <div className="flex items-center gap-2 text-xs text-slate2-500">
+            <ThemeToggle align="right" size="sm" />
             <CitySelector />
           </div>
         </div>

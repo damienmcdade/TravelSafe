@@ -69,6 +69,11 @@ model User {
   liveShareLinks    LiveShareLink[]
   reviewActions     PostReviewAction[]
   suspensionEvents  SuspensionEvent[]
+
+  // "List TRUSTED users", "list new MODERATORs this week" etc.
+  // queries become point lookups instead of seq scans. Finding #3
+  // in docs/schema-review.md.
+  @@index([trustLevel])
 }
 
 // -----------------------------------------------------------------------------
@@ -164,6 +169,11 @@ model Area {
   centroidLng Float?
 
   posts       Post[]
+
+  // City-page queries filter by parentSlug; without this index every
+  // city page does a seq scan as the area table grows toward the full
+  // 30-city / 5k-neighborhood rollout. Finding #1 in docs/schema-review.md.
+  @@index([parentSlug])
 }
 
 // -----------------------------------------------------------------------------
@@ -254,6 +264,9 @@ model PostComment {
   author    User       @relation(fields: [authorId], references: [id])
 
   @@index([postId, status])
+  // Finding #4: "my comments" view filters by authorId — currently
+  // a seq scan. Composite with createdAt for the chronological order.
+  @@index([authorId, createdAt])
 }
 
 model PostReaction {
@@ -363,6 +376,9 @@ model UserBlock {
   blocked    User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
 
   @@unique([blockerId, blockedId])
+  // Reverse-direction index — "has this user been blocked by anyone?"
+  // runs on every authenticated community feed render. Finding #2.
+  @@index([blockedId])
 }
 
 model UserMute {
@@ -375,6 +391,7 @@ model UserMute {
   muted     User     @relation("Muted", fields: [mutedId], references: [id], onDelete: Cascade)
 
   @@unique([muterId, mutedId])
+  @@index([mutedId])
 }
 
 // -----------------------------------------------------------------------------

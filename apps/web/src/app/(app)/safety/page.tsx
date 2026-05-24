@@ -46,7 +46,7 @@ export default function PersonalSafetyPage() {
   }
 
   return (
-    <main className="space-y-8">
+    <main className="space-y-5">
       {showDisclaimer && (
         <div className="surface p-5 border-amber2-500/40">
           <h2 className="font-display text-lg text-slate2-900">Before you use this tab</h2>

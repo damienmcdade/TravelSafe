@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, Polyline, CircleMarker, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import type { RouteAlt } from "./page";
@@ -12,12 +12,11 @@ interface Props {
   selectedIdx: number;
   ratingStrokes: Record<RouteAlt["rating"], { stroke: string }>;
   /// Optional density points for the heat overlay. Each entry is
-  /// [lat, lng, weight]. When omitted, no overlay renders. Page-level
-  /// toggle (`heatVisible`) controls visibility — passing the points
-  /// without `heatVisible=true` is a no-op so the data can be fetched
-  /// ahead of the user clicking the toggle.
+  /// [lat, lng, weight]. When omitted, the heatmap toggle is hidden.
+  /// The toggle now lives in-map (HeatToggleControl) so the user
+  /// flips visibility without consuming vertical space outside the
+  /// map — mobile UX audit M4 fix.
   heatPoints?: Array<[number, number, number]>;
-  heatVisible?: boolean;
 }
 
 function FitBounds({ from, to, routes }: Pick<Props, "from" | "to" | "routes">) {
@@ -48,9 +47,21 @@ function FitBounds({ from, to, routes }: Pick<Props, "from" | "to" | "routes">) 
   return null;
 }
 
-export default function RouteMap({ from, to, routes, selectedIdx, ratingStrokes, heatPoints, heatVisible }: Props) {
+export default function RouteMap({ from, to, routes, selectedIdx, ratingStrokes, heatPoints }: Props) {
+  // Heatmap visibility lives inside the map component now so the
+  // in-map toggle owns its own state without round-tripping through
+  // the page. Persists across re-renders triggered by selectedIdx
+  // changes (clicking a route alternative).
+  const [heatVisible, setHeatVisible] = useState(false);
+  const hasHeatData = !!heatPoints && heatPoints.length > 0;
   return (
-    <div className="surface overflow-hidden ring-1 ring-bay-200">
+    <div className="surface overflow-hidden ring-1 ring-bay-200 relative">
+      {hasHeatData && (
+        <HeatToggleControl
+          visible={heatVisible}
+          onToggle={() => setHeatVisible((v) => !v)}
+        />
+      )}
       <MapContainer center={[from.lat, from.lng]} zoom={13} scrollWheelZoom className="h-[55vh] min-h-[420px] w-full">
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -89,6 +100,32 @@ export default function RouteMap({ from, to, routes, selectedIdx, ratingStrokes,
 
         <FitBounds from={from} to={to} routes={routes} />
       </MapContainer>
+    </div>
+  );
+}
+
+/// In-map heatmap toggle. Absolute-positioned over the map at the
+/// top-right corner — matches Leaflet's own control placement
+/// conventions. z-index sits above the tile layer (Leaflet uses
+/// z-index 400 for panes, this control uses 500) but below any
+/// popups (700). Pointer-events on the button only so clicks on the
+/// surrounding map area still pan as expected.
+function HeatToggleControl({ visible, onToggle }: { visible: boolean; onToggle: () => void }) {
+  return (
+    <div className="pointer-events-none absolute top-3 right-3 z-[500]">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={visible}
+        className={`pointer-events-auto text-xs px-3 py-1.5 rounded-md shadow-card-lift transition-colors ${
+          visible
+            ? "bg-bay-500 text-white"
+            : "bg-white text-slate2-700 hover:bg-bay-50 border border-bay-200"
+        }`}
+        title="Toggle the city-wide neighborhood-activity density heatmap on top of the route map."
+      >
+        {visible ? "Hide heatmap" : "Show heatmap"}
+      </button>
     </div>
   );
 }

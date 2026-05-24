@@ -122,7 +122,7 @@ export default function NowPage() {
   const heroTitle = area ? area.label : city.label;
 
   return (
-    <main className="space-y-10">
+    <main className="space-y-6">
       <header className="page-hero flex flex-wrap items-center gap-3 justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Now · {city.label}</p>
@@ -137,7 +137,7 @@ export default function NowPage() {
       </header>
 
       {/* --- CITY SECTION --- */}
-      <section id="now-city" className="space-y-6" aria-labelledby="now-city-heading">
+      <section id="now-city" className="space-y-4" aria-labelledby="now-city-heading">
         <div className="flex items-baseline justify-between gap-4">
           <h2 id="now-city-heading" className="font-display text-2xl text-slate2-900">{city.label} — citywide</h2>
           <a href="#now-neighborhood" className="text-xs text-bay-700 hover:underline">Jump to neighborhood ↓</a>
@@ -153,7 +153,7 @@ export default function NowPage() {
         <CitywideSafeZoneSection city={{ slug: city.slug, label: city.label }} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4">
             <IncidentSummaryCard
               citySlug={city.slug}
               contextLabel={`${city.label} (citywide)`}
@@ -178,7 +178,7 @@ export default function NowPage() {
       <div className="border-t border-sand-200" aria-hidden />
 
       {/* --- NEIGHBORHOOD SECTION --- */}
-      <section id="now-neighborhood" className="space-y-6 scroll-mt-6" aria-labelledby="now-area-heading">
+      <section id="now-neighborhood" className="space-y-4 scroll-mt-6" aria-labelledby="now-area-heading">
         <div className="flex items-baseline justify-between gap-4 flex-wrap">
           <div>
             <h2 id="now-area-heading" className="font-display text-2xl text-slate2-900">
@@ -240,7 +240,7 @@ export default function NowPage() {
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4">
                 <IncidentSummaryCard areaSlug={area.slug} contextLabel={area.label} />
                 <AreaBriefPanel areaSlug={area.slug} />
                 <CrimeChart

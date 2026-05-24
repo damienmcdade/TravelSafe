@@ -59,16 +59,25 @@ export function CitySelector() {
       <button
         ref={triggerRef}
         onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-slate2-700 hover:bg-bay-100 hover:text-bay-700 transition-colors"
-        aria-label="Change city"
+        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-white border border-bay-200 text-slate2-900 shadow-card hover:bg-bay-50 hover:border-bay-400 hover:shadow-glow-bay transition-all"
+        aria-label={`Change city — currently ${city.label}, ${city.state}`}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-bay-500" />
-        <span className="font-medium">{city.label}</span>
-        <span className="text-slate2-500">·</span>
-        <span className="text-slate2-500">{city.state}</span>
-        <svg viewBox="0 0 16 16" className="w-3 h-3 opacity-60" fill="none" stroke="currentColor"><path d="M4 6l4 4 4-4" strokeWidth="1.5" /></svg>
+        {/* Location-pin icon — clearly signals "this is your selected
+            place" rather than the prior tiny dot. */}
+        <svg viewBox="0 0 16 16" className="w-4 h-4 text-bay-700 shrink-0" fill="currentColor" aria-hidden>
+          <path d="M8 1a5 5 0 0 0-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
+        </svg>
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-[10px] uppercase tracking-wider text-slate2-500">City</span>
+          <span className="font-semibold">{city.label}</span>
+          <span className="text-slate2-500">·</span>
+          <span className="text-slate2-700 font-medium">{city.state}</span>
+        </span>
+        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-slate2-500" fill="none" stroke="currentColor" aria-hidden>
+          <path d="M4 6l4 4 4-4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </button>
 
       {open && (
