@@ -145,6 +145,92 @@ export interface SafetyScoreResponse {
   cfsScale: number;
 }
 
+// FBI UCR Part 1 violent + property filters. The FBI's published
+// "violent-crime" and "property-crime" national + per-city rates use
+// the narrow UCR Part 1 definition. Adapters classify by NIBRS Crime
+// Against (Persons/Property/Society), which is BROADER — NIBRS
+// "Crimes Against Persons" includes simple assault, intimidation,
+// kidnapping, and human-trafficking, none of which are in UCR Part 1
+// violent. The result was adapter rates 2-7× the city's FBI-published
+// rate. These regex matchers narrow each NIBRS row to the UCR Part 1
+// definition so the per-100k we display lines up with what the FBI's
+// CDE publishes for the same city.
+//
+// Designed to match offense descriptions from MANY adapter formats —
+// LAPD NIBRS ("242 - PC - M - Battery On Person - Simple - 13B"),
+// SDPD NIBRS ("MURDER & NONNEGLIGENT MANSLAUGHTER"), Cincinnati STARS
+// ("Aggravated Assault"), etc. Erring on the side of inclusion when
+// ambiguous — better to overcount slightly than miss a Part 1 crime.
+
+const PART1_VIOLENT_PATTERNS = [
+  /\bmurder\b/i,
+  /\bhomicide\b/i,
+  /\bmanslaughter\b/i,
+  /\brape\b/i,
+  /\brobbery\b/i,
+  /carjack/i,
+  /aggravat.*assault/i,
+  /assault.*aggravat/i,
+  /assault.*deadly weapon/i,
+  /assault.*firearm/i,
+];
+// Exclude simple/misdemeanor assaults + intimidation from violent;
+// these are NIBRS Crimes Against Persons but not UCR Part 1.
+const PART1_VIOLENT_EXCLUDE = [
+  /simple assault/i,
+  /misdemeanor assault/i,
+  /assault.*simple/i,
+  /\bintimidation\b/i,
+  /\bharassment\b/i,
+  /\bstrangulation\b/i,
+  /\bmenacing\b/i,
+];
+
+const PART1_PROPERTY_PATTERNS = [
+  /\bburglary\b/i,
+  /\bbreaking.*entering\b/i,
+  /\bb&e\b/i,
+  /\blarceny\b/i,
+  /\btheft\b/i,         // includes shoplifting, theft from auto, etc.
+  /\bshoplift/i,
+  /motor vehicle theft/i,
+  /\bauto theft\b/i,
+  /\bcarjack/i,         // carjacking is both Part 1 violent (robbery) AND MV theft
+  /stolen vehicle/i,
+  /\barson\b/i,
+];
+// Exclude misc property offenses not in UCR Part 1 (vandalism, fraud,
+// embezzlement, forgery, identity theft are NIBRS property but not
+// UCR Part 1 property).
+const PART1_PROPERTY_EXCLUDE = [
+  /vandal/i,
+  /destruction.*property/i,
+  /damage.*property/i,
+  /criminal mischief/i,
+  /\bfraud\b/i,
+  /forgery/i,
+  /counterfeit/i,
+  /identity theft/i,
+  /credit card/i,
+  /embezzle/i,
+  /false pretenses/i,
+  /\bstolen property\b/i,  // receiving stolen property
+];
+
+function isPart1Violent(desc: string | undefined): boolean {
+  if (!desc) return false;
+  for (const ex of PART1_VIOLENT_EXCLUDE) if (ex.test(desc)) return false;
+  for (const p of PART1_VIOLENT_PATTERNS) if (p.test(desc)) return true;
+  return false;
+}
+
+function isPart1Property(desc: string | undefined): boolean {
+  if (!desc) return false;
+  for (const ex of PART1_PROPERTY_EXCLUDE) if (ex.test(desc)) return false;
+  for (const p of PART1_PROPERTY_PATTERNS) if (p.test(desc)) return true;
+  return false;
+}
+
 /// Compute a confidence signal for the score. A small/short data window
 /// produces a per-capita rate that can swing wildly even when the city's
 /// actual crime profile is steady (annualizing a 14-day sample from a
@@ -379,13 +465,17 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
     }
   }
 
-  // Step 2: count incidents strictly in [windowStartMs, nowMs].
-  // Also track which AREAS contributed at least one in-window incident
-  // so the population denominator can be limited to the "fresh-data"
-  // subset of the city. This is the DC/KC fix: if half a city's
-  // adapter coverage is stale (LAPD/CPD-style), summing the fresh
-  // half's incidents over the FULL city population understates the
-  // per-100k rate by however much pop the stale areas held.
+  // Step 2: count incidents strictly in [windowStartMs, nowMs] AND
+  // strictly within UCR Part 1 violent/property. The Part 1 filter is
+  // applied on top of the adapter's NIBRS classification — see
+  // isPart1Violent/isPart1Property above. Without it, the per-100k
+  // we display runs 2-7× the FBI's published city rate because
+  // adapters lump simple assault + intimidation under NIBRS "Crimes
+  // Against Persons" which is broader than UCR Part 1 violent.
+  //
+  // Also track which AREAS contributed at least one in-window
+  // incident so the population denominator can be limited to the
+  // "fresh-data" subset of the city (DC/KC stale-adapter fix).
   const freshAreaSlugs = new Set<string>();
   for (let a = 0; a < areas.length; a++) {
     const incidents = perArea[a];
@@ -395,11 +485,14 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
       if (!Number.isFinite(t) || t <= 0) continue;
       if (t < windowStartMs || t > nowMs) continue;
       const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
-      if (k === "PERSONS") persons += 1;
-      else if (k === "PROPERTY") property += 1;
-      else continue;
-      contributed = true;
-      if (t > latest) latest = t;
+      const desc = i.ibrOffenseDescription;
+      let counted = false;
+      if (k === "PERSONS" && isPart1Violent(desc)) { persons += 1; counted = true; }
+      else if (k === "PROPERTY" && isPart1Property(desc)) { property += 1; counted = true; }
+      if (counted) {
+        contributed = true;
+        if (t > latest) latest = t;
+      }
     }
     if (contributed) freshAreaSlugs.add(areas[a].slug);
   }
@@ -595,8 +688,10 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
       if (!Number.isFinite(t) || t <= 0) continue;
       if (t < windowStartMsArea || t > nowMsArea) continue;
       const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
-      if (k === "PERSONS") cityPersons += 1;
-      else if (k === "PROPERTY") cityProperty += 1;
+      const desc = i.ibrOffenseDescription;
+      // Apply UCR Part 1 filter — see helper functions for rationale.
+      if (k === "PERSONS" && isPart1Violent(desc)) cityPersons += 1;
+      else if (k === "PROPERTY" && isPart1Property(desc)) cityProperty += 1;
       if (t > latest) latest = t;
     }
   }
@@ -633,16 +728,18 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     );
   }
 
-  // Per-area count uses the SAME clock-anchored window so it's
-  // apples-to-apples with the citywide totals computed above.
+  // Per-area count uses the SAME clock-anchored window AND UCR
+  // Part 1 filter so it's apples-to-apples with the citywide totals
+  // computed above.
   let persons = 0, property = 0;
   for (const i of areaIncidents) {
     const t = +new Date(i.occurredAt);
     if (!Number.isFinite(t) || t <= 0) continue;
     if (t < windowStartMsArea || t > nowMsArea) continue;
     const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
-    if (k === "PERSONS") persons += 1;
-    else if (k === "PROPERTY") property += 1;
+    const desc = i.ibrOffenseDescription;
+    if (k === "PERSONS" && isPart1Violent(desc)) persons += 1;
+    else if (k === "PROPERTY" && isPart1Property(desc)) property += 1;
   }
 
   // windowDays from clock + adapter's oldest row (same stable formula
