@@ -27,29 +27,46 @@ interface TabDef {
   warm?: (ctx: { citySlug: string; areaSlug: string | null }) => string[];
 }
 
-// Tab labels — short, energetic, action-oriented. Each is a verb a
-// user can do at that tab: SCAN the area for activity, DIG into the
-// data, CONNECT with community + personal-safety tools, EXPLORE on
-// the geographic map.
+// Tab labels per the v5 IA decision:
+//   1. City Awareness         — citywide cards + Safety Score (merged)
+//   2. Neighborhood Awareness — area-scoped cards + search
+//   3. Safe Route             — standalone (was inside Overwatch)
+//   4. Vigilance              — Personal Safety sub-tab
+//   5. CommunitySafe          — standalone
+//   6. Crime Map              — geographic exploration
+//
+// Overwatch is gone: its two former sub-tabs split — Safety Score
+// merged into City Awareness, Safe Route became standalone. /plan
+// still works for bookmarks and now lands on Safe Route by default.
 const PRIMARY: TabDef[] = [
-  // Scan — unified Awareness (replaces /threats City+Neighborhood toggle)
-  { href: "/now", label: "Scan",
-    subroutes: ["/threats"],
-    warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
-  // Dig — Safety Score + Trend + Compare + Route. Subroutes cover
-  // the legacy URLs so a bookmark to /safety-score still highlights this.
-  { href: "/plan", label: "Dig",
-    subroutes: ["/safety-score", "/trends", "/route"],
+  // City Awareness — citywide cards + the migrated Safety Score view.
+  // /safety-score, /trends, /now, /threats kept as subroutes so old
+  // bookmarks still light up this tab.
+  { href: "/city", label: "City Awareness",
+    subroutes: ["/now", "/threats", "/safety-score", "/trends"],
+    warm: ({ citySlug }) => [
+      `/api/crime-data/citywide?city=${citySlug}`,
+      `/api/safezone/safety-score?city=${citySlug}`,
+    ] },
+  // Neighborhood Awareness — search + area-scoped cards.
+  { href: "/neighborhood", label: "Neighborhood Awareness",
     warm: ({ citySlug, areaSlug }) => areaSlug
-      ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`,
-         `/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
-      : [`/api/safezone/safety-score?city=${citySlug}`,
-         `/api/safezone/trend?city=${citySlug}`] },
-  // Connect — Personal Safety + Community
-  { href: "/act", label: "Connect",
-    subroutes: ["/safety", "/community"] },
-  // Explore — geographic map
-  { href: "/map", label: "Explore",
+      ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
+      : [`/api/geo/areas?city=${citySlug}`] },
+  // Safe Route — standalone (was a sub-tab under Overwatch). /plan
+  // kept as a subroute so the legacy /plan?tab=route URL still
+  // highlights this tab.
+  { href: "/route", label: "Safe Route",
+    subroutes: ["/plan"],
+    warm: ({ citySlug }) => [`/api/geo/areas?city=${citySlug}`] },
+  // Vigilance — Personal Safety as a sub-tab (and future safety tools).
+  { href: "/vigilance", label: "Vigilance",
+    subroutes: ["/safety"] },
+  // CommunitySafe — standalone.
+  { href: "/community", label: "CommunitySafe",
+    subroutes: ["/act"] },
+  // Crime Map — geographic exploration.
+  { href: "/map", label: "Crime Map",
     warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
 ];
 
