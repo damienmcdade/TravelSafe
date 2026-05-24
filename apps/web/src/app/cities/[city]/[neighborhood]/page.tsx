@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!area) return { title: "Not found" };
   return {
     title: `${area.label}, ${city.label} safety overview`,
-    description: `Recent police-feed safety data for ${area.label} in ${city.label}, compared to the FBI Crime in the Nation 2024 national average. Updated hourly.`,
+    description: `Recent police-feed safety data for ${area.label} in ${city.label}, compared to the FBI Crime in the Nation 2023 national average. Updated hourly.`,
     alternates: { canonical: `/cities/${citySlug}/${areaSlug}` },
     openGraph: {
       title: `${area.label}, ${city.label} · Safety overview · TravelSafe`,
@@ -79,7 +79,7 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
         "@type": "Place",
         name: `${area.label}, ${city.label}`,
         url: `${base}/cities/${citySlug}/${areaSlug}`,
-        description: `Recent police-feed safety data for ${area.label} in ${city.label}, compared to the FBI Crime in the Nation ${score?.source.publishedYear ?? 2024} national average.`,
+        description: `Recent police-feed safety data for ${area.label} in ${city.label}, compared to the FBI Crime in the Nation ${score?.source.publishedYear ?? 2023} national average.`,
         containedInPlace: {
           "@type": "Place",
           name: city.label,
@@ -116,7 +116,7 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
         <h1 className="mt-1 font-display text-3xl text-slate2-900">{area.label}, {city.label}</h1>
         <p className="mt-2 text-sm text-slate2-700 max-w-2xl">
           Recent police-feed safety data for {area.label} in {city.label}, compared to the
-          FBI Crime in the Nation 2024 national average. Sourced directly from the {city.label} police open-data feed.
+          FBI Crime in the Nation 2023 national average. Sourced directly from the {city.label} police open-data feed.
         </p>
       </header>
 

@@ -273,7 +273,7 @@ export function AIAssistant() {
               </button>
             </div>
             <p className="mt-2 text-[10px] text-slate2-500">
-              Answers come from the same official police feeds + FBI Crime in the Nation 2024 data the rest of the app uses. No web search, no personal data.
+              Answers come from the same official police feeds + FBI Crime in the Nation 2023 data the rest of the app uses. No web search, no personal data.
             </p>
           </footer>
         </section>

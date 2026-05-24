@@ -99,7 +99,7 @@ export default function SafetyScorePage() {
           How {city.label} <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">compares to the FBI national average</span>
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
-          Defaults to a citywide score against the FBI Crime in the Nation 2024 national rate. Drill into a specific {city.label} neighborhood below if you want a per-area comparison, or use Compare to put two neighborhoods side-by-side.
+          Defaults to a citywide score against the FBI Crime in the Nation 2023 national rate. Drill into a specific {city.label} neighborhood below if you want a per-area comparison, or use Compare to put two neighborhoods side-by-side.
         </p>
       </header>
 

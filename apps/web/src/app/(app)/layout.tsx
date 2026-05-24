@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <footer className="mt-12 border-t border-sand-200 bg-white/60 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate2-500">
           <p>
-            TravelSafe surfaces official city police-incident data and the FBI Crime in the Nation 2024 national rate.
+            TravelSafe surfaces official city police-incident data and the FBI Crime in the Nation 2023 national rate.
             Historical reporting only — not a substitute for emergency services.
           </p>
           <nav aria-label="Legal" className="flex gap-3">

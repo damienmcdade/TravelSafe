@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   description:
     "Neighborhood-level safety awareness across 30 US cities. Drawn from " +
-    "official police data sources and the FBI Crime in the Nation 2024 " +
+    "official police data sources and the FBI Crime in the Nation 2023 " +
     "national average. Not surveillance; not a substitute for emergency services.",
   manifest: "/manifest.json",
   // openGraph defaults inherited by every page. Per-page metadata can

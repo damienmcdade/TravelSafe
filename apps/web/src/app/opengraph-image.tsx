@@ -58,7 +58,7 @@ export default function RootOgImage() {
               lineHeight: 1.3,
             }}
           >
-            Drawn from official police open-data feeds and the FBI Crime in the Nation 2024 national average.
+            Drawn from official police open-data feeds and the FBI Crime in the Nation 2023 national average.
           </div>
         </div>
         <div

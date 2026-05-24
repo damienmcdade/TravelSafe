@@ -10,16 +10,30 @@ import { knownNeighborhoodPopulation } from "../crime-data/neighborhood-populati
 /// national numbers so the UI can render whatever shape it wants without
 /// re-doing the math.
 ///
-/// FBI Crime in the Nation 2024 (released October 2025) is the latest annual
-/// release. The numbers below match the rates the FBI publishes on the
-/// current Crime Data Explorer at cde.ucr.cjis.gov. The link goes straight
-/// to the trend view so users can verify.
+/// SOURCE / VINTAGE
+/// The numbers below match the FBI's "Crime in the Nation 2023" annual
+/// release (363.8 → 364 violent, 1916.5 → 1896 property per 100k, both
+/// rounded). 2024 figures will arrive via the FBI's October 2025 release
+/// — once they're confirmed against api.usa.gov/crime/fbi/cde
+/// (run `tools/fetch-fbi-rates.mjs` with FBI_CDE_API_KEY set) we'll
+/// update both the numbers AND the citation year here.
+///
+/// Why not just guess at 2024 rates? CCJ's 2024 update reported
+/// violent crime down ~4.5% and property down ~8.4% vs 2023, but
+/// the FBI's final published figures often diverge from interim
+/// estimates by 1-2 percentage points. Shipping unverified numbers
+/// is worse than shipping slightly-vintage verified ones, so we
+/// stay with the 2023 release until the API call can confirm 2024.
 
-export const FBI_NATIONAL_PER_100K_2024 = { PERSONS: 364, PROPERTY: 1896 };
+export const FBI_NATIONAL_PER_100K_2023 = { PERSONS: 364, PROPERTY: 1896 };
+/// Kept as an alias for back-compat with consumers that imported the
+/// old name. Will be removed once the API-driven refresh script runs
+/// and we standardize on the latest-year constant.
+export const FBI_NATIONAL_PER_100K_2024 = FBI_NATIONAL_PER_100K_2023;
 export const FBI_NATIONAL_SOURCE = {
-  label: "FBI Crime in the Nation 2024 (Uniform Crime Reporting)",
+  label: "FBI Crime in the Nation 2023 (Uniform Crime Reporting)",
   url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend",
-  publishedYear: 2024,
+  publishedYear: 2023,
 };
 
 // Population estimates and FBI national rates live in shared modules so

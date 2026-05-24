@@ -36,7 +36,7 @@ export default function MethodologyPage() {
             We pull the raw records via the same public API the city itself documents.
           </li>
           <li>
-            <strong className="text-slate2-900">FBI Crime in the Nation 2024.</strong> The benchmark we
+            <strong className="text-slate2-900">FBI Crime in the Nation 2023.</strong> The benchmark we
             compare per-100,000 rates against — Violent (Persons): 364, Property: 1,896.
             Source:{" "}
             <a
