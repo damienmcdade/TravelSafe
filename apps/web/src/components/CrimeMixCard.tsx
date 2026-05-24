@@ -14,14 +14,68 @@ const CATEGORY_STORAGE_KEY = "travelsafe.crime-mix.category.v1";
 interface Slice { offense: string; category: "PERSONS" | "PROPERTY" | "SOCIETY"; count: number; lastOccurredAt: string }
 interface Mix { area: string; windowDays: number; asOf: string | null; totalIncidents: number; topOffenses: Slice[] }
 
-// Aligned with the rest of the app's muted palette: PERSONS = terracotta,
-// PROPERTY = sand-gold, SOCIETY = slate-teal. The previous mapping shuffled
-// the category-color pairs AND used the old bright-saturation tones.
-const COLOR: Record<Slice["category"], { bar: string; chip: string; iconBg: string }> = {
-  PERSONS:  { bar: "linear-gradient(90deg, #FCA5A5, #DC2626)",  chip: "bg-coral-100 text-coral-700",   iconBg: "bg-coral-100" },
-  PROPERTY: { bar: "linear-gradient(90deg, #FCD34D, #F59E0B)",  chip: "bg-amber2-100 text-amber2-700", iconBg: "bg-amber2-100" },
-  SOCIETY:  { bar: "linear-gradient(90deg, #93C5FD, #2563EB)",  chip: "bg-bay-100 text-bay-700",       iconBg: "bg-bay-100" },
+// Each offense gets its OWN bar color so users can visually distinguish
+// "robbery" from "assault" at a glance — not just "Persons" from
+// "Property". Per-category palette keeps the family signal (Persons
+// shades trend coral, Property amber, Society blue) while every
+// offense within a category gets a distinct shade. The offense name
+// is hashed to pick an index so the assignment is stable across
+// renders + sessions.
+const CATEGORY_PALETTE: Record<Slice["category"], string[]> = {
+  PERSONS: [
+    "linear-gradient(90deg, #FECACA, #B91C1C)",  // muted red
+    "linear-gradient(90deg, #FCA5A5, #DC2626)",  // coral
+    "linear-gradient(90deg, #F87171, #991B1B)",  // brick
+    "linear-gradient(90deg, #FCD3CC, #C2410C)",  // terracotta
+    "linear-gradient(90deg, #FBCFE8, #BE185D)",  // berry
+    "linear-gradient(90deg, #FECDD3, #9F1239)",  // wine
+    "linear-gradient(90deg, #FED7AA, #C2410C)",  // burnt orange
+    "linear-gradient(90deg, #FBA8B0, #831843)",  // mulberry
+  ],
+  PROPERTY: [
+    "linear-gradient(90deg, #FDE68A, #B45309)",  // mustard
+    "linear-gradient(90deg, #FCD34D, #D97706)",  // amber
+    "linear-gradient(90deg, #FEF08A, #A16207)",  // gold
+    "linear-gradient(90deg, #FBBF24, #92400E)",  // bronze
+    "linear-gradient(90deg, #FDBA74, #C2410C)",  // tangerine
+    "linear-gradient(90deg, #FACC15, #854D0E)",  // ochre
+    "linear-gradient(90deg, #FCD34D, #92400E)",  // butterscotch
+    "linear-gradient(90deg, #FDE047, #713F12)",  // saffron
+  ],
+  SOCIETY: [
+    "linear-gradient(90deg, #BFDBFE, #1E3A8A)",  // navy
+    "linear-gradient(90deg, #93C5FD, #1D4ED8)",  // azure
+    "linear-gradient(90deg, #A5F3FC, #0E7490)",  // teal
+    "linear-gradient(90deg, #C7D2FE, #3730A3)",  // indigo
+    "linear-gradient(90deg, #BAE6FD, #075985)",  // sky-deep
+    "linear-gradient(90deg, #99F6E4, #115E59)",  // jade
+    "linear-gradient(90deg, #DDD6FE, #5B21B6)",  // violet
+    "linear-gradient(90deg, #A7F3D0, #047857)",  // emerald
+  ],
 };
+
+// Category-level color chip (for the small dot before the offense
+// name). Stays at the category granularity since it's a single
+// dot and chip styling expects Tailwind classes, not gradients.
+const CATEGORY_CHIP: Record<Slice["category"], string> = {
+  PERSONS:  "bg-coral-500",
+  PROPERTY: "bg-amber2-500",
+  SOCIETY:  "bg-bay-500",
+};
+
+// Cheap deterministic hash — good enough to spread distinct offense
+// names across an N-element palette without collisions in practice.
+function hashStr(s: string): number {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+function offenseBarStyle(offense: string, category: Slice["category"]): string {
+  const palette = CATEGORY_PALETTE[category];
+  const idx = hashStr(offense) % palette.length;
+  return palette[idx];
+}
 
 const SOURCE_LABEL: Record<string, string> = {
   "san-diego":     "SDPD NIBRS",
@@ -139,19 +193,19 @@ export function CrimeMixCard({ areaSlug, jurisdictionSlug, title }: { areaSlug?:
         <ul className="mt-4 space-y-3">
           {filteredOffenses.map((s) => {
             const pct = (s.count / max) * 100;
-            const tone = COLOR[s.category];
+            const barBg = offenseBarStyle(s.offense, s.category);
             return (
               <li key={s.offense} className="group" title={`Last reported ${relativeTime(s.lastOccurredAt)}`}>
                 <div className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="flex items-center gap-1.5 text-slate2-900 min-w-0">
-                    <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${tone.chip.split(" ")[0]}`} />
+                    <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${CATEGORY_CHIP[s.category]}`} />
                     <span className="truncate">{s.offense}</span>
                     <OffenseInfoButton offenseName={s.offense} />
                   </span>
                   <span className="tabular-nums text-slate2-700 shrink-0">{s.count.toLocaleString()}</span>
                 </div>
                 <div className="mt-1 h-2.5 rounded-full bg-sand-100 overflow-hidden">
-                  <div className="h-full transition-all duration-700 ease-spring group-hover:saturate-150" style={{ width: `${pct}%`, background: tone.bar }} />
+                  <div className="h-full transition-all duration-700 ease-spring group-hover:saturate-150" style={{ width: `${pct}%`, background: barBg }} />
                 </div>
                 <div className="mt-0.5 text-[10px] text-slate2-500">Last reported {relativeTime(s.lastOccurredAt)}</div>
               </li>

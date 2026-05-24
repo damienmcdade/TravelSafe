@@ -1,7 +1,6 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 
@@ -27,55 +26,48 @@ interface TabDef {
   warm?: (ctx: { citySlug: string; areaSlug: string | null }) => string[];
 }
 
-// Tab labels per the v5 IA decision:
-//   1. City Awareness         — citywide cards + Safety Score (merged)
-//   2. Neighborhood Awareness — area-scoped cards + search
-//   3. Safe Route             — standalone (was inside Overwatch)
-//   4. Vigilance              — Personal Safety sub-tab
-//   5. CommunitySafe          — standalone
-//   6. Crime Map              — geographic exploration
+// Tab labels per the v6 IA decision:
+//   1. City Awareness         — citywide-only cards
+//   2. Neighborhood Awareness — area cards + Personal Safety sub-tab
+//   3. Overwatch              — Crime Map + Safe Route sub-tabs
+//   4. CommunitySafe          — standalone
 //
-// Overwatch is gone: its two former sub-tabs split — Safety Score
-// merged into City Awareness, Safe Route became standalone. /plan
-// still works for bookmarks and now lands on Safe Route by default.
+// Vigilance retired (Personal Safety moved into Neighborhood Awareness
+// as a sub-tab). Crime Map and Safe Route relocated into Overwatch.
+// More drawer removed — Coverage/Watch/Cities/Privacy still exist as
+// direct URLs but no longer surface in the primary nav.
 const PRIMARY: TabDef[] = [
-  // City Awareness — citywide cards + the migrated Safety Score view.
-  // /safety-score, /trends, /now, /threats kept as subroutes so old
-  // bookmarks still light up this tab.
+  // City Awareness — citywide-only cards. Subroute hints preserve
+  // bookmarks from previous IA iterations.
   { href: "/city", label: "City Awareness",
     subroutes: ["/now", "/threats", "/safety-score", "/trends"],
     warm: ({ citySlug }) => [
       `/api/crime-data/citywide?city=${citySlug}`,
       `/api/safezone/safety-score?city=${citySlug}`,
     ] },
-  // Neighborhood Awareness — search + area-scoped cards.
+  // Neighborhood Awareness — search + area cards + Personal Safety
+  // sub-tab. /safety / /vigilance legacy URLs light up this tab.
   { href: "/neighborhood", label: "Neighborhood Awareness",
+    subroutes: ["/safety", "/vigilance"],
     warm: ({ citySlug, areaSlug }) => areaSlug
       ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
       : [`/api/geo/areas?city=${citySlug}`] },
-  // Safe Route — standalone (was a sub-tab under Overwatch). /plan
-  // kept as a subroute so the legacy /plan?tab=route URL still
-  // highlights this tab.
-  { href: "/route", label: "Safe Route",
-    subroutes: ["/plan"],
-    warm: ({ citySlug }) => [`/api/geo/areas?city=${citySlug}`] },
-  // Vigilance — Personal Safety as a sub-tab (and future safety tools).
-  { href: "/vigilance", label: "Vigilance",
-    subroutes: ["/safety"] },
+  // Overwatch — Crime Map + Safe Route in one hub.
+  { href: "/overwatch", label: "Overwatch",
+    subroutes: ["/map", "/route", "/plan"],
+    warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
   // CommunitySafe — standalone.
   { href: "/community", label: "CommunitySafe",
     subroutes: ["/act"] },
-  // Crime Map — geographic exploration.
-  { href: "/map", label: "Crime Map",
-    warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
 ];
 
-const DRAWER: TabDef[] = [
-  { href: "/coverage", label: "Coverage & data health" },
-  { href: "/watch",    label: "Neighborhood Watch" },
-  { href: "/cities",   label: "Cities directory" },
-  { href: "/settings/privacy", label: "Privacy controls" },
-];
+// Drawer routes still exist as deep links but no longer surface in
+// the primary nav per the v6 directive ("remove More button"). Listed
+// here as documentation of what's reachable by URL.
+//   /coverage           — Coverage & data health
+//   /watch              — Neighborhood Watch
+//   /cities             — Cities directory
+//   /settings/privacy   — Privacy controls
 
 function isTabActive(tab: TabDef, pathname: string | null): boolean {
   if (!pathname) return false;
@@ -97,31 +89,6 @@ export function TabNav() {
   const pathname = usePathname();
   const { city } = useCity();
   const { area } = useArea(city.slug);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const drawerRef = useRef<HTMLLIElement | null>(null);
-
-  // Close drawer on route change.
-  useEffect(() => { setDrawerOpen(false); }, [pathname]);
-
-  // Outside-click closer for the drawer.
-  useEffect(() => {
-    if (!drawerOpen) return;
-    function onClick(e: MouseEvent) {
-      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) setDrawerOpen(false);
-    }
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, [drawerOpen]);
-
-  // Escape closer.
-  useEffect(() => {
-    if (!drawerOpen) return;
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setDrawerOpen(false); }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [drawerOpen]);
-
-  const drawerActive = DRAWER.some((t) => isTabActive(t, pathname));
 
   return (
     <nav className="border-b border-sand-200 bg-white/80 backdrop-blur sticky top-0 z-20" aria-label="Primary">
@@ -159,46 +126,6 @@ export function TabNav() {
               </li>
             );
           })}
-          {/* More drawer */}
-          <li className="relative ml-auto" ref={drawerRef}>
-            <button
-              type="button"
-              onClick={() => setDrawerOpen((v) => !v)}
-              aria-expanded={drawerOpen}
-              aria-haspopup="menu"
-              aria-label="More"
-              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-md transition-all whitespace-nowrap ${
-                drawerActive || drawerOpen
-                  ? "bg-bay-500 text-white font-semibold shadow-card"
-                  : "text-slate2-700 hover:text-bay-700 hover:bg-sand-100/80"
-              }`}
-            >
-              <span aria-hidden>⋯</span>
-              <span className="sr-only sm:not-sr-only">More</span>
-            </button>
-            {drawerOpen && (
-              <div
-                role="menu"
-                className="absolute right-0 top-full mt-1 z-30 surface shadow-card-lift p-1 min-w-[12rem] max-w-[calc(100vw-1rem)]"
-              >
-                {DRAWER.map((t) => {
-                  const active = isTabActive(t, pathname);
-                  return (
-                    <Link
-                      key={t.href}
-                      role="menuitem"
-                      href={t.href}
-                      className={`block px-3 py-2 text-sm rounded-md transition-colors ${
-                        active ? "bg-bay-100 text-slate2-900 font-medium" : "text-slate2-700 hover:bg-sand-100"
-                      }`}
-                    >
-                      {t.label}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </li>
         </ul>
         <div className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-white/90 to-transparent sm:hidden" aria-hidden />
       </div>

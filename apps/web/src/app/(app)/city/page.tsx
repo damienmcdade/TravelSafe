@@ -16,7 +16,7 @@ import {
   ThreatFeed,
   useSafeZoneData,
 } from "@/components/SafeZoneTab";
-import SafetyScorePage from "../safety-score/page";
+import { CityScoreCard } from "@/components/CityScoreCard";
 
 interface PerArea { slug: string; label: string; incidentCount: number; riskLevel: 1|2|3|4|5; byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number }; dominantCategory: "PERSONS"|"PROPERTY"|"SOCIETY"|null }
 interface Alert { area: string; category: "PERSONS"|"PROPERTY"|"SOCIETY"; riskLevel: 1|2|3|4|5; summary: string; recency: string; provenance: ProvenanceLike }
@@ -92,14 +92,16 @@ export default function CityAwarenessPage() {
       <UptickTile />
       <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? null} />
 
-      {/* Migrated Safety Score section — renders the full SafetyScorePage
-          body inline (grade card, per-category bars, compare overlay,
-          methodology note, inline TrendPanel). The Safety Score sub-tab
-          on /plan is gone; this is the canonical Safety Score surface
-          now and it lives on City Awareness so users see the FBI
-          national-comparison grade alongside the citywide signals. */}
-      <div className="border-t border-sand-200 pt-4" aria-hidden />
-      <SafetyScorePage />
+      {/* Citywide Safety Score — always city-scoped via CityScoreCard,
+          which only renders the grade + per-category bars vs FBI
+          national. Previously this slot embedded the full
+          SafetyScorePage which carried the neighborhood drill-down
+          picker, FBI category chips, compare overlay, and an
+          area-aware TrendPanel — all of which leaked
+          neighborhood-specific UI onto a city-only tab. Per v6
+          directive: every neighborhood-scoped surface was stripped
+          from /city; CityScoreCard is the clean replacement. */}
+      <CityScoreCard citySlug={city.slug} cityLabel={city.label} />
     </main>
   );
 }

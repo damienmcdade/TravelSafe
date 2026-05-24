@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { api, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { ensurePushSubscription } from "@/lib/push";
@@ -9,26 +10,95 @@ import { useDocumentTitle } from "@/lib/use-document-title";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
-import { CrimeChart } from "@/components/CrimeChart";
-import { IncidentSummaryCard } from "@/components/IncidentSummaryCard";
 import { TimeOfDayCard } from "@/components/TimeOfDayCard";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
+import { TrendPanel } from "@/components/TrendPanel";
 import {
   BlockScoreWidget,
   ThreatFeed,
   useSafeZoneData,
 } from "@/components/SafeZoneTab";
+import SafetyPage from "../safety/page";
 
 interface Alert { area: string; category: "PERSONS"|"PROPERTY"|"SOCIETY"; riskLevel: 1|2|3|4|5; summary: string; recency: string; provenance: ProvenanceLike }
 
-/// Neighborhood Awareness — every information card scoped to the
-/// user-selected neighborhood. Prominent search bar autofills supported
-/// neighborhoods for the currently-selected city (LocationSearch). Use
-/// my location button resolves the user's GPS to the closest tracked
-/// neighborhood and focuses it.
+type NeighTab = "neighborhood" | "personal";
+
+const TABS: Array<{ id: NeighTab; label: string; sublabel: string }> = [
+  { id: "neighborhood", label: "Neighborhood",   sublabel: "Area-scoped safety information" },
+  { id: "personal",     label: "Personal Safety", sublabel: "Emergency, check-in, location sharing" },
+];
+
+/// Neighborhood Awareness — area-scoped cards + Personal Safety as a
+/// sub-tab. v6 IA: Vigilance retired, its Personal Safety landed here.
+function NeighborhoodInner() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const initial = (params?.get("tab") as NeighTab) === "personal" ? "personal" : "neighborhood";
+  const [tab, setTab] = useState<NeighTab>(initial);
+
+  useEffect(() => {
+    const next = new URLSearchParams(params?.toString() ?? "");
+    if (tab === "neighborhood") next.delete("tab");
+    else next.set("tab", tab);
+    const qs = next.toString();
+    router.replace(qs ? `/neighborhood?${qs}` : "/neighborhood", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
+
+  return (
+    <div className="space-y-4">
+      <div role="tablist" aria-label="Neighborhood Awareness" className="surface-muted px-3 py-2 flex flex-wrap gap-1 text-sm">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={tab === t.id}
+            aria-controls={`neigh-panel-${t.id}`}
+            id={`neigh-tab-${t.id}`}
+            title={t.sublabel}
+            onClick={() => setTab(t.id)}
+            className={`px-3 py-1.5 rounded-md transition-colors font-medium ${
+              tab === t.id ? "bg-bay-500 text-white" : "text-slate2-700 hover:bg-bay-100"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div hidden={tab !== "neighborhood"} id="neigh-panel-neighborhood" role="tabpanel" aria-labelledby="neigh-tab-neighborhood">
+        <NeighborhoodView />
+      </div>
+      <div hidden={tab !== "personal"} id="neigh-panel-personal" role="tabpanel" aria-labelledby="neigh-tab-personal">
+        <SafetyPage />
+      </div>
+    </div>
+  );
+}
+
 export default function NeighborhoodAwarenessPage() {
+  return (
+    <Suspense fallback={<div className="surface p-6 text-sm text-slate2-500 animate-pulse">Loading…</div>}>
+      <NeighborhoodInner />
+    </Suspense>
+  );
+}
+
+/// Card layout per the v6 directive:
+///   - Search + Use-my-location header row
+///   - BlockScore + ThreatFeed (recent dispatches stay — they're
+///     the area's own and the user explicitly wanted dispatches HERE)
+///   - CrimeMixCard (per-crime color distinction)
+///   - TimeOfDayCard (when reports happen)
+///   - TrendPanel (week-over-week shift, area-scoped)
+///   - NewsPanel (area-scoped, with same selectors as City Awareness)
+///   - AreaBriefPanel — AT THE BOTTOM, renamed to "AI Summary"
+///
+/// Explicitly removed: IncidentSummaryCard ("recent activity"),
+/// CrimeChart. Both per user directive.
+function NeighborhoodView() {
   const { city, setCity, cities } = useCity();
   const { area, setArea } = useArea(city.slug);
   useDocumentTitle(area ? `Neighborhood Awareness · ${area.label}` : `Neighborhood Awareness · ${city.label}`);
@@ -103,9 +173,6 @@ export default function NeighborhoodAwarenessPage() {
         <LiveActivityBadge />
       </header>
 
-      {/* Search + location row — primary entry into the page when
-          no area is picked. LocationSearch autofills supported
-          neighborhoods for the currently-selected city. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2">
           <LocationSearch current={area} onResolved={setArea} />
@@ -145,27 +212,23 @@ export default function NeighborhoodAwarenessPage() {
         <>
           <AreaSafeZoneSection city={{ slug: city.slug, label: city.label }} area={area} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <IncidentSummaryCard areaSlug={area.slug} contextLabel={area.label} />
-            <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />
-          </div>
-
-          <AreaBriefPanel areaSlug={area.slug} />
-
-          <CrimeChart
-            mode="area"
-            citySlug={city.slug}
-            cityLabel={city.label}
-            areaSlug={area.slug}
-            areaLabel={area.label}
-          />
+          <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} />
             <NewsPanel areaSlug={area.slug} />
           </div>
 
+          {/* Week-over-week trend for this neighborhood (moved from
+              City Awareness per v6 directive — area-scoped, not
+              duplicated by anything else on this page). */}
+          <TrendPanel headingLevel={3} />
+
           <DataProvenanceBanner provenance={selectedAreaStats?.alerts[0]?.provenance ?? null} />
+
+          {/* AI Summary at the BOTTOM of Neighborhood Awareness per
+              v6 directive — renamed from "In plain English". */}
+          <AreaBriefPanel areaSlug={area.slug} />
         </>
       )}
     </main>
