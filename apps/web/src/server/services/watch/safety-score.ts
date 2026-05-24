@@ -162,46 +162,40 @@ export interface SafetyScoreResponse {
 // ("Aggravated Assault"), etc. Erring on the side of inclusion when
 // ambiguous — better to overcount slightly than miss a Part 1 crime.
 
-const PART1_VIOLENT_PATTERNS = [
-  /\bmurder\b/i,
-  /\bhomicide\b/i,
-  /\bmanslaughter\b/i,
-  /\brape\b/i,
-  /\brobbery\b/i,
-  /carjack/i,
-  /aggravat.*assault/i,
-  /assault.*aggravat/i,
-  /assault.*deadly weapon/i,
-  /assault.*firearm/i,
-];
-// Exclude simple/misdemeanor assaults + intimidation from violent;
-// these are NIBRS Crimes Against Persons but not UCR Part 1.
+// Hard EXCLUDES — these are NIBRS Crimes Against Persons but NOT UCR
+// Part 1. The default for a PERSONS-classified row is INCLUDE unless
+// one of these matches (the original include-only approach failed
+// because adapters publish generic descriptors like "ASSAULT" or
+// "BATTERY" that don't carry the "aggravated"/"simple" qualifier).
+// LAPD NIBRS rows do carry it ("Battery On Person - Simple - 13B")
+// and we catch those via /\bsimple\b/i.
 const PART1_VIOLENT_EXCLUDE = [
-  /simple assault/i,
-  /misdemeanor assault/i,
-  /assault.*simple/i,
+  /\bsimple\b/i,            // SDPD "SIMPLE ASSAULT", LAPD "...Simple..."
+  /misdemeanor/i,
   /\bintimidation\b/i,
   /\bharassment\b/i,
+  /\bharrassment\b/i,       // NYPD misspells this in their offense feed
   /\bstrangulation\b/i,
   /\bmenacing\b/i,
+  /\bstalking\b/i,
+  /human traffick/i,
+  /kidnap/i,
+  /\babduct/i,
+  /false imprisonment/i,
+  /\bextortion\b/i,
+  /coercion/i,
+  /weapons.*offense/i,      // weapon-law violations are NIBRS Society
+  /weapon law/i,
+  /child abuse/i,
+  /child neglect/i,
+  /elder abuse/i,
+  /family offense/i,
+  /\bdomestic\b(?!.*assault).*$/i, // DV w/o assault → catch-all
 ];
 
-const PART1_PROPERTY_PATTERNS = [
-  /\bburglary\b/i,
-  /\bbreaking.*entering\b/i,
-  /\bb&e\b/i,
-  /\blarceny\b/i,
-  /\btheft\b/i,         // includes shoplifting, theft from auto, etc.
-  /\bshoplift/i,
-  /motor vehicle theft/i,
-  /\bauto theft\b/i,
-  /\bcarjack/i,         // carjacking is both Part 1 violent (robbery) AND MV theft
-  /stolen vehicle/i,
-  /\barson\b/i,
-];
-// Exclude misc property offenses not in UCR Part 1 (vandalism, fraud,
-// embezzlement, forgery, identity theft are NIBRS property but not
-// UCR Part 1 property).
+// Hard EXCLUDES for property — NIBRS classifies these as Crimes
+// Against Property but FBI UCR Part 1 property is only burglary,
+// larceny, MV theft, arson.
 const PART1_PROPERTY_EXCLUDE = [
   /vandal/i,
   /destruction.*property/i,
@@ -214,21 +208,27 @@ const PART1_PROPERTY_EXCLUDE = [
   /credit card/i,
   /embezzle/i,
   /false pretenses/i,
-  /\bstolen property\b/i,  // receiving stolen property
+  /\bstolen property\b/i,
+  /receiving.*stolen/i,
+  /\bextortion\b/i,
+  /\bbribery\b/i,
 ];
 
+// Default-INCLUDE filter: trust the adapter's NIBRS classification
+// and only exclude offenses that NIBRS-broad-classifies as
+// PERSONS/PROPERTY but UCR-Part-1 doesn't. This is more forgiving
+// of generic offense descriptions like "ASSAULT" / "BATTERY" /
+// "THEFT" that lack the modifier specifying aggravated-vs-simple.
 function isPart1Violent(desc: string | undefined): boolean {
-  if (!desc) return false;
+  if (!desc) return true; // unknown description → trust NIBRS PERSONS, count
   for (const ex of PART1_VIOLENT_EXCLUDE) if (ex.test(desc)) return false;
-  for (const p of PART1_VIOLENT_PATTERNS) if (p.test(desc)) return true;
-  return false;
+  return true;
 }
 
 function isPart1Property(desc: string | undefined): boolean {
-  if (!desc) return false;
+  if (!desc) return true;
   for (const ex of PART1_PROPERTY_EXCLUDE) if (ex.test(desc)) return false;
-  for (const p of PART1_PROPERTY_PATTERNS) if (p.test(desc)) return true;
-  return false;
+  return true;
 }
 
 /// Compute a confidence signal for the score. A small/short data window
