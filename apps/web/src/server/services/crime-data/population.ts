@@ -45,7 +45,7 @@ export const CITY_POPULATION: Record<string, number> = {
   "las-vegas":       660_929,
   "boise":           237_446,
   "buffalo":         272_140,
-  "tucson":          544_417,
+  "norfolk":         235_410,
   "kansas-city":     510_704,
   "saint-paul":      303_820,
   "pittsburgh":      303_255,
