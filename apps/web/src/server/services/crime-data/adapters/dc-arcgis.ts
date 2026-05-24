@@ -13,7 +13,25 @@ import dcGeo from "../../../data/dc-neighborhoods.json";
 // couldn't tell Adams Morgan from Kalorama Heights — so we ignore it now.
 // Doc: https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/MPD/MapServer/39
 
-const BASE = "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/MPD/MapServer/39/query";
+// DC publishes crime incidents as year-specific ArcGIS layers under
+// the FEEDS/MPD MapServer. Layer 39 = "Last 30 Days" — what we used
+// originally — gives a too-small window for the safety-score's
+// 365d annualization: 30 days of incidents annualized over an
+// assumed-365d window deflated DC's per-100k by ~12×, falsely
+// grading the entire city A. Pulling the per-year layers (41 =
+// current, 7 = prior year) gives a real ~17-month rolling window;
+// safety-score's wall-clock 365d filter then trims back to the
+// canonical year correctly.
+const BASE_TEMPLATE = "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/MPD/MapServer/{layer}/query";
+// Layer IDs by year. Layer 41 is currently 2026 (the "current year"
+// slot in DC's catalog); 7 is 2025. When the calendar turns over,
+// DC rotates IDs so the year→layer map below needs updating —
+// they typically post the new layer in early January.
+const YEAR_LAYERS: Record<number, number> = {
+  2026: 41,
+  2025: 7,
+  2024: 6,
+};
 const PAGE_SIZE = 2000;
 const PAGES = 5;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -95,8 +113,8 @@ function geocodeDC(lng: number, lat: number): string | null {
 
 const PROVENANCE: DataProvenance = {
   source: "DC MPD Crime Incidents — Last 30 Days (Open Data DC, ArcGIS MapServer)",
-  datasetUrl: "https://opendata.dc.gov/datasets/DCGIS::crime-incidents-last-30-days",
-  recency: "Refreshed daily by the Metropolitan Police Department",
+  datasetUrl: "https://maps2.dcgis.dc.gov/dcgis/rest/services/FEEDS/MPD/MapServer",
+  recency: "Refreshed daily by the Metropolitan Police Department (rolling 2-year window of incidents)",
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the DC Metropolitan Police Department, with neighborhood " +
@@ -104,8 +122,8 @@ const PROVENANCE: DataProvenance = {
     "Neighborhood polygons. Not live, not street-level. TravelSafe does not track individuals.",
 };
 
-async function fetchPage(offset: number): Promise<DcRow[]> {
-  const url = new URL(BASE);
+async function fetchPage(layer: number, offset: number): Promise<DcRow[]> {
+  const url = new URL(BASE_TEMPLATE.replace("{layer}", String(layer)));
   url.searchParams.set("where", "1=1");
   url.searchParams.set("outFields", "CCN,OFFENSE,METHOD,START_DATE,WARD,DISTRICT,LATITUDE,LONGITUDE");
   url.searchParams.set("returnGeometry", "false");
@@ -116,16 +134,39 @@ async function fetchPage(offset: number): Promise<DcRow[]> {
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
-  if (!res.ok) throw new Error(`DC ArcGIS ${res.status} offset=${offset}`);
+  if (!res.ok) throw new Error(`DC ArcGIS layer=${layer} ${res.status} offset=${offset}`);
   const body = await res.json() as { features?: Array<{ attributes: DcRow }> };
   return (body.features ?? []).map((f) => f.attributes);
 }
 
 async function fetchDC(): Promise<Incident[]> {
-  const pages = await Promise.all(
-    Array.from({ length: PAGES }, (_, i) => fetchPage(i * PAGE_SIZE).catch(() => [] as DcRow[])),
+  // Pull current year + prior year. The safety-score's 365d wall-clock
+  // window then narrows back to one year; without prior-year coverage
+  // every score in the first ~365 days of any new calendar year would
+  // collapse the moment the year-1 layer dropped out of the query set.
+  const currentYear = new Date().getUTCFullYear();
+  const layersToPull: number[] = [];
+  for (const yr of [currentYear, currentYear - 1]) {
+    const layer = YEAR_LAYERS[yr];
+    if (layer != null) layersToPull.push(layer);
+  }
+  // Within each layer, page through up to PAGES × PAGE_SIZE rows.
+  const allPages = await Promise.all(
+    layersToPull.flatMap((layer) =>
+      Array.from({ length: PAGES }, (_, i) => fetchPage(layer, i * PAGE_SIZE).catch(() => [] as DcRow[])),
+    ),
   );
-  const rows = pages.flat();
+  // Dedupe by CCN — DC's incident numbers are unique across years so a
+  // straight map keyed by CCN gives one row per incident even if pages
+  // overlap from concurrent crawls.
+  const byCcn = new Map<string, DcRow>();
+  for (const page of allPages) {
+    for (const r of page) {
+      const key = r.CCN ?? `${r.START_DATE ?? ""}-${r.OFFENSE ?? ""}-${r.LATITUDE ?? ""}-${r.LONGITUDE ?? ""}`;
+      if (!byCcn.has(key)) byCcn.set(key, r);
+    }
+  }
+  const rows = Array.from(byCcn.values());
   // Filter rows with no parseable START_DATE before constructing Incidents.
   // See charlotte-arcgis.ts for the rationale — epoch-fallback rows pollute
   // the citywide aggregator's rate compute and collapse windowDays to 0.
