@@ -1,15 +1,8 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useApi } from "@/lib/api-client";
 import { WheelPicker, type WheelItem } from "./WheelPicker";
-
-// localStorage key for the Crime Chart window selector. Persists the
-// user's interval choice across page navigations + tab switches so
-// returning to the chart doesn't silently reset their 90-day or
-// 365-day pick back to the default 30 days — which made the chart
-// look like the scores had drastically changed when really only
-// the time window had reverted.
-const WINDOW_STORAGE_KEY = "travelsafe.crime-chart.window.v1";
+import { snapToSupported, useTimeWindow, type WindowValue } from "@/lib/use-time-window";
 
 interface CategoryCounts { PERSONS: number; PROPERTY: number; SOCIETY: number }
 
@@ -96,23 +89,19 @@ export function CrimeChart({
   areaSlug?: string;
   areaLabel?: string;
 }) {
-  // Initialize from localStorage so the user's interval choice
-  // survives tab switches AND cross-page navigation. SSR returns "30"
-  // (no localStorage on the server); the useEffect hydrates the real
-  // value on the first client commit.
-  const [windowValue, setWindowValueState] = useState<string>("30");
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(WINDOW_STORAGE_KEY);
-      if (stored && WINDOW_ITEMS.some((i) => i.value === stored)) {
-        setWindowValueState(stored);
-      }
-    } catch { /* quota / privacy mode — fall through with default */ }
-  }, []);
-  const setWindowValue = useCallback((next: string) => {
-    setWindowValueState(next);
-    try { window.localStorage.setItem(WINDOW_STORAGE_KEY, next); } catch { /* ignore */ }
-  }, []);
+  // Shared cross-card window store. Picking a new interval here
+  // propagates to TrendPanel (and any other window-aware card) so
+  // the user doesn't see one card on 90 days while another silently
+  // stayed on 30. Snapped to this card's supported preset list so a
+  // value chosen on a card with a wider range (e.g. 180) still maps
+  // to one of CrimeChart's options here.
+  const { value: rawWindow, setValue: setSharedWindow } = useTimeWindow();
+  const CRIME_PRESETS: ReadonlyArray<WindowValue> = [7, 30, 90, 180, 365, "all"];
+  const snapped = snapToSupported(rawWindow, CRIME_PRESETS);
+  const windowValue: string = snapped === "all" ? "all" : String(snapped);
+  const setWindowValue = (next: string) => {
+    setSharedWindow(next === "all" ? "all" : Number(next));
+  };
   const windowDays = windowValue === "all" ? null : Number(windowValue);
   const path = `/crime-data/citywide?city=${encodeURIComponent(citySlug)}${windowDays != null ? `&windowDays=${windowDays}` : ""}`;
   const { data, loading, error } = useApi<CitywideResp>(path, [path]);

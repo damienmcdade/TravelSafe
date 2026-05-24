@@ -4,6 +4,7 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
+import { snapToSupported, useTimeWindow, type WindowValue } from "@/lib/use-time-window";
 
 /// Self-contained Trend panel. Owns its own state (compare, window),
 /// reads the global area selection (so it stays in sync with /safety-
@@ -53,7 +54,16 @@ export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) 
   const { area } = useArea(city.slug);
   const [compareArea, setCompareArea] = useState<AreaSelection | null>(null);
   const [showComparePicker, setShowComparePicker] = useState(false);
-  const [windowDays, setWindowDays] = useState<number>(30);
+  // Window now comes from the shared cross-card store so picking 90 days
+  // on CrimeChart propagates here (and vice versa). The TrendPanel's
+  // preset set is narrower than CrimeChart's, so we snap to the nearest
+  // supported value — the user's actual preference is preserved in the
+  // shared store and surfaces again on cards that support it.
+  const { value: rawWindow, setValue: setSharedWindow } = useTimeWindow();
+  const TREND_PRESETS: ReadonlyArray<WindowValue> = [7, 14, 30, 90];
+  const snapped = snapToSupported(rawWindow, TREND_PRESETS);
+  const windowDays = typeof snapped === "number" ? snapped : 30;
+  const setWindowDays = (d: number) => setSharedWindow(d);
   const HeadingTag = headingLevel === 3 ? "h3" : "h2";
   const headingClass = headingLevel === 3 ? "font-display text-xl text-slate2-900" : "font-display text-2xl text-slate2-900";
 

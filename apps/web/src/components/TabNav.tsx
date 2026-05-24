@@ -1,93 +1,60 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 
-/// IA: 3 top-level workflows organized by USER INTENT, each with a
-/// sub-nav of routes inside. Replaces the prior flat 7-tab strip which
-/// duplicated cards across tabs and made the same data show up in two
-/// places (Awareness + CommunitySafe both rendering NewsPanel + crime
-/// mix, for instance).
+/// IA v3: 4 primary destinations + a "More" drawer for utilities.
 ///
-///   Browse      — citywide overview, news, system status, directory
-///   Investigate — single-area deep-dive: score / trends / watch / map
-///   Act         — live tools that take user action
+///   /now   — what's happening right now (city + neighborhood, scrollable)
+///   /plan  — investigate one area or plan a trip (Safety Score + Route)
+///   /act   — take action (Personal Safety + Community posts)
+///   /map   — full-bleed geographic exploration
+///
+/// Drawer (less-used): Coverage, Neighborhood Watch, Cities directory,
+/// Privacy controls. These exist but don't earn primary-nav space.
+///
+/// Replaces the prior 3-workflow + 9-sub-tab structure which made the
+/// app feel deeper than it actually is and forced users to remember
+/// which workflow held each feature.
 interface TabDef {
   href: string;
   label: string;
-  /// Other route prefixes that should keep this tab marked active
-  /// (e.g. /trends keeps /safety-score active when we use safety-score
-  /// as the SafeZone entry point).
+  /// Other route prefixes that should keep this tab marked active.
   subroutes?: string[];
-  /// API paths to pre-warm when the user hovers over this tab. Each
-  /// becomes a `fetch()` (no body parsed) so the response lands in the
-  /// browser HTTP cache before the click. Vercel's edge cache makes
-  /// these near-free for repeat hovers.
+  /// API paths to pre-warm when the user hovers over this tab.
   warm?: (ctx: { citySlug: string; areaSlug: string | null }) => string[];
 }
 
-interface WorkflowDef {
-  id: "browse" | "investigate" | "act";
-  label: string;
-  tagline: string;
-  tabs: TabDef[];
-}
-
-const WORKFLOWS: WorkflowDef[] = [
-  {
-    id: "browse",
-    label: "Browse",
-    tagline: "Overview, news, and system status",
-    tabs: [
-      { href: "/threats", label: "Awareness",
-        warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
-      { href: "/community", label: "Community" },
-      { href: "/coverage", label: "Coverage" },
-      // /cities is intentionally NOT in the sub-nav. It still exists as
-      // a public SEO route (linked from the homepage, sitemap, 404 page,
-      // and city pickers) but it duplicated the city picker that lives
-      // in the header on every page — the audit + tab-restructure goal
-      // was to remove duplicate surfaces, not add them.
-    ],
-  },
-  {
-    id: "investigate",
-    label: "Investigate",
-    tagline: "Deep-dive on one area: score, trends, map, watch",
-    tabs: [
-      // SafeZone (Score + Trends) — one tab, one page. The /trends
-      // URL still works as an alias for SEO/bookmarks, but the
-      // Investigate sub-nav advertises a single SafeZone entry to
-      // avoid the "two tabs, same product" confusion the old IA had.
-      { href: "/safety-score", label: "SafeZone", subroutes: ["/trends"],
-        warm: ({ citySlug, areaSlug }) => areaSlug
-          ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`,
-             `/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
-          : [`/api/safezone/safety-score?city=${citySlug}`,
-             `/api/safezone/trend?city=${citySlug}`] },
-      { href: "/watch", label: "Neighborhood Watch",
-        warm: ({ citySlug }) => [`/api/geo/areas?city=${citySlug}`] },
-      { href: "/map", label: "Crime Map",
-        warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
-    ],
-  },
-  {
-    id: "act",
-    label: "Act",
-    tagline: "Live tools: routing + personal safety",
-    tabs: [
-      { href: "/route", label: "Safe Route",
-        warm: ({ citySlug }) => [`/api/geo/areas?city=${citySlug}`] },
-      { href: "/safety", label: "Personal Safety" },
-    ],
-  },
+const PRIMARY: TabDef[] = [
+  // /now — unified Awareness (replaces /threats City+Neighborhood toggle)
+  { href: "/now", label: "Now",
+    subroutes: ["/threats"],
+    warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
+  // /plan — Safety Score + Trend + Compare + Route. Subroutes cover the
+  // legacy URLs so a bookmark to /safety-score still highlights this tab.
+  { href: "/plan", label: "Plan",
+    subroutes: ["/safety-score", "/trends", "/route"],
+    warm: ({ citySlug, areaSlug }) => areaSlug
+      ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`,
+         `/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
+      : [`/api/safezone/safety-score?city=${citySlug}`,
+         `/api/safezone/trend?city=${citySlug}`] },
+  // /act — Personal Safety + Community
+  { href: "/act", label: "Act",
+    subroutes: ["/safety", "/community"] },
+  // /map — geographic exploration
+  { href: "/map", label: "Map",
+    warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
 ];
 
-/// Default workflow when the path doesn't match any tab (e.g. a /cities/[slug]
-/// SEO page lands here — Browse is the right context for that).
-const DEFAULT_WORKFLOW: WorkflowDef["id"] = "browse";
+const DRAWER: TabDef[] = [
+  { href: "/coverage", label: "Coverage & data health" },
+  { href: "/watch",    label: "Neighborhood Watch" },
+  { href: "/cities",   label: "Cities directory" },
+  { href: "/settings/privacy", label: "Privacy controls" },
+];
 
 function isTabActive(tab: TabDef, pathname: string | null): boolean {
   if (!pathname) return false;
@@ -96,16 +63,6 @@ function isTabActive(tab: TabDef, pathname: string | null): boolean {
   return (tab.subroutes ?? []).some((r) => pathname === r || pathname.startsWith(r + "/"));
 }
 
-function activeWorkflow(pathname: string | null): WorkflowDef {
-  for (const w of WORKFLOWS) {
-    if (w.tabs.some((t) => isTabActive(t, pathname))) return w;
-  }
-  return WORKFLOWS.find((w) => w.id === DEFAULT_WORKFLOW) ?? WORKFLOWS[0];
-}
-
-/// One-shot fetch with a short timeout so a hover that never converts to
-/// a click doesn't leak a long-running request. Errors are swallowed —
-/// this is best-effort warming.
 function warmFetch(path: string) {
   if (typeof window === "undefined") return;
   try {
@@ -119,62 +76,37 @@ export function TabNav() {
   const pathname = usePathname();
   const { city } = useCity();
   const { area } = useArea(city.slug);
-  const current = activeWorkflow(pathname);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const drawerRef = useRef<HTMLLIElement | null>(null);
 
-  // Scroll the active sub-tab into view on mount / route change so users
-  // on small viewports always see where they are in the sub-nav strip.
-  // Uses inline auto-scroll behavior — gentle but immediate, no smooth
-  // transition since the nav is sticky and a slow scroll would be jarring.
-  const subnavRef = useRef<HTMLUListElement | null>(null);
+  // Close drawer on route change.
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+
+  // Outside-click closer for the drawer.
   useEffect(() => {
-    const el = subnavRef.current?.querySelector<HTMLAnchorElement>('[aria-current="page"]');
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "auto", block: "nearest", inline: "center" });
+    if (!drawerOpen) return;
+    function onClick(e: MouseEvent) {
+      if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) setDrawerOpen(false);
     }
-  }, [pathname]);
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [drawerOpen]);
+
+  // Escape closer.
+  useEffect(() => {
+    if (!drawerOpen) return;
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setDrawerOpen(false); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
+
+  const drawerActive = DRAWER.some((t) => isTabActive(t, pathname));
 
   return (
     <nav className="border-b border-sand-200 bg-white/80 backdrop-blur sticky top-0 z-20" aria-label="Primary">
-      {/* Row 1: workflow tabs (top-level intent) — wrapped in a
-          relative div so we can layer a right-edge fade for the
-          mobile horizontal-scroll affordance. The fade only appears
-          when the strip actually overflows (pointer-events-none so
-          it doesn't block taps on the rightmost tab). */}
       <div className="relative">
-        <ul className="max-w-5xl mx-auto flex gap-1 px-4 pt-1 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none]">
-          {WORKFLOWS.map((w) => {
-            const isActive = w.id === current.id;
-            // Land users on the FIRST tab of the chosen workflow.
-            const href = w.tabs[0]?.href ?? "/";
-            return (
-              <li key={w.id}>
-                <Link
-                  href={href}
-                  className={`inline-flex items-baseline gap-1.5 px-3 py-2 text-sm rounded-t-md transition-colors whitespace-nowrap ${
-                    isActive
-                      ? "text-slate2-900 font-semibold bg-sand-50 border-x border-t border-sand-200"
-                      : "text-slate2-500 hover:text-bay-700"
-                  }`}
-                  aria-current={isActive ? "page" : undefined}
-                  title={w.tagline}
-                >
-                  {w.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-white/90 to-transparent sm:hidden" aria-hidden />
-      </div>
-      {/* Row 2: sub-nav for the active workflow — same affordance:
-          horizontal scroll on mobile, right-edge fade, active tab
-          auto-scrolled into view on route change. */}
-      <div className="relative border-t border-sand-100">
-        <ul
-          ref={subnavRef}
-          className="max-w-5xl mx-auto flex gap-0.5 px-4 py-1 overflow-x-auto text-xs scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none]"
-        >
-          {current.tabs.map((t) => {
+        <ul className="max-w-5xl mx-auto flex items-stretch gap-1 px-4 py-1 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none]">
+          {PRIMARY.map((t) => {
             const active = isTabActive(t, pathname);
             const onPreload = t.warm
               ? () => {
@@ -186,7 +118,11 @@ export function TabNav() {
               <li key={t.href}>
                 <Link
                   href={t.href}
-                  className={`tab-link whitespace-nowrap ${active ? "is-active text-slate2-900 font-medium" : "text-slate2-500 hover:text-bay-700"}`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-md transition-colors whitespace-nowrap ${
+                    active
+                      ? "text-slate2-900 font-semibold bg-sand-50 ring-1 ring-sand-200"
+                      : "text-slate2-500 hover:text-bay-700 hover:bg-sand-50/60"
+                  }`}
                   aria-current={active ? "page" : undefined}
                   onMouseEnter={onPreload}
                   onFocus={onPreload}
@@ -196,6 +132,46 @@ export function TabNav() {
               </li>
             );
           })}
+          {/* More drawer */}
+          <li className="relative ml-auto" ref={drawerRef}>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen((v) => !v)}
+              aria-expanded={drawerOpen}
+              aria-haspopup="menu"
+              aria-label="More"
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-sm rounded-md transition-colors whitespace-nowrap ${
+                drawerActive || drawerOpen
+                  ? "text-slate2-900 font-semibold bg-sand-50 ring-1 ring-sand-200"
+                  : "text-slate2-500 hover:text-bay-700 hover:bg-sand-50/60"
+              }`}
+            >
+              <span aria-hidden>⋯</span>
+              <span className="sr-only sm:not-sr-only">More</span>
+            </button>
+            {drawerOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1 z-30 surface shadow-card-lift p-1 min-w-[12rem]"
+              >
+                {DRAWER.map((t) => {
+                  const active = isTabActive(t, pathname);
+                  return (
+                    <Link
+                      key={t.href}
+                      role="menuitem"
+                      href={t.href}
+                      className={`block px-3 py-2 text-sm rounded-md transition-colors ${
+                        active ? "bg-bay-100 text-slate2-900 font-medium" : "text-slate2-700 hover:bg-sand-100"
+                      }`}
+                    >
+                      {t.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </li>
         </ul>
         <div className="pointer-events-none absolute top-0 right-0 h-full w-6 bg-gradient-to-l from-white/90 to-transparent sm:hidden" aria-hidden />
       </div>
