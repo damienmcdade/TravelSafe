@@ -250,7 +250,12 @@ function AreaSafeZoneSection({
     city: { slug: city.slug, label: city.label },
     area: { slug: area.slug, label: area.label },
   });
-  const sourceLabel = `${city.label} official police open-data feed`;
+  // Per-city adapter source link (real dataset URL, not the generic
+  // FBI CDE explorer). Same surfacing as /city's LocalActivity.
+  const source = data.source ?? {
+    label: `${city.label} official police open-data feed`,
+    url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend",
+  };
   return (
     <div className="space-y-3">
       <BlockScoreWidget
@@ -264,7 +269,7 @@ function AreaSafeZoneSection({
         baseline={data.baseline}
         windowDays={data.windowDays}
         contextLabel={area.label}
-        source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
+        source={source}
         loading={data.loading}
       />
     </div>

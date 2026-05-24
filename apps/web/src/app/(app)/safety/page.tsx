@@ -6,13 +6,10 @@ import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
+import { registryForState } from "@/lib/state-registries";
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
-// Public sex-offender registry link. Moved to Personal Safety per v7
-// directive — it's a personal-safety lookup, not a community-feed
-// surface. Env override lets per-state deployments swap registries.
-const REGISTRY_URL = process.env.NEXT_PUBLIC_SEX_OFFENDER_REGISTRY_URL || "https://www.meganslaw.ca.gov/";
 
 interface ActiveTimer {
   id: string;
@@ -87,18 +84,33 @@ export default function PersonalSafetyPage() {
           tool, lives on a personal-safety surface. We never re-host
           or render individuals; this is a deep link out to the
           official state registry. */}
-      <section className="surface p-5 border-amber2-500/30">
-        <h2 className="font-display text-lg text-slate2-900">Official registries</h2>
-        <p className="mt-1 text-sm text-slate2-700">
-          For sex-offender information, CommunitySafe links to the official public registry. We do not re-host or display individuals here.
-        </p>
-        <a href={REGISTRY_URL} target="_blank" rel="noreferrer" className="mt-3 inline-block underline text-slate2-900 hover:text-bay-700 transition-colors">
-          Open Megan&apos;s Law (California) →
-        </a>
-      </section>
+      <OfficialRegistryCard />
+
 
       <AccountPanel />
     </main>
+  );
+}
+
+/// Per-state sex-offender registry link. Picks the registry URL
+/// matching the user's currently-selected city's state. CA users
+/// see California's Megan's Law site; IL users see Illinois ISP's
+/// SOR; etc. Cities in states without an explicit entry get the
+/// federal NSOPW aggregator. Resolves the prior bug where every
+/// city — including out-of-state ones — surfaced California's link.
+function OfficialRegistryCard() {
+  const { city } = useCity();
+  const registry = registryForState(city.state);
+  return (
+    <section className="surface p-5 border-amber2-500/30">
+      <h2 className="font-display text-lg text-slate2-900">Official registries</h2>
+      <p className="mt-1 text-sm text-slate2-700">
+        For sex-offender information, CommunitySafe links to the official public registry for {city.state}. We do not re-host or display individuals here.
+      </p>
+      <a href={registry.url} target="_blank" rel="noreferrer" className="mt-3 inline-block underline text-slate2-900 hover:text-bay-700 transition-colors">
+        Open {registry.label} →
+      </a>
+    </section>
   );
 }
 

@@ -71,6 +71,12 @@ export interface SafeZoneDataState {
   windowDays: number;
   /// Most recent incident timestamp in the cached window.
   asOf: string | null;
+  /// Per-city police-feed citation surfaced from the active adapter's
+  /// PROVENANCE. Page components hand this to ThreatFeed so users see
+  /// a real per-city source link (data.sandiego.gov, opendata.dc.gov,
+  /// etc.) instead of the generic FBI CDE URL the page formerly
+  /// hardcoded.
+  source: { label: string; url: string } | null;
   loading: boolean;
   error: Error | null;
 }

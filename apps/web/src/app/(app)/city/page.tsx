@@ -144,14 +144,22 @@ function LocalActivity({ city }: { city: { slug: string; label: string } }) {
     city: { slug: city.slug, label: city.label },
     area: null,
   });
-  const sourceLabel = `${city.label} official police open-data feed`;
+  // Source surfaces the actual adapter's dataset URL (e.g.,
+  // data.sandiego.gov, data.dc.gov) — previously hardcoded to the
+  // FBI CDE national-stats explorer, which never reflected the
+  // city's real data source. Falls back to the FBI CDE only if the
+  // adapter omits provenance (shouldn't happen for any live city).
+  const source = data.source ?? {
+    label: `${city.label} official police open-data feed`,
+    url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend",
+  };
   return (
     <ThreatFeed
       threats={data.threats}
       baseline={data.baseline}
       windowDays={data.windowDays}
       contextLabel={`${city.label} citywide`}
-      source={{ label: sourceLabel, url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend" }}
+      source={source}
       loading={data.loading}
     />
   );

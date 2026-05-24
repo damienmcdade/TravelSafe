@@ -43,6 +43,7 @@ interface TrendApi {
     text: string;
     category?: "PERSONS" | "PROPERTY" | "SOCIETY";
   }>;
+  source?: { label: string; url: string };
 }
 
 interface InsightsApi {
@@ -309,6 +310,7 @@ export function useSafeZoneData(selection: SafeZoneSelection): SafeZoneDataState
     baseline: deriveBaseline(insightsApi),
     windowDays: trendApi?.windowDays ?? 30,
     asOf: scoreApi?.asOf ?? null,
+    source: trendApi?.source ?? null,
     loading: scoreLoading || trendLoading || insightsLoading,
     error: scoreErr ?? trendErr ?? insightsErr ?? null,
   }), [
