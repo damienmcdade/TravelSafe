@@ -1,8 +1,15 @@
 import "dotenv/config";
 import { z } from "zod";
 
+// Coerce empty-string env vars to undefined so a misconfigured
+// "KEY=" on the platform falls through to the zod default instead
+// of failing the enum check. Railway / Vercel / Docker all allow
+// setting a key with an empty value, and treating that as "use
+// default" is the kinder behavior than refusing to start.
+const emptyToUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
+
 const Env = z.object({
-  NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  NODE_ENV: z.preprocess(emptyToUndefined, z.enum(["development", "test", "production"]).default("development")),
   // Railway (and most PaaS) injects PORT. API_PORT is honored as a fallback
   // for local dev where developers may have set the older variable name.
   PORT: z.coerce.number().optional(),
