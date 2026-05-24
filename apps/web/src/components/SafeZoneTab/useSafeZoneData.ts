@@ -1,6 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { useApi } from "@/lib/api-client";
+import { snapToSupported, useTimeWindow, type WindowValue } from "@/lib/use-time-window";
 import type {
   BaselinePoint,
   BlockScore,
@@ -273,12 +274,21 @@ export function useSafeZoneData(selection: SafeZoneSelection): SafeZoneDataState
     ? `area=${encodeURIComponent(selection.area.slug)}&label=${encodeURIComponent(selection.area.label)}`
     : null;
   const cityForApi = `city=${encodeURIComponent(selection.city.slug)}`;
+  // Honor the shared cross-card window store so the in-card window
+  // picker on ThreatFeed (and TrendPanel and CrimeChart) actually
+  // drives the trend fetch. Snapped to the trend endpoint's supported
+  // preset list. Without this the trend endpoint always defaulted to
+  // 30 days regardless of what the user picked.
+  const { value: rawWindow } = useTimeWindow();
+  const TREND_PRESETS: ReadonlyArray<WindowValue> = [7, 14, 30, 90];
+  const snapped = snapToSupported(rawWindow, TREND_PRESETS);
+  const trendDays = typeof snapped === "number" ? snapped : 30;
   const scorePath = areaForApi
     ? `/safezone/safety-score?${areaForApi}`
     : `/safezone/safety-score?${cityForApi}`;
   const trendPath = areaForApi
-    ? `/safezone/trend?${areaForApi}`
-    : `/safezone/trend?${cityForApi}`;
+    ? `/safezone/trend?${areaForApi}&days=${trendDays}`
+    : `/safezone/trend?${cityForApi}&days=${trendDays}`;
   // Citywide: hit the new ?city= mode on /crime-data/insights. Previously
   // we passed `jurisdiction=<citySlug>` which the route treated as an
   // area slug and returned zero incidents → the trend graph went silently
