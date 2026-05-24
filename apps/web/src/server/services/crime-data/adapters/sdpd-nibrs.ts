@@ -26,14 +26,18 @@ function mapCrimeAgainst(value: string | undefined): CrimeCategory {
 }
 
 // Display-label remap. SDPD publishes neighborhood names like
-// "Core-Columbia" that don't match what residents call the area. We
-// keep the upstream slug (so historical URLs and the polygon GeoJSON
-// continue to resolve) but show the friendlier label everywhere the
-// user reads it. The reverse map lets incident-matching tolerate
-// either the display name or the upstream name.
-const AREA_LABEL_REMAP: Record<string, string> = {
-  "Core-Columbia": "Downtown",
-};
+// "Core-Columbia" that aren't always intuitive; we relabel them where
+// a clearly better real name exists in city planning documents.
+//
+// IMPORTANT: SDPD's "Core-Columbia" was previously renamed to
+// "Downtown" here, which collided with our own canonical "Downtown"
+// entry (slug `downtown-sd`) and produced two "Downtown" rows in the
+// neighborhood list. "Core-Columbia" IS the City of San Diego's
+// official Community Planning Area name (it combines the historical
+// "Core" and "Columbia" subareas of the central business district),
+// so we now leave it as-is. The map is intentionally empty until a
+// remap with no collision risk is justified.
+const AREA_LABEL_REMAP: Record<string, string> = {};
 const AREA_LABEL_REVERSE: Record<string, string> = Object.fromEntries(
   Object.entries(AREA_LABEL_REMAP).map(([upstream, display]) => [display, upstream]),
 );

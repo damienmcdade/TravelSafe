@@ -238,12 +238,15 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
                 onClick={() => tap(i)}
                 disabled={item.disabled}
                 tabIndex={-1}
-                className={`w-full text-center transition-all px-3 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-bay-700 font-semibold" : "text-slate2-700"}`}
+                className={`w-full text-center transition-all px-2 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-bay-700 font-semibold" : "text-slate2-700"}`}
                 style={{ opacity, transform: `scale(${scale})` }}
               >
-                <div className="truncate">{item.label}</div>
+                {/* Labels wrap inside the wheel instead of truncating
+                    with an ellipsis. break-words keeps long single
+                    words from overflowing the wheel column. */}
+                <div className="break-words whitespace-normal">{item.label}</div>
                 {item.detail && (
-                  <div className="text-[10px] uppercase tracking-wider text-slate2-500 truncate">{item.detail}</div>
+                  <div className="text-[10px] uppercase tracking-wider text-slate2-500 break-words whitespace-normal">{item.detail}</div>
                 )}
               </button>
             </li>

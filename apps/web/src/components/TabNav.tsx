@@ -52,12 +52,15 @@ const PRIMARY: TabDef[] = [
     warm: ({ citySlug, areaSlug }) => areaSlug
       ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
       : [`/api/geo/areas?city=${citySlug}`] },
-  // Overwatch — Crime Map + Safe Route in one hub.
-  { href: "/overwatch", label: "Overwatch",
+  // Pathfinder — Crime Map + Safe Route in one hub (renamed from
+  // Overwatch). Route stays /overwatch for bookmark stability; only
+  // the user-facing label changes.
+  { href: "/overwatch", label: "Pathfinder",
     subroutes: ["/map", "/route", "/plan"],
     warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
-  // CommunitySafe — standalone.
-  { href: "/community", label: "CommunitySafe",
+  // Connections — community feed (renamed from CommunitySafe). Route
+  // stays /community.
+  { href: "/community", label: "Connections",
     subroutes: ["/act"] },
 ];
 

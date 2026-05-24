@@ -165,45 +165,24 @@ export default function CommunityPage() {
               uptick mirrors what neighbors are flagging"). */}
           {area && <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(area.slug)}`} />}
 
-          {/* Recent published police incidents, side-by-side with the
-              neighbor-reported feed above — lets users compare what
-              police published vs what neighbors are flagging. Only
-              rendered with a picked area (the city-aggregate version of
-              this lives on /threats). */}
-          {area && (
-            <RecentIncidentsCards
-              area={area.slug}
-              title={`Recently reported in ${area.label}`}
-            />
-          )}
+          {/* "Recently reported in <area>" card + title removed per
+              v7 directive — Connections now focuses on neighbor-led
+              posts; the published-police feed lives on Neighborhood
+              Awareness's ThreatFeed where it belongs. */}
 
-          <section className="surface p-6 border-amber2-500/30">
-            <h2 className="font-display text-lg text-slate2-900">Official registries</h2>
-            <p className="text-sm text-slate2-700 mt-1">
-              For sex-offender information, TravelSafe links to the official public registry. We do not re-host or display individuals here.
-            </p>
-            <a href={REGISTRY_URL} target="_blank" rel="noreferrer" className="mt-3 inline-block underline text-slate2-900 hover:text-bay-700 transition-colors">
-              Open Megan&apos;s Law (California) →
-            </a>
-          </section>
+          {/* Official registries card moved to Personal Safety
+              sub-tab on Neighborhood Awareness per v7 directive —
+              registry lookups are a personal-safety tool, not a
+              community-discussion surface.
+
+              "Looking for news + official alerts?" cross-link
+              removed — the news + alerts cards live on City
+              Awareness only, and a redundant pointer card on
+              Connections was noise. */}
 
           <DataProvenanceBanner provenance={stats?.provenance ?? null} />
         </div>
         <aside className="space-y-4">
-          {/* Cross-link to Browse → Awareness for the citywide news +
-              crime-mix + official alerts widgets. Per the Option-2 IA,
-              those cards live on /threats only — we don't double-render
-              them here. */}
-          <section className="surface p-4 text-sm text-slate2-700 leading-snug">
-            <h2 className="font-display text-base text-slate2-900">Looking for news + official alerts?</h2>
-            <p className="mt-2">
-              The {city.label} citywide news feed, FBI category breakdown, and
-              official-alert digest live on the Awareness tab in the Browse workflow.
-            </p>
-            <Link href="/threats" className="mt-3 inline-block text-bay-700 hover:underline font-medium">
-              Go to Awareness →
-            </Link>
-          </section>
         </aside>
       </div>
     </main>

@@ -56,7 +56,7 @@ export function AreaBriefPanel({
   return (
     <section className="surface p-5 bg-gradient-to-br from-white via-white to-coral-200/20">
       <header className="flex items-baseline justify-between flex-wrap gap-1">
-        <h2 className="font-display text-lg text-slate2-900">In plain English</h2>
+        <h2 className="font-display text-lg text-slate2-900">AI Summary</h2>
         <span className="text-[10px] uppercase tracking-wider text-slate2-500">AI · grounded in the data</span>
       </header>
       {loading && (

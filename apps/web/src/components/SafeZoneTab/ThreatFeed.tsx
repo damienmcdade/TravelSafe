@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { BaselinePoint, ThreatConfidence, ThreatItem } from "./types";
-import { BaselineTrendChart } from "./BaselineTrendChart";
 import { api } from "@/lib/api-client";
 
 export interface ThreatFeedProps {
@@ -87,11 +86,8 @@ export function ThreatFeed({ threats, baseline, windowDays, contextLabel, source
       {visible.length === 0 ? (
         <div className="mt-4">
           <p className="text-sm text-slate2-700">
-            No reported dispatches in the past {windowDays} days. The chart below shows the area&apos;s rolling baseline so trends remain visible even during quiet windows.
+            No reported dispatches in the past {windowDays} days.
           </p>
-          <div className="mt-3">
-            <BaselineTrendChart points={baseline} />
-          </div>
         </div>
       ) : (
         <>

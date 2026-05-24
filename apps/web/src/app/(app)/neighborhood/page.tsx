@@ -8,7 +8,7 @@ import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
-import { LocationSearch } from "@/components/LocationSearch";
+import { WheelCityAreaPicker } from "@/components/WheelCityAreaPicker";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { TimeOfDayCard } from "@/components/TimeOfDayCard";
 import { NewsPanel } from "@/components/NewsPanel";
@@ -173,9 +173,12 @@ function NeighborhoodView() {
         <LiveActivityBadge />
       </header>
 
+      {/* Wheel-style city + neighborhood picker — replaces the
+          LocationSearch typed input per v7 directive. Two wheels,
+          wrapped labels, commit-on-click so users can scrub freely. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         <div className="lg:col-span-2">
-          <LocationSearch current={area} onResolved={setArea} />
+          <WheelCityAreaPicker />
         </div>
         <div className="surface p-4 flex flex-col gap-2 text-sm">
           <button onClick={useMyLocation} disabled={locBusy} className="btn-primary disabled:opacity-60 disabled:cursor-wait">
@@ -224,11 +227,12 @@ function NeighborhoodView() {
               duplicated by anything else on this page). */}
           <TrendPanel headingLevel={3} />
 
-          <DataProvenanceBanner provenance={selectedAreaStats?.alerts[0]?.provenance ?? null} />
-
-          {/* AI Summary at the BOTTOM of Neighborhood Awareness per
-              v6 directive — renamed from "In plain English". */}
+          {/* AI Summary sits above the bottom disclaimer banner so
+              users see the summary before the legal/provenance footer.
+              v7 directive: AI Summary belongs ABOVE the disclaimers. */}
           <AreaBriefPanel areaSlug={area.slug} />
+
+          <DataProvenanceBanner provenance={selectedAreaStats?.alerts[0]?.provenance ?? null} />
         </>
       )}
     </main>

@@ -2,6 +2,15 @@
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 
+interface WeatherCurrent {
+  temperatureF: number | null;
+  feelsLikeF:   number | null;
+  humidityPct:  number | null;
+  windMph:      number | null;
+  conditions:   string | null;
+  observedAt:   string | null;
+}
+
 interface OfficialAlert {
   id: string;
   source: string;
@@ -34,15 +43,36 @@ export function OfficialAlertsPanel() {
   const { city } = useCity();
   const { data, error } = useApi<Resp>(`/official-alerts?city=${encodeURIComponent(city.slug)}`, [city.slug]);
   const alerts = (data?.alerts ?? []).filter((a) => a.source === "National Weather Service");
+  // Live current-conditions pulled from Open-Meteo via /api/weather/current.
+  // Surfaced in the header so users see the temperature for the
+  // selected city without leaving the page. 5-min server-side cache
+  // keeps cost trivial. Failures are non-blocking — the alerts list
+  // still renders normally.
+  const { data: wx } = useApi<WeatherCurrent>(
+    `/weather/current?lat=${city.centroid.lat}&lng=${city.centroid.lng}`,
+    [city.slug],
+  );
 
   return (
     <section className="surface p-6 min-h-[180px]">
-      <header className="flex items-center justify-between">
+      <header className="flex items-baseline justify-between gap-3 flex-wrap">
         <h2 className="font-display text-lg text-slate2-900">Weather</h2>
+        {/* Live temperature pill — appears once the current-conditions
+            request resolves. Conditions phrase ("partly cloudy", etc.)
+            is appended when available. */}
+        {wx?.temperatureF != null && (
+          <div className="inline-flex items-baseline gap-1.5 text-sm">
+            <span className="font-display text-2xl text-slate2-900 tabular-nums">{Math.round(wx.temperatureF)}°F</span>
+            {wx.conditions && <span className="text-xs text-slate2-500">{wx.conditions}</span>}
+          </div>
+        )}
         <span className="text-xs text-slate2-500">National Weather Service</span>
       </header>
       <p className="mt-1 text-xs text-slate2-500">
         Active NWS alerts for {city.label} — watches, warnings, and advisories from the official US weather agency. Independent of TravelSafe community posts.
+        {wx?.feelsLikeF != null && (
+          <span> Feels like {Math.round(wx.feelsLikeF)}°F.</span>
+        )}
       </p>
       {error && !data && (
         <p className="mt-4 text-sm text-dusk-700">
