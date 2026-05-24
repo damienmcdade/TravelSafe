@@ -4,11 +4,11 @@ import { useCity, STATES, citiesInState } from "@/lib/use-city";
 import { WheelCityAreaPicker } from "./WheelCityAreaPicker";
 
 // Shared selector-pill styling. Used by both CitySelector and the
-// StateSelector below so the two controls are visually identical
-// (a state pill next to a city pill in the header). Pulled into a
-// constant rather than a wrapper component so each selector keeps
-// its own ref / aria handling.
-const TRIGGER_CLS = "inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm bg-white border border-bay-200 text-slate2-900 shadow-card hover:bg-bay-50 hover:border-bay-400 hover:shadow-glow-bay transition-all";
+// StateSelector below so the two controls are visually identical.
+// Padding tightens on mobile so the pill fits in narrow headers
+// without clipping. min-w-0 + max-w-[60vw] guards against
+// pathological label widths from cities with long names.
+const TRIGGER_CLS = "inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-sm bg-white border border-bay-200 text-slate2-900 shadow-card hover:bg-bay-50 hover:border-bay-400 hover:shadow-glow-bay transition-all min-w-0 max-w-[60vw] sm:max-w-none";
 
 /// Header city switcher. Two modes share one dropdown:
 ///
@@ -76,11 +76,15 @@ export function CitySelector() {
         <svg viewBox="0 0 16 16" className="w-4 h-4 text-bay-700 shrink-0" fill="currentColor" aria-hidden>
           <path d="M8 1a5 5 0 0 0-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 0 0-5-5zm0 7a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
         </svg>
-        <span className="flex items-baseline gap-1.5">
-          <span className="text-[11px] uppercase tracking-wider text-slate2-500">City</span>
-          <span className="font-semibold">{city.label}</span>
+        <span className="flex items-baseline gap-1.5 min-w-0">
+          {/* "City" prefix label hidden on mobile to save horizontal
+              real-estate — the icon already signals "this is a place
+              picker". Label truncates instead of breaking the
+              container. */}
+          <span className="hidden sm:inline text-[11px] uppercase tracking-wider text-slate2-500 shrink-0">City</span>
+          <span className="font-semibold truncate">{city.label}</span>
         </span>
-        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-slate2-500" fill="none" stroke="currentColor" aria-hidden>
+        <svg viewBox="0 0 16 16" className="w-3.5 h-3.5 text-slate2-500 shrink-0" fill="none" stroke="currentColor" aria-hidden>
           <path d="M4 6l4 4 4-4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>

@@ -16,13 +16,25 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           Browsing, posting, check-in timer, and live-share all work with no
           visible account flow. */}
       <header className="bg-white/80 backdrop-blur border-b border-sand-200 sticky top-0 z-30">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <Link href="/" className="font-display text-xl text-slate2-900 transition-colors hover:text-bay-700">
+        <div className="max-w-5xl mx-auto px-3 sm:px-4 py-3 flex items-center justify-between gap-2 sm:gap-3">
+          <Link
+            href="/"
+            className="font-display text-xl text-slate2-900 transition-colors hover:text-bay-700 shrink-0 min-w-0 truncate"
+          >
             <span className="bg-gradient-to-r from-bay-700 to-coral-500 bg-clip-text text-transparent">Community</span>Safe
           </Link>
-          <div className="flex items-center gap-2 text-xs text-slate2-500">
-            <ThemeToggle align="right" size="sm" />
-            <StateSelector />
+          {/* Right-cluster: theme + state selectors are hidden on
+              mobile (theme lives at /settings/privacy, state is
+              jump-only and the combined city+neighborhood picker
+              already lets users change cities). CitySelector renders
+              compact on mobile so the right edge never clips. */}
+          <div className="flex items-center gap-2 text-xs text-slate2-500 min-w-0">
+            <div className="hidden sm:inline-flex">
+              <ThemeToggle align="right" size="sm" />
+            </div>
+            <div className="hidden sm:inline-flex">
+              <StateSelector />
+            </div>
             <CitySelector />
           </div>
         </div>
