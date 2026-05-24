@@ -4,20 +4,36 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import type { KnownArea } from "../neighborhoods";
 import { kansasCityPolygons } from "../../../data/kansas-city-neighborhoods";
 
-// Kansas City MO — KCPD Crime Data 2026.
-// Socrata dataset f7wj-ckmw on data.kcmo.org. Refreshed routinely by KCPD.
+// Kansas City MO — KCPD Crime Data, current + prior year.
+// KCPD publishes one Socrata dataset per calendar year (data.kcmo.org).
+// The adapter previously hit only the current-year dataset, so in
+// early calendar months the cache held only a few weeks of data;
+// safety-score's 365d wall-clock window picked up whatever stray
+// older timestamps were in the cache to set dataEarliestMs, mis-
+// computed windowDays as 364, and annualized over a misleading
+// span — KC's citywide grade read as a false A with rates ~10×
+// below the FBI national. Same fix-pattern as DC: merge current +
+// prior year so the cache spans a real ~17-month rolling window.
 //
-// IMPORTANT: the upstream dataset carries demographic columns (`race`,
-// `sex`) on per-row victim/suspect records. The adapter EXPLICITLY enumerates
-// outFields so the demographic columns are never requested — they don't
-// reach our server.
+// IMPORTANT: the upstream dataset carries demographic columns
+// (`race`, `sex`) on per-row victim/suspect records. The adapter
+// EXPLICITLY enumerates outFields so the demographic columns are
+// never requested.
 //
-// KCPD's own `area` field has only 6 patrol divisions (CPD/EPD/MPD/SPD/NPD/SCP)
-// which is too coarse for neighborhood-level guidance. We point-in-polygon
-// each row through 145 named Kansas City neighborhoods (blackmad/neighborhoods)
-// so the area surfaces as "Westport" or "Country Club Plaza" instead of "MPD".
+// KCPD's own `area` field has only 6 patrol divisions (CPD/EPD/MPD/
+// SPD/NPD/SCP) which is too coarse for neighborhood-level guidance.
+// We point-in-polygon each row through 145 named Kansas City
+// neighborhoods (blackmad/neighborhoods).
 
-const BASE = "https://data.kcmo.org/resource/f7wj-ckmw.json";
+// Year → Socrata dataset ID. KCPD ships these as separate datasets;
+// the catalog confirms 2018-2026 each has its own ID. When 2027
+// lands we add it here. Datasets currently live, oldest → newest
+// (only the most recent two are pulled at runtime).
+const YEAR_DATASETS: Record<number, string> = {
+  2026: "f7wj-ckmw",
+  2025: "dmnp-9ajg",
+  2024: "isbe-v4d8",
+};
 const ROW_LIMIT = 5_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
@@ -105,9 +121,9 @@ function geocodeKansasCity(lng: number, lat: number): string | null {
 }
 
 const PROVENANCE: DataProvenance = {
-  source: "Kansas City MO Police Crime Data 2026 (Open Data KC, Socrata)",
-  datasetUrl: "https://data.kcmo.org/Public-Safety/KCPD-Crime-Data-2026/f7wj-ckmw",
-  recency: "Refreshed routinely by KCPD",
+  source: "Kansas City MO Police Crime Data — current + prior year (Open Data KC, Socrata)",
+  datasetUrl: "https://data.kcmo.org/browse?q=KCPD+Crime+Data",
+  recency: "Refreshed routinely by KCPD; merged across calendar-year datasets for a rolling ~17-month window",
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the Kansas City MO Police Department. " +
@@ -129,15 +145,36 @@ function safeIso(raw: string | null | undefined): string | null {
   return d.toISOString();
 }
 
-async function fetchKansasCity(): Promise<Incident[]> {
+async function fetchKansasCityYear(datasetId: string): Promise<KcRow[]> {
   // EXPLICIT $select — never request the `race`/`sex` demographic columns.
   const select = "report,report_date,from_date,offense,ibrs,beat,address,city,zipcode,rep_dist,area,location";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=report_date%20DESC&$where=location%20IS%20NOT%20NULL`;
+  const u = `https://data.kcmo.org/resource/${datasetId}.json?$limit=${ROW_LIMIT}&$select=${select}&$order=report_date%20DESC&$where=location%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
     headers: { Accept: "application/json", "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
-  if (!res.ok) throw new Error(`Kansas City Socrata ${res.status}`);
-  const rows = (await res.json()) as KcRow[];
+  if (!res.ok) throw new Error(`Kansas City Socrata ${datasetId} ${res.status}`);
+  return (await res.json()) as KcRow[];
+}
+
+async function fetchKansasCity(): Promise<Incident[]> {
+  // Pull current + prior year in parallel. The 5k row limit per year
+  // gives us a typical 60-80 days of recent activity per year (KCPD
+  // publishes ~50/day), so the merged set covers approximately the
+  // most recent 4-6 months — narrow enough to be timely, wide enough
+  // that safety-score's 365d window has stable dataEarliestMs.
+  const currentYear = new Date().getUTCFullYear();
+  const datasetIds: string[] = [];
+  for (const yr of [currentYear, currentYear - 1]) {
+    const ds = YEAR_DATASETS[yr];
+    if (ds) datasetIds.push(ds);
+  }
+  const pages = await Promise.all(
+    datasetIds.map((ds) => fetchKansasCityYear(ds).catch((e) => {
+      console.warn(`[kc] year-dataset ${ds} failed:`, (e as Error).message);
+      return [] as KcRow[];
+    })),
+  );
+  const rows = pages.flat();
   // De-duplicate: KCPD emits one row per VIC/SUS per report. Group by report
   // number so each incident gets ONE card instead of (victims + suspects).
   const seen = new Set<string>();

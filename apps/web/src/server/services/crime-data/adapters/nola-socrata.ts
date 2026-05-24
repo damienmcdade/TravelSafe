@@ -14,7 +14,13 @@ import { nolaPolygons } from "../../../data/new-orleans-neighborhoods";
 // dataset. The Calls for Service feed is the only acceptable upstream.
 
 const BASE = "https://data.nola.gov/resource/es9j-6y5d.json";
-const ROW_LIMIT = 5_000;
+// NOLA CFS feed runs ~800 dispatches/day. At the original 5,000-row
+// limit the cache spanned only ~6 days; safety-score's annualization
+// over 365 days multiplied by 60× and noise was massive. 50k rows
+// gives us ~60 days of recent activity, which crosses the 30-day
+// "low confidence" trip-wire and produces stable grades across
+// refreshes. Socrata accepts $limit up to 50,000 in a single request.
+const ROW_LIMIT = 50_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

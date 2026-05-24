@@ -18,7 +18,14 @@ import type { KnownArea } from "../neighborhoods";
 
 const BASE = "https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/CAD_Police/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                // 10k rows
+// 30 pages × 2,000 = 60,000 rows. Cleveland's CFS feed runs ~1,000
+// incidents/day; at the earlier 10k-row limit the cache spanned
+// ~10 days, which safety-score then annualized over 365 days with
+// an absurd 36× multiplier — citywide rates got noisy enough that
+// grade-flipping was a regular occurrence on cache refreshes.
+// 60k rows ≈ 60 days, comfortably above the 30-day "low confidence"
+// trip-wire and stable enough that grades don't ping-pong.
+const PAGES = 30;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

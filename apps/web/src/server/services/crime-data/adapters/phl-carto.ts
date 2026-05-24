@@ -11,7 +11,15 @@ import type { KnownArea } from "../neighborhoods";
 
 const BASE = "https://phl.carto.com/api/v2/sql";
 const TABLE = "incidents_part1_part2";
-const ROW_LIMIT = 5_000;
+// Philly publishes ~415 Part-1 + Part-2 incidents per day. The
+// original 5k limit spanned ~12 days of cached activity;
+// safety-score's 365-day annualization gave a ~30× multiplier that
+// made every refresh swing the citywide rate by tens of percent.
+// 30k rows covers ~75 days — past the 30-day "low confidence"
+// trip-wire and stable across cache cycles. CARTO SQL accepts
+// larger LIMITs but 30k is comfortable; raising further has
+// diminishing returns vs the request payload size.
+const ROW_LIMIT = 30_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

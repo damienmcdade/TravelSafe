@@ -14,7 +14,15 @@ import type { KnownArea } from "../neighborhoods";
 
 const BASE = "https://gis.charlottenc.gov/arcgis/rest/services/CMPD/CMPDIncidents/MapServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                // 10,000 rows
+// 30 pages × 2,000 = 60,000 rows. CMPD publishes ~250 incidents/day,
+// so the earlier 10k limit covered ~40 days but reported a 364-day
+// windowDays (a handful of cached rows with backdated DATE_INCIDENT_
+// BEGAN values latched dataEarliestMs to year-old timestamps).
+// Either way, 10k rows over 364 days annualized to roughly 6.5 P+P
+// incidents per 100k per year — about 10× below Charlotte's real
+// FBI rate. 60k rows ≈ 240 days of recent activity; safety-score's
+// 365d clamp then trims back honestly.
+const PAGES = 30;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
