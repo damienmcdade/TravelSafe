@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BaselinePoint, ThreatConfidence, ThreatItem } from "./types";
 import { BaselineTrendChart } from "./BaselineTrendChart";
 
@@ -101,12 +101,7 @@ export function ThreatFeed({ threats, baseline, windowDays, contextLabel, source
                 <li key={t.id} className="flex items-start gap-2 text-sm text-slate2-700">
                   <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${CAT_DOT[t.category]}`} aria-hidden />
                   <span className="flex-1">{t.description}</span>
-                  <span
-                    className={`shrink-0 text-[10px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded-full ring-1 ${badge.cls}`}
-                    title={badge.title}
-                  >
-                    {badge.label}
-                  </span>
+                  <ConfidenceBadge confidence={t.confidence} label={badge.label} cls={badge.cls} title={badge.title} />
                 </li>
               );
             })}
@@ -145,5 +140,89 @@ function ThreatFeedSkeleton() {
         {[0, 1, 2, 3, 4, 5].map((i) => (<div key={i} className="skel h-3 w-full" />))}
       </div>
     </section>
+  );
+}
+
+/// Click-to-explain confidence badge. The badge itself shows the
+/// short label; clicking opens a popover with the full rationale.
+/// Provides the "confidence explanation modal" the strategy doc
+/// asked for, scoped per-row so users can interrogate any
+/// individual incident's trust signal without leaving the feed.
+function ConfidenceBadge({
+  confidence,
+  label,
+  cls,
+  title,
+}: {
+  confidence: ThreatConfidence;
+  label: string;
+  cls: string;
+  title: string;
+}) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  return (
+    <span className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        aria-label={`Explain ${label} confidence rating`}
+        aria-expanded={open}
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v); }}
+        className={`text-[10px] uppercase tracking-wider font-medium px-1.5 py-0.5 rounded-full ring-1 ${cls} hover:opacity-90 transition-opacity cursor-pointer`}
+        title={title}
+      >
+        {label}
+      </button>
+      {open && (
+        <>
+          {/* Transparent backdrop swallows outside clicks. */}
+          <button
+            type="button"
+            aria-hidden
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-30 cursor-default bg-transparent"
+          />
+          <div
+            role="dialog"
+            aria-label={`${label} confidence explanation`}
+            className="absolute z-40 right-0 top-6 w-72 max-w-[calc(100vw-2rem)] surface p-3 text-xs leading-snug shadow-lg ring-1 ring-sand-300"
+          >
+            <p className="font-medium text-slate2-900">{label} confidence</p>
+            <p className="mt-1 text-slate2-700">{title}</p>
+            <p className="mt-2 text-[10px] text-slate2-500 leading-snug">
+              Confidence combines source credibility, report age, and clustering with peer incidents in the same category within 24 hours. A fresh report stays &ldquo;developing&rdquo; until either 2+ same-category peers corroborate it or 2 hours pass.
+            </p>
+            <ConfidenceLevelGuide active={confidence} />
+          </div>
+        </>
+      )}
+    </span>
+  );
+}
+
+function ConfidenceLevelGuide({ active }: { active: ThreatConfidence }) {
+  const levels: Array<{ id: ThreatConfidence; label: string; copy: string }> = [
+    { id: "verified", label: "Verified", copy: "Official feed + report stabilized (>2h or clustered)." },
+    { id: "community-confirmed", label: "Community confirmed", copy: "Multi-signal community post or moderator-approved." },
+    { id: "developing", label: "Developing", copy: "Fresh adapter row (<2h); description may be revised." },
+    { id: "unverified", label: "Unverified", copy: "Single community signal, not yet moderated." },
+  ];
+  return (
+    <ul className="mt-3 space-y-1.5 text-[11px]">
+      {levels.map((l) => (
+        <li key={l.id} className={`flex items-baseline gap-1.5 ${l.id === active ? "text-slate2-900" : "text-slate2-500"}`}>
+          <span className="font-medium shrink-0">{l.label}{l.id === active ? " ✓" : ""}</span>
+          <span>{l.copy}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

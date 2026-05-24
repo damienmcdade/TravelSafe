@@ -134,6 +134,47 @@ export const INCIDENT_CATEGORIES: IncidentCategory[] = [
       /\bmethamphetamine\b/i, /\bcocaine\b/i, /\bheroin\b/i, /\bopioid/i, /\bfentanyl\b/i,
     ], d),
   },
+  {
+    id: "tourist-scams",
+    label: "Tourist scams",
+    description: "Fraud schemes that disproportionately target visitors — pickpocketing, distraction theft, fake-officer demands, currency-exchange fraud, taxi/rideshare scams.",
+    match: (d) => TEST([
+      /pickpocket/i, /\bdistraction\b/i, /\bsnatch/i,
+      /\bcounterfeit\b/i, /\bcurrency\b/i,
+      /\bsolicitation\b/i, /\bunlicensed\b/i,
+      /\bsleight\b/i, /\bswindle/i, /\bconfidence game\b/i,
+      /\bfake.*officer\b/i, /\bimpersonat/i,
+    ], d),
+  },
+  {
+    id: "traffic-hazards",
+    label: "Traffic hazards",
+    description: "Reckless or hazardous driving, hit-and-run, pedestrian-struck incidents, street-racing — events that change which routes are safe to walk or drive.",
+    match: (d) => TEST([
+      /reckless drive/i, /reckless driving/i,
+      /\bhit.*run\b/i, /\bhit and run\b/i,
+      /pedestrian.*struck/i, /\bped struck/i,
+      /\bstreet rac/i, /\bracing\b/i,
+      /\btraffic accident/i, /\bcollision\b/i,
+      /\bspeeding\b/i,
+    ], d),
+  },
+  {
+    id: "protests",
+    label: "Protests",
+    description: "Demonstrations, rallies, civil unrest, road closures and crowd-control events — useful for travelers planning around large gatherings.",
+    match: (d) => TEST([
+      /\bprotest/i, /\brally/i, /\bdemonstration\b/i, /\bmarch\b/i,
+      /\bunrest\b/i, /\briot/i,
+      /\bcrowd\b/i, /\bassembly\b/i,
+      /\bstreet closure\b/i,
+    ], d),
+  },
+  // No "weather" matcher — weather alerts come from a separate
+  // pipeline (NWS via /api/official-alerts → Weather card). Filtering
+  // the police-incident feed for weather keywords would produce
+  // noise (officers do file weather-related reports occasionally —
+  // e.g., DUI in a storm — but those aren't actually weather alerts).
 ];
 
 /// Lookup a category by ID. Returns the "all" category as a safe

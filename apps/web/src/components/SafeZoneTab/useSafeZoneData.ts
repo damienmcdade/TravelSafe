@@ -161,32 +161,67 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
   };
 }
 
-// Threshold for marking a fresh adapter row as "developing" instead
-// of "verified". 2 hours mirrors how the original incident report
-// typically takes to be reviewed + augmented with follow-up
-// information; before that point, the description may be revised
-// or even retracted as officers update the case file. After 2 hours
-// the row is stable enough to carry the full "verified" badge.
+// Multi-signal confidence derivation. Combines:
+//   1. AGE — fresh adapter rows (< 2h) are "developing" because the
+//      initial report can be revised/retracted as officers update the
+//      case file. Rows older than 2h are stable enough to carry the
+//      full "verified" badge.
+//   2. CLUSTERING — when multiple incidents of the same category land
+//      in the same 24h window, each one's confidence is corroborated
+//      by the others (police got multiple independent reports of the
+//      same kind of activity). A row that would otherwise be
+//      "developing" gets promoted to "verified" if 2+ peers in
+//      the same category landed within 24h.
+//   3. SOURCE — all rows in our feed come from official police
+//      adapters, so source credibility defaults to "verified" tier.
+//      (Community-sourced rows from posts use a separate
+//      "community-confirmed" / "unverified" path; not unified here
+//      because they don't flow through this hook today.)
 const DEVELOPING_THRESHOLD_MS = 2 * 60 * 60 * 1000;
+const CLUSTERING_WINDOW_MS = 24 * 60 * 60 * 1000;
+const CLUSTERING_THRESHOLD = 2; // 2+ peers in same category within 24h → corroborated
 
 function deriveThreats(api: TrendApi | null): ThreatItem[] {
   if (!api) return [];
   const now = Date.now();
-  return api.bullets
-    .filter((b) => b.kind === "dispatch")
-    .map((b, i) => {
-      const at = +new Date(b.at);
-      const age = Number.isFinite(at) ? now - at : Number.MAX_SAFE_INTEGER;
-      const confidence: ThreatItem["confidence"] =
-        age >= 0 && age < DEVELOPING_THRESHOLD_MS ? "developing" : "verified";
-      return {
-        id: `${b.at}-${i}`,
-        at: b.at,
-        description: b.text,
-        category: (b.category ?? "SOCIETY") as ThreatItem["category"],
-        confidence,
-      };
-    });
+  const dispatches = api.bullets.filter((b) => b.kind === "dispatch");
+  // First pass: bucket by category for clustering lookups.
+  const peersByCategory = new Map<string, number[]>(); // category → list of incident timestamps
+  for (const b of dispatches) {
+    const t = +new Date(b.at);
+    if (!Number.isFinite(t)) continue;
+    const cat = b.category ?? "SOCIETY";
+    const list = peersByCategory.get(cat) ?? [];
+    list.push(t);
+    peersByCategory.set(cat, list);
+  }
+  return dispatches.map((b, i) => {
+    const at = +new Date(b.at);
+    const age = Number.isFinite(at) ? now - at : Number.MAX_SAFE_INTEGER;
+    const cat = (b.category ?? "SOCIETY") as ThreatItem["category"];
+    // Count peer incidents in the same category that landed within
+    // the clustering window of this one (excluding self).
+    const peers = peersByCategory.get(cat) ?? [];
+    let peerCount = 0;
+    for (const pt of peers) {
+      if (pt === at) continue;
+      if (Math.abs(pt - at) <= CLUSTERING_WINDOW_MS) peerCount += 1;
+    }
+    let confidence: ThreatItem["confidence"];
+    if (age < DEVELOPING_THRESHOLD_MS) {
+      // Fresh row — promote to verified ONLY if clustering corroborates.
+      confidence = peerCount >= CLUSTERING_THRESHOLD ? "verified" : "developing";
+    } else {
+      confidence = "verified";
+    }
+    return {
+      id: `${b.at}-${i}`,
+      at: b.at,
+      description: b.text,
+      category: cat,
+      confidence,
+    };
+  });
 }
 
 function deriveBaseline(api: InsightsApi | null): BaselinePoint[] {

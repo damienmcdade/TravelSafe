@@ -304,6 +304,55 @@ export async function getSafeRoute(
   scored.sort((a, b) => a.exposurePer100k - b.exposurePer100k);
   scored.forEach((r, i) => { r.rating = ratingFromRank(i, scored.length); });
 
+  // Rewrite the headline now that we have the full sorted set so
+  // each route can be described RELATIVE to its peers. The safest
+  // option calls that out, the worst flags its peers as safer, and
+  // any route passing through a notably-hot neighborhood (a polygon
+  // whose intensity exceeds the city's per-area average by 2×)
+  // gets that called out by name. Gives users the "why this route
+  // is safer" rationale the strategy doc asked for.
+  if (scored.length > 0) {
+    const meanIntensity = intensity.length > 0
+      ? intensity.reduce((s, i) => s + i.intensity, 0) / intensity.length
+      : 0;
+    const hotNeighborhoods = new Set<string>();
+    for (const ai of intensity) {
+      if (meanIntensity > 0 && ai.intensity > meanIntensity * 2) hotNeighborhoods.add(ai.area.label);
+    }
+    const safest = scored[0];
+    const worst = scored[scored.length - 1];
+    scored.forEach((r, i) => {
+      const isSafest = scored.length > 1 && r === safest;
+      const isWorst = scored.length > 1 && r === worst;
+      const hotCrossed = r.passesThrough.filter((n) => hotNeighborhoods.has(n));
+      const pct = scored.length > 1 && safest.exposurePer100k > 0
+        ? Math.round(((r.exposurePer100k - safest.exposurePer100k) / safest.exposurePer100k) * 100)
+        : 0;
+
+      const parts: string[] = [];
+      if (isSafest && scored.length > 1) {
+        parts.push("Safest option — lowest historical incident exposure.");
+      } else if (isWorst && scored.length > 2) {
+        parts.push(`Highest exposure of the ${scored.length} options${pct > 0 ? ` (~${pct}% above the safest)` : ""}.`);
+      } else if (scored.length > 1 && pct > 0) {
+        parts.push(`~${pct}% more exposure than the safest option.`);
+      }
+      if (hotCrossed.length > 0) {
+        parts.push(`Crosses ${hotCrossed.slice(0, 2).join(" + ")} where reports cluster.`);
+      } else if (r.passesThrough.length > 0 && !isSafest) {
+        // Mention which neighborhoods get crossed when none are
+        // "hot" — at least the user gets a route description.
+        parts.push(`Passes through ${r.passesThrough.slice(0, 3).join(" → ")}.`);
+      }
+      if (parts.length === 0) {
+        parts.push(r.passesThrough.length > 0
+          ? `Passes through ${r.passesThrough.join(" → ")}.`
+          : "Route does not cross a tracked neighborhood with recorded incidents.");
+      }
+      r.headline = parts.join(" ");
+    });
+  }
+
   return {
     city: { slug: city.slug, label: city.label },
     from, to, mode,

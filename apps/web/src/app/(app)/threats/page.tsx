@@ -11,6 +11,8 @@ import { LocationSearch } from "@/components/LocationSearch";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { CrimeChart } from "@/components/CrimeChart";
 import { IncidentSummaryCard } from "@/components/IncidentSummaryCard";
+import { HotspotCard } from "@/components/HotspotCard";
+import { TimeOfDayCard } from "@/components/TimeOfDayCard";
 import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
 import { UptickTile } from "@/components/UptickTile";
@@ -326,6 +328,11 @@ function CityAwareness({
           <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? null} />
         </div>
         <aside className="space-y-4">
+          <HotspotCard
+            citySlug={city.slug}
+            cityLabel={city.label}
+            onPickArea={onPickNeighborhood}
+          />
           <UptickTile />
           <NewsPanel />
           <OfficialAlertsPanel />
@@ -442,6 +449,7 @@ function NeighborhoodAwareness({
                 areaSlug={area.slug}
                 title={`${area.label} — last 30 days`}
               />
+              <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} />
               <DataProvenanceBanner provenance={areaAlertsProvenance} />
             </div>
             <aside className="space-y-4">
