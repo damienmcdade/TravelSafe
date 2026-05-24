@@ -4,6 +4,7 @@ import { cityForArea } from "../crime-data/cities";
 import { loadPolygonAreas, lookupAreaKm2, totalCityKm2 } from "../../lib/polygon-areas";
 import { HttpError } from "../../lib/http";
 import { knownNeighborhoodPopulation } from "../crime-data/neighborhood-population";
+import { CITY_FBI_BASELINES } from "./city-fbi-baselines-generated";
 
 /// Safety Score — compares the user's selected area against the FBI's most
 /// recent national rates per 100,000 residents. Returns the raw local and
@@ -224,9 +225,10 @@ function gradeFromCityDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["grade
   return "E";                  // >2.5× city average
 }
 
-/// Grade the CITYWIDE rate vs the FBI NATIONAL rate. Citywide IS the
-/// comparison, so national is the right anchor here (and the legacy
-/// thresholds apply).
+/// Grade the CITYWIDE rate vs the FBI NATIONAL rate. Legacy fallback —
+/// used only when we don't have a city-specific FBI baseline. Most
+/// urban cities collapse to D/E under this because national includes
+/// rural + suburban areas.
 function gradeFromNationalDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["grade"] {
   const ratios = rows.map((r) => r.nationalPer100k > 0 ? r.localPer100k / r.nationalPer100k : 1);
   if (ratios.length === 0) return "C";
@@ -236,6 +238,32 @@ function gradeFromNationalDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["g
   if (avg <= 1.3) return "C";
   if (avg <= 2.0) return "D";
   return "E";
+}
+
+/// Grade the CITYWIDE rate vs the city's OWN FBI-published rate. This
+/// is the authoritative comparison: "is the current adapter sample
+/// reading above or below what the FBI published as this city's
+/// canonical per-100k rate?" Grades are tighter than the legacy
+/// vs-national ladder because city-vs-its-own-baseline ratios cluster
+/// around 1.0 (a healthy adapter on a stable-crime city should match
+/// the FBI baseline within ~20%). Big deviations point to either a
+/// genuine spike or adapter inflation — both are meaningful signals.
+function gradeFromCityFbiBaseline(
+  rows: SafetyScoreRow[],
+  baseline: { violent: number; property: number },
+): SafetyScoreResponse["grade"] {
+  const personsRow = rows.find((r) => r.category === "PERSONS");
+  const propertyRow = rows.find((r) => r.category === "PROPERTY");
+  const ratios: number[] = [];
+  if (personsRow && baseline.violent > 0) ratios.push(personsRow.localPer100k / baseline.violent);
+  if (propertyRow && baseline.property > 0) ratios.push(propertyRow.localPer100k / baseline.property);
+  if (ratios.length === 0) return "C";
+  const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+  if (avg <= 0.7) return "A";  // ≥30% below city's baseline — meaningfully quieter
+  if (avg <= 0.9) return "B";  // 10-30% below
+  if (avg <= 1.2) return "C";  // within ±20% — matches baseline
+  if (avg <= 1.6) return "D";  // 20-60% above
+  return "E";                   // >60% above (or adapter is over-counting)
 }
 
 function headlineForArea(grade: SafetyScoreResponse["grade"], areaLabel: string, cityLabel: string): string {
@@ -451,17 +479,26 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
     },
   ];
 
-  // Citywide IS the comparison vs national — grade against the national
-  // baseline using the legacy thresholds. We compute confidence first so
-  // gradeWithNullGuard can demote a no-data area to "N/A" instead of
-  // the misleading "near average" C the raw math would produce.
+  // Citywide grading anchor: prefer the city's OWN FBI-published rate
+  // when we have it baked in city-fbi-baselines-generated.ts. That's
+  // the authoritative comparison — "is the current adapter sample
+  // reading above or below what the FBI says this city's canonical
+  // rate is?" — and gives a much more honest grade than comparing
+  // adapter-derived rates against the FBI national average, which
+  // is structurally pulled down by rural areas and made every urban
+  // city land at D/E regardless of whether the period was actually
+  // representative.
+  //
+  // When no FBI city baseline is on file (Denver, Cambridge,
+  // Charlotte, Nashville, Minneapolis, Las Vegas, Tucson — ORI
+  // lookup pending), fall back to the legacy vs-national grader.
   const cityLabel = `${city.label} (citywide)`;
   const confidence = computeDataConfidence(windowDays, persons + property, pop, cfsScale);
-  const grade = gradeWithNullGuard(
-    gradeFromNationalDeltas(rows),
-    persons + property,
-    confidence.dataConfidence,
-  );
+  const fbiBaseline = CITY_FBI_BASELINES[city.slug];
+  const rawGrade = fbiBaseline
+    ? gradeFromCityFbiBaseline(rows, fbiBaseline)
+    : gradeFromNationalDeltas(rows);
+  const grade = gradeWithNullGuard(rawGrade, persons + property, confidence.dataConfidence);
   const headline = headlineForCity(grade, cityLabel);
 
   return {
@@ -478,10 +515,14 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
       "Citywide rate is the sum of incidents across every tracked neighborhood, " +
       `annualized from the cached window and scaled to per-100,000 residents using ` +
       `${city.label}'s US Census Bureau Vintage 2024 population (${pop.toLocaleString()}). ` +
-      "National rates are the FBI Uniform Crime Reporting program's 2024 " +
-      "annual release — the same denominator the FBI uses to publish " +
-      "official city-vs-national comparisons. Society / public-order " +
-      "offenses are excluded because the FBI does not publish a national rate." +
+      (fbiBaseline
+        ? `The grade compares this rate against ${city.label}'s OWN FBI-published rate for ${fbiBaseline.year} ` +
+          `(violent ${fbiBaseline.violent}/100k, property ${fbiBaseline.property}/100k via cde.ucr.cjis.gov agency ORI ${fbiBaseline.ori}). ` +
+          `A grade of A means the current adapter sample is ≥30% below that baseline; ` +
+          `C means within ±20% of it; E means ≥60% above (a real spike or adapter over-count). `
+        : `The grade compares this rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
+          `because no city-specific FBI baseline is on file for ${city.label} yet. `) +
+      "Society / public-order offenses are excluded because the FBI does not publish a national rate." +
       (CFS_CALIBRATION[city.slug]
         ? ` ${city.label} publishes calls-for-service rather than closed NIBRS reports; rates are scaled by ${CFS_CALIBRATION[city.slug]}× to approximate NIBRS-equivalent volumes (CFS is structurally 2–3× inflated because each crime spawns multiple dispatches and many dispatches are unfounded).`
         : ""),
