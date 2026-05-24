@@ -1,9 +1,20 @@
-// Curated per-neighborhood population estimates. When an entry exists
-// for a (citySlug, areaSlug) pair, the safety-score per-area population
-// denominator uses it directly — bypassing the polygon-area / peer-
-// share heuristics which assume uniform density and produce wrong
-// per-capita rates for denser-than-average neighborhoods (downtown
-// cores, beach districts, transit-oriented infill, etc.).
+import { GENERATED_NEIGHBORHOOD_POPS } from "./neighborhood-populations-generated";
+
+// Per-neighborhood population resolution. The hierarchy:
+//
+//   1. Manual override in this file (POP map below). Used to correct
+//      individual neighborhoods where the generated estimate is
+//      obviously off OR where local sources (SANDAG, DCP) publish
+//      better numbers than ACS tract aggregation.
+//   2. Generated table from tools/build-neighborhood-populations.mjs
+//      (ACS 5-year via Census Reporter + TigerWeb spatial join).
+//      Covers every polygon we have boundary data for.
+//   3. Fall through (caller uses the polygon-area / peer-share
+//      heuristics).
+//
+// Manual overrides exist when the ACS spatial join produces a
+// number that's clearly wrong for a specific neighborhood. Each
+// entry MUST cite its source so future maintainers can reconcile.
 //
 // Sources, in order of preference:
 //   1. ACS 5-year estimates (data.census.gov) — the federal standard
@@ -61,15 +72,23 @@ const POP: Record<string, Record<string, NeighborhoodPopEntry>> = {
   // every neighborhood the adapters discover.
 };
 
-/// Returns a Census/SANDAG-sourced population for the given
-/// (city, area) pair, or null when no curated entry exists. Callers
-/// fall back to polygon-area weighting (with the density-bias floor)
-/// when this returns null.
+/// Returns a population for the given (city, area) pair, preferring
+/// the manual curated table over the auto-generated ACS table. Falls
+/// through to null when neither has an entry; callers then use the
+/// polygon-area / peer-share heuristics with the density-bias floor.
 export function knownNeighborhoodPopulation(
   citySlug: string,
   areaSlug: string,
 ): { population: number; source: string } | null {
-  const c = POP[citySlug];
-  if (!c) return null;
-  return c[areaSlug] ?? null;
+  // 1. Manual override wins. Used to correct individual neighborhoods
+  //    where ACS aggregation produces a clearly-wrong number.
+  const manual = POP[citySlug]?.[areaSlug];
+  if (manual) return manual;
+  // 2. Generated ACS table. Covers every polygon we have boundaries
+  //    for across the 28 cities currently in the pipeline output.
+  const generated = GENERATED_NEIGHBORHOOD_POPS[citySlug]?.[areaSlug];
+  if (Number.isFinite(generated) && generated > 0) {
+    return { population: generated, source: "Census ACS 5-year (latest) via Census Reporter — tract centroid ∈ polygon spatial join" };
+  }
+  return null;
 }
