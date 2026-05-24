@@ -40,9 +40,28 @@ export interface CoverageResponse {
 
 /// Build per-city status by querying each adapter's discover() +
 /// getAreaStats() for a representative area. Runs in parallel across
-/// all cities; cold-cache cost is dominated by the slowest adapter
-/// (typically Detroit at ~10s). Edge-cached at the route layer for
-/// 5 minutes so repeat dashboard hits are instant.
+/// all cities; cold-cache cost is dominated by the slowest adapter.
+/// Edge-cached at the route layer for 5 minutes so repeat dashboard
+/// hits are instant.
+///
+/// Per-city timeout (PER_CITY_TIMEOUT_MS) prevents a single
+/// slow-loading adapter from blowing past Vercel's 60s function
+/// budget and 504-ing the whole dashboard. A city that times out
+/// is reported as "warming-up" with zero neighborhoods; the
+/// downstream cache pull eventually completes and the next coverage
+/// request gets the real count.
+const PER_CITY_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const id = setTimeout(() => resolve(fallback), ms);
+    p.then(
+      (v) => { clearTimeout(id); resolve(v); },
+      () => { clearTimeout(id); resolve(fallback); },
+    );
+  });
+}
+
 export async function getCoverage(): Promise<CoverageResponse> {
   const now = Date.now();
   const results = await Promise.all(
@@ -53,7 +72,7 @@ export async function getCoverage(): Promise<CoverageResponse> {
       let health: CityHealth = "live";
 
       try {
-        const areas = await city.discover();
+        const areas = await withTimeout(city.discover(), PER_CITY_TIMEOUT_MS, [] as Awaited<ReturnType<typeof city.discover>>);
         neighborhoodCount = areas.length;
 
         // Sample the first area for provenance + asOf timestamp. One

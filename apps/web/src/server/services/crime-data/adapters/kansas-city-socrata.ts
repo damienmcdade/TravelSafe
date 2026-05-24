@@ -34,7 +34,15 @@ const YEAR_DATASETS: Record<number, string> = {
   2025: "dmnp-9ajg",
   2024: "isbe-v4d8",
 };
-const ROW_LIMIT = 5_000;
+// 50k per year × 2 years = 100k rows. KCPD publishes ~50-150
+// incidents/day (deduped to one row per report); at the previous
+// 5k limit each year-dataset spanned only 30-100 days. Combined
+// 2-year cache covers ~12-18 months of actual reporting volume
+// — past the safety-score 30-day low-confidence trip-wire and
+// stable across cache cycles. Socrata's $limit caps at 50k per
+// request, so this is the per-year ceiling we can pull in one
+// shot without paginating.
+const ROW_LIMIT = 50_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
