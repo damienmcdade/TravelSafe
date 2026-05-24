@@ -85,6 +85,30 @@ function safeIso(raw: string | null | undefined): string | null {
 // city's Civic League neighborhoods.
 const NORFOLK_CENTROID = { lat: 36.85, lng: -76.28 };
 
+// Norfolk's open-data feed publishes neighborhood names in ALLCAPS
+// ("GHENT", "OCEAN VIEW", "DOWNTOWN"). Title-case them at ingest so
+// every downstream surface (wheel picker, ThreatFeed, hotspots,
+// search) reads "Ghent" / "Ocean View" / "Downtown" instead. Small
+// words ("of", "the", "and") stay lowercase unless they're the first
+// word. Common acronyms (BRT, NSU) get re-capitalized.
+const ACRONYMS = new Set(["BRT", "NSU", "ODU", "EVMS", "HRT"]);
+const SMALL_WORDS = new Set(["of", "the", "and", "at", "in", "on", "by", "for"]);
+function titleCaseArea(raw: string | null | undefined): string | undefined {
+  if (!raw) return undefined;
+  return raw
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w, i) => {
+      const upper = w.toUpperCase();
+      if (ACRONYMS.has(upper)) return upper;
+      if (i > 0 && SMALL_WORDS.has(w)) return w;
+      // Handle hyphenated words ("park-place" → "Park-Place") and
+      // apostrophes ("o'brien" → "O'Brien").
+      return w.replace(/(^|[-'])([a-z])/g, (_, sep: string, ch: string) => sep + ch.toUpperCase());
+    })
+    .join(" ");
+}
+
 async function fetchNorfolk(): Promise<Incident[]> {
   const select = "inci_id,offense,streetno,street,date_occu,hour_occu,tract,zone,district,reportarea,dow1,neighborhd";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_occu%20DESC&$where=date_occu%20IS%20NOT%20NULL%20AND%20neighborhd%20IS%20NOT%20NULL`;
@@ -98,8 +122,8 @@ async function fetchNorfolk(): Promise<Incident[]> {
     const r = rows[i];
     const occurredAt = safeIso(r.date_occu);
     if (!occurredAt) continue;
-    const area = r.neighborhd?.trim();
-    if (!area || area === "UNKNOWN") continue;
+    const area = titleCaseArea(r.neighborhd?.trim());
+    if (!area || area.toUpperCase() === "UNKNOWN") continue;
     out.push({
       id: `nor-${r.inci_id ?? i}`,
       area,

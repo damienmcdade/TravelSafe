@@ -49,46 +49,47 @@ function mapToNibrs(row: PhlRow): CrimeCategory {
   return CrimeCategory.SOCIETY;
 }
 
-// PPD's 21 police districts mapped to their commonly-known neighborhood
-// service areas. Codes are stored as zero-padded strings in the data
-// ("09", "19", "25"); the polygon file emits them as integers, so the
-// adapter normalizes both sides to the integer form.
+// PPD's 21 police districts mapped to the single most-recognized
+// neighborhood name in each district's service area. The prior map
+// surfaced the district number AND a comma-list of neighborhoods
+// ("9th District: Center City"); users want the real neighborhood
+// name only ("Center City"). Where two districts cover similar
+// geography, we differentiate by picking distinct anchor
+// neighborhoods (5 vs 7 vs 8 vs 15 — all "Northeast" — get
+// Frankford / Bustleton / Somerton / Tacony respectively).
 const DISTRICT_NEIGHBORHOODS: Record<number, string> = {
   1:  "South Philadelphia",
-  2:  "Mayfair, Tacony, Holmesburg",
-  3:  "South Philadelphia, Pennsport",
-  5:  "Lower Northeast",
-  7:  "Northeast",
-  8:  "Far Northeast",
+  2:  "Mayfair",
+  3:  "Pennsport",
+  5:  "Frankford",
+  7:  "Bustleton",
+  8:  "Somerton",
   9:  "Center City",
-  12: "Southwest Philadelphia",
-  14: "Germantown, Mt. Airy",
-  15: "Far Northeast",
-  16: "West Philadelphia, Mantua",
-  17: "South Philadelphia, Newbold",
-  18: "Southwest Philadelphia, Cobbs Creek",
-  19: "West Philadelphia, University City",
-  22: "Brewerytown, Fairmount, North Philadelphia",
-  24: "Kensington, North Philadelphia",
-  25: "Hunting Park, North Philadelphia",
-  26: "Fishtown, North Philadelphia",
-  35: "Olney, Far Northwest",
-  39: "East Falls, North Philadelphia",
-  77: "Citywide / Administrative",
+  12: "Eastwick",
+  14: "Germantown",
+  15: "Tacony",
+  16: "Mantua",
+  17: "Point Breeze",
+  18: "Cobbs Creek",
+  19: "University City",
+  22: "Brewerytown",
+  24: "Kensington",
+  25: "Hunting Park",
+  26: "Fishtown",
+  35: "Olney",
+  39: "East Falls",
+  77: "Citywide",
 };
-
-function ordinal(n: number): string {
-  const k = n % 100, j = n % 10;
-  if (k >= 11 && k <= 13) return `${n}th`;
-  return `${n}${j === 1 ? "st" : j === 2 ? "nd" : j === 3 ? "rd" : "th"}`;
-}
 
 function enrich(dc_dist: string | null | undefined): string {
   if (!dc_dist) return "Unknown";
   const n = parseInt(dc_dist, 10);
   if (!Number.isFinite(n)) return "Unknown";
-  const nbh = DISTRICT_NEIGHBORHOODS[n];
-  return nbh ? `${ordinal(n)} District: ${nbh}` : `${ordinal(n)} District`;
+  // Drop the district-number prefix per v10 directive — surface
+  // the real neighborhood name only. Fall back to "PPD District N"
+  // for any number we haven't mapped yet so unknown districts
+  // remain identifiable instead of all collapsing to "Unknown".
+  return DISTRICT_NEIGHBORHOODS[n] ?? `PPD District ${n}`;
 }
 
 const PROVENANCE: DataProvenance = {

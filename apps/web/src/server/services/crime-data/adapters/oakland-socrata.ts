@@ -109,11 +109,15 @@ async function fetchOakland(): Promise<Incident[]> {
     const c = r.location_1?.coordinates;
     const lng = Array.isArray(c) ? Number(c[0]) : NaN;
     const lat = Array.isArray(c) ? Number(c[1]) : NaN;
+    // Real Oakland neighborhood names only — no opaque "Beat 19X"
+    // labels. When geocodeOakland() can't resolve the point to a
+    // known neighborhood polygon (or the row lacks coords), the
+    // incident is dropped from neighborhood discovery downstream
+    // (the discovery filter explicitly skips area === "Unknown"),
+    // which slightly undercounts but is honest about what we know.
     let area = "Unknown";
     if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-      area = geocodeOakland(lng, lat) ?? (r.policebeat ? `Beat ${r.policebeat}` : "Unknown");
-    } else if (r.policebeat) {
-      area = `Beat ${r.policebeat}`;
+      area = geocodeOakland(lng, lat) ?? "Unknown";
     }
     return {
       id: `oak-${r.casenumber ?? i}`,

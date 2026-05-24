@@ -134,6 +134,26 @@ function safeIso(raw: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
 }
 
+// NOPD's 8 districts mapped to the single most-recognized
+// neighborhood name in each district's geography. Used only as a
+// fallback when an incident lacks lat/lng coords (geocodeNola()
+// handles the typical case). Replaces the old "District 4" / "District
+// 7" labels which were operational shorthand, not neighborhood names.
+const NOPD_DISTRICT_TO_NEIGHBORHOOD: Record<string, string> = {
+  "1": "Treme",            // 1st: French Quarter / Treme / Marigny
+  "2": "Uptown",           // 2nd: Uptown, Garden District, Magazine St
+  "3": "Mid-City",         // 3rd: Mid-City, Lakeview
+  "4": "Algiers",          // 4th: Algiers / West Bank
+  "5": "Bywater",          // 5th: Marigny / Bywater / St. Roch
+  "6": "Central City",     // 6th: Garden District / Central City
+  "7": "New Orleans East", // 7th: New Orleans East
+  "8": "French Quarter",   // 8th: French Quarter / CBD
+};
+function districtToNeighborhood(raw: string | undefined | null): string {
+  if (!raw) return "Unknown";
+  return NOPD_DISTRICT_TO_NEIGHBORHOOD[String(raw).trim()] ?? "Unknown";
+}
+
 async function fetchNola(): Promise<Incident[]> {
   // Explicit $select — never pull anything we don't render. (Calls for
   // Service 2026 doesn't publish demographics anyway, but belt-and-braces.)
@@ -156,9 +176,9 @@ async function fetchNola(): Promise<Incident[]> {
     const lat = Array.isArray(c) ? Number(c[1]) : NaN;
     let area = "Unknown";
     if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-      area = geocodeNola(lng, lat) ?? (r.policedistrict ? `District ${r.policedistrict}` : "Unknown");
-    } else if (r.policedistrict) {
-      area = `District ${r.policedistrict}`;
+      area = geocodeNola(lng, lat) ?? districtToNeighborhood(r.policedistrict);
+    } else {
+      area = districtToNeighborhood(r.policedistrict);
     }
     out.push({
       id: `nola-${r.nopd_item ?? i}`,
