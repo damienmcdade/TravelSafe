@@ -126,8 +126,19 @@ export async function getCitywideTrend(citySlug: string, opts?: { windowDays?: n
       rows: await crimeData.getIncidents(a.slug, { limit: 5000 }).catch(() => []),
     })),
   );
+  // Epoch-0 observability: adapters that hit a date-parse fallback emit
+  // occurredAt = "1970-01-01T..." rather than dropping the row. Those rows
+  // survive into the cache but the cutoff filter below silently excludes
+  // them, which historically masked upstream schema drift (e.g. the
+  // Boston "+00" offset bug). Count them per city so any future regression
+  // shows up in logs instead of as a silent "0 dispatches in last 30 days".
+  let epoch0Count = 0;
+  let totalRows = 0;
   for (const { label, rows } of perArea) {
     for (const r of rows) {
+      totalRows += 1;
+      const t = +new Date(r.occurredAt);
+      if (!Number.isFinite(t) || t <= 86_400_000) { epoch0Count += 1; continue; }
       if (new Date(r.occurredAt) >= cutoff) {
         inWindow.push({
           occurredAt: r.occurredAt,
@@ -138,6 +149,9 @@ export async function getCitywideTrend(citySlug: string, opts?: { windowDays?: n
         });
       }
     }
+  }
+  if (totalRows > 0 && epoch0Count / totalRows > 0.1) {
+    console.warn(`[trend-feed] ${city.slug} citywide: ${epoch0Count}/${totalRows} (${Math.round(100*epoch0Count/totalRows)}%) rows had unparseable/epoch-0 timestamps — adapter date-parse fallback likely degraded`);
   }
   inWindow.sort((x, y) => +new Date(y.occurredAt) - +new Date(x.occurredAt));
 
@@ -240,7 +254,17 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
   // area, which is far more than 30 days for any realistic neighborhood.
   // We filter down to the 30-day window client-side.
   const all = await crimeData.getIncidents(areaSlug, { limit: 5000 }).catch(() => []);
-  const inWindow = all.filter((i) => new Date(i.occurredAt) >= cutoff);
+  // Epoch-0 observability — same reasoning as getCitywideTrend above.
+  let epoch0Count = 0;
+  const validRows = all.filter((i) => {
+    const t = +new Date(i.occurredAt);
+    if (!Number.isFinite(t) || t <= 86_400_000) { epoch0Count += 1; return false; }
+    return true;
+  });
+  if (all.length > 0 && epoch0Count / all.length > 0.1) {
+    console.warn(`[trend-feed] ${city.slug}/${areaSlug}: ${epoch0Count}/${all.length} rows had unparseable/epoch-0 timestamps`);
+  }
+  const inWindow = validRows.filter((i) => new Date(i.occurredAt) >= cutoff);
   inWindow.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
 
   // Bucket the window into the most recent 7 days vs the 7 days before that,
