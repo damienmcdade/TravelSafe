@@ -26,7 +26,7 @@ export const CITY_POPULATION: Record<string, number> = {
   "chicago":       2_664_452,
   "seattle":         755_078,
   "new-york":      8_258_035,
-  "denver":          716_577,
+  "colorado-springs": 488_664,
   "detroit":         633_218,
   "washington-dc":   678_972,
   "boston":          650_706,

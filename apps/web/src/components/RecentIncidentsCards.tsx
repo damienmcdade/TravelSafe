@@ -14,7 +14,7 @@ const SOURCE_LABELS: Record<string, string> = {
   "chicago":       "CPD Crimes 2001-Present · refreshed every 5 min",
   "seattle":       "SPD Crime Data · refreshed every 5 min",
   "new-york":      "NYPD Complaint Data YTD · refreshed every 5 min",
-  "denver":        "Denver Crime Offenses · refreshed every 5 min",
+  "colorado-springs": "CSPD Crime Level Data · refreshed every 5 min",
   "detroit":       "Detroit RMS Crime Incidents · refreshed every 5 min",
   "washington-dc": "DC MPD · last 30 days · refreshed every 5 min",
   "boston":        "BPD Crime Incident Reports · refreshed every 5 min",

@@ -24,7 +24,7 @@ const CITY_SUBREDDITS: Record<string, string> = {
   "chicago":       "chicago",
   "seattle":       "Seattle",
   "new-york":      "nyc",
-  "denver":        "Denver",
+  "colorado-springs": "ColoradoSprings",
   "detroit":       "Detroit",
   "washington-dc": "washingtondc",
   "philadelphia":  "philadelphia",

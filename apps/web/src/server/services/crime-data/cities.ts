@@ -7,7 +7,11 @@ import { sfAdapter, getDiscoveredAreasSF } from "./adapters/sf-socrata";
 import { chicagoAdapter, getDiscoveredAreasChicago } from "./adapters/chicago-socrata";
 import { seattleAdapter, getDiscoveredAreasSeattle } from "./adapters/seattle-socrata";
 import { nypdAdapter, getDiscoveredAreasNYC } from "./adapters/nypd-socrata";
-import { denverAdapter, getDiscoveredAreasDenver } from "./adapters/denver-arcgis";
+// Denver retired (upstream ArcGIS feed moved behind auth in 2026).
+// Adapter file is preserved at ./adapters/denver-arcgis.ts with a
+// DENVER_ARCGIS_TOKEN passthrough so we can re-enable if a key is
+// obtained later. Replaced by Colorado Springs.
+import { coloradoSpringsAdapter, getDiscoveredAreasCoSp } from "./adapters/colorado-springs-socrata";
 import { detroitAdapter, getDiscoveredAreasDetroit } from "./adapters/detroit-arcgis";
 import { dcAdapter, getDiscoveredAreasDC } from "./adapters/dc-arcgis";
 import { bostonAdapter, getDiscoveredAreasBoston } from "./adapters/boston-ckan";
@@ -94,11 +98,11 @@ export const CITIES: CityEntry[] = [
     discover: getDiscoveredAreasNYC,
   },
   {
-    slug: "denver",
-    label: "Denver",
-    bbox: { south: 39.61, west: -105.11, north: 39.91, east: -104.60 },
-    adapter: denverAdapter,
-    discover: getDiscoveredAreasDenver,
+    slug: "colorado-springs",
+    label: "Colorado Springs",
+    bbox: { south: 38.70, west: -104.92, north: 39.10, east: -104.55 },
+    adapter: coloradoSpringsAdapter,
+    discover: getDiscoveredAreasCoSp,
   },
   {
     slug: "detroit",
@@ -317,7 +321,9 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("chi-") || slug === "chicago")       return CITIES[3];
   if (slug.startsWith("sea-") || slug === "seattle")       return CITIES[4];
   if (slug.startsWith("ny-")  || slug === "new-york")      return CITIES[5];
-  if (slug.startsWith("den-") || slug === "denver")        return CITIES[6];
+  if (slug.startsWith("cosp-") || slug === "colorado-springs") return CITIES[6];
+  // Legacy /den- slugs (Denver retired) fall through to the default
+  // city lookup — bookmarks won't crash; they just won't resolve.
   if (slug.startsWith("det-") || slug === "detroit")       return CITIES[7];
   if (slug.startsWith("dc-")  || slug === "washington-dc") return CITIES[8];
   if (slug.startsWith("bos-") || slug === "boston")        return CITIES[9];

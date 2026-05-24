@@ -30,9 +30,9 @@ export default function MethodologyPage() {
             <strong className="text-slate2-900">City open-data portals.</strong> Each of CommunitySafe&apos;s
             30 supported cities publishes police-incident records through an official open-data feed
             (SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD, NYPD Complaint Data,
-            Seattle SPD, Boston BPD, DC MPD, Philadelphia PPD, Denver, Detroit, Oakland, Cincinnati,
+            Seattle SPD, Boston BPD, DC MPD, Philadelphia PPD, Colorado Springs, Detroit, Oakland, Cincinnati,
             New Orleans, Baton Rouge, Cambridge, Dallas, Charlotte, Nashville, Minneapolis, Cleveland,
-            Milwaukee, Las Vegas, Boise, Buffalo, Tucson, Kansas City, Saint Paul, Pittsburgh, Phoenix).
+            Milwaukee, Las Vegas, Boise, Buffalo, Norfolk, Kansas City, Saint Paul, Pittsburgh, Phoenix).
             We pull the raw records via the same public API the city itself documents.
           </li>
           <li>

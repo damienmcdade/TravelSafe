@@ -135,7 +135,7 @@ const STATE_BY_SLUG: Record<string, string> = {
   "chicago": "IL",
   "new-york": "NY", "buffalo": "NY",
   "seattle": "WA",
-  "denver": "CO",
+  "colorado-springs": "CO",
   "detroit": "MI",
   "washington-dc": "DC",
   "boston": "MA", "cambridge": "MA",

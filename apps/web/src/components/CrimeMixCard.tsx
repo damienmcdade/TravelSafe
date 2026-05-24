@@ -84,7 +84,7 @@ const SOURCE_LABEL: Record<string, string> = {
   "chicago":       "Chicago CPD",
   "seattle":       "Seattle PD",
   "new-york":      "NYPD Complaint Data",
-  "denver":        "Denver Open Data",
+  "colorado-springs": "CSPD Open Data",
   "detroit":       "Detroit RMS",
   "washington-dc": "DC MPD",
   "boston":        "Boston BPD",

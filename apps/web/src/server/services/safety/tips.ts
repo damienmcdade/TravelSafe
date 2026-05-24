@@ -21,7 +21,7 @@ import { generateAITipsForArea, type AITip } from "./ai-tips";
 
 export type CitySlug =
   | "san-diego" | "los-angeles" | "san-francisco" | "oakland"
-  | "chicago" | "seattle" | "new-york" | "denver" | "detroit"
+  | "chicago" | "seattle" | "new-york" | "colorado-springs" | "detroit"
   | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
   | "charlotte" | "nashville" | "minneapolis" | "cleveland"
@@ -56,7 +56,7 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   "chicago":       { line: "311",          label: "Chicago Police via 311", url: "https://www.chicago.gov/city/en/depts/cpd.html" },
   "seattle":       { line: "206-625-5011", label: "SPD non-emergency",    url: "https://www.seattle.gov/police" },
   "new-york":      { line: "311",          label: "NYPD via NYC 311",     url: "https://www.nyc.gov/site/nypd/index.page" },
-  "denver":        { line: "720-913-2000", label: "DPD non-emergency",    url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
+  "colorado-springs": { line: "719-444-7000", label: "CSPD non-emergency",   url: "https://coloradosprings.gov/police-department" },
   "detroit":       { line: "313-267-4600", label: "DPD non-emergency",    url: "https://detroitmi.gov/departments/police-department" },
   "washington-dc": { line: "311",          label: "MPD via DC 311",       url: "https://mpdc.dc.gov/" },
   "boston":        { line: "617-343-4240", label: "BPD non-emergency",    url: "https://www.boston.gov/departments/police" },
@@ -94,7 +94,7 @@ export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; progr
   "chicago":       { name: "Chicago Police Department",      url: "https://www.chicago.gov/city/en/depts/cpd.html", programName: "CPD CAPS (Chicago Alternative Policing Strategy)", programUrl: "https://home.chicagopolice.org/community/caps/" },
   "seattle":       { name: "Seattle Police Department",      url: "https://www.seattle.gov/police",          programName: "SPD Crime Prevention",           programUrl: "https://www.seattle.gov/police/crime-prevention" },
   "new-york":      { name: "New York City Police Department", url: "https://www.nyc.gov/site/nypd/index.page", programName: "New York City Police Department", programUrl: "https://www.nyc.gov/site/nypd/index.page" },
-  "denver":        { name: "Denver Police Department",       url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department", programName: "Denver Police Department", programUrl: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
+  "colorado-springs": { name: "Colorado Springs Police Department", url: "https://coloradosprings.gov/police-department", programName: "CSPD Crime Prevention", programUrl: "https://coloradosprings.gov/police-department/page/crime-prevention" },
   "detroit":       { name: "Detroit Police Department",      url: "https://detroitmi.gov/departments/police-department", programName: "DPD Project Green Light", programUrl: "https://detroitmi.gov/departments/police-department/project-green-light-detroit" },
   "washington-dc": { name: "DC Metropolitan Police Department", url: "https://mpdc.dc.gov/",                  programName: "MPDC Crime Prevention",          programUrl: "https://mpdc.dc.gov/page/crime-prevention" },
   "boston":        { name: "Boston Police Department",       url: "https://www.boston.gov/departments/police", programName: "Boston Police Department",     programUrl: "https://www.boston.gov/departments/police" },

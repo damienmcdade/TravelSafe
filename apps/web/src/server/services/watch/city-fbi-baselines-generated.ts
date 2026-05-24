@@ -35,7 +35,11 @@ export const CITY_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "cincinnati": { violent: 779, property: 3599, year: 2025, ori: "OHCIP0000" },
   "cleveland": { violent: 1360, property: 3949, year: 2025, ori: "OHCLP0000" },
   "dallas": { violent: 576, property: 3070, year: 2025, ori: "TXDPD0000" },
-  "denver": { violent: 878, property: 4135, year: 2025, ori: "CODPD0000" },
+  // Colorado Springs PD — CO0210100. Rates are approximations
+  // pending a refresh via tools/build-city-fbi-baselines.mjs once
+  // the FBI CDE API key is available; CSPD historically runs below
+  // Denver on violent and near-national on property.
+  "colorado-springs": { violent: 670, property: 3900, year: 2025, ori: "CO0210100" },
   "detroit": { violent: 1652, property: 3949, year: 2025, ori: "MI8234900" },
   "kansas-city": { violent: 1371, property: 3970, year: 2025, ori: "MOKPD0000" },
   "las-vegas": { violent: 409, property: 2418, year: 2025, ori: "NV0020100" },

@@ -71,15 +71,15 @@ const PHOTOS: Record<string, string[]> = {
     // 10-mile Manhattan skyline panorama
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg/1920px-10_mile_panorama_of_NYC%2C_Feb.%2C_2018.jpg",
   ],
-  "denver": [
-    // Downtown Denver skyline (Wikipedia infobox crop)
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Denver%2C_Colorado_skyline_%28cropped%29.jpg/1920px-Denver%2C_Colorado_skyline_%28cropped%29.jpg",
-    // 17th Street financial district skyscraper cluster
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Downtown_Denver_Skyscrapers.JPG/1920px-Downtown_Denver_Skyscrapers.JPG",
-    // Downtown Denver 2024 — Trinity Church + Mile High Center + Lincoln Center
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Downtown_Denver_2024.jpg/1920px-Downtown_Denver_2024.jpg",
-    // Downtown panorama along Speer Boulevard at midnight
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/2006-07-14-Denver_Skyline_Midnight.jpg/1920px-2006-07-14-Denver_Skyline_Midnight.jpg",
+  "colorado-springs": [
+    // Colorado Springs skyline with the Rockies behind
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Colorado_Springs_Skyline_%2854557268110%29.jpg/1920px-Colorado_Springs_Skyline_%2854557268110%29.jpg",
+    // Downtown Colorado Springs street-level view (Shankbone)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Downtown_Colorado_Springs_3_by_David_Shankbone.jpg/1920px-Downtown_Colorado_Springs_3_by_David_Shankbone.jpg",
+    // Downtown Colorado Springs from the east — Pikes Peak in the distance
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Downtown_Colorado_Springs_from_the_east.jpg/1920px-Downtown_Colorado_Springs_from_the_east.jpg",
+    // Downtown Colorado Springs aerial-style crop (Shankbone)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/Downtown_Colorado_Springs_by_David_Shankbone_cropped.jpg/1920px-Downtown_Colorado_Springs_by_David_Shankbone_cropped.jpg",
   ],
   "detroit": [
     // Detroit skyline viewed across the river from Windsor (September 2025)

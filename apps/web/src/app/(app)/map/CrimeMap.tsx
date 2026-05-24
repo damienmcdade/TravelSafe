@@ -74,7 +74,7 @@ function normName(s: string): string {
     .replace(/\bchicago\b/g, "chi")
     .replace(/\bnew york\b/g, "ny")
     .replace(/\bseattle\b/g, "sea")
-    .replace(/\bdenver\b/g, "den")
+    .replace(/\bcolorado springs\b/g, "cosp")
     .replace(/\bdetroit\b/g, "det")
     .replace(/\s+/g, " ")
     .trim();

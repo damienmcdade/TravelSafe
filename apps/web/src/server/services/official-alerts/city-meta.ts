@@ -29,7 +29,7 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "new-orleans":       { slug: "new-orleans",       label: "New Orleans",       state: "LA", centroid: { lat: 29.95, lng: -90.07 } },
   "baton-rouge":       { slug: "baton-rouge",       label: "Baton Rouge",       state: "LA", centroid: { lat: 30.44, lng: -91.13 } },
   "dallas":            { slug: "dallas",            label: "Dallas",            state: "TX", centroid: { lat: 32.78, lng: -96.80 } },
-  "denver":            { slug: "denver",            label: "Denver",            state: "CO", centroid: { lat: 39.74, lng: -104.99 } },
+  "colorado-springs":  { slug: "colorado-springs",  label: "Colorado Springs",  state: "CO", centroid: { lat: 38.835, lng: -104.825 } },
   "detroit":           { slug: "detroit",           label: "Detroit",           state: "MI", centroid: { lat: 42.33, lng: -83.05 } },
   "washington-dc":     { slug: "washington-dc",     label: "Washington",        state: "DC", centroid: { lat: 38.90, lng: -77.04 } },
   "phoenix":           { slug: "phoenix",           label: "Phoenix",           state: "AZ", centroid: { lat: 33.45, lng: -112.07 } },
