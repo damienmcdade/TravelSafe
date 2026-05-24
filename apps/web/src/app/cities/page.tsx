@@ -28,7 +28,7 @@ export default function CitiesIndexPage() {
         </h1>
         <p className="mt-2 text-sm text-slate2-700 max-w-2xl">
           Pick a city to see neighborhood-level safety data drawn from that city&apos;s
-          official police open-data feed, compared to the FBI Crime in the Nation 2023
+          official police open-data feed, compared to the FBI Crime Data Explorer 2025
           national average.
         </p>
       </header>

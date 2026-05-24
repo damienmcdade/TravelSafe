@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!city) return { title: "City not found" };
   return {
     title: `${city.label} safety overview`,
-    description: `Neighborhood-level safety data for ${city.label} — official police-feed coverage compared to the FBI Crime in the Nation 2023 national average.`,
+    description: `Neighborhood-level safety data for ${city.label} — official police-feed coverage compared to the FBI Crime Data Explorer 2025 national average.`,
     alternates: { canonical: `/cities/${slug}` },
     openGraph: {
       title: `${city.label} safety overview · TravelSafe`,

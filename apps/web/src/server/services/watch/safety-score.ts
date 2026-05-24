@@ -11,29 +11,31 @@ import { knownNeighborhoodPopulation } from "../crime-data/neighborhood-populati
 /// re-doing the math.
 ///
 /// SOURCE / VINTAGE
-/// The numbers below match the FBI's "Crime in the Nation 2023" annual
-/// release (363.8 → 364 violent, 1916.5 → 1896 property per 100k, both
-/// rounded). 2024 figures will arrive via the FBI's October 2025 release
-/// — once they're confirmed against api.usa.gov/crime/fbi/cde
-/// (run `tools/fetch-fbi-rates.mjs` with FBI_CDE_API_KEY set) we'll
-/// update both the numbers AND the citation year here.
+/// Numbers below are the FBI Crime Data Explorer's full-year 2025 annual
+/// totals (sum of 12 monthly per-100k rates from cde.ucr.cjis.gov), pulled
+/// via api.usa.gov/crime/fbi/cde with `tools/fetch-fbi-rates.mjs`. 2025
+/// is the most-recent complete year in BOTH the violent-crime and
+/// property-crime series as of the last run.
 ///
-/// Why not just guess at 2024 rates? CCJ's 2024 update reported
-/// violent crime down ~4.5% and property down ~8.4% vs 2023, but
-/// the FBI's final published figures often diverge from interim
-/// estimates by 1-2 percentage points. Shipping unverified numbers
-/// is worse than shipping slightly-vintage verified ones, so we
-/// stay with the 2023 release until the API call can confirm 2024.
+/// Year-over-year context (per CDE, for sanity-checking):
+///   2025: violent 328, property 1548  ← in use
+///   2024: violent 364, property 1771
+///   2023: violent 386, property 1954
+///   2022: violent 398, property 1999
+///
+/// To refresh after a new CDE month publishes:
+///   FBI_CDE_API_KEY=<your-key> node tools/fetch-fbi-rates.mjs
 
-export const FBI_NATIONAL_PER_100K_2023 = { PERSONS: 364, PROPERTY: 1896 };
-/// Kept as an alias for back-compat with consumers that imported the
-/// old name. Will be removed once the API-driven refresh script runs
-/// and we standardize on the latest-year constant.
-export const FBI_NATIONAL_PER_100K_2024 = FBI_NATIONAL_PER_100K_2023;
+export const FBI_NATIONAL_PER_100K_2025 = { PERSONS: 328, PROPERTY: 1548 };
+/// Kept as aliases for back-compat with consumers that import the
+/// older names. They all resolve to the same latest-year constant
+/// so updates only need to happen in one place.
+export const FBI_NATIONAL_PER_100K_2024 = FBI_NATIONAL_PER_100K_2025;
+export const FBI_NATIONAL_PER_100K_2023 = FBI_NATIONAL_PER_100K_2025;
 export const FBI_NATIONAL_SOURCE = {
-  label: "FBI Crime in the Nation 2023 (Uniform Crime Reporting)",
+  label: "FBI Crime Data Explorer 2025 (annual sum of monthly UCR rates)",
   url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend",
-  publishedYear: 2023,
+  publishedYear: 2025,
 };
 
 // Population estimates and FBI national rates live in shared modules so

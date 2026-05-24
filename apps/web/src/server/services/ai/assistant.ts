@@ -6,7 +6,7 @@ import { CITIES, cityBySlug } from "../crime-data/cities";
 import { CITY_POPULATION, POPULATION_VINTAGE } from "../crime-data/population";
 import { getSafetyScore, getCitywideSafetyScore } from "../watch/safety-score";
 
-// FBI Crime in the Nation 2023 — most recent published national rates
+// FBI Crime Data Explorer 2025 — most recent published national rates
 // (released October 2025), used for the city-vs-national comparison tool.
 // Per-100k rates round to the same figures across recent years so the
 // numbers are stable; the YEAR label is what gets refreshed when the FBI
@@ -307,7 +307,7 @@ export async function streamAssistant(messages: Array<{ role: "user" | "assistan
     }),
     compare_city_to_national: tool({
       description:
-        "Compute the city's per-100,000 rates for Persons (violent) and Property crime from the recent cached window and compare them to the FBI Crime in the Nation 2023 national averages. Returns the A-E grade, dataConfidence flag, and CFS calibration when applicable. Use this when the user asks 'is X safer than the rest of the country' or for any city-vs-national comparison. Cite the source URL in your response.",
+        "Compute the city's per-100,000 rates for Persons (violent) and Property crime from the recent cached window and compare them to the FBI Crime Data Explorer 2025 national averages. Returns the A-E grade, dataConfidence flag, and CFS calibration when applicable. Use this when the user asks 'is X safer than the rest of the country' or for any city-vs-national comparison. Cite the source URL in your response.",
       inputSchema: z.object({
         city_slug: z.string().describe("One of: " + citySlugList().join(", ")),
       }),

@@ -127,7 +127,7 @@ export default async function NeighborhoodOgImage({
               {area.label}
             </div>
             <div style={{ display: "flex", fontSize: 26, marginTop: 22, opacity: 0.92, maxWidth: 720, lineHeight: 1.3 }}>
-              Neighborhood-level safety data compared to the FBI Crime in the Nation 2023 national average.
+              Neighborhood-level safety data compared to the FBI Crime Data Explorer 2025 national average.
             </div>
           </div>
           <div style={{ display: "flex", fontSize: 20, opacity: 0.85 }}>

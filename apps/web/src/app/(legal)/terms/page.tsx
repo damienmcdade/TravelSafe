@@ -77,7 +77,7 @@ export default function TermsPage() {
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Data accuracy</h2>
-        <p>TravelSafe re-displays data from official city open-data portals without editorial modification. We rely on those publishers to be accurate and current. Police-incident data is reported by officers; it reflects what was reported, not necessarily what occurred. Publication delays can be 7-30 days depending on the city. The FBI national-rate comparison uses the most recent annual release (Crime in the Nation 2024); the FBI publishes new rates each October. For full methodology, see the <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link> page.</p>
+        <p>TravelSafe re-displays data from official city open-data portals without editorial modification. We rely on those publishers to be accurate and current. Police-incident data is reported by officers; it reflects what was reported, not necessarily what occurred. Publication delays can be 7-30 days depending on the city. The FBI national-rate comparison comes from the FBI Crime Data Explorer (cde.ucr.cjis.gov), pulled as the annual sum of monthly UCR rates for the most-recent complete calendar year. For full methodology, see the <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link> page.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
