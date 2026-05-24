@@ -27,31 +27,29 @@ interface TabDef {
   warm?: (ctx: { citySlug: string; areaSlug: string | null }) => string[];
 }
 
-// Tab labels picked for distinctiveness over genericness — generic verbs
-// (Now / Plan / Act) read as filler in nav strips; concrete instrument
-// nouns give each tab a memorable mental anchor. Cohesive metaphor
-// family: a navigator's toolkit — Pulse (vital-signs of the area now),
-// Compass (orient + plan a route), Circle (your trusted people + tools),
-// Atlas (geographic exploration).
+// Tab labels — short, energetic, action-oriented. Each is a verb a
+// user can do at that tab: SCAN the area for activity, DIG into the
+// data, CONNECT with community + personal-safety tools, EXPLORE on
+// the geographic map.
 const PRIMARY: TabDef[] = [
-  // Pulse — unified Awareness (replaces /threats City+Neighborhood toggle)
-  { href: "/now", label: "Pulse",
+  // Scan — unified Awareness (replaces /threats City+Neighborhood toggle)
+  { href: "/now", label: "Scan",
     subroutes: ["/threats"],
     warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
-  // Compass — Safety Score + Trend + Compare + Route. Subroutes cover
+  // Dig — Safety Score + Trend + Compare + Route. Subroutes cover
   // the legacy URLs so a bookmark to /safety-score still highlights this.
-  { href: "/plan", label: "Compass",
+  { href: "/plan", label: "Dig",
     subroutes: ["/safety-score", "/trends", "/route"],
     warm: ({ citySlug, areaSlug }) => areaSlug
       ? [`/api/safezone/safety-score?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`,
          `/api/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaSlug)}`]
       : [`/api/safezone/safety-score?city=${citySlug}`,
          `/api/safezone/trend?city=${citySlug}`] },
-  // Circle — Personal Safety + Community
-  { href: "/act", label: "Circle",
+  // Connect — Personal Safety + Community
+  { href: "/act", label: "Connect",
     subroutes: ["/safety", "/community"] },
-  // Atlas — geographic exploration
-  { href: "/map", label: "Atlas",
+  // Explore — geographic map
+  { href: "/map", label: "Explore",
     warm: ({ citySlug }) => [`/api/crime-data/citywide?city=${citySlug}`] },
 ];
 
