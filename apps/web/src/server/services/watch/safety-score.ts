@@ -3,6 +3,7 @@ import { crimeData } from "../crime-data";
 import { cityForArea } from "../crime-data/cities";
 import { loadPolygonAreas, lookupAreaKm2, totalCityKm2 } from "../../lib/polygon-areas";
 import { HttpError } from "../../lib/http";
+import { knownNeighborhoodPopulation } from "../crime-data/neighborhood-population";
 
 /// Safety Score — compares the user's selected area against the FBI's most
 /// recent national rates per 100,000 residents. Returns the raw local and
@@ -602,26 +603,31 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // polygon) OR as a floor when polygon-weighting produces an
   // implausibly low population for dense neighborhoods.
   const peerSharePop = cityPop > 0 ? cityPop / N : 0;
-  // DENSITY-BIAS FLOOR. The polygon-area formula assumes uniform
-  // density across the city, which is wildly wrong for dense
-  // downtowns and moderately wrong for any neighborhood that's
-  // denser than the city average (beach districts, transit-oriented
-  // cores, etc.). A 0.9 km² downtown polygon in a 600 km² city was
-  // being assigned ~1,500 residents when its actual population is
-  // closer to 30k; even a moderately-dense neighborhood like
-  // Pacific Beach (~50k real, ~14 km²) was being assigned ~18k.
-  // Both produce per-capita rates that are too high and force
-  // grades worse than the data warrants.
+  // POPULATION ESTIMATION — three tiers, most-accurate first:
   //
-  // The floor: areaPop = max(polygon, peer-share). Polygon weighting
-  // can still INCREASE the estimate for genuinely large polygons
-  // (where uniform density understates them); the floor only
-  // prevents the polygon from DECREASING the estimate below the
-  // city's per-neighborhood average, which is the structural bias
-  // the uniform-density assumption causes. This is more aggressive
-  // than the prior 0.5×-peer-share trigger and trades a small loss
-  // of density signal for a much larger correctness win.
-  if (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0) {
+  //   1. Curated override (SANDAG / Census ACS) keyed by city slug
+  //      + area slug. Authoritative when present; bypasses both
+  //      polygon weighting and peer-share. See
+  //      neighborhood-population.ts for the seed list and sources.
+  //
+  //   2. Polygon-area weighting with a DENSITY-BIAS FLOOR. The
+  //      polygon formula assumes uniform density across the city
+  //      and breaks for denser-than-average neighborhoods; the floor
+  //      `max(polygon, peer-share)` prevents the polygon from
+  //      DECREASING the estimate below the city's per-neighborhood
+  //      average. Used when no curated entry exists AND a polygon
+  //      is available.
+  //
+  //   3. Peer-share (cityPop / N areas). Final fallback when no
+  //      curated entry AND no polygon is available.
+  const curatedPop = knownNeighborhoodPopulation(city.slug, areaSlug);
+  if (curatedPop) {
+    popDenominator = curatedPop.population;
+    const localPersonsRate = popDenominator > 0 ? (persons * 365 / Math.max(1, windowDays) / popDenominator) * 100_000 * cfsScalePerArea : 0;
+    const localPropertyRate = popDenominator > 0 ? (property * 365 / Math.max(1, windowDays) / popDenominator) * 100_000 * cfsScalePerArea : 0;
+    personsScale = cityPersons100k > 0 ? localPersonsRate / cityPersons100k : 0;
+    propertyScale = cityProperty100k > 0 ? localPropertyRate / cityProperty100k : 0;
+  } else if (ourAreaKm2 != null && cityTotalKm2 > 0 && cityPop > 0) {
     const polygonAreaPop = cityPop * (ourAreaKm2 / cityTotalKm2);
     const areaPop = Math.max(polygonAreaPop, peerSharePop);
     popDenominator = Math.round(areaPop);
@@ -717,7 +723,15 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
     headline,
     rows,
     source: FBI_NATIONAL_SOURCE,
-    disclaimer: usedPolygonWeight
+    disclaimer: curatedPop
+      ? `Per-area rate uses a curated population estimate of ${curatedPop.population.toLocaleString()} ` +
+        `residents for ${areaLabel} (source: ${curatedPop.source}) — bypasses the polygon-area / peer-share ` +
+        `heuristics for the most-trafficked neighborhoods so the per-capita rate matches the actual census ` +
+        `population. The grade compares the result to ${city.label}'s OWN citywide rate (the nearest ` +
+        `official baseline), not the FBI national average. ${city.label}'s citywide comparison vs ` +
+        `the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national rate is shown below for reference. ` +
+        "Society / public-order offenses are excluded because the FBI doesn't publish a national rate for them."
+      : usedPolygonWeight
       ? `Per-area rate uses this neighborhood's polygon area (${ourAreaKm2!.toFixed(1)} km²) ` +
         `to estimate population — assuming roughly uniform density across ${city.label}, an area ` +
         `gets a share of ${city.label}'s total population proportional to its share of the city's ` +
