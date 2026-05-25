@@ -123,7 +123,19 @@ const PROVENANCE: DataProvenance = {
 // we collapse internal whitespace first to keep it tolerant.
 function parsePhoenixDate(raw: string | null | undefined): Date | null {
   if (!raw) return null;
-  const cleaned = raw.replace(/\s+/g, " ").trim();
+  // v62 — normalize to "M/D/YYYY H:MM:SS AM/PM". Phoenix's feed mixes
+  // two formats: older rows have "9/3/2025  6:55:00 AM" (space before
+  // AM/PM, parseable by Date()), but rows added since ~late-2025 use
+  // "12/24/2025   6:58:00PM" — the AM/PM is jammed against the
+  // seconds, which Date() rejects as Invalid Date. Whole-cache effect:
+  // every Phoenix record published after the format change was silently
+  // dropped by parsePhoenixDate, which is why our citywide cache held
+  // 168k rows but the newest date was 2025-09-03 (the last day of the
+  // old format). Insert a space before AM/PM so both formats parse.
+  const cleaned = raw
+    .replace(/\s+/g, " ")
+    .replace(/(\d)(AM|PM|am|pm)\b/, "$1 $2")
+    .trim();
   const d = new Date(cleaned);
   return Number.isNaN(d.getTime()) ? null : d;
 }
