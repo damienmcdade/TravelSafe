@@ -147,6 +147,21 @@ export async function generateIncidentSummary(opts: BuildOpts): Promise<Incident
         offense: o.offense, count: o.count, category: "" as string,
       }));
     }
+    // v57 — second fallback. v54 covered "recent=0 but prior has
+    // data." Some adapters publish data so sparsely that BOTH 30d
+    // and 60d windows are empty (LA NIBRS quarterly publish is the
+    // classic case). Pull a year of data so the LLM still has
+    // offense-mix context. If even the year-long window is empty,
+    // we fall through to summary:null and the UI's deterministic-
+    // fields-only path renders.
+    if (topOffenses.length === 0) {
+      const yearLong = await crimeData.getCitywide(opts.cityOnly.citySlug, { windowDays: 365 }).catch(() => null);
+      if (yearLong && yearLong.totalIncidents > 0) {
+        topOffenses = (yearLong.topOffenses ?? []).slice(0, 6).map((o) => ({
+          offense: o.offense, count: o.count, category: "" as string,
+        }));
+      }
+    }
   } else {
     return null;
   }

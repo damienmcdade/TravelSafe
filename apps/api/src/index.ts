@@ -19,6 +19,7 @@ import { officialAlertsRouter } from "./routes/official-alerts.routes.js";
 import { safezoneRouter } from "./routes/safezone.routes.js";
 import { startCheckInWorker } from "./services/safety/check-in.worker.js";
 import { startDigestWorker } from "./services/push/digest.worker.js";
+import { startWarmWorker } from "./services/warm/cache.worker.js";
 
 const app = express();
 
@@ -68,6 +69,7 @@ const server = app.listen(env.LISTEN_PORT, () => {
   console.log(`[api] listening on :${env.LISTEN_PORT} (env=${env.NODE_ENV})`);
   startCheckInWorker();
   startDigestWorker();
+  startWarmWorker();
 });
 
 for (const sig of ["SIGINT", "SIGTERM"] as const) {

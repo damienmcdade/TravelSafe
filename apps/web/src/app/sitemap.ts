@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { CITIES } from "@/server/services/crime-data/cities";
+import type { KnownArea } from "@travelsafe/crime-data";
 
 /// Sitemap covering every public surface. Emits:
 ///   - The homepage + every live app tab
@@ -26,9 +27,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Per-city discover() in parallel, soft-fail per city so one broken
   // adapter doesn't drop every other city's neighborhood URLs.
+  //
+  // v57 — added a per-city 15s timeout. Vercel build was hitting the
+  // 60s function ceiling on /sitemap.xml because slow adapters
+  // (Detroit's 30k row fetch on a cold Railway cache) pinned the
+  // whole Promise.all. With a timeout, the slowest adapter contributes
+  // 0 neighborhood URLs for that build; the next hourly revalidation
+  // picks them up once the adapter cache warms. The sitemap still ships
+  // the homepage + every supported city's index page so SEO coverage
+  // is preserved.
+  const CITY_DISCOVER_TIMEOUT_MS = 15_000;
   const perCity = await Promise.all(
     CITIES.map(async (city) => {
-      const areas = await city.discover().catch(() => []);
+      const areas: KnownArea[] = await Promise.race<KnownArea[]>([
+        city.discover().catch(() => [] as KnownArea[]),
+        new Promise<KnownArea[]>((resolve) => setTimeout(() => resolve([] as KnownArea[]), CITY_DISCOVER_TIMEOUT_MS)),
+      ]);
       return { city, areas };
     }),
   );
