@@ -44,14 +44,21 @@ interface CmpdRow {
 // description to PERSONS / PROPERTY / SOCIETY via keyword groups. (NIBRS
 // itself classifies Robbery as a property crime, which is the FBI's official
 // taxonomy — we preserve that here.)
+// v31 calibration: ROBBERY moved from PROPERTY to PERSONS. CMPD's
+// internal taxonomy puts Robbery under Crime-Against-Property
+// (because the target is property), but FBI UCR Part 1 groups
+// Robbery under Violent — which is what the FBI baseline uses.
+// The earlier mapping made Charlotte's PERSONS rate look ~50% of
+// FBI baseline (we missed all robberies); aligning to FBI fixes
+// it. Also dropped MISSING PERSON and SUDDEN/NATURAL DEATH from
+// PERSONS — they're administrative, not violent crime.
 const PERSONS_KEYS = [
-  "ASSAULT", "HOMICIDE", "MURDER", "MANSLAUGHTER", "INTIMIDATION",
+  "ASSAULT", "ROBBERY", "HOMICIDE", "MURDER", "MANSLAUGHTER",
   "KIDNAPPING", "SEX OFFENSE", "RAPE", "HUMAN TRAFFICKING",
-  "MISSING PERSON", "SUDDEN/NATURAL DEATH",
 ];
 const PROPERTY_KEYS = [
   "THEFT", "BURGLARY", "B&E", "LARCENY", "MOTOR VEHICLE",
-  "ROBBERY", "ARSON", "VANDALISM", "DAMAGE", "FORGERY",
+  "ARSON", "VANDALISM", "DAMAGE", "FORGERY",
   "FRAUD", "EMBEZZLEMENT", "COUNTERFEIT", "STOLEN PROPERTY",
   "IDENTITY THEFT", "CREDIT CARD", "FALSE PRETENSES", "SHOPLIFTING",
 ];

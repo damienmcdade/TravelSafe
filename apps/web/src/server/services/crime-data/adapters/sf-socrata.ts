@@ -76,7 +76,16 @@ async function fetchSF(): Promise<Incident[]> {
       area: r.analysis_neighborhood?.trim() || r.police_district?.trim() || "Unknown",
       occurredAt: r.incident_datetime ?? new Date(0).toISOString(),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: r.incident_description?.trim() || r.incident_subcategory?.trim() || r.incident_category?.trim() || "Unknown",
+      // v31 calibration: prepend the subcategory so the downstream
+      // Part-1 filter sees "Simple Assault" vs "Aggravated Assault"
+      // (SF splits 42k simple / 25k aggravated under one "Assault"
+      // category; only aggravated is Part-1 violent). Without this
+      // prefix the bare incident_description like "Battery" didn't
+      // hit any /\bsimple\b/i or /\bother assault/i exclude, so
+      // every Assault row inflated SF's violent rate to 3× FBI.
+      ibrOffenseDescription: [r.incident_subcategory?.trim(), r.incident_description?.trim()]
+        .filter(Boolean)
+        .join(" — ") || r.incident_category?.trim() || "Unknown",
       beat: r.police_district ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,

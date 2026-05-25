@@ -558,10 +558,17 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
     if (known) freshPopSum += known.population;
   }
   const popFraction = cityPop > 0 ? freshPopSum / cityPop : 0;
-  // Clamp: if fresh-area pop is implausibly small (< 10% of city)
-  // OR we couldn't resolve any per-area pops, use cityPop as a safe
-  // fallback. Otherwise use the fresh subset.
-  const pop = (popFraction >= 0.10 && freshPopSum > 0) ? freshPopSum : cityPop;
+  // Clamp: only use the fresh-area subset when MOST of the city is
+  // publishing (>=70%). Below that, fall back to cityPop because
+  // the fresh subset is likely a non-representative slice (e.g.,
+  // high-crime areas publishing while low-crime stay quiet, which
+  // would over-inflate the rate). v31 raised the threshold from
+  // 0.10 → 0.70 after Seattle prod data showed only 31% of areas
+  // contributing — the 0.10 threshold accepted that subset, divided
+  // ~30% of incidents by ~30% of pop, and amplified the per-100k
+  // rate to ~3× FBI baseline because the fresh subset happened to
+  // skew toward higher-crime neighborhoods.
+  const pop = (popFraction >= 0.70 && freshPopSum > 0) ? freshPopSum : cityPop;
   // CFS calibration — see CFS_CALIBRATION comment at the top of the file.
   // 1.0 for NIBRS-based adapters, ~0.35-0.50 for CFS-based.
   const cfsScale = CFS_CALIBRATION[city.slug] ?? 1.0;
