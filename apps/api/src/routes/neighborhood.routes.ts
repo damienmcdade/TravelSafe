@@ -3,7 +3,9 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { PostStatus, AreaKind } from "@prisma/client";
 import { optionalAuth } from "../middleware/auth.js";
-import { crimeData } from "../services/crime-data/index.js";
+// v62 — workspace dispatcher (multi-city) instead of the SD-only
+// legacy adapter, so per-neighborhood feed works for every city.
+import { crimeData } from "@travelsafe/crime-data/dispatcher";
 
 export const neighborhoodRouter = Router();
 

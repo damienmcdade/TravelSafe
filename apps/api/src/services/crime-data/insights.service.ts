@@ -1,5 +1,10 @@
-import { crimeData } from "./index.js";
-import type { Incident } from "./types.js";
+// v62 — switched to workspace dispatcher so insights respect ?city=.
+// The legacy SD-only impl was returning empty trends for every city
+// other than San Diego whenever the Vercel handler proxied a per-city
+// insights request through Railway.
+import { crimeData } from "@travelsafe/crime-data/dispatcher";
+import type { Incident } from "@travelsafe/crime-data/types";
+import { cityBySlug } from "@travelsafe/crime-data/cities";
 
 const WEEKS = 12;
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
@@ -57,10 +62,7 @@ function buildBrief(area: string, trends: CategoryTrend[]): string {
   return parts.join(" ");
 }
 
-/// Compute weekly sparkline trends and a plain-language brief for an area.
-/// Falls back gracefully if the underlying incident feed returns nothing.
-export async function getAreaInsights(area: string): Promise<AreaInsights> {
-  const incidents = await crimeData.getIncidents(area, { limit: 5000 });
+function trendsFromIncidents(incidents: Incident[]): CategoryTrend[] {
   const buckets = bucketByWeek(incidents);
   const trends: CategoryTrend[] = [];
   for (const [category, weekly] of buckets) {
@@ -75,11 +77,42 @@ export async function getAreaInsights(area: string): Promise<AreaInsights> {
     });
   }
   trends.sort((a, b) => b.weekly.reduce((s, n) => s + n, 0) - a.weekly.reduce((s, n) => s + n, 0));
+  return trends;
+}
+
+/// Compute weekly sparkline trends and a plain-language brief for an area.
+/// Falls back gracefully if the underlying incident feed returns nothing.
+export async function getAreaInsights(area: string): Promise<AreaInsights> {
+  const incidents = await crimeData.getIncidents(area, { limit: 5000 });
+  const trends = trendsFromIncidents(incidents);
   return {
     area,
     windowWeeks: WEEKS,
     totalIncidents: incidents.length,
     trends,
     brief: buildBrief(area, trends),
+  };
+}
+
+/// Citywide variant — same shape, fans out across every tracked area.
+/// Mirrors apps/web/src/server/services/crime-data/insights.getCitywideInsights.
+export async function getCitywideInsights(citySlug: string): Promise<AreaInsights> {
+  const city = cityBySlug(citySlug);
+  if (!city) {
+    return { area: citySlug, windowWeeks: WEEKS, totalIncidents: 0, trends: [], brief: buildBrief(citySlug, []) };
+  }
+  const areas = await city.discover().catch(() => []);
+  const perArea = await Promise.all(
+    areas.map((a) => crimeData.getIncidents(a.slug, { limit: 5000 }).catch(() => [])),
+  );
+  const incidents = perArea.flat();
+  const trends = trendsFromIncidents(incidents);
+  const label = `${city.label} (citywide)`;
+  return {
+    area: label,
+    windowWeeks: WEEKS,
+    totalIncidents: incidents.length,
+    trends,
+    brief: buildBrief(label, trends),
   };
 }

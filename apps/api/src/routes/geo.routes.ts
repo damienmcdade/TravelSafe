@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { z } from "zod";
 import { lookupLocation, allKnownAreas } from "../services/geo/lookup.service.js";
+import { cityBySlug } from "@travelsafe/crime-data/cities";
+import { getDiscoveredAreasStale as sdpdStale } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
 
 export const geoRouter = Router();
 
@@ -15,6 +17,31 @@ geoRouter.get("/lookup", async (req, res, next) => {
   }
 });
 
-geoRouter.get("/areas", (_req, res) => {
-  res.json(allKnownAreas());
+// v62 sync — was returning a hardcoded SD area list and ignoring the
+// `city` param, so Vercel proxies to Railway and got 7 SD areas for
+// every city. Brought to parity with apps/web/src/app/api/geo/areas.
+// Without ?city= → bare KnownArea[] (legacy back-compat). With
+// ?city=<slug> → { areas, stale?, staleMessage? } so the picker can
+// render a "warming up" hint when an adapter is serving last-known-
+// good data.
+geoRouter.get("/areas", async (req, res, next) => {
+  try {
+    const citySlug = typeof req.query.city === "string" ? req.query.city : null;
+    if (citySlug) {
+      const city = cityBySlug(citySlug);
+      if (!city) return res.json({ areas: [] });
+      const areas = await city.discover().catch(() => []);
+      let stale = false;
+      let staleMessage: string | undefined;
+      if (citySlug === "san-diego" && sdpdStale()) {
+        stale = true;
+        staleMessage =
+          "The San Diego police feed didn't return new data this request, so we're showing the last successful neighborhood pull. Scores and incidents below may be a few minutes behind.";
+      }
+      return res.json({ areas, stale, staleMessage });
+    }
+    res.json(allKnownAreas());
+  } catch (err) {
+    next(err);
+  }
 });

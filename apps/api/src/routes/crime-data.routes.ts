@@ -1,18 +1,31 @@
 import { Router } from "express";
 import { z } from "zod";
 import { optionalAuth } from "../middleware/auth.js";
-import { crimeData } from "../services/crime-data/index.js";
+// v62 — switched from the SD-only legacy adapter to the workspace
+// dispatcher so /crime-data/{citywide,area-stats,recent,alerts,
+// insights} respects the ?city= param. Prior implementation
+// hardcoded SD_AREAS and ignored every per-city query, which made
+// Vercel proxies return SD data for every other city.
+import { crimeData } from "@travelsafe/crime-data/dispatcher";
 import { nearestArea } from "../services/crime-data/neighborhoods.js";
 import { getCrimeMix, getCitywideCrimeMix } from "@travelsafe/crime-data/mix";
 import { getCitywideUpticks } from "@travelsafe/crime-data/upticks";
 
 export const crimeDataRouter = Router();
 
+// v62 sync — Vercel routes accept `city` as a first-class param;
+// Express side was missing it across most handlers, which meant
+// `?city=detroit` proxied from Vercel was effectively dropped on
+// Railway and the wrong (default SD) city's data came back. Add
+// `city` to the shared shape so all proxied routes honor it.
 const areaQuery = z.object({
+  city: z.string().min(1).max(120).optional(),
   neighborhood: z.string().optional(),
   jurisdiction: z.string().optional(),
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
+  windowDays: z.coerce.number().int().min(1).max(730).optional(),
+  offense: z.string().max(120).optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50).optional(),
 });
 
@@ -26,9 +39,11 @@ function resolveArea(q: z.infer<typeof areaQuery>): string | null {
   return null;
 }
 
-crimeDataRouter.get("/citywide", optionalAuth, async (_req, res, next) => {
+crimeDataRouter.get("/citywide", optionalAuth, async (req, res, next) => {
   try {
-    res.json(await crimeData.getCitywide());
+    const q = areaQuery.parse(req.query);
+    const city = q.city ?? "san-diego";
+    res.json(await crimeData.getCitywide(city, { offense: q.offense, windowDays: q.windowDays }));
   } catch (err) {
     next(err);
   }
@@ -48,8 +63,10 @@ crimeDataRouter.get("/alerts", optionalAuth, async (req, res, next) => {
 crimeDataRouter.get("/area-stats", optionalAuth, async (req, res, next) => {
   try {
     const q = areaQuery.parse(req.query);
+    // v62 sync — Vercel route accepts ?city= for citywide totals.
+    if (q.city) return res.json(await crimeData.getCitywideAreaStats(q.city));
     const area = resolveArea(q);
-    if (!area) return res.status(400).json({ error: "area_required" });
+    if (!area) return res.status(400).json({ error: "area_or_city_required" });
     res.json(await crimeData.getAreaStats(area));
   } catch (err) {
     next(err);
@@ -59,8 +76,13 @@ crimeDataRouter.get("/area-stats", optionalAuth, async (req, res, next) => {
 crimeDataRouter.get("/insights", optionalAuth, async (req, res, next) => {
   try {
     const q = areaQuery.parse(req.query);
+    // v62 sync — Vercel route accepts ?city= for citywide 12-week trend.
+    if (q.city) {
+      const { getCitywideInsights } = await import("../services/crime-data/insights.service.js");
+      return res.json(await getCitywideInsights(q.city));
+    }
     const area = resolveArea(q);
-    if (!area) return res.status(400).json({ error: "area_required" });
+    if (!area) return res.status(400).json({ error: "area_or_city_required" });
     const { getAreaInsights } = await import("../services/crime-data/insights.service.js");
     res.json(await getAreaInsights(area));
   } catch (err) {
