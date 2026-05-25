@@ -1,6 +1,26 @@
 import "./globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+
+// v55 — viewport configuration for the Capacitor iOS shell + mobile
+// browsers. viewportFit "cover" lets the WebView extend behind the
+// notch / home indicator so safe-area-inset-* CSS env() values are
+// non-zero (otherwise iOS clamps everything inside the safe rect and
+// the app looks letterboxed). themeColor tints the iOS status bar.
+// minimum/maximum-scale=1 prevents accidental two-finger zoom on the
+// map and other interactive surfaces.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  minimumScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF7F2" },
+    { media: "(prefers-color-scheme: dark)",  color: "#0F172A" },
+  ],
+};
 import Script from "next/script";
 import { CityBackdrop } from "@/components/CityBackdrop";
 import { SessionBootstrap } from "@/components/SessionBootstrap";

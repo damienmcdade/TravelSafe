@@ -8,7 +8,13 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "postinstall": "prisma generate --schema=../../packages/db/prisma/schema.prisma"
+    "postinstall": "prisma generate --schema=../../packages/db/prisma/schema.prisma",
+    "mobile:sync": "npx cap sync",
+    "mobile:ios": "npx cap sync ios && npx cap open ios",
+    "mobile:android": "npx cap sync android && npx cap open android",
+    "mobile:android:aab": "cd android && JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home ./gradlew bundleRelease",
+    "mobile:android:apk": "cd android && JAVA_HOME=/opt/homebrew/Cellar/openjdk@21/21.0.11/libexec/openjdk.jdk/Contents/Home ./gradlew assembleRelease",
+    "mobile:ios:build": "xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.79",
@@ -31,6 +37,10 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
+    "@capacitor/ios": "^8.3.4",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/leaflet": "^1.9.14",

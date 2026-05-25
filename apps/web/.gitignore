@@ -1,1 +1,12 @@
 .vercel
+
+# v55 — Capacitor / mobile build artifacts
+/ios/App/build
+/ios/App/App/public
+/ios/App/Pods
+/android/build
+/android/.gradle
+/android/app/build
+/android/app/release
+/android/local.properties
+/out

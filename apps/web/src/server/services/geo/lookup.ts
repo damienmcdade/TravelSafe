@@ -82,10 +82,30 @@ export async function lookupLocation(q: string): Promise<LookupResult | null> {
   const exact = findArea(trimmed);
   if (exact) return { area: exact, matchedVia: "exact", rawQuery: trimmed };
 
-  const zipMatch = trimmed.match(/\b(9\d{4})\b/);
-  if (zipMatch && SD_ZIP_TO_AREA[zipMatch[1]]) {
-    const area = findArea(SD_ZIP_TO_AREA[zipMatch[1]]);
-    if (area) return { area, matchedVia: "zip", rawQuery: trimmed };
+  // v55 — ZIP code handling. SD_ZIP_TO_AREA only covers San Diego
+  // (zips starting with 9); a user typing "85001" (Phoenix), "10001"
+  // (NYC), "33101" (Miami), etc. previously got "no_match" because
+  // the regex required `9\d{4}`. Now: any 5-digit ZIP either hits
+  // the SD direct-map (fast path, no upstream call) OR falls through
+  // to the geocode + snap-to-nearest path so EVERY US ZIP resolves.
+  const zip5 = trimmed.match(/\b(\d{5})\b/);
+  if (zip5) {
+    const z = zip5[1];
+    if (SD_ZIP_TO_AREA[z]) {
+      const area = findArea(SD_ZIP_TO_AREA[z]);
+      if (area) return { area, matchedVia: "zip", rawQuery: trimmed };
+    }
+    // Geocode the ZIP centroid via Nominatim — works for every US
+    // ZIP without us maintaining a 30-city map. The nearestArea snap
+    // below ensures the result is one of our supported neighborhoods.
+    const geo = await nominatimGeocode(`${z} USA`);
+    if (geo) {
+      // Ensure discovered-area list is fully populated before snap.
+      const areas = listKnownAreasSync();
+      if (areas.length < 50) await listKnownAreas().catch(() => []);
+      const area = nearestArea(geo);
+      if (area) return { area, matchedVia: "zip", rawQuery: trimmed };
+    }
   }
 
   // Only now pull the discovered list for fuzzy matching. Use the
