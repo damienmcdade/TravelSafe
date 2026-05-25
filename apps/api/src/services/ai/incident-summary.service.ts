@@ -108,6 +108,20 @@ export async function generateIncidentSummary(opts: BuildOpts): Promise<Incident
     recentCount = cw.totalIncidents;
     const wide = await crimeData.getCitywide(opts.cityOnly.citySlug, { windowDays: windowDays * 2 }).catch(() => null);
     if (wide) priorCount = Math.max(0, wide.totalIncidents - recentCount);
+    // v54 — fallback: when the recent window has zero incidents but
+    // the prior window has data, the adapter's cache simply doesn't
+    // hold last-30-day rows (Boston bundled snapshot, KC monthly
+    // refresh, LA NIBRS quarterly). In that case use the WIDE window
+    // for the LLM's offense-mix context so the summary still
+    // generates something useful — the trend/severity math still
+    // reflects the truth (recent=0 → falling -100%), but the AI can
+    // describe what offense KINDS are characteristic instead of
+    // returning summary:null.
+    if (recentCount === 0 && wide && wide.totalIncidents > 0 && topOffenses.length === 0) {
+      topOffenses = (wide.topOffenses ?? []).slice(0, 6).map((o) => ({
+        offense: o.offense, count: o.count, category: "" as string,
+      }));
+    }
   } else {
     return null;
   }
@@ -121,6 +135,14 @@ export async function generateIncidentSummary(opts: BuildOpts): Promise<Incident
     const offenseList = topOffenses
       .map((o) => `${sanitize(o.offense, 60)} (${o.count})`)
       .join("; ");
+    // v54 — when recentCount is 0 but we still have topOffenses, the
+    // offense list came from the WIDER window (the v54 fallback).
+    // Tell the LLM so it doesn't write "in the last 30 days these
+    // categories…" when there were zero incidents in that window.
+    const offensesFromWideWindow = recentCount === 0 && topOffenses.length > 0;
+    const offensesScope = offensesFromWideWindow
+      ? `Top offenses (from a longer ~${windowDays * 2}-day window — no incidents in the last ${windowDays} days):`
+      : `Top offenses in recent window:`;
     const userPrompt = `
 City: ${sanitize(cityLabel)}
 ${areaLabel ? `Neighborhood: ${sanitize(areaLabel)}` : "Scope: citywide"}
@@ -129,10 +151,10 @@ Recent incident count: ${recentCount}
 Prior ${windowDays}-day count (for trend): ${priorCount}
 Change: ${changePct >= 0 ? "+" : ""}${changePct}% (${trend})
 Severity bucket vs prior: ${severity}
-Top offenses in recent window:
+${offensesScope}
 ${offenseList}
 
-Write the one-paragraph summary now.
+Write the one-paragraph summary now.${offensesFromWideWindow ? " Acknowledge plainly that the most recent " + windowDays + "-day window had no published reports yet, then describe what offense categories are characteristic of this area from the longer window." : ""}
 `.trim();
     try {
       const model = await getAIModel();

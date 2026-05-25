@@ -136,6 +136,17 @@ export async function generateIncidentSummary(opts: BuildOpts): Promise<Incident
     // For citywide trend, pull a 2× window and subtract.
     const wide = await crimeData.getCitywide(opts.cityOnly.citySlug, { windowDays: windowDays * 2 }).catch(() => null);
     if (wide) priorCount = Math.max(0, wide.totalIncidents - recentCount);
+    // v54 — see apps/api/.../incident-summary.service.ts for the same
+    // fallback rationale. Cities whose adapter cache has no rows in
+    // the last 30d (Boston bundled snapshot, KC monthly refresh, LA
+    // NIBRS) returned summary:null previously because the LLM gate
+    // requires topOffenses.length > 0. Use the wider window's
+    // offenses for context when recent is empty.
+    if (recentCount === 0 && wide && wide.totalIncidents > 0 && topOffenses.length === 0) {
+      topOffenses = (wide.topOffenses ?? []).slice(0, 6).map((o) => ({
+        offense: o.offense, count: o.count, category: "" as string,
+      }));
+    }
   } else {
     return null;
   }
