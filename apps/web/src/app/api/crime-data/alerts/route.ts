@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap, HttpError } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { crimeData } from "@/server/services/crime-data";
 import { listKnownAreas, nearestArea, type KnownArea } from "@/server/services/crime-data/neighborhoods";
 import { cityFromLatLng, cityForArea, nearestCityByCentroid } from "@/server/services/crime-data/cities";
@@ -87,6 +88,8 @@ const PRIVATE_CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "crime-data" });
+  if (limited) return limited;
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
 
   if (q.neighborhood || q.jurisdiction) {

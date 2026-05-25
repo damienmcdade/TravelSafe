@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap, HttpError } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { getAreaInsights, getCitywideInsights } from "@/server/services/crime-data/insights";
 
 /// Two modes share this route:
@@ -22,6 +23,8 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "crime-data" });
+  if (limited) return limited;
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   if (q.city) return NextResponse.json(await getCitywideInsights(q.city), { headers: CACHE_HEADERS });
   const area = q.neighborhood ?? q.jurisdiction;

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import {
   getTrendForArea,
@@ -30,6 +31,8 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "safezone" });
+  if (limited) return limited;
   const proxied = await tryProxy(req, "/safezone/trend");
   if (proxied) return proxied.response;
 

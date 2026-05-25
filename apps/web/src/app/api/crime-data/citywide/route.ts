@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { wrap } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { crimeData } from "@/server/services/crime-data";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +12,8 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "crime-data" });
+  if (limited) return limited;
   const city = req.nextUrl.searchParams.get("city") ?? "san-diego";
   const offense = req.nextUrl.searchParams.get("offense") ?? undefined;
   // windowDays narrows the in-window incident set so the Crime Chart's

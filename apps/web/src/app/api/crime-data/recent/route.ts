@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap, HttpError } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { crimeData } from "@/server/services/crime-data";
 
 const Query = z.object({
@@ -11,6 +12,8 @@ const Query = z.object({
 
 export const dynamic = "force-dynamic";
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "crime-data" });
+  if (limited) return limited;
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   const area = q.neighborhood ?? q.jurisdiction;
   if (!area) throw new HttpError(400, "area_required");

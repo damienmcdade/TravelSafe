@@ -1,18 +1,24 @@
 import { runDailyDigest } from "./digest.service.js";
+import { getRedis } from "../../lib/redis.js";
 
 // Daily-fire scheduler for the push digest. Replaces Vercel Cron's
 // "0 16 * * *" entry; Railway runs a persistent container so we can
 // just check the wall clock every minute.
 //
-// Restart-safety: lastFiredYmd lives in process memory. If the
-// container restarts after the day's fire we'll re-fire on next tick;
-// web push de-dupes notifications by `tag: "digest-daily"` so the
-// user only sees one bubble even on a double-send. If we ever scale
-// to >1 Railway instance, this needs DB persistence to avoid
-// per-instance fan-out (use a SystemSetting row or advisory lock).
+// Restart-safety: v60 — lastFiredYmd persists to Redis when REDIS_URL
+// is configured (Railway plugin auto-injects it). Without persistence
+// a container restart between 16:00 UTC and 23:59 UTC would re-fire
+// the digest; web push de-dupes by `tag: "digest-daily"` so users only
+// see one bubble even on a double-send, but the backend redoes the
+// (paid) fan-out work. With Redis the worker reads/writes the daily
+// stamp at SETEX 36h so even a clock-skew restart can't refire.
+// In-memory copy `lastFiredYmd` is kept as a fast-path check so we
+// don't round-trip to Redis on every tick.
 
 const DIGEST_HOUR_UTC = 16;
 const TICK_INTERVAL_MS = 60 * 1000;
+const REDIS_KEY = "digest-worker:last-fired-ymd";
+const REDIS_TTL_SECONDS = 36 * 60 * 60;
 let timer: NodeJS.Timeout | null = null;
 let lastFiredYmd: string | null = null;
 
@@ -28,10 +34,32 @@ async function tick() {
   const todayYmd = ymdUtc(now);
   if (lastFiredYmd === todayYmd) return;
   if (now.getUTCHours() < DIGEST_HOUR_UTC) return;
+  // Cross-restart guard: if Redis remembers we already fired today,
+  // hydrate the in-memory copy and bail without rerunning the fan-out.
+  const redis = getRedis();
+  if (redis) {
+    try {
+      const stamped = await redis.get(REDIS_KEY);
+      if (stamped === todayYmd) {
+        console.log(`[digest-worker] skipping ${todayYmd} (already fired per redis)`);
+        lastFiredYmd = todayYmd;
+        return;
+      }
+    } catch (err) {
+      console.warn("[digest-worker] redis check failed, proceeding:", (err as Error).message);
+    }
+  }
   try {
     const result = await runDailyDigest();
     console.log(`[digest-worker] fired ${todayYmd}: ${JSON.stringify(result)}`);
     lastFiredYmd = todayYmd;
+    if (redis) {
+      try {
+        await redis.setex(REDIS_KEY, REDIS_TTL_SECONDS, todayYmd);
+      } catch (err) {
+        console.warn("[digest-worker] redis stamp failed:", (err as Error).message);
+      }
+    }
   } catch (err) {
     console.error("[digest-worker] tick failed:", err);
   }

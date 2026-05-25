@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { wrap, HttpError } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { lookupLocation } from "@/server/services/geo/lookup";
 import { nearestArea } from "@/server/services/crime-data/neighborhoods";
 
@@ -12,6 +13,8 @@ export const dynamic = "force-dynamic";
 // we don't waste a Nominatim round-trip when the browser already
 // gave us coordinates.
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "geo" });
+  if (limited) return limited;
   const sp = req.nextUrl.searchParams;
   const latStr = sp.get("lat");
   const lngStr = sp.get("lng");

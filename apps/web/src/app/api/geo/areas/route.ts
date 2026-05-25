@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { allKnownAreas } from "@/server/services/geo/lookup";
 import { cityBySlug } from "@/server/services/crime-data/cities";
 import { getDiscoveredAreasStale as sdpdStale } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
@@ -25,6 +26,8 @@ const STABLE_CACHE_HEADERS = {
 /// (the unbounded all-cities call is cold-slow because the slowest
 /// adapter dominates), so this is the preferred path for the wheel.
 export async function GET(req: NextRequest) {
+  const limited = rateLimit(req, { scope: "geo" });
+  if (limited) return limited;
   const citySlug = req.nextUrl.searchParams.get("city");
   if (citySlug) {
     const city = cityBySlug(citySlug);

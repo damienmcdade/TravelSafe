@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
+import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import {
   getSafetyScore,
@@ -35,6 +36,8 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const limited = rateLimit(req, { scope: "safezone" });
+  if (limited) return limited;
   // v37: prefer Railway when API_BASE_URL is set so all four
   // safezone + crime-data endpoints run on the Railway long-lived
   // process (shared adapter cache → fewer upstream fetches).
