@@ -480,17 +480,35 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   const nowMs = Date.now();
   const windowStartMs = nowMs - RATE_WINDOW_DAYS * MS_PER_DAY;
 
-  // Step 1: find the oldest valid row across the FULL adapter response
-  // (not just in-window). This is the characteristic data span the
-  // adapter pagination yields. Used purely to drive windowDays — does
-  // NOT affect which rows we count.
-  let dataEarliestMs = nowMs;
+  // Step 1: find the data span. The PRIOR implementation used the
+  // single oldest row as dataEarliestMs, which gave a windowDays
+  // dominated by outliers — e.g., Phoenix had a few rows from 365
+  // days ago but the dense data only covered the last 60 days. The
+  // annualization (count * 365/365) then under-stated the rate by
+  // ~5× because most of "the year" was actually empty cache.
+  //
+  // v31 fix: use the 5th-PERCENTILE oldest row, so we trim away
+  // sparse outliers. Concretely: collect every valid timestamp,
+  // sort, take the timestamp at index Math.floor(N * 0.05). That's
+  // the oldest moment containing the bottom 95% of incidents — a
+  // much better proxy for "the dense data span" than the absolute
+  // oldest row.
+  const allTimestamps: number[] = [];
   for (const incidents of perArea) {
     for (const i of incidents) {
       const t = +new Date(i.occurredAt);
       if (!Number.isFinite(t) || t <= 0 || t > nowMs) continue;
-      if (t < dataEarliestMs) dataEarliestMs = t;
+      allTimestamps.push(t);
     }
+  }
+  let dataEarliestMs = nowMs;
+  if (allTimestamps.length > 0) {
+    allTimestamps.sort((a, b) => a - b);
+    // Trim 5% of the oldest rows; use the remaining oldest row.
+    // For a city with 100 rows, that's the 5th-from-oldest row.
+    // For 50,000 rows, that's the 2,500th-from-oldest.
+    const trimIdx = Math.min(allTimestamps.length - 1, Math.floor(allTimestamps.length * 0.05));
+    dataEarliestMs = allTimestamps[trimIdx];
   }
 
   // Step 2: count incidents strictly in [windowStartMs, nowMs] AND
