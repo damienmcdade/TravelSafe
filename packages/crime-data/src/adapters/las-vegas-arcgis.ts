@@ -142,7 +142,14 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchPage(offset: number): Promise<LvRow[]> {
   const url = new URL(BASE);
-  url.searchParams.set("where", "LAT IS NOT NULL AND LAT <> ''");
+  // v72 followup — date-bounded query to guarantee a 90-day window
+  // regardless of LVMPD's daily volume. Pre-v72 we paged by row
+  // count and LV's high-volume CFS feed (~3800 filtered rows/day)
+  // packed 80k records into ~21 days, tripping the grade-sanity
+  // SHORT_WINDOW flag. ArcGIS TIMESTAMP literals are explicit.
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const ts = cutoff.toISOString().slice(0, 19).replace("T", " ");
+  url.searchParams.set("where", `LAT IS NOT NULL AND LAT <> '' AND Event_Date >= TIMESTAMP '${ts}'`);
   url.searchParams.set("outFields", "Event_Number,Event_Date,Type,Type_Description,General_Location,Beat,Disposition,LAT,LONG,WARD");
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("orderByFields", "Event_Date DESC");
