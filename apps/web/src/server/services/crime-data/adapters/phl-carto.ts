@@ -178,13 +178,19 @@ export async function getDiscoveredAreasPhl(): Promise<KnownArea[]> {
 }
 
 function labelForPhlSlug(slug: string, rows: Incident[]): string | null {
+  // v10 mapped PPD district numbers to neighborhood names ("Center City",
+  // "Mayfair", etc.) and discovery now produces string slugs ("phl-
+  // center-city") rather than numeric ones ("phl-9"). The prior matcher
+  // here still expected a numeric tail and returned null for every
+  // string slug, which made getAreaStats return null for every
+  // neighborhood and the citywide endpoint show 0 incidents per area
+  // despite 30k cached rows. Match by normalized-label string instead
+  // (same pattern as the Pittsburgh/Buffalo/Norfolk adapters).
   const s = slug.toLowerCase();
   const want = s.startsWith("phl-") ? s.slice(4) : s;
-  const wantNum = parseInt(want, 10);
-  if (!Number.isFinite(wantNum)) return null;
   for (const r of rows) {
-    const m = r.area.match(/^(\d+)/);
-    if (m && parseInt(m[1], 10) === wantNum) return r.area;
+    const candidate = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    if (candidate === want) return r.area;
   }
   return null;
 }
