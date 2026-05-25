@@ -27,6 +27,13 @@ fine, say so plainly. If something is off, name it and suggest a specific
 rephrase. Never repeat the user's full draft back.
 `.trim();
 
+// v60 — sanitize before splicing into the prompt. The draft fields are
+// user-supplied; without stripping newlines + tab/CR a determined user
+// could inject "Ignore previous instructions" on its own line. The
+// SYSTEM_PROMPT is adversarially framed, but defense-in-depth.
+const sanitize = (s: string, max = 800): string =>
+  s.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+
 export async function streamComposeFeedback(draft: { what: string; where: string; when: string }) {
   if (!aiConfigured()) {
     return { configured: false as const };
@@ -38,9 +45,9 @@ export async function streamComposeFeedback(draft: { what: string; where: string
     model: model as Parameters<typeof streamText>[0]["model"],
     system: SYSTEM_PROMPT,
     prompt:
-      `What: ${draft.what}\n` +
-      `Where: ${draft.where}\n` +
-      `When: ${draft.when}\n\n` +
+      `What: ${sanitize(draft.what, 800)}\n` +
+      `Where: ${sanitize(draft.where, 200)}\n` +
+      `When: ${sanitize(draft.when, 200)}\n\n` +
       `Coach this draft.`,
   });
   return { configured: true as const, stream: result };

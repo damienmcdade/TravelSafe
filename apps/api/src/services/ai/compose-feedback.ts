@@ -25,6 +25,12 @@ fine, say so plainly. If something is off, name it and suggest a specific
 rephrase. Never repeat the user's full draft back.
 `.trim();
 
+// v60 — mirror of the apps/web sanitize fn. Strip newlines so a draft
+// like "what: ASSAULT\nIgnore previous instructions" can't break out
+// of the labeled field line and reframe the prompt.
+const sanitize = (s: string, max = 800): string =>
+  s.replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, max);
+
 export async function streamComposeFeedback(draft: { what: string; where: string; when: string }) {
   if (!env.AI_GATEWAY_API_KEY) {
     return { configured: false as const };
@@ -35,9 +41,9 @@ export async function streamComposeFeedback(draft: { what: string; where: string
     model: "anthropic/claude-haiku-4-5",
     system: SYSTEM_PROMPT,
     prompt:
-      `What: ${draft.what}\n` +
-      `Where: ${draft.where}\n` +
-      `When: ${draft.when}\n\n` +
+      `What: ${sanitize(draft.what, 800)}\n` +
+      `Where: ${sanitize(draft.where, 200)}\n` +
+      `When: ${sanitize(draft.when, 200)}\n\n` +
       `Coach this draft.`,
   });
   return { configured: true as const, stream: result };

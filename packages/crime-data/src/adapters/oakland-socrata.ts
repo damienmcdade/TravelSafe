@@ -13,7 +13,14 @@ import { titleCaseOffense } from "../lib/titlecase-offense.js";
 // Doc: https://dev.socrata.com/foundry/data.oaklandca.gov/3xav-7geq
 
 const BASE = "https://data.oaklandca.gov/resource/3xav-7geq.json";
-const ROW_LIMIT = 5_000;
+// v60 — paginated. Single-page 5k cap covered ~14 days of Oakland's
+// volume, which dropped the citywide safety-score window into the
+// "low confidence" band and made grades jitter cycle-to-cycle.
+// Socrata unauthenticated $limit ceiling is 50k per request; 3 pages
+// gives ~150k rows ≈ 5+ months of Oakland data — comfortably above
+// the 90-day confidence threshold.
+const PAGE_SIZE = 50_000;
+const PAGES_TO_FETCH = 3;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
@@ -107,15 +114,26 @@ function safeIso(raw: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
 }
 
-async function fetchOakland(): Promise<Incident[]> {
-  // Pull only rows with coordinates so we can geocode them. Sort DESC by
-  // datetime so we get the freshest slice.
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$order=datetime%20DESC&$where=location_1%20IS%20NOT%20NULL`;
+async function fetchOaklandPage(offset: number): Promise<OakRow[]> {
+  const u = `${BASE}?$limit=${PAGE_SIZE}&$offset=${offset}&$order=datetime%20DESC&$where=location_1%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
   });
-  if (!res.ok) throw new Error(`Oakland Socrata ${res.status}`);
-  const rows = (await res.json()) as OakRow[];
+  if (!res.ok) throw new Error(`Oakland Socrata ${res.status} at offset ${offset}`);
+  return (await res.json()) as OakRow[];
+}
+
+async function fetchOakland(): Promise<Incident[]> {
+  // Pull only rows with coordinates so we can geocode them. Sort DESC by
+  // datetime so we get the freshest slice.
+  const offsets = Array.from({ length: PAGES_TO_FETCH }, (_, i) => i * PAGE_SIZE);
+  const pages = await Promise.all(
+    offsets.map((o) => fetchOaklandPage(o).catch((err) => {
+      console.warn(`[oakland] page offset=${o} failed:`, (err as Error).message);
+      return [] as OakRow[];
+    })),
+  );
+  const rows = pages.flat();
   return rows.map((r, i) => {
     const c = r.location_1?.coordinates;
     const lng = Array.isArray(c) ? Number(c[0]) : NaN;

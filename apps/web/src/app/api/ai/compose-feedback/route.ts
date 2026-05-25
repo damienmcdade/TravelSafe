@@ -11,6 +11,11 @@ const Body = z.object({
 });
 
 export const dynamic = "force-dynamic";
+// v60 — bump from Vercel's 5s default. The endpoint streams LLM output
+// (Groq → Gemini → Gateway fallback chain) which can run 5-15s on the
+// slow path. Without an explicit maxDuration the function aborts after
+// 5s and the client sees a truncated stream while the LLM still bills.
+export const maxDuration = 30;
 // Auth-gated because each call invokes a paid LLM. requireSession throws
 // HttpError(401); we catch via errorResponse since this returns a raw
 // streaming Response (not NextResponse) and can't go through wrap().

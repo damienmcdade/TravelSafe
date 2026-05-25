@@ -9,6 +9,11 @@ const Query = z.object({
 });
 
 export const dynamic = "force-dynamic";
+// v60 — bump from Vercel's 5s default. getSafetyTipsForArea invokes
+// the LLM (Groq → Gemini fallback) on cold cache for a city it hasn't
+// generated tips for yet. The 6-hour in-process cache means warm calls
+// return in ms, but the first cold call per city needs headroom.
+export const maxDuration = 45;
 
 // Safety tips are hard-coded per city — long-lived edge cache is safe.
 const STABLE_CACHE_HEADERS = {
