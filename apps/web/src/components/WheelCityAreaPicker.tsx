@@ -161,11 +161,19 @@ export function WheelCityAreaPicker({
     [cityAreas],
   );
 
-  const wheelHeight = compact ? 180 : 220;
-  const wheelRow    = compact ? 36  : 40;
-  // 3-column on wide screens; 1-column stacks on mobile + compact.
+  // v56 — compact (bottom-sheet on mobile, dropdown on desktop)
+  // ALWAYS uses 3 columns now; the prior `grid-cols-1 sm:grid-cols-3`
+  // single-column-on-mobile path stacked three 180px wheels +
+  // searches + footer into ~700px which overflowed the iPhone
+  // simulator viewport and pushed the Done button off-screen,
+  // making the selector inoperable.
+  // Wheel heights also shrink in compact mode so the whole picker
+  // fits inside the bottom-sheet's 85dvh cap without internal
+  // scroll on the most common phone sizes (iPhone 13/14/15/16/17).
+  const wheelHeight = compact ? 150 : 220;
+  const wheelRow    = compact ? 32  : 40;
   const gridCls = compact
-    ? "grid grid-cols-1 sm:grid-cols-3 gap-2"
+    ? "grid grid-cols-3 gap-1.5"
     : "grid grid-cols-1 sm:grid-cols-3 gap-3";
 
   const body = (

@@ -90,27 +90,61 @@ export function CitySelector() {
       </button>
 
       {open && (
-        <div
-          role="dialog"
-          aria-label="Change state, city and neighborhood"
-          // v45 — widened from 28rem to 36rem to fit the THREE wheels
-          // (State + City + Neighborhood) comfortably on desktop. On
-          // narrow viewports collapses to (viewport - 1rem) and the
-          // wheels stack vertically per the picker's compact mode.
-          className="absolute right-0 mt-2 w-[36rem] max-w-[calc(100vw-1rem)] surface p-3 z-30 animate-pop-in"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <p className="px-1 pb-2 text-[11px] uppercase tracking-wider text-slate2-500">
-            Pick a state, city + neighborhood
-          </p>
-          {/* Wheel picker stays open across wheel changes — the user
-              commits via the in-picker button which closes the dropdown
-              via the onCommit callback. Replaces the prior search +
-              browse-by-state UX which closed the dropdown immediately
-              on city pick (forcing the user back out before they could
-              pick a neighborhood). */}
-          <WheelCityAreaPicker compact onCommit={() => setOpen(false)} />
-        </div>
+        <>
+          {/* v56 — Mobile-first selector overlay. On narrow viewports
+              (< sm: 640px) the picker becomes a full-screen MODAL
+              anchored to the bottom edge: dim backdrop + sheet that
+              uses dynamic viewport height (dvh) so iOS Safari /
+              Capacitor WebView correctly accounts for the keyboard
+              and the address bar. On wider screens it remains a
+              positioned dropdown anchored to the trigger pill.
+
+              The prior single-mode dropdown (`absolute right-0 mt-2
+              w-[36rem]`) overflowed the iPhone simulator viewport
+              once the THREE stacked wheels + searches + Done button
+              were laid out vertically, pushing controls off-screen
+              and making the selector inoperable. */}
+          <div
+            className="sm:hidden fixed inset-0 z-30 bg-slate2-900/50"
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div
+            role="dialog"
+            aria-label="Change state, city and neighborhood"
+            aria-modal="true"
+            className="
+              fixed bottom-0 left-0 right-0 z-40 surface p-3 max-h-[85dvh] overflow-y-auto
+              animate-slide-up rounded-t-2xl
+              sm:absolute sm:bottom-auto sm:top-auto sm:left-auto sm:right-0 sm:mt-2
+              sm:w-[36rem] sm:max-w-[calc(100vw-1rem)] sm:max-h-none sm:rounded-xl sm:animate-pop-in
+            "
+            // Bottom padding includes safe-area-inset-bottom so the
+            // Done button isn't covered by the iOS home indicator on
+            // mobile-modal mode. Desktop ignores (env() = 0).
+            style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <p className="px-1 text-[11px] uppercase tracking-wider text-slate2-500">
+                Pick a state, city + neighborhood
+              </p>
+              {/* Explicit close button for mobile users — outside-tap
+                  on the backdrop closes too, but a visible X is the
+                  iOS convention and matches what users expect from a
+                  bottom-sheet. */}
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close picker"
+                className="sm:hidden p-1.5 text-slate2-500 hover:text-slate2-900"
+              >
+                <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3l10 10M13 3L3 13" strokeLinecap="round"/></svg>
+              </button>
+            </div>
+            <WheelCityAreaPicker compact onCommit={() => setOpen(false)} />
+          </div>
+        </>
       )}
     </div>
   );
