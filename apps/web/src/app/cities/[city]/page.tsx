@@ -18,7 +18,6 @@ interface Props {
 // route Cache-Control) so the first user pays the cold-fetch wait
 // but every subsequent hit serves from edge cache.
 const DYNAMIC_ONLY_CITIES = new Set(["cleveland"]);
-export const revalidate = 300;
 export function generateStaticParams() {
   return CITIES.filter((c) => !DYNAMIC_ONLY_CITIES.has(c.slug))
     .map((c) => ({ city: c.slug }));
@@ -40,10 +39,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// 1-hour ISR — city coverage changes when a city is added/removed
-// from the registry, which we do via deploys, so hourly revalidation
-// is plenty.
-export const revalidate = 3600;
+// 5-minute ISR — was 3600s but Cleveland (now dynamic, no static
+// pre-render) reads via this revalidate cadence on edge cache, and
+// 5 min matches the underlying adapter cache TTL so users see fresh
+// data the moment it lands without waiting an hour.
+export const revalidate = 300;
 
 export default async function CityLandingPage({ params }: Props) {
   const { city: slug } = await params;
