@@ -107,6 +107,15 @@ export interface SafetyScoreRow {
   /// the citywide endpoint (where the comparison anchor is properly
   /// national because the "area" IS the city).
   deltaPct: number;
+  /// City's OWN FBI-published rate for this category (per
+  /// CITY_FBI_BASELINES), or null if no per-city baseline is on file.
+  /// BlockScoreWidget uses this as its citywide anchor so the score
+  /// stays consistent with the letter grade (which has used this
+  /// baseline since the city-FBI rebase). Without this field the
+  /// score would compare to FBI national — making a city like NOLA
+  /// look 2-3× worse than its grade suggests because national
+  /// averages are pulled down by rural areas.
+  cityFbiPer100k: number | null;
 }
 
 export interface SafetyScoreResponse {
@@ -390,13 +399,21 @@ function headlineForArea(grade: SafetyScoreResponse["grade"], areaLabel: string,
   }
 }
 
-function headlineForCity(grade: SafetyScoreResponse["grade"], cityLabel: string): string {
+function headlineForCity(grade: SafetyScoreResponse["grade"], cityLabel: string, anchor: "city-fbi" | "national" = "national"): string {
+  // v44 — the prior headlines always said "FBI national rate" even
+  // when the grade math actually used the city's OWN FBI baseline.
+  // That mis-attribution made NOLA (grade B vs city baseline) sound
+  // like it had below-national crime, when in reality NOLA's rate is
+  // well above national but below NOLA's typical historical baseline.
+  const anchorLabel = anchor === "city-fbi"
+    ? `${cityLabel}'s typical FBI-published rate`
+    : "the FBI national rate";
   switch (grade) {
-    case "A": return `${cityLabel} reports lower per-capita rates than the FBI national average.`;
-    case "B": return `${cityLabel} reports below the FBI national rate.`;
-    case "C": return `${cityLabel} reports close to the FBI national rate.`;
-    case "D": return `${cityLabel} reports higher per-capita rates than the FBI national average. Use the cards below to see which category drives the gap.`;
-    case "E": return `${cityLabel} reports notably higher per-capita rates than the FBI national average.`;
+    case "A": return `${cityLabel} reports lower per-capita rates than ${anchorLabel}.`;
+    case "B": return `${cityLabel} reports below ${anchorLabel}.`;
+    case "C": return `${cityLabel} reports close to ${anchorLabel}.`;
+    case "D": return `${cityLabel} reports higher per-capita rates than ${anchorLabel}. Use the cards below to see which category drives the gap.`;
+    case "E": return `${cityLabel} reports notably higher per-capita rates than ${anchorLabel}.`;
     case "N/A": return `We don't have recent data for ${cityLabel} right now. The upstream feed may be temporarily unavailable — check Coverage for live status.`;
   }
 }
@@ -601,6 +618,7 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   // through one branch.
   const personsLocal100k = Math.round(annualize(persons));
   const propertyLocal100k = Math.round(annualize(property));
+  const cityBaseline = CITY_FBI_BASELINES[city.slug];
   const rows: SafetyScoreRow[] = [
     {
       category: "PERSONS",
@@ -611,6 +629,7 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
       nationalPer100k: FBI_NATIONAL_PER_100K_2024.PERSONS,
       deltaPct: FBI_NATIONAL_PER_100K_2024.PERSONS === 0 ? 0
         : Math.round(((personsLocal100k - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
+      cityFbiPer100k: cityBaseline ? cityBaseline.violent : null,
     },
     {
       category: "PROPERTY",
@@ -621,6 +640,7 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
       nationalPer100k: FBI_NATIONAL_PER_100K_2024.PROPERTY,
       deltaPct: FBI_NATIONAL_PER_100K_2024.PROPERTY === 0 ? 0
         : Math.round(((propertyLocal100k - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
+      cityFbiPer100k: cityBaseline ? cityBaseline.property : null,
     },
   ];
 
@@ -682,7 +702,7 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
     }
   }
 
-  const headline = headlineForCity(grade, cityLabel);
+  const headline = headlineForCity(grade, cityLabel, fbiBaseline ? "city-fbi" : "national");
 
   return {
     city: { slug: city.slug, label: city.label },
@@ -935,6 +955,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // secondary reference.
   const cityPersonsRounded = Math.round(cityPersons100k);
   const cityPropertyRounded = Math.round(cityProperty100k);
+  const cityBaselinePerArea = CITY_FBI_BASELINES[city.slug];
   const rows: SafetyScoreRow[] = [
     {
       category: "PERSONS",
@@ -947,6 +968,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
       nationalPer100k: FBI_NATIONAL_PER_100K_2024.PERSONS,
       deltaPct: FBI_NATIONAL_PER_100K_2024.PERSONS === 0 ? 0
         : Math.round(((persons100k - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
+      cityFbiPer100k: cityBaselinePerArea ? cityBaselinePerArea.violent : null,
     },
     {
       category: "PROPERTY",
@@ -959,6 +981,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
       nationalPer100k: FBI_NATIONAL_PER_100K_2024.PROPERTY,
       deltaPct: FBI_NATIONAL_PER_100K_2024.PROPERTY === 0 ? 0
         : Math.round(((property100k - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
+      cityFbiPer100k: cityBaselinePerArea ? cityBaselinePerArea.property : null,
     },
   ];
 

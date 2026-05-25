@@ -29,6 +29,15 @@ interface SafetyScoreApi {
     /// the right anchor, and as a secondary reference in the UI.
     nationalPer100k: number;
     deltaPct: number;
+    /// City's OWN FBI baseline for this category (or null if none on
+    /// file). When present, BlockScoreWidget uses this as the citywide
+    /// anchor so the 0-100 score stays consistent with the letter
+    /// grade (which uses the same city-FBI baseline since the
+    /// methodology rebase). Without this, citywide BlockScore would
+    /// compare to FBI national and disagree with the letter grade for
+    /// every urban city (NOLA showed score 29 + grade B because
+    /// score used national and grade used the city baseline).
+    cityFbiPer100k?: number | null;
   }>;
   source: { label: string; url: string; publishedYear: number };
 }
@@ -138,6 +147,17 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
   const ratios = api.rows
     .map((r) => {
       if (isCitywide) {
+        // Prefer the city's OWN FBI baseline when published. That's
+        // the same anchor gradeFromCityFbiBaseline uses, so the 0-100
+        // score and the letter grade move together. Fall back to FBI
+        // national for cities without a per-city baseline (matches
+        // gradeFromNationalDeltas's behavior). v44 fix — NOLA was
+        // showing score 29 (vs national 2.55×) alongside grade B
+        // (vs city-baseline 0.71×), confusing users about whether
+        // the city was safe or not.
+        if (r.cityFbiPer100k != null && r.cityFbiPer100k > 0) {
+          return r.localPer100k / r.cityFbiPer100k;
+        }
         return r.nationalPer100k > 0 ? r.localPer100k / r.nationalPer100k : 1;
       }
       return r.cityPer100k > 0 ? r.localPer100k / r.cityPer100k : 1;
@@ -148,7 +168,14 @@ function deriveBlockScore(api: SafetyScoreApi | null): BlockScore | null {
   const score = ratioToScore(avg);
   const band = bandFor(score);
   const mult = avg > 0 && Number.isFinite(avg) ? avg : 1;
-  const anchor = isCitywide ? "the FBI national rate" : `${api.city.label} citywide`;
+  // Anchor label matches the actual ratio source (v44):
+  //   citywide WITH city baseline → city's own FBI rate
+  //   citywide NO baseline        → national fallback
+  //   per-area                    → cityPer100k (the live citywide avg)
+  const hasCityBaseline = api.rows.some((r) => r.cityFbiPer100k != null && r.cityFbiPer100k > 0);
+  const anchor = isCitywide
+    ? (hasCityBaseline ? `${api.city.label}'s own FBI-published rate` : "the FBI national rate")
+    : `${api.city.label} citywide`;
   const headline =
     band === "safe"
       ? `${api.area.label} reports below ${anchor} (about ${mult.toFixed(2)}× across tracked categories).`
