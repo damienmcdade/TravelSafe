@@ -9,7 +9,7 @@ export const revalidate = 0;
 export const maxDuration = 60;
 
 const CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+  "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=900",
 };
 
 export const GET = wrap(async (req: NextRequest) => {

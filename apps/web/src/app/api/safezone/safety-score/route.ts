@@ -32,7 +32,7 @@ export const maxDuration = 60;
 // revalidates in the background — first cold visit pays the upstream
 // fetch, every subsequent user inside the window hits cache.
 const CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+  "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=900",
 };
 
 export const GET = wrap(async (req: NextRequest) => {

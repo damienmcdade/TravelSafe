@@ -285,16 +285,39 @@ const PART1_PROPERTY_EXCLUDE = [
 // PERSONS/PROPERTY but UCR-Part-1 doesn't. This is more forgiving
 // of generic offense descriptions like "ASSAULT" / "BATTERY" /
 // "THEFT" that lack the modifier specifying aggravated-vs-simple.
+//
+// v69 — memoize Part-1 results per unique description string. Cities
+// typically have 50-200 unique offense descriptors but tens or
+// hundreds of thousands of rows. Without memoization, the regex
+// array (13+ patterns each) ran on every row — Phoenix (200k rows)
+// did ~5.2M pattern tests per safety-score compute. The Map cache
+// trims that to ~200 evaluations (one per unique desc). Caps the
+// map at 5000 entries to bound memory in the pathological case
+// where an adapter emits per-incident free-text descriptions.
+const VIOLENT_CACHE = new Map<string, boolean>();
+const PROPERTY_CACHE = new Map<string, boolean>();
+const PART1_CACHE_CAP = 5000;
+
 function isPart1Violent(desc: string | undefined): boolean {
-  if (!desc) return true; // unknown description → trust NIBRS PERSONS, count
-  for (const ex of PART1_VIOLENT_EXCLUDE) if (ex.test(desc)) return false;
-  return true;
+  if (!desc) return true;
+  const cached = VIOLENT_CACHE.get(desc);
+  if (cached !== undefined) return cached;
+  let result = true;
+  for (const ex of PART1_VIOLENT_EXCLUDE) if (ex.test(desc)) { result = false; break; }
+  if (VIOLENT_CACHE.size >= PART1_CACHE_CAP) VIOLENT_CACHE.clear();
+  VIOLENT_CACHE.set(desc, result);
+  return result;
 }
 
 function isPart1Property(desc: string | undefined): boolean {
   if (!desc) return true;
-  for (const ex of PART1_PROPERTY_EXCLUDE) if (ex.test(desc)) return false;
-  return true;
+  const cached = PROPERTY_CACHE.get(desc);
+  if (cached !== undefined) return cached;
+  let result = true;
+  for (const ex of PART1_PROPERTY_EXCLUDE) if (ex.test(desc)) { result = false; break; }
+  if (PROPERTY_CACHE.size >= PART1_CACHE_CAP) PROPERTY_CACHE.clear();
+  PROPERTY_CACHE.set(desc, result);
+  return result;
 }
 
 /// Compute a confidence signal for the score. A small/short data window

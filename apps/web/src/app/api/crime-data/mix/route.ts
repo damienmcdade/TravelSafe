@@ -23,7 +23,7 @@ const Query = z.object({
 export const dynamic = "force-dynamic";
 
 const CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+  "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=900",
 };
 
 export const GET = wrap(async (req: NextRequest) => {

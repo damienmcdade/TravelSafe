@@ -81,7 +81,7 @@ export const maxDuration = 60;
 // the same entry). Lat/lng-based lookups skip the shared edge cache because
 // every coordinate is effectively unique.
 const SHARED_CACHE_HEADERS = {
-  "Cache-Control": "public, s-maxage=300, stale-while-revalidate=900",
+  "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=900",
 };
 const PRIVATE_CACHE_HEADERS = {
   "Cache-Control": "private, max-age=60",
