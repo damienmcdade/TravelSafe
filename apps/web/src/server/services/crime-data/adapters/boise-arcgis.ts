@@ -21,7 +21,11 @@ import type { KnownArea } from "../neighborhoods";
 
 const BASE = "https://services1.arcgis.com/WHM6qC35aMtyAAlN/arcgis/rest/services/BPD_CallsForService/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                 // 10k rows
+// v26 bump 5 → 15. Boise CFS volume is much lower than Detroit's
+// so 10k rows actually spans many months — but the deeper cache
+// keeps the cfsScale calibration (0.30 in safety-score.ts) anchored
+// to a more representative window.
+const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

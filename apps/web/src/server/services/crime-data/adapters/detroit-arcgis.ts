@@ -12,7 +12,11 @@ import { titleCaseOffense } from "../lib/titlecase-offense";
 
 const BASE = "https://services2.arcgis.com/qvkbeam7Wirps6zC/arcgis/rest/services/RMS_Crime_Incidents/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                // 10,000 rows
+// v26 bump 5 → 15. Even after the v26 classifier fix that picked
+// up AGGRAVATED ASSAULT / HOMICIDE / SEXUAL ASSAULT, the 10k cache
+// only spans ~12 days of Detroit's high crime volume; deeper cache
+// gives the annualization a true year-scale window.
+const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

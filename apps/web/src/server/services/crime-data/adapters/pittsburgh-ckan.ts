@@ -23,7 +23,9 @@ import type { KnownArea } from "../neighborhoods";
 // has proven reliable.
 const SEARCH_BASE = "https://data.wprdc.org/api/3/action/datastore_search";
 const RESOURCE_ID = "bd41992a-987a-4cca-8798-fbe1cd946b07";
-const ROW_LIMIT = 5_000;
+// v26 bump 5k → 30k. Pittsburgh PERSONS rate was running 2.3×
+// under FBI baseline; deeper cache window improves rate fidelity.
+const ROW_LIMIT = 30_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

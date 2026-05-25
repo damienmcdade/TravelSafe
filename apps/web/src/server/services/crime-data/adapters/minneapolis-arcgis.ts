@@ -20,7 +20,13 @@ import type { KnownArea } from "../neighborhoods";
 
 const BASE = "https://services.arcgis.com/afSMGVsC7QlRK1kZ/arcgis/rest/services/Crime_Data/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                 // 10,000 rows of NIBRS crime
+// v26 bump 5 → 15 (10k → 30k rows). Minneapolis publishes ~64k
+// NIBRS rows/year; the prior 10k cache only spanned ~6 weeks of
+// the city's actual volume, so annualizing 10k * 365/(window~30)
+// undershot the true rate by ~5×. 30k covers ~5 months which is
+// dense enough that the per-100k math converges on the FBI
+// baseline.
+const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

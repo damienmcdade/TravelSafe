@@ -19,7 +19,10 @@ import { districtNumberToName } from "../../../data/saint-paul-neighborhoods";
 
 const BASE = "https://services1.arcgis.com/9meaaHE3uiba0zr8/arcgis/rest/services/Crime_Incident_Report_-_Dataset/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                // 10k rows
+// v26 bump 5 → 15. Saint Paul was running ~1.8× under FBI baseline
+// on both PERSONS and PROPERTY; deeper cache reduces the
+// annualization tax.
+const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

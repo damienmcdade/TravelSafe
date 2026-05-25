@@ -33,7 +33,10 @@ const YEAR_LAYERS: Record<number, number> = {
   2024: 6,
 };
 const PAGE_SIZE = 2000;
-const PAGES = 5;
+// v26 bump 5 → 15. Sparser DC cache was under-counting both
+// PERSONS and PROPERTY by ~2.5× vs FBI baseline; deeper cache
+// gives the annualization a more representative window.
+const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

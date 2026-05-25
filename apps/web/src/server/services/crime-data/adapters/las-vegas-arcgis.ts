@@ -22,7 +22,10 @@ import { lasVegasPolygons } from "../../../data/las-vegas-neighborhoods";
 
 const BASE = "https://services1.arcgis.com/F1v0ufATbBQScMtY/arcgis/rest/services/MetroCFS_OpenData/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 5;                // 10k rows of recent CFS
+// v26 bump 5 → 15. Las Vegas CFS at 0.50 scale was running 2.4×
+// over on PERSONS (suggesting too few rows / annualization
+// inflation) — deeper cache reduces that.
+const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 

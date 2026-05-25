@@ -18,7 +18,9 @@ import { titleCaseOffense } from "../lib/titlecase-offense";
 //    "Downtown" or "Oak Lawn" rather than "310".
 
 const BASE = "https://www.dallasopendata.com/resource/qv6i-rri7.json";
-const ROW_LIMIT = 5_000;
+// v26 bump 5k → 30k. Dallas was under-counting PERSONS by 2.2×
+// against FBI; 5k rows only covered ~3 weeks of DPD volume.
+const ROW_LIMIT = 30_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
