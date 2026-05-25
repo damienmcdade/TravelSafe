@@ -77,17 +77,38 @@ async function warmCity(slug: string) {
   return Date.now() - start;
 }
 
+// v69 followup-3 — bounded-concurrency helper. Original tick fired
+// all 12 heavy cities in parallel which triggered upstream rate
+// limits on shared infrastructure (Cleveland's ArcGIS endpoint was
+// the worst offender — see v63's bounded-concurrency cleveland
+// adapter fix for the original incident). Cap heavy at 4, light at
+// 10 so we don't thundering-herd any one upstream provider.
+async function runBatched<T>(items: T[], concurrency: number, worker: (item: T) => Promise<number>): Promise<number[]> {
+  const results: number[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= items.length) return;
+      results[idx] = await worker(items[idx]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 async function tick() {
   if (inFlight) return; // skip overlap if prior tick is still running
   inFlight = true;
   const cycleStart = Date.now();
   try {
-    // Warm heavy cities first in parallel. Other cities also benefit
-    // from any Promise.all fan-out via adapter cache reuse.
-    const heavyTimings = await Promise.all(HEAVY_CITIES.map((c) => warmCity(c)));
-    // Touch every remaining city so the adapter cache stays hot.
+    // Heavy at 4 concurrent (Cleveland's 5min cycle alone monopolizes
+    // a slot; better to make small steady progress than all-at-once).
+    // Light at 10 concurrent (each finishes in <500ms; overhead is
+    // dominated by per-city in-process dispatch, not network).
+    const heavyTimings = await runBatched(HEAVY_CITIES, 4, warmCity);
     const lightCities = CITIES.map((c) => c.slug).filter((s) => !HEAVY_CITIES.includes(s));
-    const lightTimings = await Promise.all(lightCities.map((c) => warmCity(c)));
+    const lightTimings = await runBatched(lightCities, 10, warmCity);
     const total = Date.now() - cycleStart;
     const avgHeavy = heavyTimings.length
       ? Math.round(heavyTimings.reduce((a, b) => a + b, 0) / heavyTimings.length)

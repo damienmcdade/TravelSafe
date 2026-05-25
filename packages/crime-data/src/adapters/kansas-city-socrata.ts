@@ -43,7 +43,32 @@ const YEAR_DATASETS: Record<number, string> = {
 // shot without paginating.
 const ROW_LIMIT = 50_000;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+// v69 followup-3 — paired O(1) indexes (slug→label, label→rows)
+// built once per cache load. Same speedup pattern as Detroit; see
+// that adapter for the rationale.
+interface Cache {
+  fetchedAt: number;
+  rows: Incident[];
+  slugToLabel: Map<string, string>;
+  labelToRows: Map<string, Incident[]>;
+}
+let cache: Cache | null = null;
+function buildKCIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRows"> {
+  const slugToLabel = new Map<string, string>();
+  const labelToRows = new Map<string, Incident[]>();
+  for (const r of rows) {
+    const label = r.area;
+    if (!label) continue;
+    let bucket = labelToRows.get(label);
+    if (!bucket) { bucket = []; labelToRows.set(label, bucket); }
+    bucket.push(r);
+    if (!slugToLabel.has(label)) {
+      const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      slugToLabel.set(slug, label);
+    }
+  }
+  return { slugToLabel, labelToRows };
+}
 
 interface KcRow {
   report?: string;
@@ -223,7 +248,7 @@ export async function getRowsKansasCity(): Promise<Incident[]> {
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
   try {
     const rows = await fetchKansasCity();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
+    if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildKCIndexes(rows) };
     return rows;
   } catch (err) {
     console.warn("[kc] fetch failed:", (err as Error).message);
@@ -252,36 +277,34 @@ export async function getDiscoveredAreasKansasCity(): Promise<KnownArea[]> {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function labelForKansasCitySlug(slug: string, rows: Incident[]): string | null {
+// v69 followup-3 — O(1) slug → label via the cache-time index.
+function labelForKansasCitySlug(slug: string): string | null {
+  if (!cache) return null;
   const s = slug.toLowerCase();
   const want = s.startsWith("kc-") ? s.slice(3) : s;
-  for (const r of rows) {
-    const candidate = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (candidate === want) return r.area;
-  }
-  return null;
+  return cache.slugToLabel.get(want) ?? null;
 }
 
 export const kansasCityAdapter: CrimeDataAdapter = {
   name: "kansas-city-socrata",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {
-    const rows = await getRowsKansasCity();
-    const label = labelForKansasCitySlug(area, rows);
+    await getRowsKansasCity();
+    const label = labelForKansasCitySlug(area);
     if (!label) return null;
-    const inArea = rows.filter((r) => r.area === label);
+    const inArea = cache?.labelToRows.get(label) ?? [];
     if (inArea.length === 0) return null;
     const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 300 ? 5 : inArea.length > 150 ? 4 : inArea.length > 70 ? 3 : inArea.length > 20 ? 2 : 1;
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 
   async getIncidents(area: string, opts?: { limit?: number; since?: Date }) {
-    const rows = await getRowsKansasCity();
-    const label = labelForKansasCitySlug(area, rows);
+    await getRowsKansasCity();
+    const label = labelForKansasCitySlug(area);
     if (!label) return [];
-    let filtered = rows.filter((r) => r.area === label);
+    let filtered = cache?.labelToRows.get(label) ?? [];
     if (opts?.since) filtered = filtered.filter((r) => new Date(r.occurredAt) >= opts.since!);
-    filtered.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
+    filtered = [...filtered].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
     return filtered.slice(0, opts?.limit ?? 50);
   },
 
