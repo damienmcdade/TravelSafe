@@ -1,0 +1,35 @@
+# Railway nixpacks override.
+#
+# v62 — failed deploys since 2026-05-25 11:00 PT were stuck on the
+# auto-detected install phase: nixpacks runs a bare `npm i` BEFORE
+# the buildCommand from railway.json, and that bare `npm i` was
+# trying to fetch the workspace package `@travelsafe/crime-data`
+# from the public npm registry (which doesn't exist there). The
+# auto-detection picks up the root package.json but somehow loses
+# the workspace context.
+#
+# This file pins both phases to commands that explicitly know about
+# the npm workspace layout:
+#   * install: `npm install --include=dev` (root install, workspaces
+#     auto-link via npm's built-in workspace support since v7)
+#   * build:   db generate + build the crime-data package + build:api
+#     (mirrors what railway.json's buildCommand used to do, but moved
+#     here so nixpacks runs them in its build phase and not as an
+#     after-step that depends on a successful install phase first)
+
+[phases.setup]
+nixPkgs = ["nodejs_22", "npm-9_x", "openssl"]
+
+[phases.install]
+cmds = ["npm install --include=dev --include-workspace-root"]
+
+[phases.build]
+dependsOn = ["install"]
+cmds = [
+  "npm run db:generate",
+  "npm run build --workspace packages/crime-data",
+  "npm run build:api",
+]
+
+[start]
+cmd = "npm run start:api"
