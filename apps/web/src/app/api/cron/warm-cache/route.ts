@@ -8,16 +8,18 @@ import { requireCronSecret } from "@/server/lib/bearer-auth";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-// Vercel Cron hits this once daily (Hobby plan limit — Pro unlocks
-// minute-level schedules). The adapter cache TTL is 5 min so a daily hit
-// only guarantees a warm window briefly each day. For continuous warming
-// (e.g. on Pro), change the vercel.json schedule to `*/4 * * * *` so the
-// cache slot is replaced before each 5-min expiry. The handler can also
-// be triggered externally (UptimeRobot, GitHub Actions cron, etc.) on a
-// 4-min cadence — pass CRON_SECRET as a Bearer header to authorize.
+// v59 — REMOVED from vercel.json crons. The Railway warm-worker
+// (apps/api/src/services/warm/cache.worker.ts) handles continuous
+// cache warming on a 4-minute cycle, which keeps the adapter cache
+// hot 24/7 within its 5-min TTL. The Vercel daily cron used to
+// fail with 504s because the parallel fan-out across 30+ cities
+// (including the heaviest adapters like NYC paginated + Phoenix
+// 20-page + Detroit 199-area) could not complete inside Vercel's
+// 60s function ceiling.
 //
-// If CRON_SECRET is set, require it as a Bearer header so the endpoint
-// isn't a public trigger.
+// The handler is intentionally LEFT in place for manual debugging
+// (curl with CRON_SECRET Bearer) and as a fail-safe if Railway ever
+// goes down — just no longer Vercel-scheduled.
 export async function GET(req: NextRequest) {
   const denied = requireCronSecret(req);
   if (denied) return denied;
