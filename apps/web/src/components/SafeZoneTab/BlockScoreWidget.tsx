@@ -1,7 +1,9 @@
 "use client";
 import type { BlockScore, BlockScoreBand } from "./types";
 import { DataFreshnessBadge } from "../DataFreshnessBadge";
-import { POPULATION_VINTAGE } from "@/server/services/crime-data/population";
+// Import from the package directly (not the server-only shim) — this
+// is a client component, same reasoning as CityScoreCard.tsx.
+import { POPULATION_VINTAGE } from "@travelsafe/crime-data/population";
 
 export interface BlockScoreWidgetProps {
   /// Normalized 0–100 index. Pass null while loading.

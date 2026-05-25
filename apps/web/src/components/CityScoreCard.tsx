@@ -1,7 +1,11 @@
 "use client";
 import { useApi } from "@/lib/api-client";
 import { formatRatePer100k, formatRatePer100kProse, formatDeltaPct } from "@/lib/format";
-import { POPULATION_VINTAGE } from "@/server/services/crime-data/population";
+// Import the vintage label DIRECTLY from the package (not the apps/web
+// server-only shim) so this client component can include it in the
+// bundle without tripping Next's server/client boundary. The constant
+// has zero runtime cost and exposes no secrets.
+import { POPULATION_VINTAGE } from "@travelsafe/crime-data/population";
 
 interface ScoreRow {
   category: "PERSONS" | "PROPERTY";
