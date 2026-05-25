@@ -29,18 +29,29 @@ interface OakRow {
   location_1?: { type: "Point"; coordinates: [number, number] };
 }
 
-const PERSONS_TYPES = new Set([
+// OPD publishes crimetype as ALL-CAPS short codes that don't match
+// the "ASSAULT"/"THEFT" generics other adapters use. The v25 audit
+// (#153) caught that exact-match against this set silently dropped
+// MISDEMEANOR ASSAULT (84k), FELONY ASSAULT (50k), THREATS (17k),
+// PETTY THEFT (103k), GRAND THEFT (47k), all three BURG-* variants
+// (230k), and FORGERY & COUNTERFEITING (23k) — ALL surfaced as
+// SOCIETY. That under-counted Oakland's violent + property rates
+// to ~25% of the FBI baseline and yielded a misleading Grade A.
+// v26 switches to keyword substring match so partial labels still
+// classify correctly.
+const PERSONS_KEYWORDS = [
   "ASSAULT", "ROBBERY", "HOMICIDE", "MURDER", "RAPE", "SEX OFFENSE",
-  "KIDNAPPING", "HARASSMENT", "DOMESTIC VIOLENCE",
-]);
-const PROPERTY_TYPES = new Set([
-  "THEFT", "BURGLARY", "MOTOR VEHICLE THEFT", "VEHICLE THEFT",
-  "STOLEN VEHICLE", "VANDALISM", "ARSON", "FRAUD", "EMBEZZLEMENT",
-]);
+  "KIDNAPPING", "HARASSMENT", "DOMESTIC", "THREATS", "STALKING",
+  "MANSLAUGHTER",
+];
+const PROPERTY_KEYWORDS = [
+  "THEFT", "BURG", "VEHICLE", "VANDALISM", "ARSON", "FRAUD",
+  "EMBEZZLEMENT", "FORGERY", "COUNTERFEIT", "STOLEN",
+];
 function mapToNibrs(row: OakRow): CrimeCategory {
   const t = (row.crimetype ?? "").trim().toUpperCase();
-  if (PERSONS_TYPES.has(t)) return CrimeCategory.PERSONS;
-  if (PROPERTY_TYPES.has(t)) return CrimeCategory.PROPERTY;
+  for (const k of PERSONS_KEYWORDS) if (t.includes(k)) return CrimeCategory.PERSONS;
+  for (const k of PROPERTY_KEYWORDS) if (t.includes(k)) return CrimeCategory.PROPERTY;
   return CrimeCategory.SOCIETY;
 }
 

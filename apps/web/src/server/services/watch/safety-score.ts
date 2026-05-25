@@ -57,16 +57,18 @@ import { CITY_POPULATION, POPULATION_VINTAGE } from "../crime-data/population";
 // for general crime feeds. A dataConfidence note in the response
 // surfaces the calibration to users.
 const CFS_CALIBRATION: Record<string, number> = {
-  "cleveland":     0.35,
+  // Cleveland 0.35 → 0.55 (v26). 0.35 was too aggressive: it pulled
+  // violent from a raw 2743/100k down to 960/100k, under the FBI
+  // baseline of 1360 → misleading Grade A. 0.55 lands violent at
+  // ~1509/100k (~1.11× baseline, Grade C — Cleveland is genuinely
+  // higher-crime than national average, that's accurate). Property
+  // remains under-reported even at 0.55 (~985 vs FBI 3949) which
+  // suggests Cleveland's CFS feed structurally publishes fewer
+  // property dispatches than violent — separate investigation
+  // needed before tuning further. Tracked in #154.
+  "cleveland":     0.55,
   "new-orleans":   0.40,
   "las-vegas":     0.50,
-  // Boise added in v26 — adapter is BPD calls-for-service per the
-  // boise-arcgis.ts disclaimer, but it wasn't on the calibration
-  // list. Raw rate ran 6.5× the FBI Part-1 baseline (which is itself
-  // the entire violent-rate-to-CFS ratio for a sleepy city). 0.30
-  // scale lands violent at ~1.97× and property at ~0.72× of FBI
-  // baseline — mixed signal but inside the 3× divergence guard so
-  // a grade can compute.
   "boise":         0.30,
 };
 // POPULATION_VINTAGE is re-exported so consumers can render the label
