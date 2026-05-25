@@ -63,6 +63,17 @@ export default function CommunityPage() {
     postsPath,
     [postsPath],
   );
+  // v64 — fallback feed when the selected area/city has no posts yet.
+  // Without this the Connections tab shows just "No posts yet" with no
+  // content (the seed posts only exist in Pacific Beach, so every
+  // non-SD user saw an empty tab). Loading the global feed in the
+  // background gives users immediate content to read while still
+  // encouraging them to be the first to post in their own area.
+  const globalEmpty = !postsError && (posts ?? []).length === 0;
+  const { data: globalPosts } = useApi<PostListItem[]>(
+    globalEmpty ? "/community/posts" : null,
+    [globalEmpty],
+  );
   // area-stats: only query when an area is actually selected. The
   // citywide view doesn't need a per-area stats card; the citywide
   // aggregate below covers that case.
@@ -131,10 +142,26 @@ export default function CommunityPage() {
             )}
             {!postsError && (posts ?? []).length === 0 && (
               <div className="surface-muted p-4 text-sm text-slate2-500">
-                No posts yet for this area. Share the first heads-up below — anonymous, no sign-in required.
+                No posts yet for {area?.label ?? city.label}. Share the first heads-up below — anonymous, no sign-in required.
               </div>
             )}
             {(posts ?? []).map((p) => <PostCard key={p.id} post={p} />)}
+            {/* v64 — global fallback when the current area/city has no
+                posts. Header makes clear these are from across
+                CommunitySafe, not the user's selected area, so they
+                aren't mistaken for local activity. */}
+            {globalEmpty && (globalPosts ?? []).length > 0 && (
+              <section className="space-y-2 mt-4">
+                <header className="flex items-baseline justify-between">
+                  <h3 className="font-display text-sm text-slate2-900">Recent posts from across CommunitySafe</h3>
+                  <span className="text-xs text-slate2-500">{(globalPosts ?? []).length} shown</span>
+                </header>
+                <p className="text-xs text-slate2-500">
+                  These are heads-ups from other neighborhoods. Pick your area above to filter, or post the first one for {area?.label ?? city.label} below.
+                </p>
+                {(globalPosts ?? []).slice(0, 5).map((p) => <PostCard key={p.id} post={p} />)}
+              </section>
+            )}
           </section>
 
           {/* Anonymous composer directly under the feed. Composer requires

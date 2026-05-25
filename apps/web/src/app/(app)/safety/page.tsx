@@ -1,12 +1,25 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, useAnonymousAuth, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
 import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
+import { TrustedContactsManager } from "@/components/TrustedContactsManager";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { registryForState } from "@/lib/state-registries";
+
+// v64 — shared shape for the contact-picker that's now embedded in
+// both Check-on-me and Live-share. Keep loose (only the fields we
+// actually display) so the API endpoint can evolve without breaking
+// the picker.
+interface TrustedContact {
+  id: string;
+  label: string;
+  email: string | null;
+  phone: string | null;
+  status: "PENDING" | "CONFIRMED" | "REVOKED";
+}
 
 const EMERGENCY_DIAL = process.env.NEXT_PUBLIC_EMERGENCY_DIAL || "911";
 const DISCLAIMER_KEY = "travelsafe.safety.disclaimer.ack";
@@ -63,6 +76,14 @@ export default function PersonalSafetyPage() {
         </div>
       )}
 
+      {/* v64 — Check-on-me lives at the top of the tab; Live share
+          sits directly under it. These are the most-used action
+          surfaces, so they shouldn't be buried below tips or the
+          emergency dial. The emergency panel, safety tips, and
+          registry/account follow below. */}
+      <CheckInPanel />
+      <LiveSharePanel />
+
       <EmergencyPanel />
 
       <section className="surface p-5">
@@ -76,8 +97,6 @@ export default function PersonalSafetyPage() {
         areaSlug={area?.slug}
         jurisdictionSlug={!area ? city.slug : undefined}
       />
-      <CheckInPanel />
-      <LiveSharePanel />
 
       {/* Official registries — moved here from Connections (former
           CommunitySafe) per v7 directive. Lookup is a personal-safety
@@ -332,16 +351,89 @@ function EmergencyPanel() {
   );
 }
 
+// v64 — shared contact-picker used by Check-on-me + Live-share.
+// "Send to all confirmed" is the default; selecting individual
+// contacts narrows the set. Pending / revoked contacts are
+// rendered disabled with the reason so users understand why a
+// contact won't get the notification.
+function ContactPicker({
+  contacts,
+  selectedIds,
+  setSelectedIds,
+  sendToAll,
+  setSendToAll,
+  label,
+}: {
+  contacts: TrustedContact[];
+  selectedIds: Set<string>;
+  setSelectedIds: (s: Set<string>) => void;
+  sendToAll: boolean;
+  setSendToAll: (b: boolean) => void;
+  label: string;
+}) {
+  const confirmed = contacts.filter((c) => c.status === "CONFIRMED");
+  if (confirmed.length === 0) {
+    return (
+      <div className="text-xs text-slate2-500 surface-muted p-3 rounded-lg">
+        {label} No confirmed contacts yet — add one below to enable this.
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      <div className="text-xs uppercase tracking-wider text-slate2-500">{label}</div>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={sendToAll}
+          onChange={(e) => setSendToAll(e.target.checked)}
+        />
+        Send to all confirmed ({confirmed.length})
+      </label>
+      {!sendToAll && (
+        <ul className="space-y-1 pl-4">
+          {confirmed.map((c) => (
+            <li key={c.id}>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(c.id)}
+                  onChange={(e) => {
+                    const next = new Set(selectedIds);
+                    if (e.target.checked) next.add(c.id); else next.delete(c.id);
+                    setSelectedIds(next);
+                  }}
+                />
+                <span>{c.label}</span>
+                <span className="text-xs text-slate2-500">
+                  {[c.email, c.phone].filter(Boolean).join(" · ")}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function CheckInPanel() {
   const { ready: signedIn } = useAnonymousAuth();
   const { data, reload } = useApi<ActiveTimer[]>(signedIn ? "/safety/check-in/active" : null, [signedIn]);
   const active = data?.[0] ?? null;
+  // v64 — pull contacts so we can both surface the "who will be
+  // notified" picker on this card AND render the embedded contacts
+  // manager directly below the arm button. One less navigation hop.
+  const { data: contactsData, reload: reloadContacts } = useApi<TrustedContact[]>(signedIn ? "/contacts" : null, [signedIn]);
+  const contacts = useMemo(() => contactsData ?? [], [contactsData]);
 
   const [duration, setDuration] = useState(30);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const [sendToAll, setSendToAll] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!active) { setRemaining(null); return; }
@@ -364,9 +456,16 @@ function CheckInPanel() {
       } catch {
         // Continue without location — the API records null and the alert text says so.
       }
+      // v64 — pass the contact-target scope to the server. The
+      // server-side check-in worker reads this when the timer expires;
+      // unset = notify every confirmed contact (legacy behavior),
+      // contactIds = notify only the selected ones. The API is
+      // back-compat: missing field keeps the prior "all confirmed"
+      // semantics.
+      const contactIds = sendToAll ? undefined : Array.from(selectedIds);
       await api("/safety/check-in", {
         method: "POST",
-        body: JSON.stringify({ durationMinutes: duration, message: note || undefined, lat, lng }),
+        body: JSON.stringify({ durationMinutes: duration, message: note || undefined, lat, lng, contactIds }),
       });
       await reload();
     } catch (err) {
@@ -427,7 +526,21 @@ function CheckInPanel() {
             Note (optional, e.g. &quot;walking home from Pacific Beach&quot;)
             <input value={note} onChange={(e) => setNote(e.target.value)} className="mt-1 input" />
           </label>
-          <button onClick={arm} disabled={busy} className="sm:col-span-3 btn-primary disabled:opacity-50">
+          <div className="sm:col-span-3">
+            <ContactPicker
+              contacts={contacts}
+              selectedIds={selectedIds}
+              setSelectedIds={setSelectedIds}
+              sendToAll={sendToAll}
+              setSendToAll={setSendToAll}
+              label="Notify if I don't check in:"
+            />
+          </div>
+          <button
+            onClick={arm}
+            disabled={busy || (!sendToAll && selectedIds.size === 0 && contacts.some((c) => c.status === "CONFIRMED"))}
+            className="sm:col-span-3 btn-primary disabled:opacity-50"
+          >
             {busy ? "Arming…" : "Arm timer"}
           </button>
         </div>
@@ -435,6 +548,23 @@ function CheckInPanel() {
       {error && <p className="mt-3 text-sm text-dusk-700">{error}</p>}
       {!signedIn && (
         <p className="mt-3 text-xs text-slate2-500">Setting up your anonymous device session…</p>
+      )}
+
+      {/* v64 — trusted contacts embedded directly inside Check-on-me.
+          The user asked for the add UI to be available without
+          navigating away. Reloads the contacts list above when an add
+          succeeds so the picker reflects the new contact immediately
+          (once they confirm via email). */}
+      {signedIn && (
+        <div className="mt-5 pt-4 border-t border-sand-200">
+          <h3 className="font-display text-sm text-slate2-900 mb-2">Trusted contacts</h3>
+          <p className="text-xs text-slate2-500 mb-3">
+            Pending contacts need to confirm via email before they can be notified.
+          </p>
+          <div onClick={() => { void reloadContacts(); }}>
+            <TrustedContactsManager embedded />
+          </div>
+        </div>
       )}
     </section>
   );
@@ -449,6 +579,9 @@ function formatRemaining(ms: number) {
 function LiveSharePanel() {
   const { ready: signedIn } = useAnonymousAuth();
   const { data, reload } = useApi<LiveShare[]>(signedIn ? "/safety/live-share" : null, [signedIn]);
+  const { data: contactsData } = useApi<TrustedContact[]>(signedIn ? "/contacts" : null, [signedIn]);
+  const contacts = useMemo(() => contactsData ?? [], [contactsData]);
+
   // Defensive: drop rows with missing/invalid expiresAt before the
   // date comparison so a malformed cached row doesn't crash render
   // via `new Date(undefined) > new Date()` → invalid Date NaN flow.
@@ -461,23 +594,80 @@ function LiveSharePanel() {
 
   const [duration, setDuration] = useState(30);
   const [contact, setContact] = useState("");
+  // v64 — multi-recipient via trusted contacts list. The user can
+  // either type a one-off recipient (the legacy single-contact path)
+  // OR pick from trusted contacts (loops one create per contact and
+  // aggregates delivery results into batchResult).
+  const [sendToAll, setSendToAll] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [lastShare, setLastShare] = useState<{ shareUrl: string; expiresAt: string; delivery?: { kind: "email" | "phone" | null; sent: boolean; reason?: string } } | null>(null);
+  const [batchResult, setBatchResult] = useState<Array<{ label: string; sent: boolean; reason?: string }> | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
   async function create() {
     if (!signedIn || createBusy) return;
     setCreateBusy(true);
+    setBatchResult(null);
     try {
-      // v47 — accepts email OR phone in one input field. The server
-      // classifies + routes to SMTP / Twilio + surfaces a delivery
-      // object back so we can show "sent" vs "saved but not delivered"
-      // instead of the prior silent-success behavior.
-      const r = await api<{ shareUrl: string; expiresAt: string; delivery?: { kind: "email" | "phone" | null; sent: boolean; reason?: string } }>("/safety/live-share", {
-        method: "POST",
-        body: JSON.stringify({ durationMinutes: duration, contact: contact || undefined }),
-      });
-      setLastShare(r);
+      const confirmed = contacts.filter((c) => c.status === "CONFIRMED");
+      // Decide who to send to. Three modes:
+      //   1. one-off contact typed into the field — single create
+      //   2. picker: "send to all confirmed" → one create per contact
+      //   3. picker: specific contacts selected → one create per selected
+      // If both the field and the picker are populated we honor BOTH —
+      // power-user case where you want to add an extra one-off ad-hoc.
+      const pickerTargets: TrustedContact[] = sendToAll
+        ? confirmed
+        : confirmed.filter((c) => selectedIds.has(c.id));
+
+      const recipients: string[] = [];
+      if (contact.trim()) recipients.push(contact.trim());
+      for (const t of pickerTargets) {
+        const recip = t.email || t.phone;
+        if (recip) recipients.push(recip);
+      }
+
+      if (recipients.length === 0) {
+        // No recipients — generate a link only, no delivery attempt
+        const r = await api<{ shareUrl: string; expiresAt: string; delivery?: { kind: "email" | "phone" | null; sent: boolean; reason?: string } }>("/safety/live-share", {
+          method: "POST",
+          body: JSON.stringify({ durationMinutes: duration }),
+        });
+        setLastShare(r);
+        await reload();
+        return;
+      }
+
+      // Issue one create call per recipient. The server generates one
+      // share record per call (each recipient gets a unique URL with
+      // its own revoke handle). Aggregate the per-recipient delivery
+      // status into batchResult for the UI to summarize.
+      const results = await Promise.allSettled(
+        recipients.map((to, i) =>
+          api<{ shareUrl: string; expiresAt: string; delivery?: { kind: "email" | "phone" | null; sent: boolean; reason?: string } }>(
+            "/safety/live-share",
+            { method: "POST", body: JSON.stringify({ durationMinutes: duration, contact: to }) },
+          ).then((r) => ({ idx: i, to, r })),
+        ),
+      );
+
+      const batch: Array<{ label: string; sent: boolean; reason?: string }> = [];
+      let firstShare: typeof lastShare = null;
+      for (let i = 0; i < results.length; i++) {
+        const recip = recipients[i];
+        const matchedContact = pickerTargets.find((t) => (t.email || t.phone) === recip);
+        const label = matchedContact?.label ?? recip;
+        const res = results[i];
+        if (res.status === "fulfilled") {
+          if (!firstShare) firstShare = res.value.r;
+          batch.push({ label, sent: res.value.r.delivery?.sent ?? false, reason: res.value.r.delivery?.reason });
+        } else {
+          batch.push({ label, sent: false, reason: (res.reason as Error)?.message?.slice(0, 80) ?? "request_failed" });
+        }
+      }
+      setLastShare(firstShare);
+      setBatchResult(batch);
       await reload();
     } finally {
       setCreateBusy(false);
@@ -512,7 +702,7 @@ function LiveSharePanel() {
           />
         </label>
         <label className="text-sm sm:col-span-2">
-          Send link to email or phone (optional)
+          One-off recipient (optional)
           <input
             type="text"
             inputMode="text"
@@ -522,9 +712,19 @@ function LiveSharePanel() {
             className="mt-1 input"
           />
           <p className="mt-1 text-[11px] text-slate2-500">
-            Email: SMTP delivery · Phone: SMS via Twilio. Either works in this field.
+            Email: SMTP · Phone: SMS via Twilio. Leave blank to use only the picker below.
           </p>
         </label>
+        <div className="sm:col-span-3">
+          <ContactPicker
+            contacts={contacts}
+            selectedIds={selectedIds}
+            setSelectedIds={setSelectedIds}
+            sendToAll={sendToAll}
+            setSendToAll={setSendToAll}
+            label="Or send to trusted contacts:"
+          />
+        </div>
         <button
           onClick={create}
           disabled={!signedIn || createBusy}
@@ -535,6 +735,26 @@ function LiveSharePanel() {
       </div>
       {!signedIn && (
         <p className="mt-3 text-xs text-slate2-500">Setting up your anonymous device session…</p>
+      )}
+
+      {batchResult && batchResult.length > 0 && (
+        <div className="mt-4 surface-muted p-4 text-sm">
+          <div className="font-medium text-slate2-700 mb-2">Delivery summary:</div>
+          <ul className="space-y-1">
+            {batchResult.map((b, i) => (
+              <li key={i} className="text-xs flex items-center justify-between gap-2">
+                <span className="truncate">{b.label}</span>
+                {b.sent ? (
+                  <span className="px-2 py-0.5 rounded-full bg-sage-200 text-sage-700">Sent</span>
+                ) : (
+                  <span className="px-2 py-0.5 rounded-full bg-amber2-200 text-amber2-700">
+                    Not sent{b.reason ? ` · ${b.reason}` : ""}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {lastShare && (
