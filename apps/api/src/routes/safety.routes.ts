@@ -25,7 +25,7 @@ safetyRouter.post("/check-in", requireAuth, writeLimiter, async (req, res, next)
   }
 });
 
-safetyRouter.post("/check-in/:id/safe", requireAuth, async (req, res, next) => {
+safetyRouter.post("/check-in/:id/safe", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     res.json(await markSafe(req.session!.uid, req.params.id));
   } catch (err) {
@@ -56,7 +56,7 @@ safetyRouter.post("/live-share", requireAuth, writeLimiter, async (req, res, nex
   }
 });
 
-safetyRouter.delete("/live-share/:id", requireAuth, async (req, res, next) => {
+safetyRouter.delete("/live-share/:id", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     res.json(await revokeLiveShare(req.session!.uid, req.params.id));
   } catch (err) {
@@ -79,7 +79,7 @@ const safeRouteBody = z.object({
   to:   z.object({ lat: z.number(), lng: z.number() }),
 });
 
-safetyRouter.post("/safe-route", requireAuth, async (req, res, next) => {
+safetyRouter.post("/safe-route", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     const { from, to } = safeRouteBody.parse(req.body);
     res.json(await planSafeRoute(from, to));

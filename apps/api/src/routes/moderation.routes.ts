@@ -3,7 +3,9 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { ReviewActionKind } from "@prisma/client";
 import { requireAuth } from "../middleware/auth.js";
+import { writeLimiter } from "../middleware/rate-limit.js";
 import { HttpError } from "../middleware/error.js";
+import { env } from "../env.js";
 import { listPendingPosts, reportPost, reviewPost } from "../services/moderation/queue.service.js";
 
 export const moderationRouter = Router();
@@ -12,7 +14,7 @@ export const moderationRouter = Router();
 // moderator. TODO: real role table / RBAC.
 function requireModerator(req: Request) {
   const email = req.session?.email;
-  const list = (process.env.MODERATOR_EMAILS ?? "")
+  const list = (env.MODERATOR_EMAILS ?? "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -46,7 +48,7 @@ moderationRouter.post("/posts/:id/review", requireAuth, async (req, res, next) =
   }
 });
 
-moderationRouter.post("/posts/:id/report", requireAuth, async (req, res, next) => {
+moderationRouter.post("/posts/:id/report", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     const body = z.object({ reason: z.string().max(500).optional() }).parse(req.body ?? {});
     res.json(await reportPost(req.session!.uid, req.params.id, body.reason));
@@ -55,7 +57,7 @@ moderationRouter.post("/posts/:id/report", requireAuth, async (req, res, next) =
   }
 });
 
-moderationRouter.post("/block", requireAuth, async (req, res, next) => {
+moderationRouter.post("/block", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     const { userId } = z.object({ userId: z.string() }).parse(req.body);
     const blockerId = req.session!.uid;
@@ -71,7 +73,7 @@ moderationRouter.post("/block", requireAuth, async (req, res, next) => {
   }
 });
 
-moderationRouter.post("/mute", requireAuth, async (req, res, next) => {
+moderationRouter.post("/mute", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     const { userId } = z.object({ userId: z.string() }).parse(req.body);
     const muterId = req.session!.uid;

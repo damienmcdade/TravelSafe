@@ -47,5 +47,20 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CommunitySafe uses your location to show neighborhood safety scores, nearby incidents, and weather conditions for where you are right now.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CommunitySafe uses your location in the background to power Check-on-Me and Live Location Share so trusted contacts can verify you arrived safely.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>CommunitySafe lets you import trusted contacts from your address book so you can quickly add them to your Check-on-Me list.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>CommunitySafe uses the camera if you choose to attach a photo to a community post or incident report.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CommunitySafe accesses your photos only if you choose to attach an image to a community post.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>

@@ -147,8 +147,17 @@ export function startWarmWorker() {
   if (timer) return;
   console.log(`[warm-worker] starting (cycle every ${WARM_INTERVAL_MS / 1000}s)`);
   timer = setInterval(() => void tick(), WARM_INTERVAL_MS);
-  // Don't fire on startup — let the server finish booting first.
-  // The first cycle will run 4 minutes after launch.
+  // v71 followup — fire an initial warm cycle 15s after boot rather
+  // than waiting the full 4 min. Pre-v71 the audit caught Cleveland
+  // serving 503 warming_up for ~4 min on every container restart
+  // (its adapter takes ~30s for the bounded-concurrency 30-page
+  // pagination, and the route's 25s timeout fires first). The Redis
+  // L2 cache survives container restarts but only contains entries
+  // for cities the PRIOR container warmed — a brand-new city or a
+  // city missed by the previous cycle still cold-starts. Firing on
+  // boot (delayed 15s so DB + Redis are fully wired) gets the
+  // adapter caches populated before users hit the first request.
+  setTimeout(() => void tick(), 15_000);
 }
 
 export function stopWarmWorker() {

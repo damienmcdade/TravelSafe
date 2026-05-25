@@ -96,12 +96,12 @@ function Section({ title, subtitle, tips, initial = 6 }: { title: string; subtit
         ))}
       </ul>
       {hidden > 0 && (
-        <button onClick={() => setExpanded(true)} className="mt-3 btn-secondary text-xs px-3 py-1.5">
+        <button onClick={() => setExpanded(true)} aria-label={`Expand safety tips to show ${hidden} additional ${hidden === 1 ? "tip" : "tips"}`} className="mt-3 btn-secondary text-xs px-3 py-1.5">
           Show {hidden} more {hidden === 1 ? "card" : "cards"}
         </button>
       )}
       {expanded && tips.length > initial && (
-        <button onClick={() => setExpanded(false)} className="mt-3 btn-ghost text-xs px-3 py-1.5">
+        <button onClick={() => setExpanded(false)} aria-label="Collapse safety tips back to the initial set" className="mt-3 btn-ghost text-xs px-3 py-1.5">
           Show fewer
         </button>
       )}

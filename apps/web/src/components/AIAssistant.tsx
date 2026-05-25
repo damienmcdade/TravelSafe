@@ -280,6 +280,7 @@ export function AIAssistant() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={onKeyDown}
+                aria-label="Ask the safety assistant a question about any city or neighborhood"
                 placeholder="Ask about a city or neighborhood…"
                 rows={2}
                 disabled={busy}

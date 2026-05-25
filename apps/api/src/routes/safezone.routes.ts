@@ -24,16 +24,19 @@ const ScoreQuery = z.object({
   message: "Pass exactly one of `city` or `area`.",
 });
 
-// v68 hotfix — bound the per-request work to 25s so the route never
+// v68 — bound the per-request work to a deadline so the route never
 // hangs indefinitely on cold-cache adapters. Cleveland's adapter
-// in particular takes ~5min cold (bounded-concurrency CFS
-// pagination), which left every Cleveland safety-score request
-// blocking until either the adapter finished or the client gave up.
-// On timeout we return 503 with a "warming up" hint so the client
-// can show a friendly retry-in-a-moment surface instead of a
-// generic timeout error. The warm-worker continues populating the
-// cache in the background.
-const SCORE_TIMEOUT_MS = 25_000;
+// in particular takes ~30s cold (bounded-concurrency CFS
+// pagination over 30 pages), and other heavy cities can take 15-25s
+// on first-touch. On timeout we return 503 with a "warming up" hint
+// so the client can show a friendly retry-in-a-moment surface
+// instead of a generic timeout error. The warm-worker continues
+// populating the cache in the background.
+// v71 followup — bumped 25s → 45s. The pre-rollout audit caught the
+// 25s ceiling cutting off Cleveland's first request on every fresh
+// container before the warm-worker could populate Redis. 45s still
+// fits inside Vercel's 60s tryProxy header timeout with 15s headroom.
+const SCORE_TIMEOUT_MS = 45_000;
 function withScoreTimeout<T>(p: Promise<T>): Promise<T | typeof TIMEOUT> {
   return Promise.race([
     p,

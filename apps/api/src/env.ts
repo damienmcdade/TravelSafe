@@ -60,6 +60,16 @@ const Env = z.object({
   // process-local stores. Set automatically by Railway when the Redis
   // plugin is attached.
   REDIS_URL: z.string().url().optional(),
+
+  // Comma-separated list of moderator email addresses. Used by the
+  // moderation routes (requireModerator) for MVP authorization until
+  // a proper RBAC role table lands. Optional — when unset, no user
+  // can call moderator-only endpoints (which fail-closed at 403).
+  MODERATOR_EMAILS: z.string().optional(),
+
+  // Cron secret for /diag/grade-sanity + warm-cache trigger routes.
+  // Optional — when unset, cron routes return 503 (fail-closed).
+  CRON_SECRET: z.string().optional(),
 });
 
 const parsed = Env.parse(process.env);

@@ -4,6 +4,7 @@ import webpush from "web-push";
 import { prisma } from "../lib/prisma.js";
 import { env } from "../env.js";
 import { requireAuth } from "../middleware/auth.js";
+import { writeLimiter } from "../middleware/rate-limit.js";
 
 export const pushRouter = Router();
 
@@ -20,7 +21,7 @@ const subscribeBody = z.object({
   keys: z.object({ p256dh: z.string(), auth: z.string() }),
 });
 
-pushRouter.post("/subscribe", requireAuth, async (req, res, next) => {
+pushRouter.post("/subscribe", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     const sub = subscribeBody.parse(req.body);
     await prisma.pushSubscription.upsert({
@@ -34,7 +35,7 @@ pushRouter.post("/subscribe", requireAuth, async (req, res, next) => {
   }
 });
 
-pushRouter.delete("/subscribe", requireAuth, async (req, res, next) => {
+pushRouter.delete("/subscribe", requireAuth, writeLimiter, async (req, res, next) => {
   try {
     const { endpoint } = z.object({ endpoint: z.string().url() }).parse(req.body);
     await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: req.session!.uid } });

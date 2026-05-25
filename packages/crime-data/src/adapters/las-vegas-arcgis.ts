@@ -24,7 +24,12 @@ const PAGE_SIZE = 2000;
 // v26 bump 5 → 15. Las Vegas CFS at 0.50 scale was running 2.4×
 // over on PERSONS (suggesting too few rows / annualization
 // inflation) — deeper cache reduces that.
-const PAGES = 15;
+// v72 bump 15 → 40. Pre-rollout audit caught LV serving
+// windowDays=21 (CONF_LOW) because 30k records from a high-volume
+// CFS feed only covered ~3 weeks. 40 pages = 80k records gives
+// ~60-90 days of coverage at LV's daily volume, lifting confidence
+// to "medium"/"high" and stabilizing the grade.
+const PAGES = 40;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
@@ -153,9 +158,23 @@ async function fetchPage(offset: number): Promise<LvRow[]> {
 }
 
 async function fetchLasVegas(): Promise<Incident[]> {
-  const pages = await Promise.all(
-    Array.from({ length: PAGES }, (_, i) => fetchPage(i * PAGE_SIZE).catch(() => [] as LvRow[])),
-  );
+  // v72 — bounded concurrency to avoid rate-limiting the ArcGIS
+  // endpoint with 40 parallel requests (same pattern Charlotte +
+  // Cleveland adopted in v63/v69 after their all-parallel fetches
+  // dropped to 1998/60k rows under rate-limit). Concurrency=4
+  // keeps us well below ArcGIS's per-IP cap while still finishing
+  // 40 pages in ~10s total.
+  const pages: LvRow[][] = new Array(PAGES);
+  let cursor = 0;
+  const concurrency = 4;
+  const workers = Array.from({ length: Math.min(concurrency, PAGES) }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= PAGES) return;
+      pages[i] = await fetchPage(i * PAGE_SIZE).catch(() => [] as LvRow[]);
+    }
+  });
+  await Promise.all(workers);
   const rows = pages.flat();
   const out: Incident[] = [];
   for (const r of rows) {
