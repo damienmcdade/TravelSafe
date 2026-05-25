@@ -3,6 +3,8 @@ import { z } from "zod";
 import { optionalAuth } from "../middleware/auth.js";
 import { crimeData } from "../services/crime-data/index.js";
 import { nearestArea } from "../services/crime-data/neighborhoods.js";
+import { getCrimeMix, getCitywideCrimeMix } from "@travelsafe/crime-data/mix";
+import { getCitywideUpticks } from "@travelsafe/crime-data/upticks";
 
 export const crimeDataRouter = Router();
 
@@ -72,6 +74,39 @@ crimeDataRouter.get("/recent", optionalAuth, async (req, res, next) => {
     const area = resolveArea(q);
     if (!area) return res.status(400).json({ error: "area_required" });
     res.json({ area, reports: await crimeData.getRecentReports(area, { limit: q.limit }) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Added in v36 — mix + upticks port from apps/web. Same response shape
+// as the Vercel handlers at /api/crime-data/mix and /api/crime-data/upticks.
+// Implementation lives in @travelsafe/crime-data so both runtimes serve
+// identical bytes.
+const MixQuery = z.object({
+  city: z.string().min(1).max(120).optional(),
+  neighborhood: z.string().optional(),
+  jurisdiction: z.string().optional(),
+  days: z.coerce.number().int().min(1).max(730).optional(),
+});
+
+crimeDataRouter.get("/mix", async (req, res, next) => {
+  try {
+    const q = MixQuery.parse(req.query);
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
+    if (q.city) return res.json(await getCitywideCrimeMix(q.city));
+    const area = q.neighborhood ?? q.jurisdiction ?? "san-diego";
+    return res.json(await getCrimeMix(area, q.days));
+  } catch (err) {
+    next(err);
+  }
+});
+
+crimeDataRouter.get("/upticks", async (req, res, next) => {
+  try {
+    const citySlug = (typeof req.query.city === "string" ? req.query.city : null) ?? "san-diego";
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
+    return res.json(await getCitywideUpticks(citySlug));
   } catch (err) {
     next(err);
   }
