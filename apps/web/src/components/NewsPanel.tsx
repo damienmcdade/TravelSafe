@@ -80,6 +80,14 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
   const [showPicker, setShowPicker] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  // v67 — panel-level collapse so the news card doesn't dominate the
+  // page on landing. Distinct from `expanded` (which controls
+  // show-more inside the rendered list). Collapsed-by-default per
+  // the long-cards directive; user-toggleable; resets when they
+  // navigate between cities/areas (so the new area's news starts
+  // collapsed too rather than inheriting a previous open state).
+  const [panelOpen, setPanelOpen] = useState(false);
+  useEffect(() => { setPanelOpen(false); }, [city.slug, areaSlug]);
   useEffect(() => { setHidden(new Set(readPrefs().hidden)); }, []);
   // Reset to collapsed whenever the city changes — switching cities
   // brings in a brand-new feed and the user should re-decide whether
@@ -116,12 +124,30 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
   const hiddenCount = visibleItems.length - displayItems.length;
 
   return (
-    <section className="surface p-5 flex flex-col">
-      <header className="flex items-baseline justify-between flex-wrap gap-1">
-        <h3 className="font-display text-lg text-slate2-900">What&apos;s being reported</h3>
+    <section className="surface p-4 sm:p-5 flex flex-col">
+      {/* v67 — panel-level collapse toggle. Renders the headline only
+          when collapsed so the news card doesn't crowd the page on
+          landing. Source picker + window selector + body all live in
+          the expanded branch. */}
+      <button
+        type="button"
+        onClick={() => setPanelOpen(!panelOpen)}
+        aria-expanded={panelOpen}
+        className="w-full flex items-center justify-between gap-3 text-left hover:bg-bay-50/40 rounded-md -m-1 p-1 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span aria-hidden="true" className={`inline-block transition-transform text-slate2-500 text-sm shrink-0 ${panelOpen ? "rotate-90" : ""}`}>▶</span>
+          <h3 className="font-display text-lg text-slate2-900 truncate">What&apos;s being reported</h3>
+        </div>
+        {visibleItems.length > 0 && (
+          <span className="text-xs text-slate2-500 shrink-0 tabular-nums">{visibleItems.length} headlines</span>
+        )}
+      </button>
+      {!panelOpen ? null : <>
+      <header className="mt-3 flex items-baseline justify-between flex-wrap gap-1">
         <button
           onClick={() => setShowPicker((s) => !s)}
-          className="text-xs text-bay-700 hover:underline"
+          className="text-xs text-bay-700 hover:underline ml-auto"
           aria-expanded={showPicker}
         >
           {showPicker ? "Hide source picker" : `Pick sources${hidden.size ? ` (${hidden.size} hidden)` : ""}`}
@@ -233,6 +259,7 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
           )}
         </>
       )}
+      </>}
     </section>
   );
 }
