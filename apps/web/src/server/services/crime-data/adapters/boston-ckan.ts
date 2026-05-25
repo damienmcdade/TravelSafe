@@ -3,6 +3,7 @@ import { CrimeCategory } from "@prisma/client";
 import { env } from "../../../lib/env";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 // Bundled snapshot of the BPD CSV (most recent 5,000 rows). Refreshed via
 // `tools/refresh-boston.mjs` and committed to git. See "Why bundled?" below.
 // Shipped as a TS module rather than a JSON import — Next's file-tracing
@@ -148,7 +149,7 @@ function rowsFromSnapshot(): Incident[] {
       area: enrich(r.DISTRICT),
       occurredAt: safeIsoFromBostonDate(r.OCCURRED_ON_DATE),
       nibrsCategory: mapToNibrs({ OFFENSE_DESCRIPTION: r.OFFENSE_DESCRIPTION }),
-      ibrOffenseDescription: r.OFFENSE_DESCRIPTION?.trim() || "Unknown",
+      ibrOffenseDescription: titleCaseOffense(r.OFFENSE_DESCRIPTION),
       beat: r.DISTRICT ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,
@@ -200,7 +201,7 @@ async function fetchBoston(): Promise<Incident[]> {
       area: enrich(r.DISTRICT),
       occurredAt: safeIsoFromBostonDate(r.OCCURRED_ON_DATE),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: r.OFFENSE_DESCRIPTION?.trim() || "Unknown",
+      ibrOffenseDescription: titleCaseOffense(r.OFFENSE_DESCRIPTION),
       beat: r.DISTRICT ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,

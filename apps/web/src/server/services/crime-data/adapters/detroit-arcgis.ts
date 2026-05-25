@@ -2,6 +2,7 @@ import "server-only";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 
 // Detroit — RMS_Crime_Incidents on services2.arcgis.com.
 // ESRI Feature Server, same shape as Denver. Detroit's old Socrata endpoint
@@ -95,7 +96,7 @@ async function fetchDetroit(): Promise<Incident[]> {
       area,
       occurredAt: d.toISOString(),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: desc,
+      ibrOffenseDescription: titleCaseOffense(desc),
       beat: r.police_precinct ?? null,
       blockLabel: undefined,
       lat: typeof lat === "number" && lat !== 0 ? lat : undefined,

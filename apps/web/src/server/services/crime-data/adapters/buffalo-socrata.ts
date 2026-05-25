@@ -2,6 +2,7 @@ import "server-only";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 
 // Buffalo NY — Buffalo Police Crime Incidents on data.buffalony.gov
 // (Socrata dataset d6g9-xbgu).
@@ -81,7 +82,7 @@ async function fetchBuffalo(): Promise<Incident[]> {
       area: area && area !== "UNKNOWN" ? area : "Unknown",
       occurredAt: safeIso(r.incident_datetime),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: r.incident_type_primary?.trim() || r.parent_incident_type?.trim() || "Unknown",
+      ibrOffenseDescription: titleCaseOffense(r.incident_type_primary || r.parent_incident_type),
       beat: r.police_district ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,

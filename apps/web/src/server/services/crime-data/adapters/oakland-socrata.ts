@@ -3,6 +3,7 @@ import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
 import { oaklandPolygons } from "../../../data/oakland-neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 
 // Oakland — OPD Crime Reports.
 // Socrata dataset 3xav-7geq on data.oaklandca.gov. The dataset stamps each
@@ -124,7 +125,7 @@ async function fetchOakland(): Promise<Incident[]> {
       area,
       occurredAt: safeIso(r.datetime),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: r.description?.trim() || r.crimetype?.trim() || "Unknown",
+      ibrOffenseDescription: titleCaseOffense(r.description || r.crimetype),
       beat: r.policebeat ?? null,
       blockLabel: r.address ?? undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,

@@ -3,6 +3,7 @@ import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
 import { dallasPolygons } from "../../../data/dallas-neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 
 // Dallas TX — DPD Police Incidents.
 // Socrata dataset qv6i-rri7 on www.dallasopendata.com. Refreshed daily.
@@ -137,7 +138,7 @@ async function fetchDallas(): Promise<Incident[]> {
       area,
       occurredAt: safeIso(r.date1),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: r.nibrs_crime?.trim() || r.offincident?.trim() || "Unknown",
+      ibrOffenseDescription: titleCaseOffense(r.nibrs_crime || r.offincident),
       beat: r.beat ?? r.sector ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,

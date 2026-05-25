@@ -2,6 +2,7 @@ import "server-only";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 
 // Cleveland — Cleveland Division of Police Calls for Service (CAD) on
 // services3.arcgis.com (owner: opendataCLE). The feed is dispatched CFS,
@@ -122,7 +123,7 @@ async function fetchCleveland(): Promise<Incident[]> {
       area: r.neighborhood?.trim() || "Unknown",
       occurredAt: r.IncidentDate ? new Date(r.IncidentDate).toISOString() : new Date(0).toISOString(),
       nibrsCategory: cat,
-      ibrOffenseDescription: desc || "Unknown",
+      ibrOffenseDescription: titleCaseOffense(desc),
       beat: r.police_district ? `District ${r.police_district}` : null,
       blockLabel: undefined,
       lat: typeof r.latitude === "number" && r.latitude !== 0 ? r.latitude : undefined,

@@ -2,6 +2,7 @@ import "server-only";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
 import type { KnownArea } from "../neighborhoods";
+import { titleCaseOffense } from "../lib/titlecase-offense";
 
 // City of Chicago — Crimes 2001 to Present.
 // Socrata dataset ijzp-q8t2 on data.cityofchicago.org. The original public
@@ -110,7 +111,7 @@ async function fetchChicago(): Promise<{ rows: Incident[]; areaByNum: Map<number
       area: areaName,
       occurredAt: r.date ?? new Date(0).toISOString(),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: (r.description?.trim() || r.primary_type?.trim()) ?? "Unknown",
+      ibrOffenseDescription: titleCaseOffense(r.description || r.primary_type),
       beat: r.beat ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,
