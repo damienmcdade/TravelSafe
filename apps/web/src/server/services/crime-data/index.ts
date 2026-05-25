@@ -195,8 +195,46 @@ export const crimeData = {
       }
       const dominantCategory = (Object.entries(byCategory) as Array<["PERSONS" | "PROPERTY" | "SOCIETY", number]>)
         .sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-      const riskLevel = (incidents.length > 400 ? 5 : incidents.length > 200 ? 4 : incidents.length > 80 ? 3 : incidents.length > 25 ? 2 : 1) as 1 | 2 | 3 | 4 | 5;
-      perArea.push({ slug: area.slug, label: area.label, incidentCount: incidents.length, riskLevel, byCategory, dominantCategory: incidents.length > 0 ? dominantCategory : null });
+      // riskLevel is computed RELATIVE to other neighborhoods in this
+      // same city below (after the loop) — see the percentile pass.
+      // Stash the raw count here; we'll rewrite it once we know the
+      // distribution. Default to 1 so the schema is satisfied.
+      perArea.push({ slug: area.slug, label: area.label, incidentCount: incidents.length, riskLevel: 1, byCategory, dominantCategory: incidents.length > 0 ? dominantCategory : null });
+    }
+    // Cross-city normalization (v23 audit fix): the prior per-adapter
+    // absolute-count cutoffs meant a Pacific Beach neighborhood with
+    // 150 incidents could rate 3 in San Diego but 5 in Kansas City,
+    // making the riskLevel meaningless across cities. Recompute now
+    // as PERCENTILE-WITHIN-CITY so the badge always means "how does
+    // this neighborhood compare to others in YOUR city" — same
+    // semantic everywhere. Bands:
+    //   top 10%     → 5 (worst)
+    //   next 20%    → 4
+    //   middle 40%  → 3
+    //   next 20%    → 2
+    //   bottom 10%  → 1 (best)
+    {
+      const sorted = perArea
+        .map((p, i) => ({ i, count: p.incidentCount }))
+        .sort((a, b) => b.count - a.count); // descending
+      const n = sorted.length;
+      if (n > 0) {
+        for (let rank = 0; rank < n; rank++) {
+          const pct = rank / n; // 0 = worst, ~1 = best
+          let lvl: 1 | 2 | 3 | 4 | 5;
+          if (pct < 0.10) lvl = 5;
+          else if (pct < 0.30) lvl = 4;
+          else if (pct < 0.70) lvl = 3;
+          else if (pct < 0.90) lvl = 2;
+          else lvl = 1;
+          // Neighborhoods with ZERO incidents always fall to 1, even
+          // if they happen to land in a higher percentile bucket
+          // (e.g. a small city where most neighborhoods have 0 and
+          // a couple have 1).
+          if (sorted[rank].count === 0) lvl = 1;
+          perArea[sorted[rank].i].riskLevel = lvl;
+        }
+      }
     }
     const topOffenses = Array.from(offenseCounts.entries())
       .map(([offense, count]) => ({ offense, count }))

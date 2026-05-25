@@ -14,13 +14,16 @@ interface SummaryResp {
   priorCount: number;
 }
 
-// Severity badge tones — mapped to the calm palette already in use.
-// Elevated stays in the amber/coral zone, never bright red, so the
-// card doesn't read as a panic alert (per the calm-UX guidance).
+// Severity badge tones — matched to BlockScoreWidget's bands so the
+// same severity reads the same color anywhere it appears on a given
+// page. v23 audit caught the prior elevated=amber here vs.
+// elevated=coral on BlockScoreWidget, which made the two cards on
+// the same Neighborhood Awareness page disagree visually about the
+// same area's severity.
 const SEVERITY: Record<Severity, { label: string; chip: string }> = {
   low:      { label: "Low",      chip: "bg-sage-100 text-sage-700 ring-sage-200" },
   moderate: { label: "Moderate", chip: "bg-sand-100 text-slate2-700 ring-sand-300" },
-  elevated: { label: "Elevated", chip: "bg-amber2-50 text-amber2-700 ring-amber2-300" },
+  elevated: { label: "Elevated", chip: "bg-coral-100 text-coral-700 ring-coral-200" },
 };
 
 // Trend arrow as inline SVG so it renders consistently in any
