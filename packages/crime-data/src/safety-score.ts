@@ -74,7 +74,16 @@ const CFS_CALIBRATION: Record<string, number> = {
   // inside the divergence guard.
   "new-orleans":   0.80,
   "las-vegas":     0.50,
-  "boise":         0.30,
+  // v68 followup — Boise 0.30 → 0.20. The grade-sanity worker flagged
+  // PERSONS at 2.01× FBI city baseline even after the 0.30 scale —
+  // BPD's "Violent Crimes" category label is too coarse for adapter-
+  // side Part-1 filtering (one bucket spanning aggravated assault,
+  // simple assault, intimidation, family disturbance, etc.). 0.20
+  // brings violent into ~1.34× (still over but plausibly real —
+  // Boise has elevated reporting). Property drops to ~0.48× which
+  // is acceptable trade-off; per-category CFS scaling is a deeper
+  // architectural change tracked separately.
+  "boise":         0.20,
 };
 // POPULATION_VINTAGE is re-exported so consumers can render the label
 // without reaching into the shared module independently.
@@ -204,6 +213,12 @@ const PART1_VIOLENT_EXCLUDE = [
   // city baseline (grade-sanity worker's biggest flagged outlier).
   /\bintimidate/i,
   /\bthreaten/i,
+  // v68 followup — catch the noun "THREATS" (e.g. Cleveland CFS
+  // "Threats Report - Susp on Scene") plus generic "FIGHT" (CFS
+  // descriptor for verbal/non-injury altercations, not Part-1
+  // aggravated assault). These slip past /threaten/ alone.
+  /\bthreats\b/i,
+  /\bfight\b/i,
   /\bharassment\b/i,
   /\bharass\b/i,
   /\bharrassment\b/i,       // NYPD misspells this in their offense feed
