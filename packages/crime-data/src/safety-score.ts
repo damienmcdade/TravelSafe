@@ -197,7 +197,15 @@ const PART1_VIOLENT_EXCLUDE = [
   /\bsimple\b/i,            // SDPD "SIMPLE ASSAULT", LAPD "...Simple..."
   /misdemeanor/i,
   /\bintimidation\b/i,
+  // v68 — also catch the present-tense / non-noun forms. Las Vegas
+  // emits "INTIMIDATE", "THREATEN", "THREATENING" which weren't being
+  // caught by the noun-form patterns above. These were flooding LV's
+  // PERSONS count and pushing the citywide ratio to 4.45× the FBI
+  // city baseline (grade-sanity worker's biggest flagged outlier).
+  /\bintimidate/i,
+  /\bthreaten/i,
   /\bharassment\b/i,
+  /\bharass\b/i,
   /\bharrassment\b/i,       // NYPD misspells this in their offense feed
   /\bstrangulation\b/i,
   /\bmenacing\b/i,
@@ -205,6 +213,13 @@ const PART1_VIOLENT_EXCLUDE = [
   /human traffick/i,
   /kidnap/i,
   /\babduct/i,
+  // v68 — non-criminal disturbance dispatches that some CFS-flavored
+  // adapters classify as PERSONS because they involve people:
+  /family disturbance/i,
+  /family trouble/i,
+  /verbal dispute/i,
+  /civil dispute/i,
+  /\bdisturbance\b(?!.*assault)/i,
   // Philadelphia (CARTO) emits "Other Assaults" for simple
   // assault — half a million rows that pushed Philly's PERSONS
   // rate to 3.3× the FBI Part-1 baseline. NIBRS jurisdictions
