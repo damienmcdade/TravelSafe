@@ -61,17 +61,36 @@ async function warmCity(slug: string) {
     getCitywideTrend(slug),
   ]);
   if (scoreResult.status === "fulfilled" && scoreResult.value) {
-    const redis = getRedis();
-    if (redis) {
-      try {
-        await redis.setex(`${REDIS_KEY_PREFIX}${slug}`, REDIS_TTL_SECONDS, JSON.stringify(scoreResult.value));
-      } catch (err) {
-        // Redis hiccup is non-fatal — in-process cache is still warm
-        // for the route to fall back on.
-        if (process.env.NODE_ENV !== "production") {
-          console.warn(`[warm-worker] redis cache write failed for ${slug}:`, (err as Error).message);
+    // v70 followup — sanity-guard the Redis write. The audit caught
+    // Detroit + Minneapolis serving windowDays=0 / all-zero counts
+    // because a prior warm cycle had a transient upstream hiccup, the
+    // safety-score computed a degenerate result (0 in-window
+    // incidents), and the warm-worker dutifully wrote that broken
+    // payload to Redis. Reads then served the broken value for the
+    // full 30-min TTL even though the in-process cache was healthy.
+    //
+    // Now only persist if the result has meaningful data: at least
+    // one in-window incident counted across PERSONS+PROPERTY AND a
+    // non-zero windowDays. Otherwise the prior Redis entry stays
+    // (it might be stale but it's not BROKEN) and the route can
+    // fall through to in-process compute.
+    const v = scoreResult.value;
+    const rows = (v.rows ?? []) as Array<{ count?: number }>;
+    const totalCounted = rows.reduce((s, r) => s + (r.count ?? 0), 0);
+    const wd = (v as { windowDays?: number }).windowDays ?? 0;
+    if (totalCounted > 0 && wd > 0) {
+      const redis = getRedis();
+      if (redis) {
+        try {
+          await redis.setex(`${REDIS_KEY_PREFIX}${slug}`, REDIS_TTL_SECONDS, JSON.stringify(v));
+        } catch (err) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn(`[warm-worker] redis cache write failed for ${slug}:`, (err as Error).message);
+          }
         }
       }
+    } else if (process.env.NODE_ENV === "production") {
+      console.log(`[warm-worker] skipping redis write for ${slug} (degenerate result: totalCounted=${totalCounted} windowDays=${wd})`);
     }
   }
   return Date.now() - start;
