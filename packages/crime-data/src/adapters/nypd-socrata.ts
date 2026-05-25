@@ -10,6 +10,15 @@ import type { KnownArea } from "../neighborhoods.js";
 
 const BASE = "https://data.cityofnewyork.us/resource/5uac-w243.json";
 const CACHE_TTL_MS = 5 * 60 * 1000;
+// v58 — pagination. Socrata's unauthenticated $limit ceiling is 50,000
+// rows per request. NYC publishes ~500k complaints/year via this feed,
+// so a single 50k page covers only ~30-40 days — driving the citywide
+// safety-score windowDays into the "short" band and dropping the
+// PERSONS/PROPERTY ratio vs FBI baseline (audit was 0.67 / 0.43).
+// 4 pages × 50k = 200k rows ≈ 4-5 months of NYC volume, putting
+// windowDays solidly above the 90-day comfort threshold.
+const PAGE_SIZE = 50_000;
+const PAGES_TO_FETCH = 4;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
 interface SodaRow {
@@ -176,16 +185,28 @@ function precinctName(p: string | undefined): string | null {
   return PRECINCT_TO_NEIGHBORHOOD[n] ?? `${ordinal(n)} Precinct`;
 }
 
-async function fetchNypd(): Promise<Incident[]> {
+async function fetchNypdPage(offset: number): Promise<SodaRow[]> {
   const url = new URL(BASE);
   url.searchParams.set("$select", "cmplnt_num,cmplnt_fr_dt,cmplnt_fr_tm,boro_nm,addr_pct_cd,ofns_desc,pd_desc,law_cat_cd,latitude,longitude");
   url.searchParams.set("$order", "cmplnt_fr_dt DESC");
-  url.searchParams.set("$limit", "50000");
+  url.searchParams.set("$limit", String(PAGE_SIZE));
+  url.searchParams.set("$offset", String(offset));
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
   });
-  if (!res.ok) throw new Error(`NYPD SODA ${res.status} ${url}`);
-  const rows = (await res.json()) as SodaRow[];
+  if (!res.ok) throw new Error(`NYPD SODA ${res.status} at offset ${offset}`);
+  return (await res.json()) as SodaRow[];
+}
+
+async function fetchNypd(): Promise<Incident[]> {
+  const offsets = Array.from({ length: PAGES_TO_FETCH }, (_, i) => i * PAGE_SIZE);
+  const pages = await Promise.all(
+    offsets.map((o) => fetchNypdPage(o).catch((err) => {
+      console.warn(`[nypd] page offset=${o} failed:`, (err as Error).message);
+      return [] as SodaRow[];
+    })),
+  );
+  const rows = pages.flat();
   // Drop rows with no parseable date BEFORE constructing Incidents. The
   // earlier `new Date(0).toISOString()` fallback survived row mapping
   // but was filtered out by the citywide aggregator's `t > 0` invariant,

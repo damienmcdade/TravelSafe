@@ -1,0 +1,43 @@
+name: Refresh Boston Snapshot
+
+# Boston ships as a committed bundled snapshot because data.boston.gov
+# rejects Vercel's IP range for the live CSV download. This workflow
+# regenerates the snapshot weekly so the data doesn't drift more than
+# ~7 days behind BPD's publish cadence (which itself runs ~1 month
+# behind real-time, so a 7-day refresh is plenty fresh).
+#
+# Runs every Monday 09:00 UTC (04:00 ET, before US business hours).
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+  workflow_dispatch: # allow manual trigger from the Actions tab
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run refresh-boston.mjs
+        run: node tools/refresh-boston.mjs
+
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet packages/crime-data/src/data/boston-snapshot.ts packages/crime-data/src/data/boston-snapshot.json; then
+            echo "No changes — BPD CSV unchanged since last refresh."
+            exit 0
+          fi
+          git add packages/crime-data/src/data/boston-snapshot.ts packages/crime-data/src/data/boston-snapshot.json
+          git commit -m "chore(boston): refresh bundled snapshot $(date -u +%Y-%m-%d)"
+          git push

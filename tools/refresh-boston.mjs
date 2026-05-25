@@ -21,8 +21,12 @@ import readline from "node:readline";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, "..");
-const OUT_JSON = resolve(REPO_ROOT, "apps/web/src/server/data/boston-snapshot.json");
-const OUT_PATH = resolve(REPO_ROOT, "apps/web/src/server/data/boston-snapshot.ts");
+// v58 path update — boston-snapshot moved to the @travelsafe/crime-data
+// workspace package during the v34 monorepo extraction. Writing to the
+// old apps/web path created dead files while the live adapter kept
+// loading the stale committed snapshot (3+ days lag observed in prod).
+const OUT_JSON = resolve(REPO_ROOT, "packages/crime-data/src/data/boston-snapshot.json");
+const OUT_PATH = resolve(REPO_ROOT, "packages/crime-data/src/data/boston-snapshot.ts");
 const TMP_CSV = resolve(REPO_ROOT, ".cache/boston-full.csv");
 const ROWS_TO_KEEP = 5000;
 const CSV_URL = "https://data.boston.gov/dataset/6220d948-eae2-4e4b-8723-2dc8e67722a3/resource/b973d8cb-eeb2-4e7e-99da-c92938efc9c0/download/tmpcyl1hw5w.csv";
@@ -42,31 +46,55 @@ const sizeMB = (statSync(TMP_CSV).size / 1_048_576).toFixed(1);
 console.log(`Downloaded ${sizeMB} MB in ${((Date.now()-start)/1000).toFixed(1)}s`);
 
 console.log(`Parsing + filtering to most-recent ${ROWS_TO_KEEP} rows …`);
+// v58 — quote-aware CSV parser. The prior naive line.split(",")
+// shifted column indexes whenever OFFENSE_DESCRIPTION contained
+// internal commas (e.g. "ANIMAL INCIDENTS (DOG BITES, LOST DOG, ETC)"),
+// which collapsed the snapshot from ~5k rows to ~800 garbage rows
+// with OCCURRED_ON_DATE = "47" etc. The fix is to handle the BPD
+// CSV's standard RFC-4180-ish quoting.
+function splitCSV(line) {
+  const out = [];
+  let cur = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
+      else cur += ch;
+    } else {
+      if (ch === '"') inQuotes = true;
+      else if (ch === ",") { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
 const rl = readline.createInterface({ input: createReadStream(TMP_CSV), crlfDelay: Infinity });
 let headers = null;
 const idx = {};
 const rows = [];
 for await (const line of rl) {
   if (!headers) {
-    headers = line.split(",");
+    headers = splitCSV(line);
     for (const [i, h] of headers.entries()) idx[h] = i;
     continue;
   }
-  // Lenient CSV split — BPD's file doesn't escape commas inside fields for
-  // the columns we care about (incident number, offense, district, date, lat,
-  // lng all simple values). The OFFENSE_DESCRIPTION field can include commas
-  // but it gets quoted; for snapshot purposes we accept that some
-  // descriptions will lose trailing words. Good enough for a coarse-grained
-  // snapshot — the live proxy path keeps full fidelity.
-  const f = line.split(",");
+  const f = splitCSV(line);
   const date_str = f[idx.OCCURRED_ON_DATE];
   if (!date_str) continue;
-  const ts = Date.parse(date_str.replace(" ", "T"));
+  // BPD timestamps land as "2023-01-27 22:44:00+00" (no colon in
+  // offset, two-digit hour only). Node's Date.parse rejects "+00" —
+  // normalize to "+00:00" so the timestamp parses to a finite number.
+  const iso = date_str.replace(" ", "T").replace(/([+-]\d{2})$/, "$1:00");
+  const ts = Date.parse(iso);
   if (!Number.isFinite(ts)) continue;
   rows.push({
     ts,
     INCIDENT_NUMBER: f[idx.INCIDENT_NUMBER] || "",
-    OFFENSE_DESCRIPTION: (f[idx.OFFENSE_DESCRIPTION] || "").replace(/^"|"$/g, "").trim(),
+    OFFENSE_DESCRIPTION: (f[idx.OFFENSE_DESCRIPTION] || "").trim(),
     DISTRICT: f[idx.DISTRICT] || "",
     OCCURRED_ON_DATE: date_str,
     Lat: f[idx.Lat] || null,
