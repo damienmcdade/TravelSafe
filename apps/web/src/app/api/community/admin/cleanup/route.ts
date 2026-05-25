@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { env } from "@/server/lib/env";
+import { requireCronSecret } from "@/server/lib/bearer-auth";
 import { prisma } from "@/server/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -18,14 +18,14 @@ export const dynamic = "force-dynamic";
 //
 // Idempotent: re-running it is a no-op once everything's clean.
 export async function POST(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  const secret = env.CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json({ error: "CRON_SECRET_not_configured" }, { status: 503 });
-  }
-  if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
+  // v62 — switched to shared requireCronSecret helper. The previous
+  // inline Bearer check duplicated the fail-closed + 401 logic and
+  // drifted from /api/cron/* (e.g. the inline version returned
+  // "CRON_SECRET_not_configured" while requireCronSecret returns
+  // "cron_secret_required"). Unifying so audit + monitoring sees a
+  // single error code shape across all secret-gated endpoints.
+  const denied = requireCronSecret(req);
+  if (denied) return denied;
 
   // Hard list of substrings we want gone. These match the seed/test posts we
   // shipped during development; the substring approach means we don't need to
