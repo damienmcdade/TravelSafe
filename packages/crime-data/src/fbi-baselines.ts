@@ -37,6 +37,8 @@ export const CITY_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "cleveland": { violent: 1360, property: 3949, year: 2025, ori: "OHCLP0000" },
   "dallas": { violent: 576, property: 3070, year: 2025, ori: "TXDPD0000" },
   "colorado-springs": { violent: 670, property: 3900, year: 2025, ori: "CO0210100" },
+  // v70 — FBI CDE 2025 reported rates for Denver PD ORI CO0160100.
+  "denver": { violent: 873, property: 4196, year: 2025, ori: "CO0160100" },
   "detroit": { violent: 1652, property: 3949, year: 2025, ori: "MI8234900" },
   "kansas-city": { violent: 1371, property: 3970, year: 2025, ori: "MOKPD0000" },
   "las-vegas": { violent: 409, property: 2418, year: 2025, ori: "NV0020100" },

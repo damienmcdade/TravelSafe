@@ -6,10 +6,12 @@ import { sfAdapter, getDiscoveredAreasSF } from "./adapters/sf-socrata.js";
 import { chicagoAdapter, getDiscoveredAreasChicago } from "./adapters/chicago-socrata.js";
 import { seattleAdapter, getDiscoveredAreasSeattle } from "./adapters/seattle-socrata.js";
 import { nypdAdapter, getDiscoveredAreasNYC } from "./adapters/nypd-socrata.js";
-// Denver retired (upstream ArcGIS feed moved behind auth in 2026).
-// Adapter file is preserved at ./adapters/denver-arcgis.ts with a
-// DENVER_ARCGIS_TOKEN passthrough so we can re-enable if a key is
-// obtained later. Replaced by Colorado Springs.
+// v70 — Denver UN-retired. The "Token Required" gate that shut the
+// public crime FeatureServer in May 2026 was lifted upstream by
+// 2026-05-25. The endpoint now serves anonymously again — verified
+// from Railway IP returning fresh through 2026-05-21. Re-imported
+// alongside Colorado Springs (CoSp stayed as the metro fallback).
+import { denverAdapter, getDiscoveredAreasDenver } from "./adapters/denver-arcgis.js";
 import { coloradoSpringsAdapter, getDiscoveredAreasCoSp } from "./adapters/colorado-springs-socrata.js";
 import { detroitAdapter, getDiscoveredAreasDetroit } from "./adapters/detroit-arcgis.js";
 import { dcAdapter, getDiscoveredAreasDC } from "./adapters/dc-arcgis.js";
@@ -275,6 +277,19 @@ export const CITIES: CityEntry[] = [
     adapter: phoenixAdapter,
     discover: getDiscoveredAreasPhoenix,
   },
+  {
+    // v70 — Denver re-enabled. Upstream auth gate that blocked us in
+    // May 2026 was lifted by 2026-05-25; ODC_CRIME_OFFENSES_P now
+    // serves anonymous requests again. Appended at the END of CITIES
+    // (not inserted at the original CITIES[6] slot it would have
+    // had) because `cityForArea` uses hardcoded indices — inserting
+    // mid-list would shift every subsequent index.
+    slug: "denver",
+    label: "Denver",
+    bbox: { south: 39.61, west: -105.11, north: 39.91, east: -104.60 },
+    adapter: denverAdapter,
+    discover: getDiscoveredAreasDenver,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -321,8 +336,6 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("sea-") || slug === "seattle")       return CITIES[4];
   if (slug.startsWith("ny-")  || slug === "new-york")      return CITIES[5];
   if (slug.startsWith("cosp-") || slug === "colorado-springs") return CITIES[6];
-  // Legacy /den- slugs (Denver retired) fall through to the default
-  // city lookup — bookmarks won't crash; they just won't resolve.
   if (slug.startsWith("det-") || slug === "detroit")       return CITIES[7];
   if (slug.startsWith("dc-")  || slug === "washington-dc") return CITIES[8];
   if (slug.startsWith("bos-") || slug === "boston")        return CITIES[9];
@@ -346,6 +359,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("sp-")   || slug === "saint-paul")   return CITIES[27];
   if (slug.startsWith("pgh-")  || slug === "pittsburgh")   return CITIES[28];
   if (slug.startsWith("phx-")  || slug === "phoenix")      return CITIES[29];
+  if (slug.startsWith("den-")  || slug === "denver")       return CITIES[30];
   return CITIES[0];
 }
 
