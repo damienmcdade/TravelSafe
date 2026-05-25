@@ -103,7 +103,14 @@ export function WheelCityAreaPicker({
     const picked = cityAreas.find((a) => a.slug === slug);
     if (!picked) return;
     setArea({ slug: picked.slug, label: picked.label, jurisdiction: picked.jurisdiction });
-    onCommit?.();
+    // v46 — do NOT call onCommit() here. The wheel's onChange fires
+    // on every scroll-settle, including transient stops as the user
+    // scrubs through a long neighborhood list. Previously each
+    // intermediate stop closed the dropdown, locking the user out
+    // before they reached their target. Now the global useArea
+    // store still updates immediately (so /neighborhood + /map
+    // refresh in real time), but the dropdown stays open until
+    // the user explicitly closes it via outside-click or Escape.
   }
 
   // Wheel items.
@@ -204,9 +211,20 @@ export function WheelCityAreaPicker({
         </div>
       </div>
 
-      <p className={`mt-3 text-[11px] text-slate2-500 text-center ${compact ? "text-[10px]" : ""}`}>
-        Each wheel commits on settle. State filters the city list; city filters the neighborhood list.
-      </p>
+      <div className={`mt-3 flex items-center justify-between gap-2 flex-wrap ${compact ? "text-[11px]" : ""}`}>
+        <p className={`text-[11px] text-slate2-500 ${compact ? "text-[10px]" : ""}`}>
+          Each wheel updates the page as you settle. Tap done when finished.
+        </p>
+        {onCommit && (
+          <button
+            type="button"
+            onClick={() => onCommit()}
+            className="btn-primary text-sm px-3 py-1.5"
+          >
+            Done
+          </button>
+        )}
+      </div>
     </>
   );
 
