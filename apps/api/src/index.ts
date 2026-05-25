@@ -21,6 +21,14 @@ import { startDigestWorker } from "./services/push/digest.worker.js";
 
 const app = express();
 
+// Railway (like every PaaS) terminates TLS at its edge and forwards
+// requests with X-Forwarded-For set. Trust one proxy hop so
+// express-rate-limit can key by the real client IP instead of the
+// Railway proxy's IP (which would make the rate limit effectively
+// global rather than per-user). The "1" specifically means "trust
+// the closest proxy"; we are NOT behind multiple proxy layers.
+app.set("trust proxy", 1);
+
 app.use(express.json({ limit: "200kb" }));
 app.use(
   cors({
