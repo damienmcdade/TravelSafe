@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
+import { tryProxy } from "@/server/lib/proxy-to-api";
 import { getCrimeMix, getCitywideCrimeMix } from "@/server/services/crime-data/mix";
 
 /// Two modes share this route:
@@ -25,6 +26,9 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const proxied = await tryProxy(req, "/crime-data/mix");
+  if (proxied) return proxied.response;
+
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   if (q.city) return NextResponse.json(await getCitywideCrimeMix(q.city), { headers: CACHE_HEADERS });
   const area = q.neighborhood ?? q.jurisdiction ?? "san-diego";

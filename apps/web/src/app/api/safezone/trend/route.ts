@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
+import { tryProxy } from "@/server/lib/proxy-to-api";
 import {
   getTrendForArea,
   getCitywideTrend,
@@ -29,6 +30,9 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  const proxied = await tryProxy(req, "/safezone/trend");
+  if (proxied) return proxied.response;
+
   const { city, area, label, days } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   if (city) return NextResponse.json(await getCitywideTrend(city, { windowDays: days }), { headers: CACHE_HEADERS });
   return NextResponse.json(await getTrendForArea(area!, label ?? area!, { windowDays: days }), { headers: CACHE_HEADERS });

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
+import { tryProxy } from "@/server/lib/proxy-to-api";
 import {
   getSafetyScore,
   getCitywideSafetyScore,
@@ -34,6 +35,14 @@ const CACHE_HEADERS = {
 };
 
 export const GET = wrap(async (req: NextRequest) => {
+  // v37: prefer Railway when API_BASE_URL is set so all four
+  // safezone + crime-data endpoints run on the Railway long-lived
+  // process (shared adapter cache → fewer upstream fetches).
+  // Falls through to the local implementation on any upstream
+  // error so a Railway hiccup never blocks the user.
+  const proxied = await tryProxy(req, "/safezone/safety-score");
+  if (proxied) return proxied.response;
+
   const { city, area, label } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   if (city) return NextResponse.json(await getCitywideSafetyScore(city), { headers: CACHE_HEADERS });
   return NextResponse.json(await getSafetyScore(area!, label ?? area!), { headers: CACHE_HEADERS });
