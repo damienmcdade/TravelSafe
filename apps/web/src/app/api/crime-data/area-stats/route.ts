@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap, HttpError } from "@/server/lib/http";
 import { rateLimit } from "@/server/lib/rate-limit";
+import { tryProxy } from "@/server/lib/proxy-to-api";
 import { crimeData } from "@/server/services/crime-data";
 import { nearestArea } from "@/server/services/crime-data/neighborhoods";
 
@@ -29,6 +30,10 @@ const CACHE_HEADERS = {
 export const GET = wrap(async (req: NextRequest) => {
   const limited = rateLimit(req, { scope: "crime-data" });
   if (limited) return limited;
+  // v62 — proxy to Railway (warm cache) when available; fall through to
+  // local on any failure. See crime-data/citywide for the rationale.
+  const proxied = await tryProxy(req, "/crime-data/area-stats");
+  if (proxied) return proxied.response;
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   if (q.city) return NextResponse.json(await crimeData.getCitywideAreaStats(q.city), { headers: CACHE_HEADERS });
   const area = q.neighborhood ?? q.jurisdiction ?? (q.lat != null && q.lng != null ? nearestArea({ lat: q.lat, lng: q.lng })?.slug ?? null : null);

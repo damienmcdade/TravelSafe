@@ -36,3 +36,17 @@ export async function getAIModel(): Promise<unknown | null> {
 export function aiConfigured(): boolean {
   return Boolean(groqKey() || geminiKey() || env.AI_GATEWAY_API_KEY);
 }
+
+// v62 — startup visibility on the resolved provider chain. Mirror of
+// the apps/web provider. See that file's comment for the rationale.
+if (process.env.NODE_ENV === "production") {
+  const chain: string[] = [];
+  if (groqKey()) chain.push("groq");
+  if (geminiKey()) chain.push("gemini");
+  if (env.AI_GATEWAY_API_KEY) chain.push("gateway");
+  if (chain.length === 0) {
+    console.warn("[ai] no provider configured — set GROQ_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or AI_GATEWAY_API_KEY. AI features will return null fallbacks.");
+  } else {
+    console.log(`[ai] provider chain: ${chain.join(" → ")}`);
+  }
+}

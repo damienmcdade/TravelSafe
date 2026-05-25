@@ -56,3 +56,21 @@ export async function getAIModel(): Promise<unknown | null> {
 export function aiConfigured(): boolean {
   return Boolean(groqKey() || geminiKey() || env.AI_GATEWAY_API_KEY);
 }
+
+// v62 — log the resolved provider chain ONCE at module load so a
+// silent prod misconfig (e.g. GROQ_API_KEY accidentally unset, falls
+// through to Gemini's lower free-tier RPM and silently degrades UX)
+// is visible in Vercel logs without needing the AI audit diag endpoint.
+// In dev (NODE_ENV !== "production") we stay quiet so test runs don't
+// spam stdout.
+if (process.env.NODE_ENV === "production") {
+  const chain: string[] = [];
+  if (groqKey()) chain.push("groq");
+  if (geminiKey()) chain.push("gemini");
+  if (env.AI_GATEWAY_API_KEY) chain.push("gateway");
+  if (chain.length === 0) {
+    console.warn("[ai] no provider configured — set GROQ_API_KEY, GOOGLE_GENERATIVE_AI_API_KEY, or AI_GATEWAY_API_KEY. AI features will return null fallbacks.");
+  } else {
+    console.log(`[ai] provider chain: ${chain.join(" → ")}`);
+  }
+}
