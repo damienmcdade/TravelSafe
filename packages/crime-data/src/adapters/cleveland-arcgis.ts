@@ -137,10 +137,12 @@ async function fetchPagesBounded<T>(
 }
 
 async function fetchCleveland(): Promise<Incident[]> {
-  // Concurrency tuned at 6: at 4 it took ~5min (over the warm-worker's
-  // 4-min interval, causing tick overlap); at higher than ~8 the
-  // upstream's per-IP cap kicks in and pages start returning empty.
-  const pages = await fetchPagesBounded<CleRow>(PAGES, PAGE_SIZE, fetchPage, 6);
+  // Concurrency tuning history: at 30 (all-parallel) every page
+  // returned empty (rate-limit). At 6 the host throttled mid-cycle
+  // and we collected fewer rows than at 4. 4 is the sweet spot
+  // (~5min cold, ~9.8k rows). The warm-worker's 4-min interval
+  // has an inFlight guard so the slight overlap doesn't compound.
+  const pages = await fetchPagesBounded<CleRow>(PAGES, PAGE_SIZE, fetchPage, 4);
   const rows = pages.flat();
   const out: Incident[] = [];
   for (const r of rows) {
