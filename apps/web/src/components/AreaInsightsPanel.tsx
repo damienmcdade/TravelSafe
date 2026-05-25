@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { Sparkline } from "./Sparkline";
 
@@ -24,46 +25,64 @@ const COLOR: Record<Trend["category"], string> = {
 
 export function AreaInsightsPanel({ areaQueryString }: { areaQueryString: string }) {
   const { data, loading, error } = useApi<Insights>(`/crime-data/insights?${areaQueryString}`, [areaQueryString]);
+  // v67 — collapsed-by-default to match the user directive that
+  // long cards should be collapsed on landing. The header still
+  // shows the title + headline metric, so users can scan past
+  // this card without expanding when they're not interested in
+  // the 12-week trend.
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <section className="surface p-6 min-h-[220px] flex flex-col">
-      <header className="flex items-center justify-between">
-        <h2 className="font-display text-lg text-slate2-900">{data?.area ?? "Loading area…"}</h2>
-        <span className="text-xs text-slate2-500">
-          {data ? `${data.windowWeeks}-week trend · ${data.totalIncidents} incidents in window` : ""}
-        </span>
-      </header>
-      {loading && !data && <p className="mt-2 text-sm text-slate2-500 animate-pulse">Crunching trend data…</p>}
-      {error && !loading && (
-        <p className="mt-2 text-sm text-dusk-700">Could not load insights right now — the police data feed may be warming up.</p>
-      )}
-      {data && (
-        <>
-          <p className="mt-3 text-slate2-700">{data.brief}</p>
-          <ul className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {data.trends.map((t) => (
-              <li key={t.category} className="surface-muted p-3">
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-medium ${COLOR[t.category]}`}>{t.category.toLowerCase()}</span>
-                  <DeltaPill value={t.currentVsBaseline} />
-                </div>
-                <div className={COLOR[t.category]}>
-                  <Sparkline values={t.weekly} />
-                </div>
-                <div className="text-xs text-slate2-500 mt-1">
-                  baseline {t.baseline.toFixed(1)}/wk
-                </div>
-              </li>
-            ))}
-            {data.trends.length === 0 && (
-              <li className="surface-muted p-3 text-xs text-slate2-500 sm:col-span-3">
-                {/* v64 — was hardcoded "SD neighborhoods" which read
-                    wrong for every other city in the registry. */}
-                Not enough incidents in the cached window to draw a trend. This is typical for many neighborhoods on a quiet week.
-              </li>
-            )}
-          </ul>
-        </>
+    <section className="surface p-4 sm:p-5">
+      <button
+        type="button"
+        onClick={() => setExpanded(!expanded)}
+        aria-expanded={expanded}
+        className="w-full flex items-center justify-between gap-3 text-left hover:bg-bay-50/40 rounded-md -m-1 p-1 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span aria-hidden="true" className={`inline-block transition-transform text-slate2-500 text-sm shrink-0 ${expanded ? "rotate-90" : ""}`}>▶</span>
+          <h2 className="font-display text-lg text-slate2-900 truncate">12-week trend{data?.area ? ` · ${data.area}` : ""}</h2>
+        </div>
+        {data && (
+          <span className="text-xs text-slate2-500 shrink-0 tabular-nums">
+            {data.totalIncidents} incidents
+          </span>
+        )}
+      </button>
+      {expanded && (
+        <div className="mt-3">
+          {loading && !data && <p className="text-sm text-slate2-500 animate-pulse">Crunching trend data…</p>}
+          {error && !loading && (
+            <p className="text-sm text-dusk-700">Could not load insights right now — the police data feed may be warming up.</p>
+          )}
+          {data && (
+            <>
+              <p className="text-slate2-700">{data.brief}</p>
+              <ul className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {data.trends.map((t) => (
+                  <li key={t.category} className="surface-muted p-3">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-medium ${COLOR[t.category]}`}>{t.category.toLowerCase()}</span>
+                      <DeltaPill value={t.currentVsBaseline} />
+                    </div>
+                    <div className={COLOR[t.category]}>
+                      <Sparkline values={t.weekly} />
+                    </div>
+                    <div className="text-xs text-slate2-500 mt-1">
+                      baseline {t.baseline.toFixed(1)}/wk
+                    </div>
+                  </li>
+                ))}
+                {data.trends.length === 0 && (
+                  <li className="surface-muted p-3 text-xs text-slate2-500 sm:col-span-3">
+                    Not enough incidents in the cached window to draw a trend. This is typical for many neighborhoods on a quiet week.
+                  </li>
+                )}
+              </ul>
+            </>
+          )}
+        </div>
       )}
     </section>
   );
