@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { bostonSnapshot } from "@/server/data/boston-snapshot";
-import { getRowsBoston, getDiscoveredAreasBoston } from "@/server/services/crime-data/adapters/boston-ckan";
+import { bostonSnapshot } from "@travelsafe/crime-data/data/boston-snapshot";
+import { getRowsBoston, getDiscoveredAreasBoston } from "@travelsafe/crime-data/adapters/boston-ckan";
 import { env } from "@/server/lib/env";
 import { requireCronSecret } from "@/server/lib/bearer-auth";
 

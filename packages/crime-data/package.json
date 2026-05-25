@@ -10,7 +10,11 @@
     "./types": "./src/types.ts",
     "./neighborhoods": "./src/neighborhoods.ts",
     "./population": "./src/population.ts",
-    "./fbi-baselines": "./src/fbi-baselines.ts"
+    "./fbi-baselines": "./src/fbi-baselines.ts",
+    "./cities": "./src/cities.ts",
+    "./adapters/*": "./src/adapters/*.ts",
+    "./data/*": "./src/data/*.ts",
+    "./data/*.json": "./src/data/*.json"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"

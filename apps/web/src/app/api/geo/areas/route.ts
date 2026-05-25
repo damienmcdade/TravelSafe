@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { allKnownAreas } from "@/server/services/geo/lookup";
 import { cityBySlug } from "@/server/services/crime-data/cities";
-import { getDiscoveredAreasStale as sdpdStale } from "@/server/services/crime-data/adapters/sdpd-nibrs";
+import { getDiscoveredAreasStale as sdpdStale } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

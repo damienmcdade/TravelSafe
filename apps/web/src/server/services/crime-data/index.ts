@@ -1,8 +1,11 @@
 import { env } from "../../lib/env";
 import type { AreaRiskAlert, AreaStats, CrimeDataAdapter, Incident } from "./types";
-import { sandagSocrataAdapter } from "./adapters/sandag-socrata";
-import { sdpdNibrsAdapter } from "./adapters/sdpd-nibrs";
-import { mockAdapter } from "./adapters/mock";
+// Adapter modules moved to @travelsafe/crime-data in v34. The three
+// directly-referenced ones here are imported via the package's
+// adapters/ subpath; the rest are pulled in via cities.ts.
+import { sandagSocrataAdapter } from "@travelsafe/crime-data/adapters/sandag-socrata";
+import { sdpdNibrsAdapter } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
+import { mockAdapter } from "@travelsafe/crime-data/adapters/mock";
 import { cityForArea, CITIES } from "./cities";
 
 export * from "./types";
