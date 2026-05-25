@@ -50,9 +50,23 @@ export default async function CityLandingPage({ params }: Props) {
   const city = cityBySlug(slug);
   if (!city) notFound();
 
+  // v63 hotfix3 — bounded timeouts. Cleveland (now in DYNAMIC_ONLY_CITIES)
+  // hits this path on every cold visit. Cleveland's adapter cold-cache
+  // fetch takes ~5min, which blows the Vercel function ceiling and the
+  // page times out at 15s, taking the city page COMPLETELY OFFLINE
+  // until the cache warms via warm-worker. discover() + safety-score
+  // each get their own Promise.race against a 12s deadline; on timeout
+  // the page renders with `null`/`[]` and the user sees a "data is
+  // warming up" surface instead of a Vercel error screen.
+  const TIMEOUT_MS = 12_000;
+  const withTimeout = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
+    Promise.race([
+      p,
+      new Promise<T>((resolve) => setTimeout(() => resolve(fallback), TIMEOUT_MS)),
+    ]);
   const [areas, citywideScore] = await Promise.all([
-    city.discover().catch(() => []),
-    getCitywideSafetyScore(slug).catch(() => null),
+    withTimeout(city.discover().catch(() => []), [] as Awaited<ReturnType<typeof city.discover>>),
+    withTimeout(getCitywideSafetyScore(slug).catch(() => null), null),
   ]);
 
   // JSON-LD structured data. Schema.org Place + BreadcrumbList lets
