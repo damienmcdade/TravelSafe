@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { nolaPolygons } from "../data/new-orleans-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { nolaPolygons } from "../data/new-orleans-neighborhoods.js";
 
 // New Orleans — NOPD Calls for Service 2026.
 // Socrata dataset es9j-6y5d on data.nola.gov. Live (newest entries minutes

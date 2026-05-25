@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Cleveland — Cleveland Division of Police Calls for Service (CAD) on
 // services3.arcgis.com (owner: opendataCLE). The feed is dispatched CFS,

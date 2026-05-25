@@ -1,6 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
 
 // Milwaukee WI — Milwaukee Police Department WIBR (Wisconsin Incident-
 // Based Reporting) crime data on data.milwaukee.gov.
@@ -16,7 +16,7 @@ const DATASTORE_API = "https://data.milwaukee.gov/api/3/action/datastore_search"
 const PAGE_SIZE = 10_000; // dataset total is ~9.4k; one page covers it
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
-import { milwaukeePolygons } from "../data/milwaukee-neighborhoods";
+import { milwaukeePolygons } from "../data/milwaukee-neighborhoods.js";
 
 // Per-neighborhood centroid lookup from the bundled DCD polygon set.
 // Used as the centroid for every area (Milwaukee crime rows lack

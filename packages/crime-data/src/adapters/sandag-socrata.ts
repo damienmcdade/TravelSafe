@@ -1,6 +1,6 @@
-import { env } from "../env";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import { findArea } from "../neighborhoods";
+import { env } from "../env.js";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { findArea } from "../neighborhoods.js";
 
 // SANDAG Crime Data on the San Diego County Open Data Portal (Socrata).
 // Dataset: yearly crime rates per jurisdiction (San Diego, Chula Vista, La Mesa,

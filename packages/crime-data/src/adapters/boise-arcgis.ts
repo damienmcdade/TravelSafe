@@ -1,6 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
 
 // Boise — Boise Police Department Calls for Service.
 // ArcGIS FeatureServer on services1.arcgis.com (owner: Boise_GIS).

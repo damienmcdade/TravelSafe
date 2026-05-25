@@ -1,5 +1,5 @@
-import { crimeData } from "./dispatcher";
-import { cityBySlug } from "./cities";
+import { crimeData } from "./dispatcher.js";
+import { cityBySlug } from "./cities.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // Per-area cap for citywide aggregation. The single-area path pulls up to

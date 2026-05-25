@@ -1,6 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
 
 // Cincinnati — Reported Crime (STARS Category Offenses) on or after
 // 6/3/2024. Socrata dataset 7aqy-xrv9 on data.cincinnati-oh.gov.

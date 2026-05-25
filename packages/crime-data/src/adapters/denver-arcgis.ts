@@ -1,6 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
 
 // Denver — ODC_CRIME_OFFENSES_P on services1.arcgis.com.
 // This is an ESRI Feature Server, not a Socrata SODA endpoint. Pagination is

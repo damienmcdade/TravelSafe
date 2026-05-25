@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import dcGeo from "../data/dc-neighborhoods.json";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import dcGeo from "../data/dc-neighborhoods.json" with { type: "json" };
 
 // Washington DC — MPD Crime Incidents.
 // ArcGIS MapServer at maps2.dcgis.dc.gov, layer 39 (last 30 days). We

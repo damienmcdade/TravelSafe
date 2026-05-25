@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { coSpPolygons } from "../data/colorado-springs-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { coSpPolygons } from "../data/colorado-springs-neighborhoods.js";
 
 // Colorado Springs PD — "Crime Level Data" on policedata.coloradosprings.gov.
 // Socrata dataset bc88-hemr. Public, no auth required. Replaces Denver

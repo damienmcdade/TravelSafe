@@ -1,8 +1,8 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { oaklandPolygons } from "../data/oakland-neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { oaklandPolygons } from "../data/oakland-neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Oakland — OPD Crime Reports.
 // Socrata dataset 3xav-7geq on data.oaklandca.gov. The dataset stamps each

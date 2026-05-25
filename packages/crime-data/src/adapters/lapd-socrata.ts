@@ -1,6 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
 
 // City of Los Angeles — LAPD NIBRS Offenses Dataset 2024 to 2025.
 // Socrata dataset y8y3-fqfu on data.lacity.org.

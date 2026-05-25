@@ -1,5 +1,5 @@
-import { crimeData } from "./dispatcher";
-import { cityBySlug, CITIES } from "./cities";
+import { crimeData } from "./dispatcher.js";
+import { cityBySlug, CITIES } from "./cities.js";
 
 /// Recent uptick detector — flags neighborhoods whose 7-day report count
 /// jumped meaningfully versus the prior 7 days. Used to surface "what's

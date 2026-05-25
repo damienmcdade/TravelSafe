@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Buffalo NY — Buffalo Police Crime Incidents on data.buffalony.gov
 // (Socrata dataset d6g9-xbgu).

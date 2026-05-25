@@ -1,14 +1,14 @@
-import { env } from "./env";
-import type { AreaRiskAlert, AreaStats, CrimeDataAdapter, Incident } from "./types";
+import { env } from "./env.js";
+import type { AreaRiskAlert, AreaStats, CrimeDataAdapter, Incident } from "./types.js";
 // Adapter modules moved to @travelsafe/crime-data in v34. The three
 // directly-referenced ones here are imported via the package's
 // adapters/ subpath; the rest are pulled in via cities.ts.
 import { sandagSocrataAdapter } from "@travelsafe/crime-data/adapters/sandag-socrata";
 import { sdpdNibrsAdapter } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
 import { mockAdapter } from "@travelsafe/crime-data/adapters/mock";
-import { cityForArea, CITIES } from "./cities";
+import { cityForArea, CITIES } from "./cities.js";
 
-export * from "./types";
+export * from "./types.js";
 
 const adapters: Record<string, CrimeDataAdapter> = {
   sandag: sandagSocrataAdapter,
@@ -139,7 +139,7 @@ export const crimeData = {
       dominantCategory: "PERSONS" | "PROPERTY" | "SOCIETY" | null;
     }>;
   }> {
-    const { cityBySlug } = await import("./cities");
+    const { cityBySlug } = await import("./cities.js");
     const city = cityBySlug(citySlug) ?? CITIES[0];
     const areas = await city.discover().catch(() => [] as Awaited<ReturnType<typeof city.discover>>);
     const offenseFilter = opts.offense?.toLowerCase().trim();
@@ -276,7 +276,7 @@ export const crimeData = {
   /// city slug as a neighborhood" anti-pattern that returned null when
   /// the slug wasn't a real area.
   async getCitywideAreaStats(citySlug: string = "san-diego"): Promise<AreaStats | null> {
-    const { cityBySlug } = await import("./cities");
+    const { cityBySlug } = await import("./cities.js");
     const city = cityBySlug(citySlug);
     if (!city) return null;
     const areas = await city.discover().catch(() => []);

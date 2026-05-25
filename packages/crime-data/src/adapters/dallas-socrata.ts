@@ -1,8 +1,8 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { dallasPolygons } from "../data/dallas-neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { dallasPolygons } from "../data/dallas-neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Dallas TX — DPD Police Incidents.
 // Socrata dataset qv6i-rri7 on www.dallasopendata.com. Refreshed daily.

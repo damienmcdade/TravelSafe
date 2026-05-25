@@ -1,39 +1,39 @@
-import type { CrimeDataAdapter } from "./types";
-import type { KnownArea } from "./neighborhoods";
-import { sdpdNibrsAdapter, getDiscoveredAreas as getDiscoveredAreasSD } from "./adapters/sdpd-nibrs";
-import { lapdAdapter, getDiscoveredAreasLA } from "./adapters/lapd-socrata";
-import { sfAdapter, getDiscoveredAreasSF } from "./adapters/sf-socrata";
-import { chicagoAdapter, getDiscoveredAreasChicago } from "./adapters/chicago-socrata";
-import { seattleAdapter, getDiscoveredAreasSeattle } from "./adapters/seattle-socrata";
-import { nypdAdapter, getDiscoveredAreasNYC } from "./adapters/nypd-socrata";
+import type { CrimeDataAdapter } from "./types.js";
+import type { KnownArea } from "./neighborhoods.js";
+import { sdpdNibrsAdapter, getDiscoveredAreas as getDiscoveredAreasSD } from "./adapters/sdpd-nibrs.js";
+import { lapdAdapter, getDiscoveredAreasLA } from "./adapters/lapd-socrata.js";
+import { sfAdapter, getDiscoveredAreasSF } from "./adapters/sf-socrata.js";
+import { chicagoAdapter, getDiscoveredAreasChicago } from "./adapters/chicago-socrata.js";
+import { seattleAdapter, getDiscoveredAreasSeattle } from "./adapters/seattle-socrata.js";
+import { nypdAdapter, getDiscoveredAreasNYC } from "./adapters/nypd-socrata.js";
 // Denver retired (upstream ArcGIS feed moved behind auth in 2026).
 // Adapter file is preserved at ./adapters/denver-arcgis.ts with a
 // DENVER_ARCGIS_TOKEN passthrough so we can re-enable if a key is
 // obtained later. Replaced by Colorado Springs.
-import { coloradoSpringsAdapter, getDiscoveredAreasCoSp } from "./adapters/colorado-springs-socrata";
-import { detroitAdapter, getDiscoveredAreasDetroit } from "./adapters/detroit-arcgis";
-import { dcAdapter, getDiscoveredAreasDC } from "./adapters/dc-arcgis";
-import { bostonAdapter, getDiscoveredAreasBoston } from "./adapters/boston-ckan";
-import { phlAdapter, getDiscoveredAreasPhl } from "./adapters/phl-carto";
-import { oaklandAdapter, getDiscoveredAreasOakland } from "./adapters/oakland-socrata";
-import { cincinnatiAdapter, getDiscoveredAreasCincinnati } from "./adapters/cincinnati-socrata";
-import { nolaAdapter, getDiscoveredAreasNola } from "./adapters/nola-socrata";
-import { batonRougeAdapter, getDiscoveredAreasBatonRouge } from "./adapters/baton-rouge-socrata";
-import { cambridgeAdapter, getDiscoveredAreasCambridge } from "./adapters/cambridge-socrata";
-import { dallasAdapter, getDiscoveredAreasDallas } from "./adapters/dallas-socrata";
-import { charlotteAdapter, getDiscoveredAreasCharlotte } from "./adapters/charlotte-arcgis";
-import { nashvilleAdapter, getDiscoveredAreasNashville } from "./adapters/nashville-arcgis";
-import { minneapolisAdapter, getDiscoveredAreasMinneapolis } from "./adapters/minneapolis-arcgis";
-import { clevelandAdapter, getDiscoveredAreasCleveland } from "./adapters/cleveland-arcgis";
-import { milwaukeeAdapter, getDiscoveredAreasMilwaukee } from "./adapters/milwaukee-ckan";
-import { lasVegasAdapter, getDiscoveredAreasLasVegas } from "./adapters/las-vegas-arcgis";
-import { boiseAdapter, getDiscoveredAreasBoise } from "./adapters/boise-arcgis";
-import { buffaloAdapter, getDiscoveredAreasBuffalo } from "./adapters/buffalo-socrata";
-import { norfolkAdapter, getDiscoveredAreasNorfolk } from "./adapters/norfolk-socrata";
-import { kansasCityAdapter, getDiscoveredAreasKansasCity } from "./adapters/kansas-city-socrata";
-import { saintPaulAdapter, getDiscoveredAreasSaintPaul } from "./adapters/saint-paul-arcgis";
-import { pittsburghAdapter, getDiscoveredAreasPittsburgh } from "./adapters/pittsburgh-ckan";
-import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-socrata";
+import { coloradoSpringsAdapter, getDiscoveredAreasCoSp } from "./adapters/colorado-springs-socrata.js";
+import { detroitAdapter, getDiscoveredAreasDetroit } from "./adapters/detroit-arcgis.js";
+import { dcAdapter, getDiscoveredAreasDC } from "./adapters/dc-arcgis.js";
+import { bostonAdapter, getDiscoveredAreasBoston } from "./adapters/boston-ckan.js";
+import { phlAdapter, getDiscoveredAreasPhl } from "./adapters/phl-carto.js";
+import { oaklandAdapter, getDiscoveredAreasOakland } from "./adapters/oakland-socrata.js";
+import { cincinnatiAdapter, getDiscoveredAreasCincinnati } from "./adapters/cincinnati-socrata.js";
+import { nolaAdapter, getDiscoveredAreasNola } from "./adapters/nola-socrata.js";
+import { batonRougeAdapter, getDiscoveredAreasBatonRouge } from "./adapters/baton-rouge-socrata.js";
+import { cambridgeAdapter, getDiscoveredAreasCambridge } from "./adapters/cambridge-socrata.js";
+import { dallasAdapter, getDiscoveredAreasDallas } from "./adapters/dallas-socrata.js";
+import { charlotteAdapter, getDiscoveredAreasCharlotte } from "./adapters/charlotte-arcgis.js";
+import { nashvilleAdapter, getDiscoveredAreasNashville } from "./adapters/nashville-arcgis.js";
+import { minneapolisAdapter, getDiscoveredAreasMinneapolis } from "./adapters/minneapolis-arcgis.js";
+import { clevelandAdapter, getDiscoveredAreasCleveland } from "./adapters/cleveland-arcgis.js";
+import { milwaukeeAdapter, getDiscoveredAreasMilwaukee } from "./adapters/milwaukee-ckan.js";
+import { lasVegasAdapter, getDiscoveredAreasLasVegas } from "./adapters/las-vegas-arcgis.js";
+import { boiseAdapter, getDiscoveredAreasBoise } from "./adapters/boise-arcgis.js";
+import { buffaloAdapter, getDiscoveredAreasBuffalo } from "./adapters/buffalo-socrata.js";
+import { norfolkAdapter, getDiscoveredAreasNorfolk } from "./adapters/norfolk-socrata.js";
+import { kansasCityAdapter, getDiscoveredAreasKansasCity } from "./adapters/kansas-city-socrata.js";
+import { saintPaulAdapter, getDiscoveredAreasSaintPaul } from "./adapters/saint-paul-arcgis.js";
+import { pittsburghAdapter, getDiscoveredAreasPittsburgh } from "./adapters/pittsburgh-ckan.js";
+import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-socrata.js";
 
 // City registry.
 //

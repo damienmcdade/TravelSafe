@@ -1,5 +1,5 @@
-import { crimeData } from "./dispatcher";
-import { cityForArea } from "./cities";
+import { crimeData } from "./dispatcher.js";
+import { cityForArea } from "./cities.js";
 
 /// Trend Feed — produces a bulleted chronological summary of the past
 /// 30 days for a given area, plus week-over-week shift markers. Bullets
@@ -99,7 +99,7 @@ function timeOfDayAnalysis(incidents: Array<{ occurredAt: string }>):
 /// response shape as getTrendForArea so the page renders both with one
 /// component.
 export async function getCitywideTrend(citySlug: string, opts?: { windowDays?: number }): Promise<TrendResponse> {
-  const { cityBySlug } = await import("./cities");
+  const { cityBySlug } = await import("./cities.js");
   const city = cityBySlug(citySlug) ?? cityForArea("");
   const areas = await city.discover().catch(() => []);
   const now = Date.now();

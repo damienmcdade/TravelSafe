@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { phoenixPolygons } from "../data/phoenix-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { phoenixPolygons } from "../data/phoenix-neighborhoods.js";
 
 // Per-village centroid lookup, derived from the bundled official
 // Phoenix Urban Village polygons. Used as the centroid for every

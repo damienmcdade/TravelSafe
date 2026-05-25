@@ -1,6 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
 
 // Pittsburgh — Monthly Criminal Activity (WPRDC CKAN).
 // Resource bd41992a-987a-4cca-8798-fbe1cd946b07 on data.wprdc.org. The dataset

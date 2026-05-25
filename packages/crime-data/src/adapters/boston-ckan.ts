@@ -1,14 +1,14 @@
 import { CrimeCategory } from "@prisma/client";
-import { env } from "../env";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import { env } from "../env.js";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 // Bundled snapshot of the BPD CSV (most recent 5,000 rows). Refreshed via
 // `tools/refresh-boston.mjs` and committed to git. See "Why bundled?" below.
 // Shipped as a TS module rather than a JSON import — Next's file-tracing
 // has repeatedly missed JSON files in this path, but TS modules are always
 // in the bundle.
-import { bostonSnapshot as snapshot } from "../data/boston-snapshot";
+import { bostonSnapshot as snapshot } from "../data/boston-snapshot.js";
 
 // City of Boston — Crime Incident Reports (BPD).
 //

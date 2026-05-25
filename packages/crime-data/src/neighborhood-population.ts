@@ -1,4 +1,4 @@
-import { GENERATED_NEIGHBORHOOD_POPS } from "./neighborhood-populations-generated";
+import { GENERATED_NEIGHBORHOOD_POPS } from "./neighborhood-populations-generated.js";
 
 // Per-neighborhood population resolution. The hierarchy:
 //

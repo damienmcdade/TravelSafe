@@ -17,22 +17,22 @@ export type {
   AreaRiskAlert,
   CrimeDataAdapter,
   KnownArea,
-} from "./types";
+} from "./types.js";
 
-export { CITY_POPULATION, POPULATION_VINTAGE, populationFor } from "./population";
+export { CITY_POPULATION, POPULATION_VINTAGE, populationFor } from "./population.js";
 
-export type { CityFbiBaseline } from "./fbi-baselines";
-export { CITY_FBI_BASELINES } from "./fbi-baselines";
+export type { CityFbiBaseline } from "./fbi-baselines.js";
+export { CITY_FBI_BASELINES } from "./fbi-baselines.js";
 
 // Cities + neighborhoods registry.
-export type { CityEntry } from "./cities";
+export type { CityEntry } from "./cities.js";
 export {
   CITIES,
   cityBySlug,
   cityForArea,
   cityFromLatLng,
   nearestCityByCentroid,
-} from "./cities";
+} from "./cities.js";
 
 export {
   listKnownAreas,
@@ -40,4 +40,4 @@ export {
   nearestArea,
   findArea,
   SD_AREAS,
-} from "./neighborhoods";
+} from "./neighborhoods.js";

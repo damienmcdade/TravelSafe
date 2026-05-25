@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { districtNumberToName } from "../data/saint-paul-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { districtNumberToName } from "../data/saint-paul-neighborhoods.js";
 
 // Saint Paul, MN — Saint Paul Police Department Crime Incident Report.
 // ArcGIS FeatureServer on services1.arcgis.com (owner: CityofSaintPaul).

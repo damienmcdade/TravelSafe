@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { nashvillePolygons } from "../data/nashville-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { nashvillePolygons } from "../data/nashville-neighborhoods.js";
 
 // Nashville — MNPD Police Department Incidents.
 // ArcGIS FeatureServer on services2.arcgis.com. Refreshed daily, with

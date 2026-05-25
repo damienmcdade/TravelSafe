@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { kansasCityPolygons } from "../data/kansas-city-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
 
 // Kansas City MO — KCPD Crime Data, current + prior year.
 // KCPD publishes one Socrata dataset per calendar year (data.kcmo.org).

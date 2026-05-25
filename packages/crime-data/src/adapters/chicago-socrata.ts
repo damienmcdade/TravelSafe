@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // City of Chicago — Crimes 2001 to Present.
 // Socrata dataset ijzp-q8t2 on data.cityofchicago.org. The original public

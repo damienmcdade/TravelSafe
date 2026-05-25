@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { titleCaseOffense } from "../lib/titlecase-offense";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Detroit — RMS_Crime_Incidents on services2.arcgis.com.
 // ESRI Feature Server, same shape as Denver. Detroit's old Socrata endpoint

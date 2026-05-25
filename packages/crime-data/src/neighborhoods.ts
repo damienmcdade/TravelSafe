@@ -49,7 +49,7 @@ function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: num
 /// (both subscribers of /api/geo/areas). Parallel fan-out keeps the cold
 /// call under ~5s for the entire 20-city set.
 export async function listKnownAreas(): Promise<KnownArea[]> {
-  const { CITIES } = await import("./cities");
+  const { CITIES } = await import("./cities.js");
   const results = await Promise.all(
     CITIES.map((c) => c.discover().catch(() => [] as KnownArea[])),
   );

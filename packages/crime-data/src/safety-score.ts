@@ -1,9 +1,9 @@
-import { crimeData } from "./dispatcher";
-import { cityForArea } from "./cities";
-import { loadPolygonAreas, lookupAreaKm2, totalCityKm2 } from "./polygon-areas";
-import { HttpError } from "./errors";
-import { knownNeighborhoodPopulation } from "./neighborhood-population";
-import { CITY_FBI_BASELINES } from "./fbi-baselines";
+import { crimeData } from "./dispatcher.js";
+import { cityForArea } from "./cities.js";
+import { loadPolygonAreas, lookupAreaKm2, totalCityKm2 } from "./polygon-areas.js";
+import { HttpError } from "./errors.js";
+import { knownNeighborhoodPopulation } from "./neighborhood-population.js";
+import { CITY_FBI_BASELINES } from "./fbi-baselines.js";
 
 /// Safety Score — compares the user's selected area against the FBI's most
 /// recent national rates per 100,000 residents. Returns the raw local and
@@ -42,7 +42,7 @@ export const FBI_NATIONAL_SOURCE = {
 // the AI assistant, this scoring engine, and the citywide-comparison card
 // all reference the same numbers (the audit caught us drifting across
 // three independent copies labeled different vintages).
-import { CITY_POPULATION, POPULATION_VINTAGE } from "./population";
+import { CITY_POPULATION, POPULATION_VINTAGE } from "./population.js";
 
 // CFS calibration factors. Cleveland, NOLA, and Las Vegas publish
 // calls-for-service feeds rather than closed NIBRS reports. CFS is
@@ -436,7 +436,7 @@ function roundWindowDays(raw: number): number {
 /// city total rather than an even-split per-area approximation, so the
 /// comparison reflects the city's actual reported rate.
 export async function getCitywideSafetyScore(citySlug: string): Promise<SafetyScoreResponse> {
-  const { cityBySlug } = await import("./cities");
+  const { cityBySlug } = await import("./cities.js");
   const city = cityBySlug(citySlug) ?? cityForArea("");
   const cityPop = CITY_POPULATION[city.slug] ?? 0;
   const areas = await city.discover().catch(() => []);

@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { lasVegasPolygons } from "../data/las-vegas-neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { lasVegasPolygons } from "../data/las-vegas-neighborhoods.js";
 
 // Las Vegas — Las Vegas Metropolitan Police Department Calls for Service.
 // ArcGIS FeatureServer on services1.arcgis.com (owner: Opendata_lasvegas).

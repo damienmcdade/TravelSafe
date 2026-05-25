@@ -1,9 +1,9 @@
 import { parse as parseCsv } from "csv-parse/sync";
-import { env } from "../env";
+import { env } from "../env.js";
 import { CrimeCategory } from "@prisma/client";
-import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types";
-import type { KnownArea } from "../neighborhoods";
-import { findArea } from "../neighborhoods";
+import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import type { KnownArea } from "../neighborhoods.js";
+import { findArea } from "../neighborhoods.js";
 
 // 5-minute cache: half the client's 10-minute refresh window so a 10-minute
 // client refresh always lands on a fresh upstream pull (matched TTLs were
