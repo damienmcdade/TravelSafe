@@ -197,6 +197,18 @@ const PART1_VIOLENT_EXCLUDE = [
   /human traffick/i,
   /kidnap/i,
   /\babduct/i,
+  // Philadelphia (CARTO) emits "Other Assaults" for simple
+  // assault — half a million rows that pushed Philly's PERSONS
+  // rate to 3.3× the FBI Part-1 baseline. NIBRS jurisdictions
+  // also emit "OTHER ASSAULT" and "OTHER OFFENSE" variants.
+  /\bother assault/i,
+  /\bother offense/i,
+  // NOLA emits BATTERY for simple physical contact — only
+  // BATTERY-AGGRAVATED is Part 1. The "aggravated" qualifier
+  // is checked further down via /aggravated/ — bare BATTERY
+  // is simple and should be excluded.
+  /^battery$/i,
+  /^\s*battery\b(?!.*aggrav)/i,
   /false imprisonment/i,
   /\bextortion\b/i,
   /coercion/i,
