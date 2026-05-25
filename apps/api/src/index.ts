@@ -63,17 +63,19 @@ app.use("/ai", aiRouter);
 app.use("/official-alerts", officialAlertsRouter);
 app.use("/safezone", safezoneRouter);
 
-app.use(notFound);
-app.use(errorHandler);
-
 // v64 — grade sanity diagnostic. Read-only summary of the latest
 // in-process grade-sanity report. Public read because it's pure
 // diagnostics (no secrets, no user data), same posture as /health.
+// MUST be registered BEFORE app.use(notFound) — otherwise the
+// catch-all 404 middleware intercepts the request first.
 app.get("/diag/grade-sanity", (_req, res) => {
   const r = getGradeSanityReport();
   if (!r) return res.status(503).json({ error: "no_report_yet", message: "Worker has not completed its first cycle." });
   res.json(r);
 });
+
+app.use(notFound);
+app.use(errorHandler);
 
 const server = app.listen(env.LISTEN_PORT, () => {
   console.log(`[api] listening on :${env.LISTEN_PORT} (env=${env.NODE_ENV})`);
