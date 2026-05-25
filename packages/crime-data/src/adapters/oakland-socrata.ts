@@ -22,7 +22,33 @@ const BASE = "https://data.oaklandca.gov/resource/3xav-7geq.json";
 const PAGE_SIZE = 50_000;
 const PAGES_TO_FETCH = 3;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+// v70 — paired O(1) indexes (slug→label, label→rows) built once
+// per cache load. Same pattern as Detroit + KC + Norfolk. Oakland
+// has 131 polygon-derived neighborhoods × ~150k rows; pre-index
+// per-area filter was ~20M string ops per warm-cycle.
+interface Cache {
+  fetchedAt: number;
+  rows: Incident[];
+  slugToLabel: Map<string, string>;
+  labelToRows: Map<string, Incident[]>;
+}
+let cache: Cache | null = null;
+function buildOaklandIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRows"> {
+  const slugToLabel = new Map<string, string>();
+  const labelToRows = new Map<string, Incident[]>();
+  for (const r of rows) {
+    const label = r.area;
+    if (!label) continue;
+    let bucket = labelToRows.get(label);
+    if (!bucket) { bucket = []; labelToRows.set(label, bucket); }
+    bucket.push(r);
+    if (!slugToLabel.has(label)) {
+      const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      slugToLabel.set(slug, label);
+    }
+  }
+  return { slugToLabel, labelToRows };
+}
 
 interface OakRow {
   casenumber?: string;
@@ -167,7 +193,10 @@ export async function getRowsOakland(): Promise<Incident[]> {
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
   try {
     const rows = await fetchOakland();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
+    if (rows.length > 0) {
+      const idx = buildOaklandIndexes(rows);
+      cache = { fetchedAt: now, rows, ...idx };
+    }
     return rows;
   } catch (err) {
     console.warn("[oakland] fetch failed:", (err as Error).message);
@@ -196,37 +225,35 @@ export async function getDiscoveredAreasOakland(): Promise<KnownArea[]> {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function labelForOaklandSlug(slug: string, rows: Incident[]): string | null {
+// v70 — O(1) Map lookup, pre-built once per cache load.
+function labelForOaklandSlug(slug: string): string | null {
+  if (!cache) return null;
   const s = slug.toLowerCase();
   const want = s.startsWith("oak-") ? s.slice(4) : s;
-  for (const r of rows) {
-    const candidate = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (candidate === want) return r.area;
-  }
-  return null;
+  return cache.slugToLabel.get(want) ?? null;
 }
 
 export const oaklandAdapter: CrimeDataAdapter = {
   name: "oakland-socrata",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {
-    const rows = await getRowsOakland();
-    const label = labelForOaklandSlug(area, rows);
+    await getRowsOakland();
+    const label = labelForOaklandSlug(area);
     if (!label) return null;
-    const inArea = rows.filter((r) => r.area === label);
+    const inArea = cache?.labelToRows.get(label) ?? [];
     if (inArea.length === 0) return null;
     const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 300 ? 5 : inArea.length > 160 ? 4 : inArea.length > 80 ? 3 : inArea.length > 30 ? 2 : 1;
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 
   async getIncidents(area: string, opts?: { limit?: number; since?: Date }) {
-    const rows = await getRowsOakland();
-    const label = labelForOaklandSlug(area, rows);
+    await getRowsOakland();
+    const label = labelForOaklandSlug(area);
     if (!label) return [];
-    let filtered = rows.filter((r) => r.area === label);
+    let filtered = cache?.labelToRows.get(label) ?? [];
     if (opts?.since) filtered = filtered.filter((r) => new Date(r.occurredAt) >= opts.since!);
-    filtered.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-    return filtered.slice(0, opts?.limit ?? 50);
+    const sorted = [...filtered].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
+    return sorted.slice(0, opts?.limit ?? 50);
   },
 
   async getRecentReports(area: string, opts?: { limit?: number }) {

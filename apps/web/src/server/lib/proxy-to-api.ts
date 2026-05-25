@@ -17,7 +17,12 @@ import { env } from "./env";
 // areas) can take 30-40s on a cold cache, so the original 25s
 // timeout was tripping the divergence-guard path even when Railway
 // was healthy.
-const TIMEOUT_MS = 55_000;
+// v71 — timeout now applies to RESPONSE HEADERS only (TTFB). Once
+// Railway has written status + headers we hand the body stream
+// directly back to the client; the body can continue flowing past
+// the 55s budget if needed because the abort signal is cleared at
+// header time.
+const HEADER_TIMEOUT_MS = 55_000;
 
 interface ProxyResult {
   response: NextResponse;
@@ -42,33 +47,37 @@ export async function tryProxy(
   if (auth) upstreamHeaders["Authorization"] = auth;
 
   const controller = new AbortController();
-  const to = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const to = setTimeout(() => controller.abort(), HEADER_TIMEOUT_MS);
+  let upstream: Response;
   try {
-    const upstream = await fetch(url.toString(), {
+    upstream = await fetch(url.toString(), {
       method: "GET",
       headers: upstreamHeaders,
       signal: controller.signal,
     });
-    if (!upstream.ok) {
-      // 4xx / 5xx from Railway → let the local fallback kick in. The
-      // adapter cache on Vercel might still have data.
-      return null;
-    }
-    const body = await upstream.text();
-    const ct = upstream.headers.get("content-type") ?? "application/json";
-    const cc = upstream.headers.get("cache-control")
-      ?? "public, s-maxage=300, stale-while-revalidate=900";
-    return {
-      response: new NextResponse(body, {
-        status: 200,
-        headers: { "Content-Type": ct, "Cache-Control": cc },
-      }),
-    };
   } catch {
     // Aborted, DNS failure, refused connection, etc. — fall through to
     // the local implementation. Never block the user on a Railway blip.
-    return null;
-  } finally {
     clearTimeout(to);
+    return null;
   }
+  // Headers are in hand — cancel the header-wait timer. From here we
+  // pipe the upstream body directly to the client so first-paint
+  // arrives ~200-500ms sooner on heavy cities (no longer buffering the
+  // full JSON in memory before sending the first byte).
+  clearTimeout(to);
+  if (!upstream.ok || !upstream.body) {
+    // 4xx / 5xx from Railway → let the local fallback kick in. The
+    // adapter cache on Vercel might still have data.
+    return null;
+  }
+  const ct = upstream.headers.get("content-type") ?? "application/json";
+  const cc = upstream.headers.get("cache-control")
+    ?? "public, s-maxage=300, stale-while-revalidate=900";
+  return {
+    response: new NextResponse(upstream.body, {
+      status: 200,
+      headers: { "Content-Type": ct, "Cache-Control": cc },
+    }),
+  };
 }

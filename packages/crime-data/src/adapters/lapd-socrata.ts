@@ -18,7 +18,14 @@ import type { KnownArea } from "../neighborhoods.js";
 // CommunitySafe's spec forbids displaying or storing victim/suspect
 // demographic data; we just don't request those columns.
 
-const BASE = "https://data.lacity.org/resource/y8y3-fqfu.json";
+// v70 — switched primary to the "2026-to-Present" dataset (k7nn-b2ep)
+// which LAPD publishes bi-weekly (last update May 12 2026, 13 days
+// fresh) vs the 2024-2025 dataset (y8y3-fqfu) that was ~4 months
+// behind. Same column schema. We still pull the 2024-2025 dataset
+// for historical depth as a SECONDARY merge — gives both recent
+// freshness and the multi-year safety-score window cap of 365 days.
+const BASE = "https://data.lacity.org/resource/k7nn-b2ep.json";
+const HISTORICAL_BASE = "https://data.lacity.org/resource/y8y3-fqfu.json";
 // 5-minute cache: half the client's 10-minute refresh window. With matched
 // 10/10 minute TTLs the client could land on a stale cache right before it
 // expired and see the same data twice in a row, which read as "the app isn't
@@ -103,9 +110,9 @@ function displayLabelLA(raw: string): string {
 }
 
 const PROVENANCE: DataProvenance = {
-  source: "LAPD NIBRS Offenses 2024–2025 (City of Los Angeles Open Data)",
-  datasetUrl: "https://data.lacity.org/Public-Safety/LAPD-NIBRS-Offenses-Dataset-2024-to-2025/y8y3-fqfu",
-  recency: "Refreshed weekly by LAPD",
+  source: "LAPD NIBRS Offenses 2026-to-Present + 2024–2025 (City of Los Angeles Open Data)",
+  datasetUrl: "https://data.lacity.org/Public-Safety/LAPD-NIBRS-Offenses-Dataset-2026-to-Present/k7nn-b2ep",
+  recency: "Refreshed bi-weekly by LAPD",
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the Los Angeles Police Department and aggregated to " +
@@ -114,23 +121,37 @@ const PROVENANCE: DataProvenance = {
     "published by LAPD.",
 };
 
-async function fetchLapd(): Promise<Incident[]> {
-  const url = new URL(BASE);
+async function fetchOne(baseUrl: string): Promise<SodaRow[]> {
+  const url = new URL(baseUrl);
   url.searchParams.set("$select", "caseno,uniquenibrno,date_occ,area_name,nibr_code,nibr_description,crime_against,rpt_dist_no");
   url.searchParams.set("$order", "date_occ DESC");
-  // 50k slice — same rationale as the legacy adapter. The NIBRS feed
-  // currently holds ~700k incidents across 2024-2025, so 50k newest
-  // gives us a fresh ~3-4 month window across all 21 divisions.
   url.searchParams.set("$limit", "50000");
   const res = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)",
-    },
+    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
   });
   if (!res.ok) throw new Error(`LAPD SODA ${res.status} fetching ${url}`);
-  const rows = (await res.json()) as SodaRow[];
-  return rows.map((r, i) => {
+  return (await res.json()) as SodaRow[];
+}
+
+async function fetchLapd(): Promise<Incident[]> {
+  // v70 — pull primary (2026-to-present) + historical (2024-2025) in
+  // parallel. Each dataset caps at 50k Socrata rows. Dedupe by
+  // uniquenibrno so an incident reported under both datasets only
+  // counts once. The fresh primary dataset drives recent grades;
+  // the historical adds depth for the 365-day window.
+  const [primary, historical] = await Promise.all([
+    fetchOne(BASE).catch((e) => { console.warn("[lapd] primary fetch failed:", (e as Error).message); return [] as SodaRow[]; }),
+    fetchOne(HISTORICAL_BASE).catch((e) => { console.warn("[lapd] historical fetch failed:", (e as Error).message); return [] as SodaRow[]; }),
+  ]);
+  const seen = new Set<string>();
+  const merged: SodaRow[] = [];
+  for (const r of [...primary, ...historical]) {
+    const key = r.uniquenibrno ?? r.caseno ?? "";
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(r);
+  }
+  return merged.map((r, i) => {
     const rawArea = r.area_name?.trim() || "Unknown";
     const area = displayLabelLA(rawArea);
     const cen = centroidFor(rawArea);

@@ -77,20 +77,38 @@ export function ThreatFeed({ threats, windowDays, contextLabel, source, loading 
   const { value: rawWindow, setValue: setSharedWindow } = useTimeWindow();
   const snapped = snapToSupported(rawWindow, WINDOW_PRESETS);
   const selectedWindow = typeof snapped === "number" ? snapped : 30;
+  // v70 — panel-level collapse so the dispatch list doesn't dominate
+  // the page on landing. Mirrors AreaBriefPanel + NewsPanel pattern.
+  // Resets to closed when contextLabel changes (= user picked a
+  // different area/city).
+  const [panelOpen, setPanelOpen] = useState(false);
+  useEffect(() => { setPanelOpen(false); }, [contextLabel]);
 
   if (loading && threats.length === 0) return <ThreatFeedSkeleton />;
   const eligible = threats.slice(0, HARD_CAP);
 
   return (
-    <section className="surface p-5">
-      <header className="flex items-baseline justify-between flex-wrap gap-2">
-        <div>
-          <h3 className="font-display text-lg text-slate2-900">Local Activity</h3>
-          <p className="text-xs text-slate2-500 mt-0.5">{contextLabel}</p>
+    <section className="surface p-4 sm:p-5">
+      <button
+        type="button"
+        onClick={() => setPanelOpen(!panelOpen)}
+        aria-expanded={panelOpen}
+        className="w-full flex items-center justify-between gap-3 text-left hover:bg-bay-50/40 rounded-md -m-1 p-1 transition-colors"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span aria-hidden="true" className={`inline-block transition-transform text-slate2-500 text-sm shrink-0 ${panelOpen ? "rotate-90" : ""}`}>▶</span>
+          <div className="min-w-0">
+            <h3 className="font-display text-lg text-slate2-900 truncate">Local Activity</h3>
+            <p className="text-xs text-slate2-500 mt-0.5 truncate">{contextLabel}</p>
+          </div>
         </div>
-        <span className="text-xs text-slate2-500 tabular-nums">
-          {threats.length === 0 ? "0 dispatches in window" : `${threats.length} in window`}
+        <span className="text-xs text-slate2-500 tabular-nums shrink-0">
+          {threats.length === 0 ? "0 in window" : `${threats.length} in window`}
         </span>
+      </button>
+      {!panelOpen ? null : <>
+      <header className="mt-3 flex items-baseline justify-between flex-wrap gap-2">
+        <span className="sr-only">Local Activity controls</span>
       </header>
 
       {/* In-card window selector — pick how much activity to populate.
@@ -145,6 +163,7 @@ export function ThreatFeed({ threats, windowDays, contextLabel, source, loading 
           {source.label}
         </a>
       </p>
+      </>}
     </section>
   );
 }
