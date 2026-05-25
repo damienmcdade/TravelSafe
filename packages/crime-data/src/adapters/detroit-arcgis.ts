@@ -17,7 +17,21 @@ const PAGE_SIZE = 2000;
 // gives the annualization a true year-scale window.
 const PAGES = 15;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+// v69 followup — paired index keyed off the cache fetchedAt so the
+// index rebuilds whenever the row cache refreshes. Two structures:
+//   slugToLabel: O(1) slug → upstream-label lookup (was O(n_areas ×
+//     n_rows) per call)
+//   labelToRows: O(1) label → Incident[] lookup (was rows.filter on
+//     every getIncidents call)
+// Detroit has 199 areas × ~30k rows; the cumulative win is ~5.97M
+// ops → ~200 indexed lookups per warm-worker cycle.
+interface Cache {
+  fetchedAt: number;
+  rows: Incident[];
+  slugToLabel: Map<string, string>;
+  labelToRows: Map<string, Incident[]>;
+}
+let cache: Cache | null = null;
 
 interface DetroitRow {
   crime_id?: string;
@@ -118,12 +132,30 @@ async function fetchDetroit(): Promise<Incident[]> {
   return out;
 }
 
+// v69 followup — build the two indexes once per cache load.
+function buildIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRows"> {
+  const slugToLabel = new Map<string, string>();
+  const labelToRows = new Map<string, Incident[]>();
+  for (const r of rows) {
+    const label = r.area;
+    if (!label) continue;
+    let bucket = labelToRows.get(label);
+    if (!bucket) { bucket = []; labelToRows.set(label, bucket); }
+    bucket.push(r);
+    if (!slugToLabel.has(label)) {
+      const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      slugToLabel.set(slug, label);
+    }
+  }
+  return { slugToLabel, labelToRows };
+}
+
 export async function getRowsDetroit(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
   try {
     const rows = await fetchDetroit();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
+    if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildIndexes(rows) };
     return rows;
   } catch (err) {
     console.warn("[detroit] fetch failed:", (err as Error).message);
@@ -152,36 +184,37 @@ export async function getDiscoveredAreasDetroit(): Promise<KnownArea[]> {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function labelForDetroitSlug(slug: string, rows: Incident[]): string | null {
+// v69 followup — O(1) slug → label via the cache-time index.
+function labelForDetroitSlug(slug: string): string | null {
+  if (!cache) return null;
   const s = slug.toLowerCase();
   const want = s.startsWith("det-") ? s.slice(4) : s;
-  for (const r of rows) {
-    const candidate = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (candidate === want) return r.area;
-  }
-  return null;
+  return cache.slugToLabel.get(want) ?? null;
 }
 
 export const detroitAdapter: CrimeDataAdapter = {
   name: "detroit-arcgis",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {
-    const rows = await getRowsDetroit();
-    const label = labelForDetroitSlug(area, rows);
+    await getRowsDetroit();
+    const label = labelForDetroitSlug(area);
     if (!label) return null;
-    const inArea = rows.filter((r) => r.area === label);
+    const inArea = cache?.labelToRows.get(label) ?? [];
     if (inArea.length === 0) return null;
     const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 800 ? 5 : inArea.length > 400 ? 4 : inArea.length > 200 ? 3 : inArea.length > 60 ? 2 : 1;
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 
   async getIncidents(area: string, opts?: { limit?: number; since?: Date }) {
-    const rows = await getRowsDetroit();
-    const label = labelForDetroitSlug(area, rows);
+    await getRowsDetroit();
+    const label = labelForDetroitSlug(area);
     if (!label) return [];
-    let filtered = rows.filter((r) => r.area === label);
+    let filtered = cache?.labelToRows.get(label) ?? [];
     if (opts?.since) filtered = filtered.filter((r) => new Date(r.occurredAt) >= opts.since!);
-    filtered.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
+    // Index buckets aren't pre-sorted; sort on the fly. Most callers
+    // pass limit > bucket size so the cost is bounded by the bucket
+    // size rather than the global row count.
+    filtered = [...filtered].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
     return filtered.slice(0, opts?.limit ?? 50);
   },
 
