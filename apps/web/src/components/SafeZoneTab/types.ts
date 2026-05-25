@@ -12,7 +12,10 @@ export interface BlockScore {
   /// the user-selected area's annualized rate vs. the FBI national rate
   /// across the two reported NIBRS groups (Persons + Property).
   score: number;
-  /// Bucket used for color coding: safe ≥80, moderate 50–79, elevated <50.
+  /// Bucket used for color coding: safe ≥70, moderate 50–69, elevated <50.
+  /// v51 re-banded — bands now align with letter-grade thresholds so
+  /// Grade B (ratio ≤0.9) consistently lands in the "safe" band
+  /// instead of "moderate". See useSafeZoneData.bandFor.
   band: BlockScoreBand;
   /// Plain-English headline (e.g. "Well below the national rate.")
   headline: string;

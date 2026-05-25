@@ -47,15 +47,43 @@ function capWord(w: string): string {
   return w.toLowerCase().replace(/(^|[-'])([a-z])/g, (_, sep: string, ch: string) => sep + ch.toUpperCase());
 }
 
+// User-sensitive relabel map for offense descriptions where the raw
+// NIBRS / police-feed phrasing reads as harsh or potentially
+// re-traumatizing to survivors who scroll the feed. Applied AFTER
+// titlecasing so a feed value of "SIMPLE RAPE" becomes "Sexual
+// Assault (non-aggravated)" rather than the clinical adjective the
+// user reported. Matched on the cased output, case-insensitive.
+const SENSITIVE_RELABEL: Array<[RegExp, string]> = [
+  [/^simple rape$/i,                    "Sexual Assault (non-aggravated)"],
+  [/^simple rape - /i,                  "Sexual Assault — "],
+  [/^forcible rape$/i,                  "Sexual Assault"],
+  [/^statutory rape$/i,                 "Sexual Assault (statutory)"],
+  [/^rape$/i,                           "Sexual Assault"],
+  // Some adapters publish "Sex Offense - Forcible" etc.; soften the
+  // forcible qualifier which reads as graphic.
+  [/forcible sodomy/i,                  "Sexual Assault — Sodomy"],
+];
+
+function applySensitiveRelabel(s: string): string {
+  for (const [pat, replacement] of SENSITIVE_RELABEL) {
+    if (pat.test(s)) {
+      if (pat.source.endsWith("$/")) return s.replace(pat, replacement);
+      return s.replace(pat, replacement);
+    }
+  }
+  return s;
+}
+
 export function titleCaseOffense(raw: string | null | undefined): string {
   if (!raw) return "Unknown";
   const stripped = raw.replace(LEADING_CODE, "").trim();
   if (!stripped) return "Unknown";
   const words = stripped.split(/\s+/);
-  return words
+  const titled = words
     .map((w, i) => {
       if (i > 0 && SMALL_WORDS.has(w.toLowerCase())) return w.toLowerCase();
       return capWord(w);
     })
     .join(" ");
+  return applySensitiveRelabel(titled);
 }

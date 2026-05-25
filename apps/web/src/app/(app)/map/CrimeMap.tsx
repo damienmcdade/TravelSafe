@@ -111,11 +111,16 @@ function fuseColor(
   const g = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[1]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[1]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[1]);
   const b = Math.round(w.PERSONS * CATEGORY_COLOR.PERSONS.rgb[2]  + w.PROPERTY * CATEGORY_COLOR.PROPERTY.rgb[2]  + w.SOCIETY * CATEGORY_COLOR.SOCIETY.rgb[2]);
   const ratio = Math.min(1, value / Math.max(1, maxValue));
-  // Softer alpha curve: floor 0.42, ceiling 0.82 so even the busiest
-  // neighborhood stays under full-saturation. cubic-root pulls midtones up
-  // a hair so users see real differentiation between sleepy areas, instead
-  // of every low-incident polygon looking identically faded.
-  const opacity = 0.42 + Math.cbrt(ratio) * 0.40;
+  // v51 — bumped opacity floor 0.42 → 0.55 and ceiling 0.82 → 0.95
+  // after a user reported "crime maps for some cities such as New
+  // Orleans will not populate coloring scheme." NOLA's top
+  // neighborhood has ~520 incidents in the cached window — much
+  // sparser than Chicago / Detroit which can hit 5k+. Under the old
+  // floor every mid-density NOLA polygon landed near 0.5 opacity
+  // against a grey-blue background, which read as "no color." The
+  // brighter floor (0.55) plus a higher ceiling guarantees visible
+  // shading even when the citywide maxValue is small.
+  const opacity = 0.55 + Math.cbrt(ratio) * 0.40;
   return { fill: `rgb(${r},${g},${b})`, opacity, stroke: `rgb(${Math.max(0, r - 50)},${Math.max(0, g - 50)},${Math.max(0, b - 50)})` };
 }
 

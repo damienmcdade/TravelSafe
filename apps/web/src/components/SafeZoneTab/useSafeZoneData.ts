@@ -103,8 +103,18 @@ function ratioToScore(ratio: number): number {
   return Math.max(5, Math.min(100, Math.round(raw)));
 }
 
+// v51 — re-banded to align with the gradeFromCityFbiBaseline
+// thresholds so a "Grade B" city doesn't read as "moderate risk"
+// in the score band. Bands now mirror grades:
+//   safe     (≥70)  → A or B    (ratio ≤ ~0.9)
+//   moderate (50–69) → C        (ratio ~0.9–1.2)
+//   elevated (<50)  → D or E    (ratio > ~1.3)
+// User report: "does a 71 score correlate to a b city grade? new
+// orleans is displaying this currently" — under the prior 80/50/0
+// bands a B-grade city (ratio ~0.71) computed score 71 = moderate,
+// which contradicted the "B = below baseline" semantic.
 function bandFor(score: number): BlockScoreBand {
-  if (score >= 80) return "safe";
+  if (score >= 70) return "safe";
   if (score >= 50) return "moderate";
   return "elevated";
 }

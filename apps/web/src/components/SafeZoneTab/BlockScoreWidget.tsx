@@ -216,9 +216,9 @@ function HowItsCalculated({ benchmark }: { benchmark: BlockScore["benchmark"] })
 
 function BandLegend({ currentBand }: { currentBand: BlockScoreBand }) {
   const rows: Array<{ band: BlockScoreBand; range: string; copy: string }> = [
-    { band: "safe",     range: "80–100", copy: "Fewer reports than national rate" },
-    { band: "moderate", range: "50–79",  copy: "Roughly matches national rate" },
-    { band: "elevated", range: "0–49",   copy: "More reports than national rate" },
+    { band: "safe",     range: "70–100", copy: "Below the city's typical baseline (grade A or B)" },
+    { band: "moderate", range: "50–69",  copy: "Around the city's typical baseline (grade C)" },
+    { band: "elevated", range: "0–49",   copy: "Above the city's typical baseline (grade D or E)" },
   ];
   return (
     <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
