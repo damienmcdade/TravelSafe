@@ -23,14 +23,40 @@ const ScoreQuery = z.object({
   message: "Pass exactly one of `city` or `area`.",
 });
 
+// v68 hotfix — bound the per-request work to 25s so the route never
+// hangs indefinitely on cold-cache adapters. Cleveland's adapter
+// in particular takes ~5min cold (bounded-concurrency CFS
+// pagination), which left every Cleveland safety-score request
+// blocking until either the adapter finished or the client gave up.
+// On timeout we return 503 with a "warming up" hint so the client
+// can show a friendly retry-in-a-moment surface instead of a
+// generic timeout error. The warm-worker continues populating the
+// cache in the background.
+const SCORE_TIMEOUT_MS = 25_000;
+function withScoreTimeout<T>(p: Promise<T>): Promise<T | typeof TIMEOUT> {
+  return Promise.race([
+    p,
+    new Promise<typeof TIMEOUT>((resolve) => setTimeout(() => resolve(TIMEOUT), SCORE_TIMEOUT_MS)),
+  ]);
+}
+const TIMEOUT = Symbol("safety-score-timeout");
+
 safezoneRouter.get("/safety-score", async (req, res, next) => {
   try {
     const { city, area, label } = ScoreQuery.parse(req.query);
     // Cache-Control mirrors the Vercel edge cache so a CDN in front
     // of Railway (Cloudflare etc.) can reuse the same posture.
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
-    if (city) return res.json(await getCitywideSafetyScore(city));
-    return res.json(await getSafetyScore(area!, label ?? area!));
+    const result = city
+      ? await withScoreTimeout(getCitywideSafetyScore(city))
+      : await withScoreTimeout(getSafetyScore(area!, label ?? area!));
+    if (result === TIMEOUT) {
+      return res.status(503).json({
+        error: "warming_up",
+        message: "This city's data is still loading. Try again in a moment — typically resolves within 30s.",
+      });
+    }
+    return res.json(result);
   } catch (err) {
     next(err);
   }
