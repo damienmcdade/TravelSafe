@@ -53,8 +53,14 @@ export function NationalAverageCard() {
           FBI Crime in the Nation, {score?.source.publishedYear ?? 2025}
         </a>
       </header>
+      {/* v67 followup — replaced "annualized per-100,000 rate" jargon
+          with a plain-English explainer. Hovering the dotted term
+          reveals the technical phrasing for users who want it. */}
       <p className="mt-1 text-xs text-slate2-500">
-        Bars compare {city.label}&apos;s annualized per-100,000 rate against the FBI&apos;s national average for the same category. Longer bar = more incidents per resident.
+        Bars compare {city.label}&apos;s <span
+          className="underline decoration-dotted decoration-slate2-300 cursor-help"
+          title="Annualized per-100,000 rate — incidents per 100,000 residents, scaled to a one-year period from the cached data window."
+        >incidents per resident</span> against the FBI&apos;s national average for the same category. Longer bar = more incidents per resident.
       </p>
 
       {loading ? (

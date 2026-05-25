@@ -58,7 +58,20 @@ export function IncidentCard({ incident }: { incident: IncidentCardItem }) {
           <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-slate2-500">
             <div><dt className="inline text-slate2-700">When · </dt><dd className="inline">{when}</dd></div>
             <div><dt className="inline text-slate2-700">Area · </dt><dd className="inline">{incident.area}</dd></div>
-            {incident.beat && <div><dt className="inline text-slate2-700">Beat · </dt><dd className="inline">{incident.beat}</dd></div>}
+            {incident.beat && (
+              <div>
+                {/* v67 followup — "beat" is police-precinct jargon.
+                    Tooltip explains it for non-law-enforcement readers
+                    without enlarging the label or adding visual noise. */}
+                <dt
+                  className="inline text-slate2-700"
+                  title="Police beat — the patrol-area subdivision the responding officer was assigned to."
+                >
+                  Beat ·{" "}
+                </dt>
+                <dd className="inline">{incident.beat}</dd>
+              </div>
+            )}
             {incident.blockLabel && <div className="col-span-2 truncate"><dt className="inline text-slate2-700">Block · </dt><dd className="inline">{incident.blockLabel}</dd></div>}
           </dl>
         </div>

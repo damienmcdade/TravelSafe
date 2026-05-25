@@ -268,7 +268,7 @@ function LocationControls() {
 function AppearanceControls() {
   const { theme, setTheme, effective } = useTheme();
   const options: Array<{ id: Theme; label: string; sublabel: string }> = [
-    { id: "light",  label: "Light",  sublabel: "Calm, light palette (default in 2024)" },
+    { id: "light",  label: "Light",  sublabel: "Calm, light palette" },
     { id: "dark",   label: "Dark",   sublabel: "Easier on the eyes after sundown" },
     { id: "system", label: "System", sublabel: "Follow your device's theme automatically" },
   ];
