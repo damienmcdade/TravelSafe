@@ -62,7 +62,22 @@ safezoneRouter.get("/safety-score", async (req, res, next) => {
       if (redis) {
         try {
           const cached = await redis.get(`citywide:${city}`);
-          if (cached) return res.json(JSON.parse(cached));
+          if (cached) {
+            // v70 — sanity-check the cached payload before serving it.
+            // A v69 bug allowed degenerate scores (windowDays=0,
+            // all-zero counts) into Redis from transient warm-worker
+            // failures; the old route returned them blindly and
+            // users saw grade=N/A for 30min until TTL expired.
+            // Reject + fall through whenever the cached value looks
+            // broken so the in-process compute path recovers
+            // immediately. The next warm cycle's healthy result
+            // overwrites the bad entry.
+            const parsed = JSON.parse(cached) as { windowDays?: number; rows?: Array<{ count?: number }> };
+            const totalCounted = (parsed.rows ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
+            if ((parsed.windowDays ?? 0) > 0 && totalCounted > 0) {
+              return res.json(parsed);
+            }
+          }
         } catch {
           // Redis fail-soft — fall through to compute below
         }
