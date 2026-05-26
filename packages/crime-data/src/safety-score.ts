@@ -544,6 +544,23 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
     areas.map((a) => crimeData.getIncidents(a.slug, { limit: 50000 }).catch(() => [])),
   );
 
+  // v80 — parse occurredAt timestamps ONCE per incident. The pre-v80
+  // code did `+new Date(i.occurredAt)` 3-5 times per row across the
+  // timestamp-collection pass + the in-window counting pass + the
+  // per-category sub-passes. With 50k-200k incidents per city × 3-5
+  // re-parses each, this was 200k-1M Date constructor calls per
+  // citywide score compute. A single parallel-array pass costs the
+  // same as one of those passes and the remaining passes get a Float64
+  // lookup for free.
+  const perAreaTs: number[][] = perArea.map((incidents) => {
+    const out = new Array<number>(incidents.length);
+    for (let k = 0; k < incidents.length; k++) {
+      const t = +new Date(incidents[k].occurredAt);
+      out[k] = Number.isFinite(t) && t > 0 ? t : 0;
+    }
+    return out;
+  });
+
   // ─── STABILITY FIX ──────────────────────────────────────────────────
   // Previously the rate window was [datasetLatest - 365d, datasetLatest]
   // and windowDays was derived from the min/max of in-window rows.
@@ -579,10 +596,11 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   // much better proxy for "the dense data span" than the absolute
   // oldest row.
   const allTimestamps: number[] = [];
-  for (const incidents of perArea) {
-    for (const i of incidents) {
-      const t = +new Date(i.occurredAt);
-      if (!Number.isFinite(t) || t <= 0 || t > nowMs) continue;
+  for (let a = 0; a < perArea.length; a++) {
+    const tsList = perAreaTs[a];
+    for (let k = 0; k < tsList.length; k++) {
+      const t = tsList[k];
+      if (t <= 0 || t > nowMs) continue;
       allTimestamps.push(t);
     }
   }
@@ -610,16 +628,18 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
   const freshAreaSlugs = new Set<string>();
   for (let a = 0; a < areas.length; a++) {
     const incidents = perArea[a];
+    const tsList = perAreaTs[a];
     let contributed = false;
-    for (const i of incidents) {
-      const t = +new Date(i.occurredAt);
-      if (!Number.isFinite(t) || t <= 0) continue;
+    for (let k = 0; k < incidents.length; k++) {
+      const i = incidents[k];
+      const t = tsList[k];
+      if (t <= 0) continue;
       if (t < windowStartMs || t > nowMs) continue;
-      const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
+      const cat = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
       const desc = i.ibrOffenseDescription;
       let counted = false;
-      if (k === "PERSONS" && isPart1Violent(desc)) { persons += 1; counted = true; }
-      else if (k === "PROPERTY" && isPart1Property(desc)) { property += 1; counted = true; }
+      if (cat === "PERSONS" && isPart1Violent(desc)) { persons += 1; counted = true; }
+      else if (cat === "PROPERTY" && isPart1Property(desc)) { property += 1; counted = true; }
       if (counted) {
         contributed = true;
         if (t > latest) latest = t;
@@ -852,12 +872,23 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   const nowMsArea = Date.now();
   const windowStartMsArea = nowMsArea - PER_AREA_RATE_WINDOW_DAYS * PER_AREA_MS_PER_DAY;
 
+  // v80 — parse timestamps once per row (same as the citywide variant).
+  const tsPerArea: number[][] = incidentsPerArea.map((arr) => {
+    const out = new Array<number>(arr.length);
+    for (let k = 0; k < arr.length; k++) {
+      const t = +new Date(arr[k].occurredAt);
+      out[k] = Number.isFinite(t) && t > 0 ? t : 0;
+    }
+    return out;
+  });
+
   // Oldest row across the FULL response — drives windowDays only.
   let dataEarliestMsArea = nowMsArea;
-  for (const arr of incidentsPerArea) {
-    for (const i of arr) {
-      const t = +new Date(i.occurredAt);
-      if (!Number.isFinite(t) || t <= 0 || t > nowMsArea) continue;
+  for (let a = 0; a < incidentsPerArea.length; a++) {
+    const tsList = tsPerArea[a];
+    for (let k = 0; k < tsList.length; k++) {
+      const t = tsList[k];
+      if (t <= 0 || t > nowMsArea) continue;
       if (t < dataEarliestMsArea) dataEarliestMsArea = t;
     }
   }
@@ -866,16 +897,19 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // CLOCK-anchored window.
   let cityPersons = 0, cityProperty = 0;
   let latest = 0;
-  for (const arr of incidentsPerArea) {
-    for (const i of arr) {
-      const t = +new Date(i.occurredAt);
-      if (!Number.isFinite(t) || t <= 0) continue;
+  for (let a = 0; a < incidentsPerArea.length; a++) {
+    const arr = incidentsPerArea[a];
+    const tsList = tsPerArea[a];
+    for (let k = 0; k < arr.length; k++) {
+      const t = tsList[k];
+      if (t <= 0) continue;
       if (t < windowStartMsArea || t > nowMsArea) continue;
-      const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
+      const i = arr[k];
+      const cat = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
       const desc = i.ibrOffenseDescription;
       // Apply UCR Part 1 filter — see helper functions for rationale.
-      if (k === "PERSONS" && isPart1Violent(desc)) cityPersons += 1;
-      else if (k === "PROPERTY" && isPart1Property(desc)) cityProperty += 1;
+      if (cat === "PERSONS" && isPart1Violent(desc)) cityPersons += 1;
+      else if (cat === "PROPERTY" && isPart1Property(desc)) cityProperty += 1;
       if (t > latest) latest = t;
     }
   }
@@ -915,15 +949,24 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // Per-area count uses the SAME clock-anchored window AND UCR
   // Part 1 filter so it's apples-to-apples with the citywide totals
   // computed above.
+  // v80 — reuse cached timestamps where available (idx >= 0 means
+  // areaIncidents IS one of the entries in incidentsPerArea, so the
+  // corresponding tsPerArea row already has parsed timestamps).
   let persons = 0, property = 0;
-  for (const i of areaIncidents) {
-    const t = +new Date(i.occurredAt);
-    if (!Number.isFinite(t) || t <= 0) continue;
+  const areaTs = idx >= 0 ? tsPerArea[idx] : null;
+  for (let k = 0; k < areaIncidents.length; k++) {
+    const i = areaIncidents[k];
+    let t = areaTs ? areaTs[k] : 0;
+    if (!areaTs) {
+      const parsed = +new Date(i.occurredAt);
+      t = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+    if (t <= 0) continue;
     if (t < windowStartMsArea || t > nowMsArea) continue;
-    const k = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
+    const cat = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
     const desc = i.ibrOffenseDescription;
-    if (k === "PERSONS" && isPart1Violent(desc)) persons += 1;
-    else if (k === "PROPERTY" && isPart1Property(desc)) property += 1;
+    if (cat === "PERSONS" && isPart1Violent(desc)) persons += 1;
+    else if (cat === "PROPERTY" && isPart1Property(desc)) property += 1;
   }
 
   // windowDays from clock + adapter's oldest row (same stable formula
