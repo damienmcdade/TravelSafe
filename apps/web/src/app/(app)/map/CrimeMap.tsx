@@ -351,6 +351,31 @@ export default function CrimeMap() {
     return { ...polygons, features: filtered };
   }, [polygons, polygonSlugByName]);
 
+  // v83 — POLYGON-SYNC: orphan adapter areas (areas that have data
+  // but no matching polygon in the city's GeoJSON file) get a
+  // synthetic CircleMarker rendered at the adapter's published
+  // centroid. This guarantees no drop in service: every neighborhood
+  // the adapter knows about appears on the map, even when the
+  // polygon file is incomplete or stale. The marker is styled
+  // differently from real polygons (translucent + dashed) so users
+  // can tell at a glance which areas have proper boundaries vs
+  // centroid-only approximations. Circles scale by incident count
+  // using the same maxCount denominator as polygon shading.
+  const matchedSlugs = useMemo(() => new Set(polygonSlugByName.values()), [polygonSlugByName]);
+  const orphanAreasWithData = useMemo(() => {
+    if (!areas || !citywide?.perArea) return [];
+    const statsBySlug = new Map(citywide.perArea.map((p) => [p.slug, p]));
+    const out: Array<{ slug: string; label: string; centroid: { lat: number; lng: number }; stats: AreaBreakdown }> = [];
+    for (const a of areas) {
+      if (matchedSlugs.has(a.slug)) continue; // already shown as polygon
+      const stats = statsBySlug.get(a.slug);
+      if (!stats || stats.incidentCount === 0) continue;
+      if (!Number.isFinite(a.centroid?.lat) || !Number.isFinite(a.centroid?.lng)) continue;
+      out.push({ slug: a.slug, label: a.label, centroid: a.centroid, stats });
+    }
+    return out;
+  }, [areas, citywide, matchedSlugs]);
+
   // v77 — detect "polygon file ↔ adapter areas" mismatch. Pre-rollout
   // audit caught Phoenix + Milwaukee using ZIP-code polygons (85003,
   // 53202, …) while the adapters return neighborhood names (Maryvale,
@@ -466,6 +491,17 @@ export default function CrimeMap() {
   );
   const selectedStats = selectedName ? polygonStats.get(selectedName) ?? null : null;
 
+  // v84 — outlier visual treatment. Neighborhoods at riskLevel=5
+  // (top 10% by incident count within their city; see dispatcher
+  // percentile-rank logic) get a thick crimson stroke and a 15%
+  // opacity bump so they pop visually. Pre-v84 a level-5 outlier
+  // looked identical to a level-4 neighbor — the colorblend math
+  // dominated, hiding the percentile signal that drives the
+  // user's "where should I avoid" judgement. Hot-pink rather than
+  // pure red so we don't collide with the PERSONS category color.
+  const OUTLIER_STROKE = "#BE185D";  // crimson-pink, distinct from PERSONS red (#DC2626)
+  const HIGH_STROKE    = "#9D174D";  // slightly darker for level-4
+
   function stylePolygon(feat: Feature<Geometry> | undefined): PathOptions {
     if (!feat) return {};
     const name = (feat.properties as { name?: string } | null)?.name ?? "";
@@ -473,11 +509,26 @@ export default function CrimeMap() {
     const value = polygonValues.get(name) ?? 0;
     const { fill, opacity, stroke } = fuseColor(stats, value, maxValue);
     const isSel = name === selectedName;
+    const lvl = stats?.riskLevel ?? 0;
+    const isOutlier = lvl === 5;
+    const isHigh    = lvl === 4;
+    let strokeColor = isSel ? "#0E4F73" : stroke;
+    let weight = isSel ? 2.5 : 0.9;
+    let fillOp = isSel ? Math.min(1, opacity + 0.18) : opacity;
+    if (isOutlier && !isSel) {
+      strokeColor = OUTLIER_STROKE;
+      weight = 2.4;
+      fillOp = Math.min(1, opacity + 0.15);
+    } else if (isHigh && !isSel) {
+      strokeColor = HIGH_STROKE;
+      weight = 1.6;
+      fillOp = Math.min(1, opacity + 0.07);
+    }
     return {
       fillColor: fill,
-      fillOpacity: isSel ? Math.min(1, opacity + 0.18) : opacity,
-      color: isSel ? "#0E4F73" : stroke,
-      weight: isSel ? 2.5 : 0.9,
+      fillOpacity: fillOp,
+      color: strokeColor,
+      weight,
     };
   }
 
@@ -561,6 +612,42 @@ export default function CrimeMap() {
               onEachFeature={onEachFeature}
             />
           )}
+          {/* v83 — orphan adapter areas (have data, no polygon match)
+              get a CircleMarker at the adapter's centroid. Radius
+              scales by count; color uses the same fuseColor blend so
+              the visual encoding matches the polygons. Dashed stroke
+              distinguishes "centroid-only approximation" from "real
+              polygon boundary". */}
+          {orphanAreasWithData.map((a) => {
+            const c = a.stats.incidentCount;
+            // Scale radius 6-22px logarithmically against maxCount so a
+            // single super-busy orphan doesn't dwarf a busy real poly.
+            const norm = Math.min(1, Math.log10(c + 1) / Math.log10(maxCount + 1));
+            const radius = 6 + norm * 16;
+            const dom = a.stats.dominantCategory;
+            const color = dom ? CATEGORY_COLOR[dom].hex : "#94a3b8";
+            // v84 — outlier stroke matches polygon treatment so
+            // riskLevel=5 orphans pop the same as riskLevel=5 polygons.
+            const isOutlier = a.stats.riskLevel === 5;
+            const strokeColor = isOutlier ? OUTLIER_STROKE : color;
+            const strokeWeight = isOutlier ? 3 : 2;
+            return (
+              <CircleMarker
+                key={`orphan-${a.slug}`}
+                center={[a.centroid.lat, a.centroid.lng]}
+                radius={radius}
+                pathOptions={{ color: strokeColor, fillColor: color, fillOpacity: isOutlier ? 0.6 : 0.45, weight: strokeWeight, dashArray: "4 3" }}
+                eventHandlers={{ click: () => setArea({ slug: a.slug, label: a.label, jurisdiction: city.label }) }}
+              >
+                <Tooltip>
+                  <div className="text-xs">
+                    <div className="font-medium text-slate2-900">{a.label}</div>
+                    <div className="text-slate2-500">{c} incident{c === 1 ? "" : "s"} · approximate location</div>
+                  </div>
+                </Tooltip>
+              </CircleMarker>
+            );
+          })}
           {/* Per-incident drill-down dots only show inside the selected
               neighborhood. Range-validate lat/lng so a malformed upstream
               row can't plot a marker outside world bounds. */}
