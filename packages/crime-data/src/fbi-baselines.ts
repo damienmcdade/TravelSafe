@@ -58,4 +58,10 @@ export const CITY_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "san-francisco": { violent: 486, property: 2960, year: 2025, ori: "CA0380100" },
   "seattle": { violent: 700, property: 4446, year: 2025, ori: "WASPD0000" },
   "washington-dc": { violent: 748, property: 3081, year: 2025, ori: "DCMPD0000" },
+  // v90 — 5 new cities. FBI CDE 2024 values (2025 SRS not yet published).
+  "sacramento":   { violent: 755,  property: 2547, year: 2024, ori: "CA0340400" },
+  "atlanta":      { violent: 841,  property: 3748, year: 2024, ori: "GAAPD0000" },
+  "indianapolis": { violent: 878,  property: 3336, year: 2024, ori: "INIPD0000" },
+  "raleigh":      { violent: 489,  property: 2819, year: 2024, ori: "NC0920100" },
+  "tucson":       { violent: 533,  property: 3415, year: 2024, ori: "AZ0100100" },
 };

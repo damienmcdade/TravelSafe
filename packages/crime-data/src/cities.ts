@@ -36,6 +36,11 @@ import { kansasCityAdapter, getDiscoveredAreasKansasCity } from "./adapters/kans
 import { saintPaulAdapter, getDiscoveredAreasSaintPaul } from "./adapters/saint-paul-arcgis.js";
 import { pittsburghAdapter, getDiscoveredAreasPittsburgh } from "./adapters/pittsburgh-ckan.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-socrata.js";
+import { sacramentoAdapter, getDiscoveredAreasSacramento } from "./adapters/sacramento-arcgis.js";
+import { atlantaAdapter, getDiscoveredAreasAtlanta } from "./adapters/atlanta-arcgis.js";
+import { indianapolisAdapter, getDiscoveredAreasIndianapolis } from "./adapters/indianapolis-arcgis.js";
+import { raleighAdapter, getDiscoveredAreasRaleigh } from "./adapters/raleigh-arcgis.js";
+import { tucsonAdapter, getDiscoveredAreasTucson } from "./adapters/tucson-arcgis.js";
 
 // City registry.
 //
@@ -290,6 +295,44 @@ export const CITIES: CityEntry[] = [
     adapter: denverAdapter,
     discover: getDiscoveredAreasDenver,
   },
+  // v90 — 5 new cities (Honolulu deferred — Socrata HPD feed has no
+  // lat/lng or neighborhood column). Tucson substituted as the
+  // confirmed-fresh AZ candidate with full NEIGHBORHD + LAT/LONG.
+  {
+    slug: "sacramento",
+    label: "Sacramento",
+    bbox: { south: 38.437, west: -121.560, north: 38.685, east: -121.362 },
+    adapter: sacramentoAdapter,
+    discover: getDiscoveredAreasSacramento,
+  },
+  {
+    slug: "atlanta",
+    label: "Atlanta",
+    bbox: { south: 33.647, west: -84.551, north: 33.887, east: -84.290 },
+    adapter: atlantaAdapter,
+    discover: getDiscoveredAreasAtlanta,
+  },
+  {
+    slug: "indianapolis",
+    label: "Indianapolis",
+    bbox: { south: 39.632, west: -86.329, north: 39.928, east: -85.937 },
+    adapter: indianapolisAdapter,
+    discover: getDiscoveredAreasIndianapolis,
+  },
+  {
+    slug: "raleigh",
+    label: "Raleigh",
+    bbox: { south: 35.667, west: -78.792, north: 35.927, east: -78.510 },
+    adapter: raleighAdapter,
+    discover: getDiscoveredAreasRaleigh,
+  },
+  {
+    slug: "tucson",
+    label: "Tucson",
+    bbox: { south: 32.083, west: -111.114, north: 32.318, east: -110.738 },
+    adapter: tucsonAdapter,
+    discover: getDiscoveredAreasTucson,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -360,6 +403,11 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("pgh-")  || slug === "pittsburgh")   return CITIES[28];
   if (slug.startsWith("phx-")  || slug === "phoenix")      return CITIES[29];
   if (slug.startsWith("den-")  || slug === "denver")       return CITIES[30];
+  if (slug.startsWith("sac-")  || slug === "sacramento")   return CITIES[31];
+  if (slug.startsWith("atl-")  || slug === "atlanta")      return CITIES[32];
+  if (slug.startsWith("indy-") || slug === "indianapolis") return CITIES[33];
+  if (slug.startsWith("rdu-")  || slug === "raleigh")      return CITIES[34];
+  if (slug.startsWith("tuc-")  || slug === "tucson")       return CITIES[35];
   return CITIES[0];
 }
 

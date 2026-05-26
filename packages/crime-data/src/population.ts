@@ -50,6 +50,12 @@ export const CITY_POPULATION: Record<string, number> = {
   "saint-paul":      303_820,
   "pittsburgh":      303_255,
   "phoenix":       1_650_070,
+  // v90 — 5 new cities (US Census Vintage 2024 estimates).
+  "sacramento":      528_706,
+  "atlanta":         505_268,
+  "indianapolis":    891_484,
+  "raleigh":         481_031,
+  "tucson":          546_739,
 };
 
 export function populationFor(slug: string): number | null {
