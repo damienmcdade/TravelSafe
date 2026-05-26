@@ -56,11 +56,12 @@ export const CITY_POPULATION: Record<string, number> = {
   "indianapolis":    891_484,
   "raleigh":         481_031,
   "tucson":          546_739,
-  // v95p2 — 37th city. US Census Bureau Vintage 2024 estimate for
-  // Honolulu CDP. (Full Honolulu County is ~1M but our crime data
-  // covers HPD jurisdiction = Honolulu City + Co.; using city-proper
-  // pop is more honest for per-capita rate calculation.)
-  "honolulu":        345_510,
+  // v95p2 — 37th city. HPD's jurisdiction is the entire City and
+  // County of Honolulu (Oahu), not just Honolulu CDP. Use County
+  // population so the per-capita rate matches the FBI baseline,
+  // which is also reported against HPD's full ORI jurisdiction.
+  // US Census Bureau Vintage 2024.
+  "honolulu":        991_346,
 };
 
 export function populationFor(slug: string): number | null {

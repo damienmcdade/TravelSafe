@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "CommunitySafe terms of use — what the app is, what it isn't, acceptable use, AI assistant disclaimer, and how community posts are moderated.",
 };
 
-const LAST_UPDATED = "2026-05-23";
+const LAST_UPDATED = "2026-05-26";
 
 export default function TermsPage() {
   return (
@@ -20,7 +20,7 @@ export default function TermsPage() {
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What CommunitySafe is</h2>
-        <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 30 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
+        <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 37 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
