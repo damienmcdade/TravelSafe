@@ -5,7 +5,8 @@ import { register } from "@/server/services/auth";
 
 const Body = z.object({
   email: z.string().email().toLowerCase(),
-  password: z.string().min(8).max(200),
+  // v92 — min 12 chars (DISA STIG IA-5). 8 was below the FedRAMP baseline.
+  password: z.string().min(12, "Password must be at least 12 characters").max(200),
   displayName: z.string().min(1).max(80).optional(),
 });
 

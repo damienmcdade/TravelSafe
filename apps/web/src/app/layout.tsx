@@ -27,12 +27,13 @@ import { SessionBootstrap } from "@/components/SessionBootstrap";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/use-theme";
 import { FBI_DATA_YEAR, FBI_DATA_LABEL } from "@/lib/data-vintage";
 
-// Google AdSense publisher ID. Default is the CommunitySafe account
-// (ca-pub-8731629548430880); env var override lets staging /
-// preview deploys point at a different account if needed. When the
-// resolved value is the empty string AdSense is disabled — no
-// script load, no meta tag.
-const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID ?? "ca-pub-8731629548430880";
+// v92 — removed the hardcoded "ca-pub-8731629548430880" default. Pre-v92
+// AdSense loaded on every page regardless of operator intent, contradicting
+// the privacy policy ("no third-party advertising"). Now opt-in only via
+// the env var. Any deploy that sets NEXT_PUBLIC_ADSENSE_CLIENT_ID must
+// pair it with an active cookie-consent banner because AdSense profiling
+// cookies are a "sale/share" under CCPA.
+const ADSENSE_CLIENT_ID = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
 // Title template — each page sets its own `title` (e.g. "Safety Score")
 // and Next slots it into "{title} · CommunitySafe" automatically. Default is

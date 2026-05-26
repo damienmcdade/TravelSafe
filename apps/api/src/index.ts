@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import helmet from "helmet";
 import { env, corsOrigins } from "./env.js";
 import { notFound, errorHandler } from "./middleware/error.js";
 import { authRouter } from "./routes/auth.routes.js";
@@ -22,6 +23,7 @@ import { startDigestWorker } from "./services/push/digest.worker.js";
 import { startWarmWorker } from "./services/warm/cache.worker.js";
 import { startGradeSanityWorker, getLastReport as getGradeSanityReport } from "./services/audit/grade-sanity.worker.js";
 import { Agent, setGlobalDispatcher } from "undici";
+import { globalLimiter } from "./middleware/rate-limit.js";
 
 // v90p5 — pooled HTTP dispatcher inlined here (was previously in
 // @travelsafe/crime-data/lib/http but undici's node: scheme imports
@@ -46,6 +48,21 @@ const app = express();
 // the closest proxy"; we are NOT behind multiple proxy layers.
 app.set("trust proxy", 1);
 
+// v92 — helmet adds HSTS + X-CTO + X-Frame-Options + Referrer-Policy
+// to every API response (DISA STIG SC-8, SC-23). HSTS 2 years +
+// includeSubDomains + preload covers FedRAMP moderate baseline.
+// CSP is intentionally OFF here — the API only serves JSON, so a
+// CSP would be ignored by browsers and noise in the response.
+// crossOriginResourcePolicy=cross-origin so the web app on a
+// different Vercel domain can still call this API.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  hsts: { maxAge: 63072000, includeSubDomains: true, preload: true },
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginEmbedderPolicy: false,
+  referrerPolicy: { policy: "no-referrer" },
+}));
+
 app.use(express.json({ limit: "200kb" }));
 app.use(
   cors({
@@ -57,6 +74,9 @@ app.use(
   }),
 );
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+
+// v92 — global per-IP rate limit (skips /health + /diag/*).
+app.use(globalLimiter);
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true, service: "travelsafe-api", time: new Date().toISOString() });

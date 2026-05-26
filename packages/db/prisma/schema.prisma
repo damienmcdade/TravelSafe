@@ -40,6 +40,15 @@ model User {
   suspendedUntil    DateTime?
   permanentlyBanned Boolean   @default(false)
 
+  // v92 — account lockout for failed-auth burst protection (DISA STIG
+  // AC-7 / NIST 800-53 AC-7). Login service increments failedAttempts
+  // on bad password; at 5 fails sets lockedUntil = now + 15 min and
+  // rejects with 423 LOCKED until expiry. Successful login resets both.
+  // Prevents distributed dictionary attack that the per-IP rate
+  // limiter can't catch.
+  failedAttempts    Int       @default(0)
+  lockedUntil       DateTime?
+
   // Trusted-contributor system. Derived from verified-post count + low
   // rejection rate, and promotable by a moderator. The badge surfaces
   // next to the author name in community feeds so readers can weigh

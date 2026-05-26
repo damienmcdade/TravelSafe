@@ -45,23 +45,32 @@ import type { NextConfig } from "next";
 //   - frame-ancestors 'none' duplicates X-Frame-Options: DENY in the
 //     modern CSP form
 //   - worker-src 'self' blob: covers the service worker (/sw.js)
-const CSP_REPORT_ONLY = [
+// v92 — switched from Report-Only to ENFORCING. Removed 'unsafe-eval'
+// (DISA STIG SC-18; common XSS escalation vector). 'unsafe-inline' on
+// script-src is kept because Next.js hydration writes inline bootstrap
+// scripts at runtime that we can't nonce without a fork. style-src
+// retains 'unsafe-inline' for Leaflet + Tailwind arbitrary-value
+// classes which inject runtime <style> tags.
+//
+// connect-src now includes the Railway API origin so the Vercel-side
+// fetch in tryProxy() and any client-side same-origin /api/* calls
+// don't get blocked. Adjust if a new external endpoint is added.
+const CSP_ENFORCING = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "img-src 'self' data: blob: https://upload.wikimedia.org https://*.basemaps.cartocdn.com",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://communitysafe-api-production.up.railway.app https://nominatim.openstreetmap.org",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
+  "upgrade-insecure-requests",
 ].join("; ");
 
-// When we're ready to enforce, change the header key to
-// `Content-Security-Policy`. Until then this is observation-only.
 const SECURITY_HEADERS = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options",    value: "nosniff" },
@@ -70,7 +79,8 @@ const SECURITY_HEADERS = [
   { key: "Permissions-Policy",        value: "geolocation=(self), camera=(), microphone=(), payment=(), usb=(), interest-cohort=(), browsing-topics=()" },
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "X-DNS-Prefetch-Control",    value: "on" },
-  { key: "Content-Security-Policy-Report-Only", value: CSP_REPORT_ONLY },
+  // v92 — enforcing CSP (was report-only since v54). 'unsafe-eval' removed.
+  { key: "Content-Security-Policy",   value: CSP_ENFORCING },
 ];
 
 const config: NextConfig = {

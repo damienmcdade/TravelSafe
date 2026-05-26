@@ -33,7 +33,12 @@ export async function markSafe(userId: string, timerId: string) {
   if (timer.status !== CheckInStatus.ACTIVE) return { ok: true, alreadyResolved: true };
   await prisma.checkInTimer.update({
     where: { id: timer.id },
-    data: { status: CheckInStatus.CANCELLED },
+    // v92 — clear lastLat/lastLng on resolution per the privacy
+    // policy promise: "the last latitude/longitude you shared to
+    // that timer" only exists for the lifetime of the timer.
+    // Pre-v92 the coords survived until account-delete, which
+    // contradicted the user-facing copy.
+    data: { status: CheckInStatus.CANCELLED, lastLat: null, lastLng: null },
   });
   return { ok: true };
 }

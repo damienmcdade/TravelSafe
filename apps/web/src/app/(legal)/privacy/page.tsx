@@ -23,8 +23,8 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li>No demographic data — race, ethnicity, religion, age, gender, sexual orientation are not stored, displayed, or analyzed anywhere in the app.</li>
           <li>No individual identification from public data — police-incident data is aggregated to neighborhood-level only; names, addresses below the block level, plates, and photos are never surfaced.</li>
-          <li>No location tracking. Geolocation is requested only when you tap &quot;Use my location&quot;, used once for the lookup, and not stored.</li>
-          <li>No third-party advertising, no profiling cookies, no data sales.</li>
+          <li>No persistent background tracking. Geolocation is requested only when you tap &quot;Use my location&quot; OR when you arm a Check-In timer / Live Share link (both opt-in). The mobile shells (iOS / Android) declare permissions for background-location, contacts, and camera so that <em>if</em> you opt into Check-In, Live Share, Trusted Contact import, or photo attachment, the OS allows it — none of these run without an explicit user action.</li>
+          <li>No data sales, no third-party advertising or profiling cookies on this site (CommunitySafe ad slots are disabled by default; deployment can opt-in via the <code className="text-xs">NEXT_PUBLIC_ADSENSE_CLIENT_ID</code> env var, in which case a cookie banner appears at the bottom of every page until you choose).</li>
           <li>Browsing the map / safety scores / community feed does NOT require an account. Account-required features are explicitly labeled (Personal Safety, CommunitySafe posts).</li>
         </ul>
       </section>
