@@ -9,9 +9,27 @@ import { USER_AGENT } from "../lib/http.js";
 // neighborhood field directly so no PIP at intake.
 // Doc: https://gisdata.tucsonaz.gov/
 
-const BASE = "https://gis.tucsonaz.gov/arcgis/rest/services/PublicMaps/OpenData_PublicSafety/MapServer/81/query";
+// v95p6 — switched from MapServer/81 (TPD_INCIDENTS_PUBLIC_2025,
+// year-specific layer) to MapServer/42 (TUCSON_INCIDENTS_PUBLIC_45D,
+// the 45-day rolling layer). The 2025 layer stopped returning fresh
+// rows in our audit window (newest sortable row was 2025-09-22 with
+// only a single PERSONS row reaching the cache), which tripped the
+// under-count guard and suppressed Tucson's grade to N/A. The 45D
+// layer is the live rolling feed used by Tucson's own dashboards;
+// it carries the same schema (NHA_NAME, NEIGHBORHD, DATETIME_OCCU)
+// and was verified fresh through 2026-05-22 with 9.5k rows across
+// 142 named neighborhoods.
+//
+// Trade-off: windowDays is bounded by ~45d, which trips the
+// computeDataConfidence "low confidence" note (under 90d). That's
+// the honest signal — we have a short-but-current window — and is
+// preferable to the prior state of grading off a fossilized full-
+// year layer that had effectively zero recent data.
+const BASE = "https://gis.tucsonaz.gov/arcgis/rest/services/PublicMaps/OpenData_PublicSafety/MapServer/42/query";
 const PAGE_SIZE = 2000;
-const PAGES = 25;
+// 6 pages × 2k = 12k records — comfortably exceeds the live layer's
+// ~9.5k 45-day capacity, so we get everything in the rolling window.
+const PAGES = 6;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
@@ -45,9 +63,9 @@ function classify(row: TucRow): CrimeCategory {
 const TUCSON_CENTROID = { lat: 32.2226, lng: -110.9747 };
 
 const PROVENANCE: DataProvenance = {
-  source: "Tucson Police Department Public Incidents (gis.tucsonaz.gov ArcGIS MapServer)",
-  datasetUrl: "https://gisdata.tucsonaz.gov/",
-  recency: "Refreshed daily by Tucson PD",
+  source: "Tucson Police Incidents — Last 45 Days (gis.tucsonaz.gov ArcGIS MapServer)",
+  datasetUrl: "https://gisdata.tucsonaz.gov/datasets/tpd-incidents-public-last-45-days",
+  recency: "Rolling 45-day window, refreshed daily by Tucson PD",
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the Tucson Police Department and grouped by NEIGHBORHD. " +
