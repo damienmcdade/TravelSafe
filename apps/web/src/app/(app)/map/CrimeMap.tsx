@@ -72,8 +72,10 @@ const NAME_ALIASES: Array<[string, string]> = [
   ["malvern hill", "melvern hill"],
   // Detroit — punctuation drift between "/" and " "
   ["gratiot town ketterring", "gratiot town kettering"],
-  // LA — divisions LAPD prints differently between feeds.
-  ["central", "central la"],
+  // (Removed v82) LA — "central" → "central la" caused cascade
+  // ("central la" includes "central" → "central la la") and the
+  // adapter doesn't currently emit a "Central" division anyway.
+  // The v82 polygon filter drops orphan polygons automatically.
   // Pittsburgh — period in "Mt. Oliver" vs full "Mount Oliver".
   ["mt oliver", "mount oliver"],
   // Cincinnati — "Central Business District" vs "CBD/Riverfront"
@@ -329,13 +331,35 @@ export default function CrimeMap() {
     return { polygonStats: stats, polygonSlugByName: slugByName };
   }, [polygons, areas, citywide, city.label]);
 
+  // v82 — filter the rendered polygon set to those that resolve to
+  // an adapter slug. Pre-v82, cities whose polygon files had more
+  // features than the adapter publishes (Milwaukee: 190 polys / 27
+  // areas, Philly: 159 polys / 21 areas, LA: 21 polys / 18 areas)
+  // rendered the orphan polygons in solid gray "no data" — visually
+  // dominating the map and hiding the meaningful colored polygons.
+  // Drop the orphans entirely so the map only shows neighborhoods
+  // we can actually surface stats for. Adapter areas with 0 in-window
+  // incidents still keep their polygon (statsBySlug.get returns an
+  // entry with incidentCount=0; shaded pale per the existing scale).
+  const polygonsForRender = useMemo(() => {
+    if (!polygons) return polygons;
+    if (polygonSlugByName.size === 0) return polygons;  // adapter not loaded yet — render all
+    const filtered = polygons.features.filter((f) => {
+      const name = (f.properties as { name?: string } | null)?.name ?? "";
+      return polygonSlugByName.has(name);
+    });
+    return { ...polygons, features: filtered };
+  }, [polygons, polygonSlugByName]);
+
   // v77 — detect "polygon file ↔ adapter areas" mismatch. Pre-rollout
   // audit caught Phoenix + Milwaukee using ZIP-code polygons (85003,
   // 53202, …) while the adapters return neighborhood names (Maryvale,
   // Sherman Park, …). Every polygon ended up rendering as "no data"
-  // gray with no explanation. When fewer than 25% of polygons match
-  // ANY area, show a banner pointing users at the dropdown picker
-  // (which uses the adapter areas directly and works regardless).
+  // gray with no explanation. When fewer than 25% of the SOURCE
+  // polygons match ANY area, show a banner pointing users at the
+  // dropdown picker (which uses the adapter areas directly and works
+  // regardless). Threshold reads from the unfiltered set so v82's
+  // filter doesn't suppress the banner when needed.
   const polygonMatchRate = useMemo(() => {
     if (!polygons || polygons.features.length === 0) return 1;
     let matched = 0;
@@ -529,10 +553,10 @@ export default function CrimeMap() {
             url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
           />
-          {polygons && (
+          {polygonsForRender && (
             <GeoJSON
-              key={`${city.slug}-${maxCount}-${selectedName ?? ""}`}
-              data={polygons}
+              key={`${city.slug}-${maxCount}-${selectedName ?? ""}-${polygonsForRender.features.length}`}
+              data={polygonsForRender}
               style={stylePolygon as L.StyleFunction}
               onEachFeature={onEachFeature}
             />
