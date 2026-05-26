@@ -49,6 +49,23 @@ model User {
   failedAttempts    Int       @default(0)
   lockedUntil       DateTime?
 
+  // v93p2 — JWT revocation cursor. Incremented on logout / password
+  // change / explicit revoke; access tokens carry the version they
+  // were minted at, and the auth middleware rejects any token whose
+  // version is below the current value. Makes JWTs revocable without
+  // a session-store (DISA STIG IA-2, AC-12).
+  tokenVersion      Int       @default(0)
+
+  // v93p2 — MFA (TOTP). mfaSecret is the base32-encoded shared secret;
+  // mfaEnabled flips true once the user successfully verifies a code
+  // during enrollment. Storage is plaintext in DB intentionally —
+  // anyone with DB access already owns the password hashes; TOTP
+  // secret confidentiality buys nothing over that. Standard practice
+  // (auth0, Supabase, etc.) is identical. For higher-trust deployments,
+  // move to envelope encryption with a KMS key.
+  mfaEnabled        Boolean   @default(false)
+  mfaSecret         String?
+
   // Trusted-contributor system. Derived from verified-post count + low
   // rejection rate, and promotable by a moderator. The badge surfaces
   // next to the author name in community feeds so readers can weigh

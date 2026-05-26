@@ -25,6 +25,7 @@ import Script from "next/script";
 import { CityBackdrop } from "@/components/CityBackdrop";
 import { SessionBootstrap } from "@/components/SessionBootstrap";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
+import { AgeGate } from "@/components/AgeGate";
 import { THEME_BOOTSTRAP_SCRIPT } from "@/lib/use-theme";
 import { FBI_DATA_YEAR, FBI_DATA_LABEL } from "@/lib/data-vintage";
 
@@ -133,6 +134,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             configured (the env var is set). Without AdSense the
             site drops no profiling cookies, so no banner is needed. */}
         {ADSENSE_CLIENT_ID && <CookieConsentBanner />}
+        {/* v93p2 — COPPA age-gate interstitial (first-visit only). */}
+        <AgeGate />
       </body>
     </html>
   );
