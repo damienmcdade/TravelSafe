@@ -132,6 +132,7 @@ async function fetchPage(layer: number, offset: number): Promise<DcRow[]> {
   url.searchParams.set("orderByFields", "START_DATE DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
+  url.searchParams.set("cacheHint", "true"); // v87 — Esri edge cache
   url.searchParams.set("f", "json");
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },

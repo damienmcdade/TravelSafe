@@ -80,6 +80,7 @@ async function fetchPage(offset: number): Promise<DenverRow[]> {
   url.searchParams.set("orderByFields", "FIRST_OCCURRENCE_DATE DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
+  url.searchParams.set("cacheHint", "true"); // v87 — Esri edge cache
   url.searchParams.set("f", "json");
   // Pass an ArcGIS token if one's configured. As of May 2026 Denver's
   // crime FeatureServer requires auth (returns 499 GWM_0003 without

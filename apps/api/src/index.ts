@@ -21,6 +21,7 @@ import { startCheckInWorker } from "./services/safety/check-in.worker.js";
 import { startDigestWorker } from "./services/push/digest.worker.js";
 import { startWarmWorker } from "./services/warm/cache.worker.js";
 import { startGradeSanityWorker, getLastReport as getGradeSanityReport } from "./services/audit/grade-sanity.worker.js";
+import { installPooledDispatcher } from "@travelsafe/crime-data/lib/http";
 
 const app = express();
 
@@ -76,6 +77,12 @@ app.get("/diag/grade-sanity", (_req, res) => {
 
 app.use(notFound);
 app.use(errorHandler);
+
+// v87 — pooled HTTP dispatcher with keep-alive. Eliminates the
+// ~200-400ms TLS handshake every adapter page-fetch previously paid
+// (Node's global fetch defaults to an ephemeral per-call dispatcher).
+// Biggest win on Cleveland (30 pages/cycle) + DC (60 pages/cycle).
+installPooledDispatcher();
 
 const server = app.listen(env.LISTEN_PORT, () => {
   console.log(`[api] listening on :${env.LISTEN_PORT} (env=${env.NODE_ENV})`);

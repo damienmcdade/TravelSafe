@@ -20,6 +20,7 @@
     "./dispatcher":            { "types": "./dist/dispatcher.d.ts",                  "import": "./dist/dispatcher.js",                  "default": "./src/dispatcher.ts" },
     "./polygon-areas":         { "types": "./dist/polygon-areas.d.ts",               "import": "./dist/polygon-areas.js",               "default": "./src/polygon-areas.ts" },
     "./neighborhood-population": { "types": "./dist/neighborhood-population.d.ts",   "import": "./dist/neighborhood-population.js",     "default": "./src/neighborhood-population.ts" },
+    "./lib/*":                 { "types": "./dist/lib/*.d.ts",                       "import": "./dist/lib/*.js",                       "default": "./src/lib/*.ts" },
     "./adapters/*":            { "types": "./dist/adapters/*.d.ts",                  "import": "./dist/adapters/*.js",                  "default": "./src/adapters/*.ts" },
     "./data/*":                { "types": "./dist/data/*.d.ts",                      "import": "./dist/data/*.js",                      "default": "./src/data/*.ts" },
     "./data/*.json":           "./src/data/*.json"
@@ -29,7 +30,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0"
+    "@prisma/client": "^5.22.0",
+    "undici": "^7.0.0"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
