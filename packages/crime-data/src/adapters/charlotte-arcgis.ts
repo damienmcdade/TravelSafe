@@ -172,8 +172,7 @@ export async function getRowsCharlotte(): Promise<Incident[]> {
   }
 }
 
-export async function getDiscoveredAreasCharlotte(): Promise<KnownArea[]> {
-  const rows = await getRowsCharlotte();
+function buildCharlotteAreas(rows: Incident[]): KnownArea[] {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
@@ -191,6 +190,19 @@ export async function getDiscoveredAreasCharlotte(): Promise<KnownArea[]> {
       centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// v90p10 — LKG pattern (same as Cleveland v77 / Detroit v90p7). Pre-v90p10
+// the discover() blocked synchronously on getRowsCharlotte() which routinely
+// timed out HTTP clients on cold cache. Now returns cached areas if any,
+// otherwise fires the refresh in the background and returns []. Warm-worker
+// fills the cache within ~30s of container boot.
+export async function getDiscoveredAreasCharlotte(): Promise<KnownArea[]> {
+  if (cache && cache.rows.length > 0) {
+    return buildCharlotteAreas(cache.rows);
+  }
+  void getRowsCharlotte().catch(() => {});
+  return [];
 }
 
 function labelForCharlotteSlug(slug: string, rows: Incident[]): string | null {
