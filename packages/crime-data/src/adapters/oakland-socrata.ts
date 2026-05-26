@@ -215,7 +215,7 @@ export async function getDiscoveredAreasOakland(): Promise<KnownArea[]> {
     agg.set(r.area, e);
   }
   return Array.from(agg.entries())
-    .filter(([, e]) => e.count >= 3)
+    .filter(([, e]) => e.count >= 1)  // v89 — was 3; OPD has 145 named neighborhoods
     .map(([name, e]) => ({
       slug: `oak-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
       label: name,

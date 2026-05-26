@@ -267,7 +267,7 @@ export async function getDiscoveredAreasKansasCity(): Promise<KnownArea[]> {
     agg.set(r.area, e);
   }
   return Array.from(agg.entries())
-    .filter(([, e]) => e.count >= 3)
+    .filter(([, e]) => e.count >= 1)  // v89 — was 3; KCMO has ~240 registered neighborhoods
     .map(([name, e]) => ({
       slug: `kc-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
       label: name,

@@ -110,7 +110,7 @@ export async function getDiscoveredAreasBatonRouge(): Promise<KnownArea[]> {
     agg.set(r.area, e);
   }
   return Array.from(agg.entries())
-    .filter(([, e]) => e.count >= 3)
+    .filter(([, e]) => e.count >= 1)  // v89 — was 3; BR has ~80 official neighborhoods
     .map(([name, e]) => ({
       slug: `br-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
       label: name,
