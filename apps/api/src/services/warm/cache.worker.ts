@@ -44,6 +44,11 @@ const HEAVY_CITIES = [
   "new-york",        //  78
   "colorado-springs",//  78
   "chicago",         //  77
+  // v74 — LV now fetches 90 pages × 2k = 180k rows for the 90d
+  // date-bounded window; belongs in the heavy bucket.
+  "las-vegas",
+  // LA pulls two SODA datasets (primary + historical merge); heavy bucket.
+  "los-angeles",
 ];
 
 async function warmCity(slug: string) {
@@ -121,13 +126,18 @@ async function tick() {
   inFlight = true;
   const cycleStart = Date.now();
   try {
-    // Heavy at 4 concurrent (Cleveland's 5min cycle alone monopolizes
-    // a slot; better to make small steady progress than all-at-once).
-    // Light at 10 concurrent (each finishes in <500ms; overhead is
-    // dominated by per-city in-process dispatch, not network).
-    const heavyTimings = await runBatched(HEAVY_CITIES, 4, warmCity);
+    // v74 — heavy concurrency 4 → 2, light 10 → 5. The pre-rollout
+    // audit caught a prior container OOM-killed (exit 137) when the
+    // boot-time warm tick fired all heavies simultaneously and held
+    // 4 cities × ~50MB raw row buffers + parsed Incident arrays in
+    // memory at once. Sticking to 2 heavy at a time keeps the peak
+    // resident-set well under Railway's 512MB container limit even
+    // with LV's new 180k-row buffer. Also reduces the upstream
+    // "thundering herd" that produced 94 KC + 87 NYPD + 47 Norfolk
+    // "fetch failed: terminated" errors per cycle.
+    const heavyTimings = await runBatched(HEAVY_CITIES, 2, warmCity);
     const lightCities = CITIES.map((c) => c.slug).filter((s) => !HEAVY_CITIES.includes(s));
-    const lightTimings = await runBatched(lightCities, 10, warmCity);
+    const lightTimings = await runBatched(lightCities, 5, warmCity);
     const total = Date.now() - cycleStart;
     const avgHeavy = heavyTimings.length
       ? Math.round(heavyTimings.reduce((a, b) => a + b, 0) / heavyTimings.length)
@@ -147,17 +157,14 @@ export function startWarmWorker() {
   if (timer) return;
   console.log(`[warm-worker] starting (cycle every ${WARM_INTERVAL_MS / 1000}s)`);
   timer = setInterval(() => void tick(), WARM_INTERVAL_MS);
-  // v71 followup — fire an initial warm cycle 15s after boot rather
-  // than waiting the full 4 min. Pre-v71 the audit caught Cleveland
-  // serving 503 warming_up for ~4 min on every container restart
-  // (its adapter takes ~30s for the bounded-concurrency 30-page
-  // pagination, and the route's 25s timeout fires first). The Redis
-  // L2 cache survives container restarts but only contains entries
-  // for cities the PRIOR container warmed — a brand-new city or a
-  // city missed by the previous cycle still cold-starts. Firing on
-  // boot (delayed 15s so DB + Redis are fully wired) gets the
-  // adapter caches populated before users hit the first request.
-  setTimeout(() => void tick(), 15_000);
+  // v71 followup — fire an initial warm cycle on boot rather than
+  // waiting the full 4 min. Pre-v71 the audit caught Cleveland
+  // serving 503 warming_up for ~4 min on every container restart.
+  // v74 — delay 15s → 30s so the API has a full grace period to
+  // handle initial /health probes + first user requests before the
+  // memory-hungry adapter fetches kick off (a prior container was
+  // OOM-killed during the boot-tick storm).
+  setTimeout(() => void tick(), 30_000);
 }
 
 export function stopWarmWorker() {
