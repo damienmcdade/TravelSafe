@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // Cincinnati — Reported Crime (STARS Category Offenses) on or after
 // 6/3/2024. Socrata dataset 7aqy-xrv9 on data.cincinnati-oh.gov.
@@ -92,7 +93,7 @@ async function fetchCin(): Promise<Incident[]> {
   const select = "incident_no,stars_category,type,datefrom,datereported,cpd_neighborhood,latitude_x,longitude_x";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=datefrom%20DESC&$where=datefrom%20IS%20NOT%20NULL%20AND%20cpd_neighborhood%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`Cincinnati Socrata ${res.status}`);
   const rows = (await res.json()) as CinRow[];

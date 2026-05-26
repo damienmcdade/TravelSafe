@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // City of San Francisco — Police Department Incident Reports 2018 to Present.
 // Socrata dataset wg3w-h783 on data.sfgov.org. Documented + current.
@@ -63,7 +64,7 @@ async function fetchSF(): Promise<Incident[]> {
   // by a tiny sample that made every busy area show the same number.
   url.searchParams.set("$limit", "50000");
   const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(url),
   });
   if (!res.ok) throw new Error(`SFPD ${res.status} ${url}`);
   const rows = (await res.json()) as SodaRow[];

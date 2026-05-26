@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 import { nolaPolygons } from "../data/new-orleans-neighborhoods.js";
 
 // New Orleans — NOPD Calls for Service 2026.
@@ -159,7 +160,7 @@ async function fetchNola(): Promise<Incident[]> {
   const select = "nopd_item,type_,typetext,priority,policedistrict,beat,block_address,timecreate,location,disposition,dispositiontext";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=timecreate%20DESC&$where=location%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`NOLA Socrata ${res.status}`);
   const rows = (await res.json()) as NolaRow[];

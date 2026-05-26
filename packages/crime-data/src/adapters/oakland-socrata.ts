@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 import { oaklandPolygons } from "../data/oakland-neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
@@ -143,7 +144,7 @@ function safeIso(raw: string | null | undefined): string {
 async function fetchOaklandPage(offset: number): Promise<OakRow[]> {
   const u = `${BASE}?$limit=${PAGE_SIZE}&$offset=${offset}&$order=datetime%20DESC&$where=location_1%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`Oakland Socrata ${res.status} at offset ${offset}`);
   return (await res.json()) as OakRow[];

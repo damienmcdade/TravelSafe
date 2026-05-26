@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // City of Los Angeles — LAPD NIBRS Offenses Dataset 2024 to 2025.
 // Socrata dataset y8y3-fqfu on data.lacity.org.
@@ -127,7 +128,7 @@ async function fetchOne(baseUrl: string): Promise<SodaRow[]> {
   url.searchParams.set("$order", "date_occ DESC");
   url.searchParams.set("$limit", "50000");
   const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(url),
   });
   if (!res.ok) throw new Error(`LAPD SODA ${res.status} fetching ${url}`);
   return (await res.json()) as SodaRow[];

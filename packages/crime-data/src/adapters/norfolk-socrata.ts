@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // Norfolk VA — Norfolk Police Incident Reports on data.norfolk.gov
 // (Socrata dataset r7bn-2egr). Replaces Tucson in the supported-city
@@ -138,7 +139,7 @@ async function fetchNorfolk(): Promise<Incident[]> {
   const select = "inci_id,offense,streetno,street,date_occu,hour_occu,tract,zone,district,reportarea,dow1,neighborhd";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_occu%20DESC&$where=date_occu%20IS%20NOT%20NULL%20AND%20neighborhd%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`Norfolk Socrata ${res.status}`);
   const rows = (await res.json()) as NorRow[];

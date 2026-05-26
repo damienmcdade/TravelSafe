@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // Cambridge MA — Cambridge Police Crime Reports (xuad-73uj on
 // data.cambridgema.gov). The crime data dataset publishes a native
@@ -80,7 +81,7 @@ async function fetchCambridge(): Promise<Incident[]> {
   const select = "file_number,date_of_report,crime,reporting_area,neighborhood,reporting_area_lat,reporting_area_lon,location";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_of_report%20DESC&$where=neighborhood%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`Cambridge Socrata ${res.status}`);
   const rows = (await res.json()) as CamRow[];

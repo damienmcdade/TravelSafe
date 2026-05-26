@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
 
 // Kansas City MO — KCPD Crime Data, current + prior year.
@@ -182,7 +183,7 @@ async function fetchKansasCityYear(datasetId: string): Promise<KcRow[]> {
   const select = "report,report_date,from_date,offense,ibrs,beat,address,city,zipcode,rep_dist,area,location";
   const u = `https://data.kcmo.org/resource/${datasetId}.json?$limit=${ROW_LIMIT}&$select=${select}&$order=report_date%20DESC&$where=location%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`Kansas City Socrata ${datasetId} ${res.status}`);
   return (await res.json()) as KcRow[];

@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 import { dallasPolygons } from "../data/dallas-neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
@@ -117,7 +118,7 @@ async function fetchDallas(): Promise<Incident[]> {
   const select = "incidentnum,servnumid,offincident,date1,division,sector,beat,nibrs_crime,nibrs_crime_category,nibrs_crimeagainst,geocoded_column";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date1%20DESC&$where=date1%20IS%20NOT%20NULL%20AND%20geocoded_column%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`Dallas Socrata ${res.status}`);
   const rows = (await res.json()) as DallasRow[];

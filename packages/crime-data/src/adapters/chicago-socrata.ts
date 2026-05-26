@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // City of Chicago — Crimes 2001 to Present.
@@ -94,7 +95,7 @@ async function fetchChicago(): Promise<{ rows: Incident[]; areaByNum: Map<number
   url.searchParams.set("$order", "date DESC");
   url.searchParams.set("$limit", "50000");
   const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(url),
   });
   if (!res.ok) throw new Error(`Chicago SODA ${res.status} ${url}`);
   const sodaRows = (await res.json()) as SodaRow[];

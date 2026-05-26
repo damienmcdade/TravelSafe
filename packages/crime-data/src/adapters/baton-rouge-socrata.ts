@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // Baton Rouge — Baton Rouge Police Crime Incidents.
 // Socrata dataset pbin-pcm7 on data.brla.gov. Updated daily.
@@ -65,7 +66,7 @@ async function fetchBr(): Promise<Incident[]> {
   const select = "incident_number,charge_id,report_date,offense_description,statute_category,crime_against,neighborhood,district,zone,latitude,longitude";
   const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=report_date%20DESC&$where=neighborhood%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`BR Socrata ${res.status}`);
   const rows = (await res.json()) as BrRow[];

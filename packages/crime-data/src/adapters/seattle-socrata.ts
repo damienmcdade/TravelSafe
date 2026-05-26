@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 
 // Seattle — SPD Crime Data.
 // Socrata dataset tazs-3rd5 on data.seattle.gov. NIBRS-coded by SPD, which
@@ -57,7 +58,7 @@ async function fetchSeattle(): Promise<Incident[]> {
   url.searchParams.set("$order", "offense_date DESC");
   url.searchParams.set("$limit", "50000");
   const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(url),
   });
   if (!res.ok) throw new Error(`Seattle SODA ${res.status} ${url}`);
   const rows = (await res.json()) as SodaRow[];

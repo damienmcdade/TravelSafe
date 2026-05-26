@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { socrataHeaders } from "../lib/http.js";
 import { coSpPolygons } from "../data/colorado-springs-neighborhoods.js";
 
 // Colorado Springs PD — "Crime Level Data" on policedata.coloradosprings.gov.
@@ -114,7 +115,7 @@ async function fetchCoSp(): Promise<Incident[]> {
   // with when the incident actually happened.
   const u = `${BASE}?$limit=${ROW_LIMIT}&$order=occurredfromdate%20DESC&$where=occurredfromdate%20IS%20NOT%20NULL`;
   const res = await fetch(u, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
+    headers: socrataHeaders(u),
   });
   if (!res.ok) throw new Error(`CoSp Socrata ${res.status}`);
   const rows = (await res.json()) as CoSpRow[];
