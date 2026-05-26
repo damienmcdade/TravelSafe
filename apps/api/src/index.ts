@@ -82,7 +82,7 @@ app.use(errorHandler);
 // ~200-400ms TLS handshake every adapter page-fetch previously paid
 // (Node's global fetch defaults to an ephemeral per-call dispatcher).
 // Biggest win on Cleveland (30 pages/cycle) + DC (60 pages/cycle).
-installPooledDispatcher();
+void installPooledDispatcher();
 
 const server = app.listen(env.LISTEN_PORT, () => {
   console.log(`[api] listening on :${env.LISTEN_PORT} (env=${env.NODE_ENV})`);

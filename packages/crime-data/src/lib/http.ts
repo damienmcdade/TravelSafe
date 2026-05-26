@@ -1,29 +1,3 @@
-// v87 — Global HTTP dispatcher with keep-alive + per-origin connection
-// pooling. Pre-v87 every adapter page-fetch opened a fresh TCP+TLS
-// connection (Node's global fetch uses an ephemeral undici dispatcher).
-// Per the perf audit: Cleveland 30 pages, DC 60 pages, NYPD 4 pages,
-// LA 2 pages = ~50 cold handshakes/min during warm-worker cycles, each
-// 200-400ms. Switching to a pooled dispatcher cuts that overhead to
-// ~zero on the second-and-subsequent pages.
-//
-// Sized for our concurrency: per-origin connections=10 (warm-worker
-// runs heavy=2 concurrent cities × bounded-pool=4 pages = 8 simultaneous;
-// 10 leaves headroom for the routes that also hit upstreams).
-import { Agent, setGlobalDispatcher } from "undici";
-
-let installed = false;
-
-export function installPooledDispatcher(): void {
-  if (installed) return;
-  installed = true;
-  setGlobalDispatcher(new Agent({
-    keepAliveTimeout: 60_000,
-    keepAliveMaxTimeout: 600_000,
-    connections: 10,
-    pipelining: 1,
-  }));
-}
-
 // v89 — shared User-Agent so every adapter identifies itself uniformly
 // to upstream open-data portals (Socrata, ArcGIS, CKAN). Several portals
 // rate-limit anonymous traffic differently from identified traffic.
@@ -53,3 +27,9 @@ export function socrataHeaders(url: string | URL, extra: Record<string, string> 
   if (tok) h["X-App-Token"] = tok;
   return h;
 }
+
+// v90p3 — installPooledDispatcher moved to ./http-dispatcher to avoid
+// pulling undici (which uses node:fs, node:dns, etc) into the Vercel
+// webpack bundle when adapter files indirectly import this module.
+// The dispatcher is server-only and installed once from apps/api/index.ts.
+export { installPooledDispatcher } from "./http-dispatcher.js";
