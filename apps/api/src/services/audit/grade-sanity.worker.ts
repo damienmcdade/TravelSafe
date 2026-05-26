@@ -54,6 +54,22 @@ export interface GradeReport {
 
 const DAY_MS = 86_400_000;
 
+// v90p8 — per-city stale-asOf acknowledgements. These cities have
+// upstream publishing delays we've already investigated and
+// documented in ~/communitysafe-operator-notes.md (sections 4, 7).
+// The grade-sanity worker still records the staleness in the snapshot
+// for transparency, but suppresses the STALE_ASOF flag for these
+// known cases so the report's "flagged" count surfaces NEW issues
+// instead of being permanently noisy with documented behaviour.
+//
+//   phoenix   — PPD RMS migration paused publishing since late 2025
+//   sacramento — Sacramento publishes year-specific datasets;
+//                2026 dataset provisioned but not yet populated.
+//                Adapter dual-fetches; self-heals when 2026 fills.
+//   tucson    — TPD applies multi-month investigative hold;
+//                public layer's freshest record is ~11 months old.
+const STALE_ASOF_ACKNOWLEDGED = new Set(["phoenix", "sacramento", "tucson"]);
+
 function classify(snap: GradeSnapshot): GradeFlag[] {
   const flags: GradeFlag[] = [];
   if (snap.error) {
@@ -65,7 +81,7 @@ function classify(snap: GradeSnapshot): GradeFlag[] {
   if (snap.windowDays != null && snap.windowDays < 30) {
     flags.push({ code: "SHORT_WINDOW", detail: `windowDays=${snap.windowDays}` });
   }
-  if (snap.asOfAgeDays != null && snap.asOfAgeDays > 60) {
+  if (snap.asOfAgeDays != null && snap.asOfAgeDays > 60 && !STALE_ASOF_ACKNOWLEDGED.has(snap.slug)) {
     flags.push({ code: "STALE_ASOF", detail: `latest incident ${snap.asOfAgeDays}d old` });
   }
   if (snap.personsRatio != null && (snap.personsRatio < 0.3 || snap.personsRatio > 3.0)) {
