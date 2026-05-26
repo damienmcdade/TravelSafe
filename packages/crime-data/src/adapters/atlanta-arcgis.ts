@@ -3,59 +3,60 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT } from "../lib/http.js";
 
-// Atlanta — Atlanta PD Crimes (public).
-// ArcGIS FeatureServer on services.arcgis.com (owner: Atlanta Police Open Data Hub).
-// Rows carry both an NPU letter (A-Z) and a neighborhood name; we aggregate
-// by neighborhood since the 25 NPUs are an additional coarser grouping.
+// Atlanta — Atlanta PD Crimes (OpenDataWebsite_Crime_view).
+// ArcGIS FeatureServer on services3.arcgis.com (owner: RJStanionis0638
+// — the same admin as the official Atlanta Police Open Data Hub).
+//
+// v90p11 — replaced the scout-misidentified `aJ16ENn1AaqdFlqx` endpoint
+// (Asheville NC data, all neighborhoods NULL) with the correct
+// APD-administered view that powers atlanta-police-opendata-atlantapd
+// .hub.arcgis.com's live NPU + Neighborhood Crime Map dashboards.
+//
+// 243k records, refreshed daily, lat/lng + NhoodName per row.
 // Doc: https://atlanta-police-opendata-atlantapd.hub.arcgis.com/
 
-const BASE = "https://services.arcgis.com/aJ16ENn1AaqdFlqx/ArcGIS/rest/services/Crimes_public_c4e5a6ee960c4710b634386c8c034aa7/FeatureServer/0/query";
+const BASE = "https://services3.arcgis.com/Et5Qfajgiyosiw4d/arcgis/rest/services/OpenDataWebsite_Crime_view/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 20;
+const PAGES = 30;  // ~60k recent incidents — covers ~90-180d of APD volume
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
 interface AtlRow {
-  offenseid?: string;
-  reportdate?: number;
-  offendatefr?: number;
-  neighborhood?: string;
-  ucrcategory?: string;
-  ucrdesc?: string;
-  nibrsdesc?: string;
-  nibrscrimeag?: string;
-  lawdistrict?: string;
-  localdistrict?: string;
-  zip5?: string;
+  IncidentNumber?: string;
+  ReportDate?: number;
+  OccurredFromDate?: number;
+  NIBRS_Offense?: string;
+  NhoodName?: string;
+  NPU?: string;
+  BEAT?: string;
+  Zone?: string;
+  Latitude?: number;
+  Longitude?: number;
 }
 
 function classify(row: AtlRow): CrimeCategory {
-  const ag = (row.nibrscrimeag ?? "").toLowerCase();
-  if (ag.includes("person")) return CrimeCategory.PERSONS;
-  if (ag.includes("property")) return CrimeCategory.PROPERTY;
-  // Fall back to UCR category for rows without nibrscrimeag
-  const ucr = `${row.ucrcategory ?? ""} ${row.ucrdesc ?? ""}`.toUpperCase();
-  if (/(ASSAULT|ROBBERY|HOMICIDE|MURDER|RAPE|SEX)/.test(ucr)) return CrimeCategory.PERSONS;
-  if (/(BURGLAR|THEFT|LARC|STOLEN|VANDAL|FRAUD|ARSON)/.test(ucr)) return CrimeCategory.PROPERTY;
+  const desc = (row.NIBRS_Offense ?? "").toUpperCase();
+  if (/(ASSAULT|BATTERY|ROBBERY|HOMICIDE|MURDER|MANSLAUGHTER|RAPE|SEX|KIDNAP|STALK|THREAT|INTIMIDAT|DOMESTIC)/.test(desc)) return CrimeCategory.PERSONS;
+  if (/(BURGLAR|THEFT|LARC|STOLEN|VANDAL|DAMAGE|ARSON|FRAUD|FORGE|MOTOR VEHICLE|EMBEZ|COUNTERFEIT|SHOPLIFT)/.test(desc)) return CrimeCategory.PROPERTY;
   return CrimeCategory.SOCIETY;
 }
 
 const ATLANTA_CENTROID = { lat: 33.7490, lng: -84.3880 };
 
 const PROVENANCE: DataProvenance = {
-  source: "Atlanta Police Department Crimes (Public) — Atlanta Police Open Data Hub (ArcGIS Feature Server)",
+  source: "Atlanta Police Department OpenDataWebsite_Crime_view (Atlanta Police Open Data Hub, ArcGIS Feature Server)",
   datasetUrl: "https://atlanta-police-opendata-atlantapd.hub.arcgis.com/",
   recency: "Refreshed daily by Atlanta PD",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Atlanta Police Department and grouped by neighborhood. " +
+    "Incidents are reported by the Atlanta Police Department and grouped by NPU/Neighborhood. " +
     "Not live, not street-level. CommunitySafe does not track individuals.",
 };
 
 async function fetchPage(offset: number): Promise<AtlRow[]> {
   const url = new URL(BASE);
-  url.searchParams.set("where", "neighborhood IS NOT NULL AND neighborhood <> ''");
-  url.searchParams.set("outFields", "offenseid,reportdate,offendatefr,neighborhood,ucrcategory,ucrdesc,nibrsdesc,nibrscrimeag,lawdistrict,localdistrict,zip5");
+  url.searchParams.set("where", "NhoodName IS NOT NULL AND NhoodName <> ''");
+  url.searchParams.set("outFields", "IncidentNumber,ReportDate,OccurredFromDate,NIBRS_Offense,NhoodName,NPU,BEAT,Zone,Latitude,Longitude");
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("orderByFields", "OBJECTID DESC");
   url.searchParams.set("resultOffset", String(offset));
@@ -81,17 +82,17 @@ async function fetchAtlanta(): Promise<Incident[]> {
   await Promise.all(workers);
   const rows = results.flat();
   return rows
-    .filter((r) => (r.offendatefr || r.reportdate) && r.neighborhood)
+    .filter((r) => (r.OccurredFromDate || r.ReportDate) && r.NhoodName)
     .map((r, i) => ({
-      id: `atl-${r.offenseid ?? i}`,
-      area: r.neighborhood!,
-      occurredAt: new Date(r.offendatefr ?? r.reportdate!).toISOString(),
+      id: `atl-${r.IncidentNumber ?? i}`,
+      area: r.NhoodName!,
+      occurredAt: new Date(r.OccurredFromDate ?? r.ReportDate!).toISOString(),
       nibrsCategory: classify(r),
-      ibrOffenseDescription: (r.nibrsdesc ?? r.ucrdesc ?? r.ucrcategory ?? "Unknown").trim(),
-      beat: r.localdistrict ?? r.lawdistrict ?? null,
+      ibrOffenseDescription: (r.NIBRS_Offense ?? "Unknown").trim(),
+      beat: r.BEAT ?? r.Zone ?? null,
       blockLabel: undefined,
-      lat: ATLANTA_CENTROID.lat,
-      lng: ATLANTA_CENTROID.lng,
+      lat: typeof r.Latitude === "number" && r.Latitude !== 0 ? r.Latitude : ATLANTA_CENTROID.lat,
+      lng: typeof r.Longitude === "number" && r.Longitude !== 0 ? r.Longitude : ATLANTA_CENTROID.lng,
     }));
 }
 
@@ -108,8 +109,7 @@ export async function getRowsAtlanta(): Promise<Incident[]> {
   }
 }
 
-export async function getDiscoveredAreasAtlanta(): Promise<KnownArea[]> {
-  const rows = await getRowsAtlanta();
+function buildAtlantaAreas(rows: Incident[]): KnownArea[] {
   const counts = new Map<string, number>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
@@ -124,6 +124,16 @@ export async function getDiscoveredAreasAtlanta(): Promise<KnownArea[]> {
       centroid: ATLANTA_CENTROID,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// LKG pattern — return cached if any, fire refresh + return [] otherwise.
+// Warm-worker populates within ~30s of container boot.
+export async function getDiscoveredAreasAtlanta(): Promise<KnownArea[]> {
+  if (cache && cache.rows.length > 0) {
+    return buildAtlantaAreas(cache.rows);
+  }
+  void getRowsAtlanta().catch(() => {});
+  return [];
 }
 
 function labelForAtlSlug(slug: string, rows: Incident[]): string | null {
