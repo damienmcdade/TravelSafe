@@ -100,6 +100,12 @@ function normName(s: string): string {
     .replace(/\bseattle\b/g, "sea")
     .replace(/\bcolorado springs\b/g, "cosp")
     .replace(/\bdetroit\b/g, "det")
+    // v78 — strip the conjunction "and" so Norfolk's polygon-file
+    // "Azalea Acres and Azalea Lakes" matches its adapter label
+    // "Azalea Acres/ Azalea Lakes" (the "/" gets normalized to a
+    // space, leaving the "and" as the only material difference).
+    // Applies after city-abbrev rules but before whitespace collapse.
+    .replace(/\band\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
   for (const [a, b] of NAME_ALIASES) {

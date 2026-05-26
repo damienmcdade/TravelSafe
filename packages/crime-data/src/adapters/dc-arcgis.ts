@@ -221,6 +221,13 @@ export async function getDiscoveredAreasDC(): Promise<KnownArea[]> {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
+    // v78 — suppress "Ward N" geocoder-fallback buckets from the discover
+    // surface. They have no matching polygon (the dc-neighborhoods polygon
+    // file is by neighborhood, not ward) and showed up as orphan picker
+    // entries with no map representation. Incidents that hit the ward
+    // fallback still count in citywide totals; we just don't expose them
+    // as standalone area choices.
+    if (/^Ward \d+$/.test(r.area)) continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat; e.lngSum += r.lng; e.count += 1;
