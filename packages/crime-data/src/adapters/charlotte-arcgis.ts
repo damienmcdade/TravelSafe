@@ -159,17 +159,26 @@ async function fetchCharlotte(): Promise<Incident[]> {
   return out;
 }
 
+// v94 — in-flight Promise dedup (see detroit-arcgis.ts for rationale).
+let inFlightCltFetch: Promise<Incident[]> | null = null;
+
 export async function getRowsCharlotte(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchCharlotte();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[clt] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightCltFetch) return inFlightCltFetch;
+  inFlightCltFetch = (async () => {
+    try {
+      const rows = await fetchCharlotte();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[clt] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightCltFetch = null;
+    }
+  })();
+  return inFlightCltFetch;
 }
 
 function buildCharlotteAreas(rows: Incident[]): KnownArea[] {

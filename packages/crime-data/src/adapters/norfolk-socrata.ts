@@ -165,20 +165,29 @@ async function fetchNorfolk(): Promise<Incident[]> {
   return out;
 }
 
+// v94 — in-flight Promise dedup (see detroit-arcgis.ts for rationale).
+let inFlightNorFetch: Promise<Incident[]> | null = null;
+
 export async function getRowsNorfolk(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchNorfolk();
-    if (rows.length > 0) {
-      const idx = buildNorfolkIndexes(rows);
-      cache = { fetchedAt: now, rows, ...idx };
+  if (inFlightNorFetch) return inFlightNorFetch;
+  inFlightNorFetch = (async () => {
+    try {
+      const rows = await fetchNorfolk();
+      if (rows.length > 0) {
+        const idx = buildNorfolkIndexes(rows);
+        cache = { fetchedAt: now, rows, ...idx };
+      }
+      return rows;
+    } catch (err) {
+      console.warn("[norfolk] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightNorFetch = null;
     }
-    return rows;
-  } catch (err) {
-    console.warn("[norfolk] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  })();
+  return inFlightNorFetch;
 }
 
 export async function getDiscoveredAreasNorfolk(): Promise<KnownArea[]> {

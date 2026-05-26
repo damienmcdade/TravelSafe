@@ -124,7 +124,22 @@ async function probeCity(slug: string, nowMs: number): Promise<GradeSnapshot> {
         // Redis fail-soft — fall through to compute below
       }
     }
-    if (!s) s = await getCitywideSafetyScore(slug);
+    if (!s) {
+      // v94 — per-city timeout. Pre-v94 a single hung city
+      // (Detroit upstream stall, etc) blocked the entire sanity
+      // tick indefinitely. Combined with Promise.all over all 36
+      // cities, it held every partially-built getCitywideSafetyScore
+      // result in memory until heap OOM (we hit exit-134 once with
+      // a 15.8-hour cycle). 30s is enough headroom for a cold compute
+      // while small enough to fail fast.
+      const TIMEOUT = Symbol("city-timeout");
+      const result = await Promise.race([
+        getCitywideSafetyScore(slug),
+        new Promise<typeof TIMEOUT>((resolve) => setTimeout(() => resolve(TIMEOUT), 30_000)),
+      ]);
+      if (result === TIMEOUT) throw new Error("city safety-score compute timed out (>30s)");
+      s = result;
+    }
     const persons = (s.rows || []).find((r) => r.category === "PERSONS");
     const property = (s.rows || []).find((r) => r.category === "PROPERTY");
     const snap: GradeSnapshot = {
@@ -160,12 +175,32 @@ async function probeCity(slug: string, nowMs: number): Promise<GradeSnapshot> {
   }
 }
 
+// v94 — bounded-concurrency runner. Pre-v94 the tick fanned out
+// probeCity in Promise.all for all 36 cities. On Redis miss each
+// probe falls through to a heavy getCitywideSafetyScore() (per-area
+// fan-out × 50k-row filter); 36 in parallel was the OOM root cause.
+// Cap at 6 in flight. Combined with the per-city 30s timeout above,
+// worst-case cycle bound is (36/6) × 30s = 3min.
+async function runBounded<T>(items: T[], concurrency: number, fn: (item: T) => Promise<GradeSnapshot>): Promise<GradeSnapshot[]> {
+  const out: GradeSnapshot[] = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      out[i] = await fn(items[i]);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 async function tick(): Promise<void> {
   if (inFlight) return;
   inFlight = true;
   const t0 = Date.now();
   try {
-    const snaps = await Promise.all(CITIES.map((c) => probeCity(c.slug, t0)));
+    const snaps = await runBounded(CITIES, 6, (c) => probeCity(c.slug, t0));
     const flaggedCount = snaps.filter((s) => s.flags.length > 0).length;
     const report: GradeReport = {
       generatedAt: new Date(t0).toISOString(),

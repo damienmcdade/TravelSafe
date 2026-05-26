@@ -212,17 +212,26 @@ async function fetchCleveland(): Promise<Incident[]> {
   return out;
 }
 
+// v94 — in-flight Promise dedup (see detroit-arcgis.ts for rationale).
+let inFlightCleFetch: Promise<Incident[]> | null = null;
+
 export async function getRowsCleveland(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchCleveland();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[cle] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightCleFetch) return inFlightCleFetch;
+  inFlightCleFetch = (async () => {
+    try {
+      const rows = await fetchCleveland();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[cle] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightCleFetch = null;
+    }
+  })();
+  return inFlightCleFetch;
 }
 
 function buildClevelandAreas(rows: Incident[]): KnownArea[] {

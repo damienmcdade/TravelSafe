@@ -189,20 +189,29 @@ async function fetchOakland(): Promise<Incident[]> {
   });
 }
 
+// v94 — in-flight Promise dedup (see detroit-arcgis.ts for rationale).
+let inFlightOakFetch: Promise<Incident[]> | null = null;
+
 export async function getRowsOakland(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchOakland();
-    if (rows.length > 0) {
-      const idx = buildOaklandIndexes(rows);
-      cache = { fetchedAt: now, rows, ...idx };
+  if (inFlightOakFetch) return inFlightOakFetch;
+  inFlightOakFetch = (async () => {
+    try {
+      const rows = await fetchOakland();
+      if (rows.length > 0) {
+        const idx = buildOaklandIndexes(rows);
+        cache = { fetchedAt: now, rows, ...idx };
+      }
+      return rows;
+    } catch (err) {
+      console.warn("[oakland] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightOakFetch = null;
     }
-    return rows;
-  } catch (err) {
-    console.warn("[oakland] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  })();
+  return inFlightOakFetch;
 }
 
 export async function getDiscoveredAreasOakland(): Promise<KnownArea[]> {

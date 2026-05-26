@@ -244,17 +244,28 @@ async function fetchKansasCity(): Promise<Incident[]> {
   return out;
 }
 
+// v94 — in-flight Promise dedup. See detroit-arcgis.ts for the OOM
+// rationale (145 KC areas × Promise.all fan-out from the dispatcher
+// would fire 145 concurrent fetches without this guard).
+let inFlightKCFetch: Promise<Incident[]> | null = null;
+
 export async function getRowsKansasCity(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchKansasCity();
-    if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildKCIndexes(rows) };
-    return rows;
-  } catch (err) {
-    console.warn("[kc] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightKCFetch) return inFlightKCFetch;
+  inFlightKCFetch = (async () => {
+    try {
+      const rows = await fetchKansasCity();
+      if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildKCIndexes(rows) };
+      return rows;
+    } catch (err) {
+      console.warn("[kc] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightKCFetch = null;
+    }
+  })();
+  return inFlightKCFetch;
 }
 
 export async function getDiscoveredAreasKansasCity(): Promise<KnownArea[]> {

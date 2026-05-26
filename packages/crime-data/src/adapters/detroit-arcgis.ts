@@ -151,17 +151,35 @@ function buildIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRow
   return { slugToLabel, labelToRows };
 }
 
+// v94 — in-flight Promise deduplication. Pre-v94 the dispatcher's
+// per-area Promise.all (208 Detroit neighborhoods) on cold cache
+// fired 208 simultaneous getRowsDetroit() calls. Each one independently
+// invoked fetchDetroit (15 pages × 2k rows × concurrency 4), allocating
+// its own row buffer — 208 × 30k = ~6M rows in flight, hitting Node's
+// 4GB heap limit and OOM-killing the container (exit 134, observed in
+// a 15.8-hour grade-sanity cycle).
+// Now: once a fetch starts, every concurrent caller awaits the SAME
+// promise. First-to-return populates the cache; the rest reuse the
+// already-fetched rows. Cuts memory pressure from O(N areas) to O(1).
+let inFlightFetch: Promise<Incident[]> | null = null;
+
 export async function getRowsDetroit(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchDetroit();
-    if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildIndexes(rows) };
-    return rows;
-  } catch (err) {
-    console.warn("[detroit] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightFetch) return inFlightFetch;
+  inFlightFetch = (async () => {
+    try {
+      const rows = await fetchDetroit();
+      if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildIndexes(rows) };
+      return rows;
+    } catch (err) {
+      console.warn("[detroit] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightFetch = null;
+    }
+  })();
+  return inFlightFetch;
 }
 
 // v90p9 — bundled polygon set as static seed. Returned by discover()
