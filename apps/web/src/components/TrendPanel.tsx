@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
@@ -146,6 +146,12 @@ function TrendReport({ trend, accent, sectionHeadingLevel = 2, windowDays = 30 }
   const SubHeading = sectionHeadingLevel === 3 ? "h4" : "h3";
   const trendBullets = trend.bullets.filter((b) => b.kind === "trend");
   const dispatchBullets = trend.bullets.filter((b) => b.kind === "dispatch");
+  // v75 — Recent dispatches collapsed by default. Aligns with the
+  // pattern already wired into AreaBriefPanel / AreaInsightsPanel /
+  // NewsPanel / ThreatFeed / CommunitySignalsPanel. Resets to closed
+  // when the area changes so each new neighborhood starts clean.
+  const [dispatchesOpen, setDispatchesOpen] = useState(false);
+  useEffect(() => { setDispatchesOpen(false); }, [trend.area.slug]);
   return (
     <section className="space-y-3">
       {accent === "compare" && (
@@ -175,45 +181,57 @@ function TrendReport({ trend, accent, sectionHeadingLevel = 2, windowDays = 30 }
       )}
 
       <section className="surface p-5">
-        <header className="flex items-baseline justify-between flex-wrap gap-2">
-          <SubHeading className="font-display text-lg text-slate2-900">Recent dispatches in {trend.area.label}</SubHeading>
-          <div className="flex items-center gap-3 text-xs text-slate2-500">
-            <span>{trend.totalIncidents.toLocaleString()} in last 30 days</span>
-            {dispatchBullets.length > 0 && (
-              <button
-                onClick={() => downloadDispatchCsv(trend, dispatchBullets)}
-                className="text-bay-700 hover:underline"
-                aria-label="Download dispatches as CSV"
-              >
-                Download CSV
-              </button>
-            )}
-          </div>
-        </header>
+        <button
+          type="button"
+          onClick={() => setDispatchesOpen(!dispatchesOpen)}
+          aria-expanded={dispatchesOpen}
+          className="w-full flex items-baseline justify-between flex-wrap gap-2 text-left hover:bg-bay-50/40 rounded-md -m-1 p-1 transition-colors"
+        >
+          <span className="flex items-baseline gap-2 min-w-0">
+            <span aria-hidden="true" className={`inline-block transition-transform text-slate2-500 text-sm shrink-0 ${dispatchesOpen ? "rotate-90" : ""}`}>▶</span>
+            <SubHeading className="font-display text-lg text-slate2-900 truncate">Recent dispatches in {trend.area.label}</SubHeading>
+          </span>
+          <span className="text-xs text-slate2-500 shrink-0">{trend.totalIncidents.toLocaleString()} in last {windowDays} days</span>
+        </button>
 
-        {dispatchBullets.length === 0 ? (
-          <p className="mt-3 text-sm text-slate2-500">
-            {/* v64 — was hardcoded "past 30 days" even when the window
-                picker was set to 7d / 90d / 180d. User trust hit when
-                the label and the actual window diverged. */}
-            No dispatches in the past {windowDays} days for this neighborhood — that&apos;s normal for many areas in any given month.
-          </p>
-        ) : (
-          <ol className="mt-3 space-y-1.5">
-            {dispatchBullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-slate2-700">
-                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-400"}`} />
-                <span>{b.text}</span>
-              </li>
-            ))}
-          </ol>
+        {dispatchesOpen && (
+          <>
+            {dispatchBullets.length > 0 && (
+              <div className="mt-2 flex justify-end">
+                <button
+                  onClick={() => downloadDispatchCsv(trend, dispatchBullets)}
+                  className="text-xs text-bay-700 hover:underline"
+                  aria-label="Download dispatches as CSV"
+                >
+                  Download CSV
+                </button>
+              </div>
+            )}
+            {dispatchBullets.length === 0 ? (
+              <p className="mt-3 text-sm text-slate2-500">
+                {/* v64 — was hardcoded "past 30 days" even when the window
+                    picker was set to 7d / 90d / 180d. User trust hit when
+                    the label and the actual window diverged. */}
+                No dispatches in the past {windowDays} days for this neighborhood — that&apos;s normal for many areas in any given month.
+              </p>
+            ) : (
+              <ol className="mt-3 space-y-1.5">
+                {dispatchBullets.map((b, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate2-700">
+                    <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-400"}`} />
+                    <span>{b.text}</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+            <p className="mt-4 text-xs text-slate2-500">
+              Source:{" "}
+              <a href={trend.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">
+                {trend.source.label}
+              </a>
+            </p>
+          </>
         )}
-        <p className="mt-4 text-xs text-slate2-500">
-          Source:{" "}
-          <a href={trend.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">
-            {trend.source.label}
-          </a>
-        </p>
       </section>
     </section>
   );

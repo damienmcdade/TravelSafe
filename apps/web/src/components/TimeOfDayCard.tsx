@@ -31,17 +31,22 @@ export function TimeOfDayCard({
     [areaSlug],
   );
 
-  const buckets = useMemo(() => {
+  const { buckets, oldestAt, newestAt } = useMemo(() => {
     const out = new Array(24).fill(0) as number[];
-    if (!data) return out;
+    let oldest: number | null = null;
+    let newest: number | null = null;
+    if (!data) return { buckets: out, oldestAt: null, newestAt: null };
     for (const b of data.bullets) {
       if (b.kind !== "dispatch") continue;
       const t = new Date(b.at);
-      if (Number.isNaN(t.getTime())) continue;
+      const tMs = t.getTime();
+      if (Number.isNaN(tMs)) continue;
       const hr = t.getHours();
       if (hr >= 0 && hr < 24) out[hr] += 1;
+      if (oldest === null || tMs < oldest) oldest = tMs;
+      if (newest === null || tMs > newest) newest = tMs;
     }
-    return out;
+    return { buckets: out, oldestAt: oldest, newestAt: newest };
   }, [data]);
 
   const total = buckets.reduce((s, n) => s + n, 0);
@@ -49,6 +54,16 @@ export function TimeOfDayCard({
   // Peak hour for the summary line.
   const peakHour = buckets.indexOf(max);
   const peakLabel = formatHour(peakHour);
+  // v75 — honest data-span line. The trend feed defaults to a 30-day
+  // request window, but cities with stale upstreams (LA, NYC, KC,
+  // Phoenix) often return dispatches packed into a much shorter
+  // actual span. Show users the real span so the histogram's "peak"
+  // is interpreted in the right context (a 30-day pattern is more
+  // robust than a 5-day spike).
+  const spanDays = oldestAt && newestAt
+    ? Math.max(1, Math.round((newestAt - oldestAt) / (24 * 60 * 60 * 1000)))
+    : null;
+  const newestStr = newestAt ? new Date(newestAt).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : null;
 
   if (loading && !data) return (
     <section className="surface p-5 space-y-2">
@@ -70,7 +85,10 @@ export function TimeOfDayCard({
       <header>
         <h3 className="font-display text-lg text-slate2-900">When incidents happen</h3>
         <p className="text-xs text-slate2-500 mt-0.5">
-          {total.toLocaleString()} recent dispatches in {areaLabel}, bucketed by local hour. Peak around {peakLabel}.
+          {total.toLocaleString()} dispatch{total === 1 ? "" : "es"} in {areaLabel}
+          {spanDays && newestStr
+            ? ` across the ${spanDays}-day span ending ${newestStr}`
+            : ""}, bucketed by local hour. Peak around {peakLabel}.
         </p>
       </header>
       {/* 24-bar histogram. Bars are minimal and use the bay accent
