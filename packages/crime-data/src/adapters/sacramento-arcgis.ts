@@ -9,7 +9,13 @@ import { USER_AGENT } from "../lib/http.js";
 // column pre-joined — no point-in-polygon geocoding needed at intake.
 // Doc: https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento_Report_Data_2025/FeatureServer/0
 
-const BASE = "https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento_Report_Data_2025/FeatureServer/0/query";
+// Sacramento publishes year-specific datasets that get a fresh URL
+// each Jan; ALSO publishes a 3-year rolling view but that one lacks
+// the Neighborhood_Association column. Fetch BOTH year-specific
+// datasets (current + prior) in parallel and merge — same pattern
+// LA uses for k7nn-b2ep (current) + y8y3-fqfu (historical).
+const BASE_2026 = "https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento_Report_Data_2026/FeatureServer/0/query";
+const BASE_2025 = "https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento_Report_Data_2025/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
 const PAGES = 30;  // ~60k incidents covers full Sacramento PD annual volume
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -53,8 +59,8 @@ const PROVENANCE: DataProvenance = {
     "Neighborhood Association. Not live, not street-level. CommunitySafe does not track individuals.",
 };
 
-async function fetchPage(offset: number): Promise<SacRow[]> {
-  const url = new URL(BASE);
+async function fetchPage(baseUrl: string, offset: number): Promise<SacRow[]> {
+  const url = new URL(baseUrl);
   url.searchParams.set("where", "Neighborhood_Association IS NOT NULL AND Neighborhood_Association <> ''");
   url.searchParams.set("outFields", "Record_ID,Occurrence_Date_PT,Offense_Category,Description,Police_District,Beat,Neighborhood_Association");
   url.searchParams.set("returnGeometry", "false");
@@ -69,7 +75,7 @@ async function fetchPage(offset: number): Promise<SacRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchSacramento(): Promise<Incident[]> {
+async function fetchDataset(baseUrl: string): Promise<SacRow[]> {
   // Bounded concurrency=4 — same pattern as Cleveland/LV to avoid
   // rate-limiting the upstream ArcGIS tenant.
   const results: SacRow[][] = new Array(PAGES);
@@ -78,24 +84,50 @@ async function fetchSacramento(): Promise<Incident[]> {
     while (true) {
       const i = cursor++;
       if (i >= PAGES) return;
-      results[i] = await fetchPage(i * PAGE_SIZE).catch(() => [] as SacRow[]);
+      results[i] = await fetchPage(baseUrl, i * PAGE_SIZE).catch(() => [] as SacRow[]);
     }
   });
   await Promise.all(workers);
-  const rows = results.flat();
-  return rows
+  return results.flat();
+}
+
+async function fetchSacramento(): Promise<Incident[]> {
+  // Pull current + prior year datasets in parallel and dedupe on
+  // Record_ID. When the 2026 dataset is empty (Sacramento publishes
+  // a fresh empty dataset at year start and fills it over time)
+  // we still get useful coverage from 2025.
+  const [current, prior] = await Promise.all([
+    fetchDataset(BASE_2026).catch(() => [] as SacRow[]),
+    fetchDataset(BASE_2025).catch(() => [] as SacRow[]),
+  ]);
+  const seen = new Set<string>();
+  const merged: SacRow[] = [];
+  for (const r of [...current, ...prior]) {
+    const key = r.Record_ID ?? "";
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(r);
+  }
+  return merged
     .filter((r) => r.Occurrence_Date_PT && r.Neighborhood_Association)
-    .map((r, i) => ({
-      id: `sac-${r.Record_ID ?? i}`,
-      area: r.Neighborhood_Association!,
-      occurredAt: new Date(r.Occurrence_Date_PT!).toISOString(),
-      nibrsCategory: classify(r),
-      ibrOffenseDescription: (r.Description ?? r.Offense_Category ?? "Unknown").trim(),
-      beat: r.Beat ?? r.Police_District ?? null,
-      blockLabel: undefined,
-      lat: SACRAMENTO_CENTROID.lat,
-      lng: SACRAMENTO_CENTROID.lng,
-    }));
+    .map((r, i) => {
+      // Neighborhood_Association is a semicolon-separated list of
+      // overlapping neighborhood associations (a single address can
+      // sit inside 2-5 associations). Take the first — it's the
+      // primary association in the city's data dictionary.
+      const primaryArea = r.Neighborhood_Association!.split(";")[0].trim();
+      return {
+        id: `sac-${r.Record_ID ?? i}`,
+        area: primaryArea,
+        occurredAt: new Date(r.Occurrence_Date_PT!).toISOString(),
+        nibrsCategory: classify(r),
+        ibrOffenseDescription: (r.Description ?? r.Offense_Category ?? "Unknown").trim(),
+        beat: r.Beat ?? r.Police_District ?? null,
+        blockLabel: undefined,
+        lat: SACRAMENTO_CENTROID.lat,
+        lng: SACRAMENTO_CENTROID.lng,
+      };
+    });
 }
 
 export async function getRowsSacramento(): Promise<Incident[]> {

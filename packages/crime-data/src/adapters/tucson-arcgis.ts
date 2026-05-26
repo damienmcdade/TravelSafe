@@ -24,7 +24,8 @@ interface TucRow {
   STATUTDESC?: string;
   CrimeCategory?: string;
   CrimeType?: string;
-  NEIGHBORHD?: string;
+  NEIGHBORHD?: string;  // TPD short code like "T2ED"
+  NHA_NAME?: string;    // display name like "Downtown"
   DIVISION?: string;
   WARD?: string;
   LAT?: number;
@@ -55,8 +56,13 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchPage(offset: number): Promise<TucRow[]> {
   const url = new URL(BASE);
-  url.searchParams.set("where", "NEIGHBORHD IS NOT NULL AND NEIGHBORHD <> ''");
-  url.searchParams.set("outFields", "INCI_ID,DATE_OCCU,UCRSummary,UCRSummaryDesc,OFFENSE,STATUTDESC,CrimeCategory,CrimeType,NEIGHBORHD,DIVISION,WARD,LAT,LONG");
+  // v90p3 — NEIGHBORHD field returns TPD short codes (e.g. "T2ED")
+  // which don't match the polygon NAME field. NHA_NAME is the
+  // display name ("Downtown") that does match. Filter on
+  // DATE_OCCU instead so we don't drop rows with empty NHA_NAME
+  // (some HOAs aren't in the city's neighborhood association list).
+  url.searchParams.set("where", "DATE_OCCU IS NOT NULL");
+  url.searchParams.set("outFields", "INCI_ID,DATE_OCCU,UCRSummary,UCRSummaryDesc,OFFENSE,STATUTDESC,CrimeCategory,CrimeType,NHA_NAME,NEIGHBORHD,DIVISION,WARD,LAT,LONG");
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("orderByFields", "OBJECTID DESC");
   url.searchParams.set("resultOffset", String(offset));
@@ -82,10 +88,12 @@ async function fetchTucson(): Promise<Incident[]> {
   await Promise.all(workers);
   const rows = results.flat();
   return rows
-    .filter((r) => r.DATE_OCCU && r.NEIGHBORHD)
+    .filter((r) => r.DATE_OCCU)
     .map((r, i) => ({
       id: `tuc-${r.INCI_ID ?? i}`,
-      area: r.NEIGHBORHD!,
+      // Prefer NHA_NAME (display name matches polygon file); fall
+      // back to NEIGHBORHD code when NHA_NAME is missing.
+      area: (r.NHA_NAME && r.NHA_NAME.trim()) || (r.NEIGHBORHD ?? "Unknown"),
       occurredAt: new Date(r.DATE_OCCU!).toISOString(),
       nibrsCategory: classify(r),
       ibrOffenseDescription: (r.OFFENSE ?? r.UCRSummaryDesc ?? r.STATUTDESC ?? "Unknown").trim(),

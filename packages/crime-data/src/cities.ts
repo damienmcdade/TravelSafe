@@ -37,7 +37,7 @@ import { saintPaulAdapter, getDiscoveredAreasSaintPaul } from "./adapters/saint-
 import { pittsburghAdapter, getDiscoveredAreasPittsburgh } from "./adapters/pittsburgh-ckan.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-socrata.js";
 import { sacramentoAdapter, getDiscoveredAreasSacramento } from "./adapters/sacramento-arcgis.js";
-import { atlantaAdapter, getDiscoveredAreasAtlanta } from "./adapters/atlanta-arcgis.js";
+// import { atlantaAdapter, getDiscoveredAreasAtlanta } from "./adapters/atlanta-arcgis.js"; // deferred — see CITIES note
 import { indianapolisAdapter, getDiscoveredAreasIndianapolis } from "./adapters/indianapolis-arcgis.js";
 import { raleighAdapter, getDiscoveredAreasRaleigh } from "./adapters/raleigh-arcgis.js";
 import { tucsonAdapter, getDiscoveredAreasTucson } from "./adapters/tucson-arcgis.js";
@@ -305,13 +305,15 @@ export const CITIES: CityEntry[] = [
     adapter: sacramentoAdapter,
     discover: getDiscoveredAreasSacramento,
   },
-  {
-    slug: "atlanta",
-    label: "Atlanta",
-    bbox: { south: 33.647, west: -84.551, north: 33.887, east: -84.290 },
-    adapter: atlantaAdapter,
-    discover: getDiscoveredAreasAtlanta,
-  },
+  // Atlanta DEFERRED — the "Crimes_public" ArcGIS dataset (the
+  // one our scout identified) is actually Asheville NC data with
+  // mislabeled provenance: 147k rows, 0 with non-null neighborhood,
+  // street names like HAYWOOD RD / BILTMORE AVE confirm Asheville.
+  // Atlanta's true APD feed isn't currently published in a stable
+  // FeatureServer format. Adapter file (atlanta-arcgis.ts) and
+  // FBI baseline + population entries kept in place so adding the
+  // real upstream later is a one-line CITIES push + slug-prefix add.
+  // { slug: "atlanta", label: "Atlanta", bbox: {south:33.647,west:-84.551,north:33.887,east:-84.290}, adapter: atlantaAdapter, discover: getDiscoveredAreasAtlanta },
   {
     slug: "indianapolis",
     label: "Indianapolis",
@@ -404,10 +406,10 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("phx-")  || slug === "phoenix")      return CITIES[29];
   if (slug.startsWith("den-")  || slug === "denver")       return CITIES[30];
   if (slug.startsWith("sac-")  || slug === "sacramento")   return CITIES[31];
-  if (slug.startsWith("atl-")  || slug === "atlanta")      return CITIES[32];
-  if (slug.startsWith("indy-") || slug === "indianapolis") return CITIES[33];
-  if (slug.startsWith("rdu-")  || slug === "raleigh")      return CITIES[34];
-  if (slug.startsWith("tuc-")  || slug === "tucson")       return CITIES[35];
+  // (atlanta removed from CITIES array — adapter retained for future fix; see CITIES note above)
+  if (slug.startsWith("indy-") || slug === "indianapolis") return CITIES[32];
+  if (slug.startsWith("rdu-")  || slug === "raleigh")      return CITIES[33];
+  if (slug.startsWith("tuc-")  || slug === "tucson")       return CITIES[34];
   return CITIES[0];
 }
 
