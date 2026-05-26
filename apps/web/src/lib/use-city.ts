@@ -69,6 +69,24 @@ export const CITIES: CityInfo[] = [
   // phoenixopendata.com's CKAN datastore (5 paginated requests in
   // parallel) and groups by ZIP with friendly Urban Village labels.
   { slug: "phoenix",       label: "Phoenix",       state: "AZ", stateLabel: "Arizona",        defaultArea: "phoenix",          centroid: { lat: 33.45, lng: -112.07 }, status: "live",        source: "Phoenix Police Crime Statistics · phoenixopendata.com" },
+  // v90 — 5 cities added to backend but missed in this client-side
+  // wheel-picker list until v95p5 (audit caught it: cities visible in
+  // the API but not in the picker UI).
+  { slug: "denver",        label: "Denver",        state: "CO", stateLabel: "Colorado",       defaultArea: "den-five-points",  centroid: { lat: 39.74, lng: -104.99 }, status: "live",        source: "DPD Crime Incidents · denvergov.org (ArcGIS)" },
+  { slug: "sacramento",    label: "Sacramento",    state: "CA", stateLabel: "California",     defaultArea: "sac-midtown",      centroid: { lat: 38.58, lng: -121.49 }, status: "live",        source: "Sacramento PD Daily Crime · data.cityofsacramento.org (ArcGIS)" },
+  { slug: "atlanta",       label: "Atlanta",       state: "GA", stateLabel: "Georgia",        defaultArea: "atl-midtown",      centroid: { lat: 33.75, lng: -84.39 }, status: "live",        source: "APD Crime Incidents · opendata.atlantapd.org (ArcGIS)" },
+  { slug: "indianapolis",  label: "Indianapolis",  state: "IN", stateLabel: "Indiana",        defaultArea: "indy-downtown",    centroid: { lat: 39.77, lng: -86.16 }, status: "live",        source: "IMPD Crime Incidents · data.indy.gov (ArcGIS)" },
+  { slug: "raleigh",       label: "Raleigh",       state: "NC", stateLabel: "North Carolina", defaultArea: "rdu-downtown",     centroid: { lat: 35.78, lng: -78.64 }, status: "live",        source: "Raleigh Police Incidents · data.raleighnc.gov (ArcGIS)" },
+  // v95p1 — Tucson re-added with documented-stale flag. Upstream feed
+  // (gis.tucsonaz.gov) is severely partial as of 2026-05-26 (newest
+  // row 2025-09-22, only ~3 Part-1 rows/year via direct query). Grade
+  // shows N/A by the under-count guard; UI still lists the city so
+  // users can find it. New source TBD.
+  { slug: "tucson",        label: "Tucson",        state: "AZ", stateLabel: "Arizona",        defaultArea: "tuc-downtown",     centroid: { lat: 32.22, lng: -110.97 }, status: "live",        source: "Tucson PD Public Incidents · gis.tucsonaz.gov (ArcGIS, feed currently partial)" },
+  // v95p1/v95p4 — Honolulu added as the 37th city. HPD's
+  // data.honolulu.gov feed lacks lat/lng, so per-neighborhood comes
+  // from a one-time OSM Nominatim geocode of every blockaddress.
+  { slug: "honolulu",      label: "Honolulu",      state: "HI", stateLabel: "Hawaii",         defaultArea: "honolulu",         centroid: { lat: 21.31, lng: -157.86 }, status: "live",        source: "HPD Crime Incidents · data.honolulu.gov (Socrata)" },
 ];
 
 /// All US states with at least one CommunitySafe city, sorted alphabetically.
