@@ -776,7 +776,20 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
     const worst = divergence.length > 0
       ? Math.max(...divergence.map((d) => d > 1 ? d : 1 / d))
       : 1;
-    if (worst >= 3) {
+    // v86 — source-aware divergence threshold. NIBRS adapters are
+    // expected to land within 3× of FBI; a wider divergence is the
+    // signature of a partial pull / wrong calibration. CFS adapters
+    // (Cleveland, Las Vegas, New Orleans, Boise — anything with
+    // cfsScale<1) are STRUCTURALLY off-baseline — CFS counts events
+    // and many real Part-1 crimes are dispatched under generic codes
+    // (DISTURBANCE, TROUBLE) that don't survive our keyword filter.
+    // Cleveland in particular ran 17.9× under FBI baseline and was
+    // permanently N/A. For CFS sources we use a 20× threshold so a
+    // calibration gap doesn't black out the city's grade entirely —
+    // the dataConfidence note still warns users about the gap.
+    const isCfsAdapter = (cfsScale ?? 1) < 1;
+    const divergenceThreshold = isCfsAdapter ? 20 : 3;
+    if (worst >= divergenceThreshold) {
       grade = "N/A";
       confidence = {
         ...confidence,
@@ -787,6 +800,19 @@ export async function getCitywideSafetyScore(citySlug: string): Promise<SafetySc
           `wrong CFS calibration, or a population denominator mismatch. ` +
           `Grade is suppressed to avoid misleading users until the ` +
           `calibration lands.`,
+      };
+    } else if (worst >= 3 && isCfsAdapter) {
+      // Soft-warn instead of suppress for CFS adapters between
+      // 3× and 20×: grade stands but flag confidence so the UI
+      // shows the explanatory note.
+      confidence = {
+        ...confidence,
+        dataConfidence: "low",
+        dataConfidenceNote:
+          `${city.label}'s adapter is calls-for-service data which structurally undercounts vs FBI ` +
+          `NIBRS (currently ${worst.toFixed(1)}× lower than the ${fbiBaseline.year} baseline). ` +
+          `Grade is computed from CFS dispatches that match Part-1 keyword filters; treat as directional, ` +
+          `not authoritative.`,
       };
     }
   }
