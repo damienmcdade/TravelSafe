@@ -4,9 +4,19 @@
 export const USER_AGENT = "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)";
 
 // v89 — Socrata X-App-Token lookup. Anonymous SoQL queries share a
-// global throttle pool (50 req/min per IP at the time of writing);
-// adding an app token moves the calling app into a per-app pool with
-// much higher limits. Tokens are free at dev.socrata.com.
+// global throttle pool; adding an app token moves the calling app
+// into a per-app pool with much higher limits.
+//
+// v93p4 — token signup process changed when Tyler Technologies
+// acquired Socrata and rebranded to "Tyler Data & Insights". The
+// old central portal at opendata.socrata.com is DEPRECATED — that
+// SSO + federated-signup path no longer works. Tokens are now
+// minted per-portal: create an account on each city's data portal
+// (e.g. https://data.cityofnewyork.us/signup) then go to
+// `Profile → Developer Settings` and click "Create New App Token".
+//
+// Operator-notes section "Socrata tokens" lists the working
+// per-host signup URLs.
 //
 // Per-host env vars take precedence over the generic SOCRATA_APP_TOKEN
 // so an operator can grant different tokens to different cities (or
