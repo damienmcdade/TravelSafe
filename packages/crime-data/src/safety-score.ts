@@ -524,6 +524,50 @@ function gradeWithNullGuard(
   return derivedGrade;
 }
 
+// v95p3 — stricter under-count guard. The basic null guard above
+// only catches totalCount === 0. Tucson (2026-05-26) tripped this:
+// upstream feed was stale 8+ months, adapter had 1 PERSONS row in
+// cache, totalCount=1, confidence="low" — but the grade math
+// (1 / 546k pop) still produced rate ≈ 0 vs FBI 533, which the
+// per-city grader interpreted as "far below baseline" → Grade A.
+// That's a false-positive safety claim: the city isn't safer, our
+// data is missing.
+//
+// Strengthened rule: when we have an FBI baseline AND confidence
+// is "low" AND the observed rate sits below 5% of that baseline
+// for EITHER category, suppress to N/A. The user sees "data
+// unavailable" + the explanatory confidence note instead of a
+// misleadingly favorable letter grade.
+function gradeWithUndercountGuard(
+  derivedGrade: SafetyScoreResponse["grade"],
+  rows: SafetyScoreRow[],
+  fbiBaseline: { violent: number; property: number } | undefined,
+  confidence: SafetyScoreResponse["dataConfidence"],
+  isCfsAdapter: boolean,
+): SafetyScoreResponse["grade"] {
+  if (!fbiBaseline || confidence !== "low") return derivedGrade;
+  // NIBRS adapters: 5% threshold. Catches outright data outages
+  // (Tucson 2026-05-26: 0/100k with 1 row stale 8mo) without false-
+  // positives for genuinely low-crime cities.
+  // CFS adapters: 20% threshold. CFS structurally undercounts vs
+  // NIBRS, but Cleveland at 9.78% of FBI baseline is below the
+  // floor where any soft-warn note can honestly justify a "below
+  // baseline" letter grade. The cfsScale tuning was set when more
+  // rows survived the Part-1 filter — drift since then has pushed
+  // the adapter below the threshold where a meaningful grade is
+  // defensible. Suppress with the existing calibration-progress
+  // note instead of showing Grade A for a high-crime city.
+  const undercountFloor = isCfsAdapter ? 0.20 : 0.05;
+  const personsRow = rows.find((r) => r.category === "PERSONS");
+  const propertyRow = rows.find((r) => r.category === "PROPERTY");
+  const personsUnder = personsRow && fbiBaseline.violent > 0
+    && personsRow.localPer100k < fbiBaseline.violent * undercountFloor;
+  const propertyUnder = propertyRow && fbiBaseline.property > 0
+    && propertyRow.localPer100k < fbiBaseline.property * undercountFloor;
+  if (personsUnder || propertyUnder) return "N/A";
+  return derivedGrade;
+}
+
 // Round windowDays to the nearest 7-day boundary so a small drift in
 // the adapter's oldest cached row (a hours-level shift between cache
 // refresh cycles) doesn't change the annualization divisor at all.
@@ -788,6 +832,10 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
     ? gradeFromCityFbiBaseline(rows, fbiBaseline)
     : gradeFromNationalDeltas(rows);
   let grade = gradeWithNullGuard(rawGrade, persons + property, confidence.dataConfidence);
+  // v95p3 — also catch the partial-feed scenario where adapter has
+  // a tiny non-zero count that the grader interprets as "way below
+  // baseline = grade A". See gradeWithUndercountGuard for rationale.
+  grade = gradeWithUndercountGuard(grade, rows, fbiBaseline, confidence.dataConfidence, (cfsScale ?? 1) < 1);
 
   // Calibration divergence guard (v25 audit fix). The score audit
   // caught several cities reporting an A or B grade despite being
