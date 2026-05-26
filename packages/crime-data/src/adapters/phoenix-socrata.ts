@@ -220,10 +220,15 @@ async function fetchAndParse(): Promise<Cache> {
     villageCounts.set(village, (villageCounts.get(village) ?? 0) + 1);
   }
 
-  // Order by incident volume so the wheel surfaces the busiest
-  // villages first. Centroids come from the bundled village
-  // polygon centers (real geometry, not a metro placeholder).
+  // v82 — suppress "Phoenix 85xxx" ZIP-fallback labels from the
+  // discover surface. Same pattern as DC ward-fallback suppression:
+  // they have no matching polygon (the polygon file is the 15 official
+  // urban villages) and showed up as 61 orphan picker entries with no
+  // map representation. Incidents at unmapped ZIPs still count toward
+  // citywide totals (they're already in `rows`), we just don't expose
+  // them as standalone area choices.
   const areas: KnownArea[] = Array.from(villageCounts.entries())
+    .filter(([village]) => !/^Phoenix \d{5}$/.test(village))
     .sort((a, b) => b[1] - a[1])
     .map(([village]) => ({
       slug: `phx-${village.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
