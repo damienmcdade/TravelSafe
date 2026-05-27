@@ -1,31 +1,31 @@
 {
-  "generatedAt": "2026-05-27T00:43:57.224Z",
+  "generatedAt": "2026-05-27T01:00:41.206Z",
   "source": "OpenStreetMap Nominatim (https://nominatim.openstreetmap.org/)",
-  "addressCount": 2039,
-  "neighborhoodCount": 82,
+  "addressCount": 2217,
+  "neighborhoodCount": 85,
   "neighborhoods": [
     {
       "name": "McCully",
-      "count": 161,
+      "count": 170,
       "centroid": {
-        "lat": 21.2930723,
-        "lng": -157.82967876335408
+        "lat": 21.293020107647056,
+        "lng": -157.82955738176474
       }
     },
     {
       "name": "Hawaii Capital Historic District",
-      "count": 104,
+      "count": 109,
       "centroid": {
-        "lat": 21.30932402403846,
-        "lng": -157.85804324134614
+        "lat": 21.30928694770642,
+        "lng": -157.85807686972478
       }
     },
     {
       "name": "Kapahulu",
-      "count": 103,
+      "count": 107,
       "centroid": {
-        "lat": 21.27956823786408,
-        "lng": -157.81442872330106
+        "lat": 21.279722995327106,
+        "lng": -157.81434235046737
       }
     },
     {
@@ -38,10 +38,10 @@
     },
     {
       "name": "Makiki Kai",
-      "count": 73,
+      "count": 81,
       "centroid": {
-        "lat": 21.30399155890411,
-        "lng": -157.84646652191782
+        "lat": 21.30393998765432,
+        "lng": -157.84673928765432
       }
     },
     {
@@ -53,19 +53,43 @@
       }
     },
     {
-      "name": "Enchanted Lake",
-      "count": 67,
+      "name": "Wahiawa",
+      "count": 71,
       "centroid": {
-        "lat": 21.38784576716417,
-        "lng": -157.73867014029852
+        "lat": 21.499009115492953,
+        "lng": -158.02214922112677
       }
     },
     {
-      "name": "Wahiawa",
+      "name": "Enchanted Lake",
+      "count": 69,
+      "centroid": {
+        "lat": 21.387571672463757,
+        "lng": -157.7384339478261
+      }
+    },
+    {
+      "name": "Iwilei",
       "count": 66,
       "centroid": {
-        "lat": 21.499074056060604,
-        "lng": -158.02188025151514
+        "lat": 21.32152714090909,
+        "lng": -157.86908422272725
+      }
+    },
+    {
+      "name": "Kalihi Kai",
+      "count": 65,
+      "centroid": {
+        "lat": 21.32815120923078,
+        "lng": -157.88213102769225
+      }
+    },
+    {
+      "name": "Crestview",
+      "count": 64,
+      "centroid": {
+        "lat": 21.395429359374972,
+        "lng": -157.98041600624987
       }
     },
     {
@@ -77,19 +101,11 @@
       }
     },
     {
-      "name": "Kalihi Kai",
-      "count": 61,
+      "name": "Kalihi",
+      "count": 62,
       "centroid": {
-        "lat": 21.327850059016402,
-        "lng": -157.88225309508192
-      }
-    },
-    {
-      "name": "Iwilei",
-      "count": 60,
-      "centroid": {
-        "lat": 21.321573836666666,
-        "lng": -157.8689902016667
+        "lat": 21.336683701612905,
+        "lng": -157.8744035403226
       }
     },
     {
@@ -101,27 +117,35 @@
       }
     },
     {
-      "name": "Kalihi",
-      "count": 59,
+      "name": "Pawaa",
+      "count": 58,
       "centroid": {
-        "lat": 21.337173735593222,
-        "lng": -157.8744534389831
+        "lat": 21.296844705172422,
+        "lng": -157.84023873793106
       }
     },
     {
-      "name": "Pawaa",
-      "count": 52,
+      "name": "Kaimukī",
+      "count": 53,
       "centroid": {
-        "lat": 21.296841244230773,
-        "lng": -157.84013756923076
+        "lat": 21.2770653490566,
+        "lng": -157.801066481132
       }
     },
     {
       "name": "Āliamanu",
+      "count": 52,
+      "centroid": {
+        "lat": 21.35166904615384,
+        "lng": -157.92890308846157
+      }
+    },
+    {
+      "name": "Kaka‘ako",
       "count": 50,
       "centroid": {
-        "lat": 21.352074863999995,
-        "lng": -157.92888474200004
+        "lat": 21.298025954,
+        "lng": -157.857769414
       }
     },
     {
@@ -133,27 +157,19 @@
       }
     },
     {
-      "name": "Kaimukī",
-      "count": 46,
-      "centroid": {
-        "lat": 21.27700935434783,
-        "lng": -157.80117393043477
-      }
-    },
-    {
       "name": "Salt Lake",
-      "count": 45,
+      "count": 50,
       "centroid": {
-        "lat": 21.342472588888892,
-        "lng": -157.91233015555557
+        "lat": 21.342695342000003,
+        "lng": -157.91241646400002
       }
     },
     {
-      "name": "Kaka‘ako",
-      "count": 44,
+      "name": "Maunawili",
+      "count": 39,
       "centroid": {
-        "lat": 21.29798624318182,
-        "lng": -157.85804772954543
+        "lat": 21.37593884358974,
+        "lng": -157.77020436923078
       }
     },
     {
@@ -174,10 +190,10 @@
     },
     {
       "name": "Nuʻuanu",
-      "count": 37,
+      "count": 38,
       "centroid": {
-        "lat": 21.34248525405405,
-        "lng": -157.84986342702697
+        "lat": 21.342344484210525,
+        "lng": -157.84980104736837
       }
     },
     {
@@ -189,19 +205,11 @@
       }
     },
     {
-      "name": "Maunawili",
+      "name": "Ala Moana",
       "count": 33,
       "centroid": {
-        "lat": 21.37628862727272,
-        "lng": -157.7693053151515
-      }
-    },
-    {
-      "name": "Ala Moana",
-      "count": 30,
-      "centroid": {
-        "lat": 21.293427956666665,
-        "lng": -157.84584679
+        "lat": 21.293750530303033,
+        "lng": -157.8458179939394
       }
     },
     {
@@ -213,6 +221,14 @@
       }
     },
     {
+      "name": "Wailupe",
+      "count": 29,
+      "centroid": {
+        "lat": 21.27647094827587,
+        "lng": -157.77842206206896
+      }
+    },
+    {
       "name": "Pacific Palisades",
       "count": 29,
       "centroid": {
@@ -221,11 +237,11 @@
       }
     },
     {
-      "name": "Wailupe",
-      "count": 27,
+      "name": "Chinatown",
+      "count": 28,
       "centroid": {
-        "lat": 21.27689742592593,
-        "lng": -157.77828825185185
+        "lat": 21.314319239285716,
+        "lng": -157.86344283214285
       }
     },
     {
@@ -237,19 +253,19 @@
       }
     },
     {
-      "name": "Chinatown",
+      "name": "Mariner's Cove",
       "count": 24,
       "centroid": {
-        "lat": 21.314919091666667,
-        "lng": -157.86335861666666
+        "lat": 21.29911674166667,
+        "lng": -157.69008555000002
       }
     },
     {
-      "name": "Mariner's Cove",
-      "count": 23,
+      "name": "Waiau",
+      "count": 22,
       "centroid": {
-        "lat": 21.29877544782609,
-        "lng": -157.68918089130437
+        "lat": 21.396326722727274,
+        "lng": -157.96587467727272
       }
     },
     {
@@ -261,6 +277,14 @@
       }
     },
     {
+      "name": "Makakilo City",
+      "count": 21,
+      "centroid": {
+        "lat": 21.33404197619047,
+        "lng": -158.08198716190475
+      }
+    },
+    {
       "name": "Saint Louis Heights",
       "count": 21,
       "centroid": {
@@ -269,19 +293,27 @@
       }
     },
     {
+      "name": "‘Āina Haina",
+      "count": 19,
+      "centroid": {
+        "lat": 21.286094363157893,
+        "lng": -157.7542407
+      }
+    },
+    {
+      "name": "Moanalua Gardens",
+      "count": 18,
+      "centroid": {
+        "lat": 21.352817933333338,
+        "lng": -157.89251345555556
+      }
+    },
+    {
       "name": "Lanikai",
       "count": 18,
       "centroid": {
         "lat": 21.391993233333334,
         "lng": -157.7210877166667
-      }
-    },
-    {
-      "name": "Waiau",
-      "count": 18,
-      "centroid": {
-        "lat": 21.397557355555552,
-        "lng": -157.96456619444444
       }
     },
     {
@@ -301,22 +333,6 @@
       }
     },
     {
-      "name": "Moanalua Gardens",
-      "count": 17,
-      "centroid": {
-        "lat": 21.35271369411765,
-        "lng": -157.89219107058824
-      }
-    },
-    {
-      "name": "‘Āina Haina",
-      "count": 15,
-      "centroid": {
-        "lat": 21.285262699999997,
-        "lng": -157.75383238666666
-      }
-    },
-    {
       "name": "Kalaeloa",
       "count": 14,
       "centroid": {
@@ -325,11 +341,11 @@
       }
     },
     {
-      "name": "Makakilo City",
-      "count": 13,
+      "name": "Pearl Highlands",
+      "count": 12,
       "centroid": {
-        "lat": 21.3319638,
-        "lng": -158.08349617692303
+        "lat": 21.39943621666666,
+        "lng": -157.97398860833334
       }
     },
     {
@@ -338,14 +354,6 @@
       "centroid": {
         "lat": 21.36748662500001,
         "lng": -157.89547477499997
-      }
-    },
-    {
-      "name": "Pearl Highlands",
-      "count": 11,
-      "centroid": {
-        "lat": 21.399677736363632,
-        "lng": -157.97433796363637
       }
     },
     {
@@ -373,11 +381,11 @@
       }
     },
     {
-      "name": "Crestview",
+      "name": "Waianae",
       "count": 9,
       "centroid": {
-        "lat": 21.395452333333335,
-        "lng": -157.98026754444447
+        "lat": 21.4425246,
+        "lng": -158.1875375
       }
     },
     {
@@ -450,6 +458,14 @@
       "centroid": {
         "lat": 21.29945,
         "lng": -157.67086744
+      }
+    },
+    {
+      "name": "Nanakuli",
+      "count": 5,
+      "centroid": {
+        "lat": 21.38122508,
+        "lng": -158.14335076
       }
     },
     {
@@ -594,6 +610,14 @@
       "centroid": {
         "lat": 21.6785575,
         "lng": -158.03761515000002
+      }
+    },
+    {
+      "name": "Makaha",
+      "count": 2,
+      "centroid": {
+        "lat": 21.4795314,
+        "lng": -158.224827
       }
     },
     {
@@ -10856,6 +10880,896 @@
       "neighborhood": "Hawaii Capital Historic District",
       "lat": 21.303565,
       "lng": -157.861125
+    },
+    "800 BLOCK PUUHALE RD": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.331412,
+      "lng": -157.879552
+    },
+    "800 BLOCK PUUNANI PL": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.337136,
+      "lng": -157.847493
+    },
+    "800 BLOCK QUEEN ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.299536,
+      "lng": -157.8558458
+    },
+    "800 BLOCK S BERETANIA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3047309,
+      "lng": -157.8508607
+    },
+    "800 BLOCK S KING ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.303257,
+      "lng": -157.853517
+    },
+    "800 BLOCK SHERIDAN ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.296648,
+      "lng": -157.842221
+    },
+    "800 BLOCK SOUTH ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.302968,
+      "lng": -157.856969
+    },
+    "800 BLOCK UNIVERSITY AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.290181,
+      "lng": -157.823618
+    },
+    "800 BLOCK VALKENBURGH ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3422222,
+      "lng": -157.9289385
+    },
+    "800 BLOCK W HIND DR": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.279318,
+      "lng": -157.755441
+    },
+    "800 BLOCK WAIAKAMILO RD": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3262971,
+      "lng": -157.8739266
+    },
+    "800 BLOCK WAIMANU ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2935918,
+      "lng": -157.8480041
+    },
+    "800 BLOCK WAKEA ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3351814,
+      "lng": -158.0832403
+    },
+    "800 BLOCK WARD AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3000342,
+      "lng": -157.8518945
+    },
+    "800 BLOCK WILIWILI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.291546,
+      "lng": -157.83025
+    },
+    "800-899 DREIER ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3006618,
+      "lng": -157.8545226
+    },
+    "8200 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "820100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "820200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "830400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "830600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840100 BLOCK MAKAU ST": {
+      "neighborhood": "Makaha",
+      "lat": 21.4795314,
+      "lng": -158.224827
+    },
+    "840200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840300 BLOCK MAKAU ST": {
+      "neighborhood": "Makaha",
+      "lat": 21.4795314,
+      "lng": -158.224827
+    },
+    "840400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840700 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840800 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "840900 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "841100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850000 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "850100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850100 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "850200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850300 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "850400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850400 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "850500 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850600 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "850700 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850700 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "850800 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "850900 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "851100 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "851300 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "851700 BLOCK WAIANAE VALLEY RD": {
+      "neighborhood": "Waianae",
+      "lat": 21.4425246,
+      "lng": -158.1875375
+    },
+    "860000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "860100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "860200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870500 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870700 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "870800 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871500 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871700 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "871900 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "872000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "872100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "8800 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "8900 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "890000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "890100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "890200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "890300 BLOCK HALEAKALA AVE": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.384533,
+      "lng": -158.1454834
+    },
+    "890400 BLOCK NANAKULI AVE": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.3790198,
+      "lng": -158.141929
+    },
+    "890500 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "890500 BLOCK NANAKULI AVE": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.3790198,
+      "lng": -158.141929
+    },
+    "890900 BLOCK HALEAKALA AVE": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.384533,
+      "lng": -158.1454834
+    },
+    "890900 BLOCK NANAKULI AVE": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.3790198,
+      "lng": -158.141929
+    },
+    "8TH AVE / KAIMUKI AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.2742642,
+      "lng": -157.7943927
+    },
+    "900 BLOCK 12TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.278015,
+      "lng": -157.801593
+    },
+    "900 BLOCK 18TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.274754,
+      "lng": -157.795107
+    },
+    "900 BLOCK 1ST ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.39024,
+      "lng": -157.971957
+    },
+    "900 BLOCK 3RD AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.28416,
+      "lng": -157.811609
+    },
+    "900 BLOCK 3RD ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.3918702,
+      "lng": -157.9708397
+    },
+    "900 BLOCK 8TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.280431,
+      "lng": -157.80621
+    },
+    "900 BLOCK 9TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.279839,
+      "lng": -157.805053
+    },
+    "900 BLOCK A RD": {
+      "neighborhood": "Waiau",
+      "lat": 21.3898633,
+      "lng": -157.9727457
+    },
+    "900 BLOCK AHANA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.29579,
+      "lng": -157.840011
+    },
+    "900 BLOCK AHUWALE ST": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.2948072,
+      "lng": -157.7567602
+    },
+    "900 BLOCK AKUMU ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.377247,
+      "lng": -157.732342
+    },
+    "900 BLOCK ALA KOPIKO PL": {
+      "neighborhood": "Moanalua Gardens",
+      "lat": 21.35459,
+      "lng": -157.897994
+    },
+    "900 BLOCK ALA LILIKOI ST": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.346114,
+      "lng": -157.912807
+    },
+    "900 BLOCK ALA LOKE ST": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.346896,
+      "lng": -157.912154
+    },
+    "900 BLOCK ALA MOANA BLVD": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2958353,
+      "lng": -157.8594514
+    },
+    "900 BLOCK ALA NANALA": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3460698,
+      "lng": -157.9101772
+    },
+    "900 BLOCK ALDER ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.298531,
+      "lng": -157.8439
+    },
+    "900 BLOCK ALIAMANU PL": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3471522,
+      "lng": -157.9168714
+    },
+    "900 BLOCK AUSTIN LN": {
+      "neighborhood": "Iwilei",
+      "lat": 21.321991,
+      "lng": -157.868378
+    },
+    "900 BLOCK BIRCH ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.298275,
+      "lng": -157.843172
+    },
+    "900 BLOCK BISHOP ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.308134,
+      "lng": -157.862182
+    },
+    "900 BLOCK CALIFORNIA AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.4977216,
+      "lng": -158.0255949
+    },
+    "900 BLOCK CENTER ST": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.498748,
+      "lng": -158.02544
+    },
+    "900 BLOCK COOLIDGE ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2918303,
+      "lng": -157.8252203
+    },
+    "900 BLOCK DILLINGHAM BLVD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.320319,
+      "lng": -157.870046
+    },
+    "900 BLOCK FACTORY ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.332053,
+      "lng": -157.879415
+    },
+    "900 BLOCK FORT ST MALL": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3087617,
+      "lng": -157.8631734
+    },
+    "900 BLOCK HAHAIONE ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.3069665,
+      "lng": -157.7108927
+    },
+    "900 BLOCK HALEKAUWILA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2971059,
+      "lng": -157.8557078
+    },
+    "900 BLOCK HAUMEA ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3321319,
+      "lng": -158.0821559
+    },
+    "900 BLOCK HAUSTEN ST": {
+      "neighborhood": "McCully",
+      "lat": 21.29143,
+      "lng": -157.8243998
+    },
+    "900 BLOCK HIKINA LN": {
+      "neighborhood": "Iwilei",
+      "lat": 21.322679,
+      "lng": -157.869313
+    },
+    "900 BLOCK HIND IUKA DR": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.291831,
+      "lng": -157.755007
+    },
+    "900 BLOCK HOOKIPA WAY": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.281452,
+      "lng": -157.808203
+    },
+    "900 BLOCK KAHEKA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.295378,
+      "lng": -157.839055
+    },
+    "900 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "900 BLOCK KAMOKILA BLVD": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.333864,
+      "lng": -158.082296
+    },
+    "900 BLOCK KAPAHULU AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.284229,
+      "lng": -157.813798
+    },
+    "900 BLOCK KAPIOLANI BLVD": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.298886,
+      "lng": -157.852521
+    },
+    "900 BLOCK KAWAIAHAO ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.298603,
+      "lng": -157.854136
+    },
+    "900 BLOCK KEALAOLU AVE": {
+      "neighborhood": "Wailupe",
+      "lat": 21.270541,
+      "lng": -157.779528
+    },
+    "900 BLOCK KEEAUMOKU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2973882,
+      "lng": -157.8407862
+    },
+    "900 BLOCK KEKAULIKE ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3123392,
+      "lng": -157.8645288
+    },
+    "900 BLOCK KEOLU DR": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.379532,
+      "lng": -157.728701
+    },
+    "900 BLOCK KILANI AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.499408,
+      "lng": -158.026366
+    },
+    "900 BLOCK KINAU ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.304782,
+      "lng": -157.848907
+    },
+    "900 BLOCK KOHOU ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3244125,
+      "lng": -157.8702435
+    },
+    "900 BLOCK KOKO HEAD AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.27812,
+      "lng": -157.801295
+    },
+    "900 BLOCK LAWELAWE ST": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.2908962,
+      "lng": -157.7558793
+    },
+    "900 BLOCK LEHUA AVE": {
+      "neighborhood": "Waiau",
+      "lat": 21.391182,
+      "lng": -157.971509
+    },
+    "900 BLOCK LUEHU ST": {
+      "neighborhood": "Pearl Highlands",
+      "lat": 21.3967795,
+      "lng": -157.9701457
+    },
+    "900 BLOCK LUKEPANE AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.284991,
+      "lng": -157.814863
+    },
+    "900 BLOCK MAKAHIKI WAY": {
+      "neighborhood": "McCully",
+      "lat": 21.292498,
+      "lng": -157.82801
+    },
+    "900 BLOCK MAUNAKEA ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3114176,
+      "lng": -157.8645813
+    },
+    "900 BLOCK MAUNAWILI CIR": {
+      "neighborhood": "Maunawili",
+      "lat": 21.36616,
+      "lng": -157.766852
+    },
+    "900 BLOCK MAUNAWILI RD": {
+      "neighborhood": "Maunawili",
+      "lat": 21.375275,
+      "lng": -157.763725
+    },
+    "900 BLOCK MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.293487,
+      "lng": -157.830776
+    },
+    "900 BLOCK MOKAUEA ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.331404,
+      "lng": -157.878267
+    },
+    "900 BLOCK N NIMITZ HWY": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3372686,
+      "lng": -157.9139566
+    },
+    "900 BLOCK NIMITZ HWY": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3165436,
+      "lng": -157.8742921
+    },
+    "900 BLOCK NUUANU AVE": {
+      "neighborhood": "Chinatown",
+      "lat": 21.310362,
+      "lng": -157.863509
+    },
+    "900 BLOCK OCEAN VIEW DR": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.27661,
+      "lng": -157.798872
+    },
+    "900 BLOCK OWEN ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.336106,
+      "lng": -157.883844
+    },
+    "900 BLOCK PALM PL": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.5011759,
+      "lng": -158.0267712
+    },
+    "900 BLOCK PEACH ST": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.493706,
+      "lng": -158.024326
+    },
+    "900 BLOCK PENSACOLA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.299386,
+      "lng": -157.846321
+    },
+    "900 BLOCK PIIKOI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.298806,
+      "lng": -157.844686
+    },
+    "900 BLOCK PROSPECT ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.308359,
+      "lng": -157.847429
+    },
+    "900 BLOCK PUMEHANA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.293899,
+      "lng": -157.831924
+    },
+    "900 BLOCK QUEEN ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.298161,
+      "lng": -157.854707
+    },
+    "900 BLOCK RIVER ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3157985,
+      "lng": -157.8598181
+    },
+    "900 BLOCK ROBELLO LN": {
+      "neighborhood": "Iwilei",
+      "lat": 21.320416,
+      "lng": -157.867874
+    },
+    "900 BLOCK S BERETANIA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3041931,
+      "lng": -157.84808
+    },
+    "900 BLOCK SHERIDAN ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.297769,
+      "lng": -157.841448
+    },
+    "900 BLOCK SMITH ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3124213,
+      "lng": -157.8613956
+    },
+    "900 BLOCK SPENCER ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.307384,
+      "lng": -157.847813
+    },
+    "900 BLOCK UNIVERSITY AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2908447,
+      "lng": -157.8226409
+    },
+    "900 BLOCK VALKENBURGH ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.340825,
+      "lng": -157.929785
+    },
+    "900 BLOCK WAIAKAMILO RD": {
+      "neighborhood": "Kalihi",
+      "lat": 21.327205,
+      "lng": -157.872876
+    },
+    "900 BLOCK WAIOHINU DR": {
+      "neighborhood": "Wailupe",
+      "lat": 21.270886,
+      "lng": -157.780929
+    },
+    "900 BLOCK WILIWILI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.293062,
+      "lng": -157.829635
+    },
+    "900 BLOCK WINANT ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.327637,
+      "lng": -157.873464
+    },
+    "910000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "910100 BLOCK KALAELOA BLVD": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3346436,
+      "lng": -158.0812643
+    },
+    "910500 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "910600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "911000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "911400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "920200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "920300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "920400 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "920500 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "920700 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "920800 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
     }
   }
 }

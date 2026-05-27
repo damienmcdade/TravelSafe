@@ -1,4 +1,18 @@
 import { findArea, nearestArea, listKnownAreas, listKnownAreasSync, type KnownArea } from "../crime-data/neighborhoods";
+import { CITIES } from "@travelsafe/crime-data/cities";
+
+// v95p15 — per-city Nominatim hinting. Pre-v95p15 the geocoder
+// always hardcoded "San Diego, California" into the query string and
+// the viewbox bounded to SD County. That meant a lookup for "Times
+// Square" issued from the NYC tab returned a SD match (or none),
+// breaking Safe Route addresses for every city other than San Diego.
+// Now: route + service accept an optional citySlug; if present we
+// resolve the city's label + bbox from the CITIES registry and use
+// those instead.
+interface CityHint { label: string; state?: string; bbox: { south: number; west: number; north: number; east: number } }
+const CITY_HINT_BY_SLUG = new Map<string, CityHint>(
+  CITIES.map((c) => [c.slug, { label: c.label, bbox: c.bbox }]),
+);
 
 const SD_ZIP_TO_AREA: Record<string, string> = {
   "92101": "downtown-sd",
@@ -49,12 +63,26 @@ function fuzzyMatch(needle: string, areas: KnownArea[]): KnownArea | null {
   return best?.area ?? null;
 }
 
-async function nominatimGeocode(query: string): Promise<{ lat: number; lng: number } | null> {
+async function nominatimGeocode(query: string, citySlug?: string): Promise<{ lat: number; lng: number } | null> {
   const url = new URL("https://nominatim.openstreetmap.org/search");
-  url.searchParams.set("q", `${query}, San Diego, California`);
+  const hint = citySlug ? CITY_HINT_BY_SLUG.get(citySlug) : undefined;
+  // Scope by the active city's label + bbox when we know the city.
+  // Without a city we fall back to the previous SD-only scoping —
+  // legacy callers (Safe Route's "Use my location" path) still hit
+  // this via the SD default, and SD-resident users get the same
+  // behavior they had before.
+  const q = hint
+    ? `${query}, ${hint.label}`
+    : `${query}, San Diego, California`;
+  url.searchParams.set("q", q);
   url.searchParams.set("format", "json");
   url.searchParams.set("limit", "1");
-  url.searchParams.set("viewbox", "-117.6,33.5,-116.0,32.5");
+  if (hint) {
+    // Nominatim viewbox is "left,top,right,bottom" (lng/lat pairs).
+    url.searchParams.set("viewbox", `${hint.bbox.west},${hint.bbox.north},${hint.bbox.east},${hint.bbox.south}`);
+  } else {
+    url.searchParams.set("viewbox", "-117.6,33.5,-116.0,32.5");
+  }
   url.searchParams.set("bounded", "1");
   try {
     const res = await fetch(url, {
@@ -69,9 +97,28 @@ async function nominatimGeocode(query: string): Promise<{ lat: number; lng: numb
   }
 }
 
-export async function lookupLocation(q: string): Promise<LookupResult | null> {
+export async function lookupLocation(q: string, citySlug?: string): Promise<LookupResult | null> {
   const trimmed = q.trim();
   if (!trimmed) return null;
+
+  // v95p15 — geocode-first when the query carries enough signal to
+  // be a real place ("X, City" with a comma, OR 3+ words). Pre-v95p15
+  // the fuzzy path always ran first for non-address queries and
+  // mis-matched things like "Balboa Park San Diego" → "North Park"
+  // because both contain the token "park". Geocoding the literal
+  // query against the city-scoped Nominatim viewbox is unambiguous.
+  const hasComma = trimmed.includes(",");
+  const wordCount = trimmed.split(/\s+/).filter(Boolean).length;
+  const geocodeFirst = hasComma || wordCount >= 3;
+  if (geocodeFirst) {
+    const geo = await nominatimGeocode(trimmed, citySlug);
+    if (geo) {
+      let areas = listKnownAreasSync();
+      if (areas.length < 50) areas = await listKnownAreas().catch(() => areas);
+      const area = nearestArea(geo);
+      if (area) return { area, matchedVia: "geocode", rawQuery: trimmed };
+    }
+  }
 
   // Try the cheap matches first BEFORE doing the heavy 30-adapter
   // listKnownAreas() fan-out. exact + zip + nominatim hit synchronous
@@ -98,7 +145,7 @@ export async function lookupLocation(q: string): Promise<LookupResult | null> {
     // Geocode the ZIP centroid via Nominatim — works for every US
     // ZIP without us maintaining a 30-city map. The nearestArea snap
     // below ensures the result is one of our supported neighborhoods.
-    const geo = await nominatimGeocode(`${z} USA`);
+    const geo = await nominatimGeocode(`${z} USA`, citySlug);
     if (geo) {
       // Ensure discovered-area list is fully populated before snap.
       const areas = listKnownAreasSync();
@@ -136,7 +183,7 @@ export async function lookupLocation(q: string): Promise<LookupResult | null> {
     if (fuzzy) return { area: fuzzy, matchedVia: "fuzzy", rawQuery: trimmed };
   }
 
-  const geo = await nominatimGeocode(trimmed);
+  const geo = await nominatimGeocode(trimmed, citySlug);
   if (geo) {
     // Make sure we have a full discovered-area list so the snap-to-
     // nearest math has the city's polygons to compare against.

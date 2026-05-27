@@ -230,6 +230,7 @@ export default function SafeRoutePage() {
               <EndpointPicker
                 label="From"
                 cityLabel={city.label}
+                citySlug={city.slug}
                 options={cityAreas}
                 value={from}
                 onPick={pickFrom}
@@ -238,6 +239,7 @@ export default function SafeRoutePage() {
               <EndpointPicker
                 label="To"
                 cityLabel={city.label}
+                citySlug={city.slug}
                 options={cityAreas.filter((a) => a.slug !== from?.slug)}
                 value={to}
                 onPick={setTo}
@@ -299,7 +301,7 @@ export default function SafeRoutePage() {
           /geo/lookup which does Nominatim geocoding then nearest-area
           snap). Lets a user ask "what's the situation around 1600
           Pennsylvania Ave?" without leaving the route planner. */}
-      <NeighborhoodLookupCard cityLabel={city.label} onApplyAsFrom={pickFrom} cityAreas={cityAreas} />
+      <NeighborhoodLookupCard cityLabel={city.label} citySlug={city.slug} onApplyAsFrom={pickFrom} cityAreas={cityAreas} />
 
       {result && (
         <>
@@ -538,10 +540,11 @@ interface GeoLookupResp {
 }
 
 function EndpointPicker({
-  label, cityLabel, options, value, onPick, showFindMyLocation = false,
+  label, cityLabel, citySlug, options, value, onPick, showFindMyLocation = false,
 }: {
   label: "From" | "To";
   cityLabel: string;
+  citySlug: string;
   options: Area[];
   value: Area | null;
   onPick: (a: Area | null) => void;
@@ -556,7 +559,10 @@ function EndpointPicker({
     if (!q.trim()) return;
     setBusy(true); setHint(null);
     try {
-      const r = await api<GeoLookupResp>(`/geo/lookup?q=${encodeURIComponent(q)}`);
+      // v95p15 — pass citySlug so Nominatim scopes by the selected
+      // city's label + bbox. Pre-v95p15 the lookup defaulted to SD
+      // and silently snapped non-SD addresses to wrong neighborhoods.
+      const r = await api<GeoLookupResp>(`/geo/lookup?q=${encodeURIComponent(q)}&city=${encodeURIComponent(citySlug)}`);
       onPick(r.area);
       // Telegraph the snap-to-area so the user knows we're routing
       // against the nearest supported neighborhood, not the literal
@@ -657,10 +663,12 @@ function EndpointPicker({
 /// result back into the route planner above.
 function NeighborhoodLookupCard({
   cityLabel,
+  citySlug,
   cityAreas,
   onApplyAsFrom,
 }: {
   cityLabel: string;
+  citySlug: string;
   cityAreas: Area[];
   onApplyAsFrom: (a: Area) => void;
 }) {
@@ -673,7 +681,7 @@ function NeighborhoodLookupCard({
     if (!q.trim()) return;
     setBusy(true); setError(null); setResult(null);
     try {
-      const r = await api<GeoLookupResp>(`/geo/lookup?q=${encodeURIComponent(q)}`);
+      const r = await api<GeoLookupResp>(`/geo/lookup?q=${encodeURIComponent(q)}&city=${encodeURIComponent(citySlug)}`);
       setResult(r);
     } catch (e) {
       setError((e as Error).message);

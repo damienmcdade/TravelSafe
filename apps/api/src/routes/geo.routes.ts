@@ -9,7 +9,11 @@ export const geoRouter = Router();
 geoRouter.get("/lookup", async (req, res, next) => {
   try {
     const q = z.string().min(1).max(200).parse(req.query.q ?? "");
-    const result = await lookupLocation(q);
+    // v95p15 — optional ?city= so Nominatim scopes by selected city.
+    const citySlug = typeof req.query.city === "string" && req.query.city.length > 0
+      ? z.string().min(1).max(60).parse(req.query.city)
+      : undefined;
+    const result = await lookupLocation(q, citySlug);
     if (!result) return res.status(404).json({ error: "no_match" });
     res.json(result);
   } catch (err) {

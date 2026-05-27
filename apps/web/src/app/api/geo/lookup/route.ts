@@ -45,7 +45,11 @@ export const GET = wrap(async (req: NextRequest) => {
   const q = sp.get("q") ?? "";
   if (!q.trim()) throw new HttpError(400, "missing_query", "Pass either `q` or `lat`+`lng`");
   if (q.length > 200) throw new HttpError(400, "query_too_long");
-  const result = await lookupLocation(q);
+  // v95p15 — optional ?city= so Nominatim + fuzzy match scope to the
+  // user's selected city. Without it, the lookup falls back to the
+  // legacy SD-only scope (back-compat).
+  const citySlug = sp.get("city") || undefined;
+  const result = await lookupLocation(q, citySlug);
   if (!result) return NextResponse.json({ error: "no_match" }, { status: 404 });
   return NextResponse.json(result);
 });
