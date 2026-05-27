@@ -6,7 +6,14 @@ import { FBI_DATA_YEAR, FBI_DATA_LABEL } from "@/lib/data-vintage";
 /// then cached at Vercel's edge for `revalidate` seconds. Each share of a
 /// city URL gets a tailored social card rather than the generic site
 /// fallback.
-export const runtime = "edge";
+// v95p25 — was "edge" but the bundle now includes the Honolulu
+// 4124-address geocode JSON (~300KB) via the transitive
+// cityBySlug → @travelsafe/crime-data/cities → all adapters chain,
+// pushing the Edge function size over Vercel's 2 MB limit (build
+// errored at 2.01 MB). nodejs runtime has a much larger limit (~50
+// MB) and ImageResponse works there too. Image gen doesn't need
+// edge — it caches at Vercel's edge regardless via `revalidate`.
+export const runtime = "nodejs";
 export const revalidate = 3600;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";

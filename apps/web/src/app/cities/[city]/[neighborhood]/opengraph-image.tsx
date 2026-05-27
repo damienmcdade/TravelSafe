@@ -13,7 +13,11 @@ import { FBI_DATA_YEAR, FBI_DATA_LABEL } from "@/lib/data-vintage";
 /// the Node-runtime API route). Falls back to citywide grade when the
 /// area-level lookup returns 404 or any other error so cards still
 /// render for cold-cache or unknown-slug cases.
-export const runtime = "edge";
+// v95p25 — same fix as cities/[city]/opengraph-image. Honolulu
+// JSON pushes the bundle past Edge's 2 MB limit. nodejs runtime
+// has headroom (~50 MB) and image gen still caches at the edge via
+// `revalidate`.
+export const runtime = "nodejs";
 export const revalidate = 3600;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
