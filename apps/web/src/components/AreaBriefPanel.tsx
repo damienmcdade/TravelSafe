@@ -33,11 +33,13 @@ export function AreaBriefPanel({
     shouldFetch ? `/ai/area-brief?area=${encodeURIComponent(areaSlug!)}` : null,
     [areaSlug ?? ""],
   );
-  // v67 — collapsed-by-default per user directive that long cards
-  // should collapse on landing. Surface still shows the headline +
-  // toggle so users see the card exists; the multi-sentence body
-  // shows only on click.
-  const [expanded, setExpanded] = useState(false);
+  // v95p17 — was collapsed-by-default (v67). Users reported "AI
+  // summary not working" — the collapse hid the brief content
+  // entirely and the disclosure-triangle affordance wasn't strong
+  // enough to telegraph it was clickable. Expanded-by-default
+  // surfaces the brief inline so it does the work it claims to.
+  // The toggle still works for users who want to dismiss it.
+  const [expanded, setExpanded] = useState(true);
 
   // Self-fetch path: AI is up but this area's brief is null = don't
   // render the disappearing trick that v66 fixed — surface the panel
