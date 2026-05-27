@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CommunitySafe data-extraction rules (Android 12+, API 31+).
+
+  Per Android's data-extraction-rules spec (https://developer.android.com
+  /guide/topics/data/autobackup#XMLSyntax) we deny BOTH the cloud-backup
+  and device-to-device (D2D) extraction surfaces. Reasoning:
+
+    - Cloud backup (Google Drive) would replicate the user's signed-in
+      session token, push subscription, and any locally-cached
+      check-in / live-share state to a third-party storage system
+      keyed to the user's Google account. Even when encrypted in
+      transit and at rest by Google, this expands our trust boundary
+      beyond the user's device.
+
+    - D2D transfer would copy the same material to a new device.
+      The user's signed-in session should re-authenticate on a new
+      device rather than silently move with the OS image.
+
+  If a future feature genuinely needs Auto Backup (e.g. user-authored
+  drafts), add an <include> rule with a domain narrower than full-disk.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

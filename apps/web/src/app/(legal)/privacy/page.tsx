@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "CommunitySafe privacy practices — what's stored on your device, what's stored on our servers when you create a Safety account, what's transmitted to third parties, and how to control it.",
 };
 
-const LAST_UPDATED = "2026-05-23";
+const LAST_UPDATED = "2026-05-26";
 
 export default function PrivacyPage() {
   return (
@@ -66,6 +66,17 @@ export default function PrivacyPage() {
           <li>Anonymous rate-limiting state: a short-lived in-memory counter keyed by IP+endpoint to throttle abuse. Not persisted.</li>
         </ul>
         <p>We do not sell, license, or share user data with third parties for advertising or marketing.</p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Do Not Sell or Share My Personal Information (CCPA / CPRA)</h2>
+        <p>California Civil Code §1798.135 requires every business that &quot;sells&quot; or &quot;shares&quot; personal information to surface a clear opt-out link. CommunitySafe does not sell or share personal information for cross-context behavioral advertising, monetary consideration, or any equivalent benefit. There is consequently no opt-out flow to surface — but for transparency we still affirm the position here:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>We have not sold or shared personal information in the preceding 12 months.</li>
+          <li>We have no contractual relationship that would permit a third party to sell or share CommunitySafe-collected personal information on our behalf.</li>
+          <li>If this changes in the future, this page will surface a working &quot;Do Not Sell or Share&quot; control before any such sale or share occurs.</li>
+        </ul>
+        <p>California residents can also exercise the right to limit the use of sensitive personal information; CommunitySafe does not process the categories California enumerates as sensitive (precise location is treated as personal — see Geolocation in the section above — and is only retained for the duration of an active Check-In or Live Share session you arm yourself).</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">

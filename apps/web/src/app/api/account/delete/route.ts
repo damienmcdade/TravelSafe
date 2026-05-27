@@ -3,6 +3,7 @@ import { z } from "zod";
 import { wrap } from "@/server/lib/http";
 import { requireSession } from "@/server/lib/auth";
 import { deleteAccount } from "@/server/services/account";
+import { writeSecurityAudit } from "@/server/lib/audit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,5 +32,11 @@ export const POST = wrap(async (req: NextRequest) => {
     );
   }
   const result = await deleteAccount(session.uid);
+  writeSecurityAudit({
+    event: "account.delete",
+    userId: session.uid,
+    email: session.email,
+    req,
+  });
   return NextResponse.json(result);
 });

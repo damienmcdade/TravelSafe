@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  CommunitySafe Auto Backup rules (Android 6-11 fallback for the
+  data-extraction-rules above). Same posture: deny full-disk replication
+  to Google Drive. See data_extraction_rules.xml for rationale.
+-->
+<full-backup-content>
+    <exclude domain="root" />
+    <exclude domain="file" />
+    <exclude domain="database" />
+    <exclude domain="sharedpref" />
+    <exclude domain="external" />
+</full-backup-content>

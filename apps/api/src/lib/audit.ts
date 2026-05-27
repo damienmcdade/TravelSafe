@@ -10,8 +10,14 @@ export type SecurityEvent =
   | "auth.login.fail.bad_password"
   | "auth.login.fail.locked"
   | "auth.login.fail.banned"
+  | "auth.login.fail.mfa"
   | "auth.register"
   | "auth.token.refresh"
+  // v95p10 — MFA lifecycle (DISA STIG IA-2(1) requires audit of
+  // authenticator-management events alongside auth events).
+  | "auth.mfa.enroll"
+  | "auth.mfa.enable"
+  | "auth.mfa.disable"
   | "account.export"
   | "account.delete"
   | "moderation.review"

@@ -92,6 +92,7 @@ authRouter.post("/logout", requireAuth, async (req, res, next) => {
 authRouter.post("/mfa/enroll", requireAuth, async (req, res, next) => {
   try {
     const provisional = generateProvisional(req.session!.email);
+    writeSecurityAudit({ event: "auth.mfa.enroll", userId: req.session!.uid, email: req.session!.email, req });
     res.json(provisional);
   } catch (err) {
     next(err);
@@ -107,6 +108,7 @@ authRouter.post("/mfa/verify-enroll", requireAuth, authLimiter, async (req, res,
       code: z.string().regex(/^\d{6}$/),
     }).parse(req.body);
     await verifyAndEnableMfa(req.session!.uid, secret, code);
+    writeSecurityAudit({ event: "auth.mfa.enable", userId: req.session!.uid, email: req.session!.email, req });
     res.json({ ok: true });
   } catch (err) {
     next(err);
@@ -135,6 +137,7 @@ authRouter.post("/mfa/disable", requireAuth, authLimiter, async (req, res, next)
   try {
     const { code } = z.object({ code: z.string().regex(/^\d{6}$/) }).parse(req.body);
     await disableMfa(req.session!.uid, code);
+    writeSecurityAudit({ event: "auth.mfa.disable", userId: req.session!.uid, email: req.session!.email, req });
     res.json({ ok: true });
   } catch (err) {
     next(err);
