@@ -57,16 +57,13 @@ import { CITY_POPULATION, POPULATION_VINTAGE } from "./population.js";
 // for general crime feeds. A dataConfidence note in the response
 // surfaces the calibration to users.
 const CFS_CALIBRATION: Record<string, number> = {
-  // Cleveland 0.35 → 0.55 (v26). 0.35 was too aggressive: it pulled
-  // violent from a raw 2743/100k down to 960/100k, under the FBI
-  // baseline of 1360 → misleading Grade A. 0.55 lands violent at
-  // ~1509/100k (~1.11× baseline, Grade C — Cleveland is genuinely
-  // higher-crime than national average, that's accurate). Property
-  // remains under-reported even at 0.55 (~985 vs FBI 3949) which
-  // suggests Cleveland's CFS feed structurally publishes fewer
-  // property dispatches than violent — separate investigation
-  // needed before tuning further. Tracked in #154.
-  "cleveland":     0.55,
+  // Cleveland REMOVED in v95p14. The Cleveland adapter switched from
+  // CAD_Police (Calls for Service, dispatch-keyword-matched) to
+  // Crime_Incidents_P1RMS (CDP's NIBRS Part-1 incident reports, with
+  // IncidentDesc pre-classified by CDP). The 0.55 CFS scale was a
+  // workaround for the keyword-matching imprecision; now that the
+  // upstream itself pre-classifies to NIBRS Part-1, the rate is
+  // directly comparable to the FBI baseline. No scale needed.
   // New Orleans 0.40 → 0.80 (v28). Same pattern as Cleveland —
   // 0.40 scaled NOPD's actual rate (~698/100k violent) down to
   // 279/100k, ~5× under the FBI baseline of 1361. 0.80 lands

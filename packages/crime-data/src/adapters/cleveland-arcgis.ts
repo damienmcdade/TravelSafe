@@ -26,133 +26,131 @@ const STATIC_CLEVELAND_AREAS: KnownArea[] = clevelandPolygons.map((p) => {
   };
 });
 
-// Cleveland — Cleveland Division of Police Calls for Service (CAD) on
-// services3.arcgis.com (owner: opendataCLE). The feed is dispatched CFS,
-// not closed reports, so it includes administrative records ("CPOP FOLLOW
-// UP", "PARK, WALK & TALK", "TRAFFIC STOP", "ALARM - BURGLAR"). We keep
-// only the rows that represent an actual citizen report or officer-
-// initiated incident relating to a crime (assault/property/society
-// signals) — the rest are filtered out at ingest so the per-neighborhood
-// counts read as comparable to other cities' NIBRS-only feeds.
+// Cleveland — Crime_Incidents_P1RMS on services3.arcgis.com
+// (owner: opendataCLE). This is CDP's published Part-1 Records
+// Management System feed — NIBRS-classified incident reports, NOT
+// raw CAD dispatches.
 //
-// Cleveland publishes 33 named neighborhoods (Statistical Planning
-// Areas) and we use them directly. Lat/lng on every retained row.
-// No demographic columns are published on this layer.
+// v95p14 — switched from CAD_Police (Calls for Service) to
+// Crime_Incidents_P1RMS. The CAD layer was a wall of dispatch codes
+// requiring keyword matching to approximate NIBRS classes; after
+// every cycle of broadening/tightening the keyword list, the
+// adapter still landed 15.8× under FBI baseline (under-count guard
+// suppressed grade to N/A). P1RMS solves this at the source: each
+// row carries an `IncidentDesc` field that already maps directly
+// to NIBRS Part-1 categories ("Aggravated Assault", "Robbery",
+// "Burglary/Breaking and Entering", "Motor Vehicle Theft", "All
+// Other Larceny", etc.) plus the canonical NEIGHBORHOOD label
+// (35 statistical planning areas, matches our static polygon set).
+// Removed from CFS_CALIBRATION in safety-score.ts since this is
+// NIBRS data, not CFS dispatches.
+//
+// 44,821 rows total (~2 years of Part-1 incidents at CDP's volume).
 
-const BASE = "https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/CAD_Police/FeatureServer/0/query";
+const BASE = "https://services3.arcgis.com/dty2kHktVXHrqO8i/arcgis/rest/services/Crime_Incidents_P1RMS/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-// 30 pages × 2,000 = 60,000 rows. Cleveland's CFS feed runs ~1,000
-// incidents/day; at the earlier 10k-row limit the cache spanned
-// ~10 days, which safety-score then annualized over 365 days with
-// an absurd 36× multiplier — citywide rates got noisy enough that
-// grade-flipping was a regular occurrence on cache refreshes.
-// 60k rows ≈ 60 days, comfortably above the 30-day "low confidence"
-// trip-wire and stable enough that grades don't ping-pong.
-// v69 followup-4 — tried 4k/15-pages experiment but Cleveland ArcGIS
-// times out 2k+ requests under load; keeping the proven config.
-const PAGES = 30;
+// 25 pages × 2k = 50k records — covers the whole P1RMS table with
+// headroom. The dataset is bounded (CDP backfills monthly) so we
+// don't need the 60-page width the CFS feed required.
+const PAGES = 25;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
 interface CleRow {
-  IncidentNumber?: string;
-  eid?: string;
-  IncidentDate?: number;
-  IncidentTypeDescription?: string;
-  DispositionDescription1?: string;
-  address?: string;
-  neighborhood?: string;
-  police_district?: string;
-  ward_2026?: string;
-  latitude?: number;
-  longitude?: number;
+  PrimaryKey?: string;
+  CaseNumber?: string;
+  District?: string;
+  IncidentDesc?: string;        // NIBRS-style class, e.g. "Aggravated Assault"
+  StatDesc?: string;             // Ohio statutory description
+  ReportedDate?: number;         // epoch ms
+  OffenseDate?: number;          // epoch ms
+  NEIGHBORHOOD?: string;
+  WARD_2026?: string;
+  Address_Public?: string;
 }
 
-// Cleveland CFS uses verbose all-caps descriptions. Group them into NIBRS
-// categories with explicit substring lists so the user-facing card mix is
-// meaningful and not dominated by administrative entries.
+// v95p14 — Cleveland's P1RMS layer pre-classifies each row into a
+// FBI NIBRS Part-1 incident type via IncidentDesc. Map those
+// directly; no keyword matching guesswork needed.
 //
-// Tightened 2026-05-23: dropped CFS-only categories that were inflating
-// Cleveland's citywide ratio to 27× national. Removed generic bucket
-// labels ("PERSON CRIME", "PROPERTY CRIME" — these are CDP's own
-// category headers, not specific offenses), MH dispatches (CRISIS
-// INTERVENTION), sensor events (SHOTSPOTTER alone), and broad public-
-// order calls (DISTURBANCE, NUISANCE) that don't map to NIBRS reports.
-// v89 — expanded Cleveland keyword filters. Pre-v89 the adapter was
-// reporting violent rates 17.9× under the FBI baseline because narrow
-// keyword sets missed many real Part-1 dispatches: "PERSON THREATENING
-// W/WEAPON", "BATTERY", "PHYSICAL DISPUTE", "PROPERTY CRIME",
-// "AUTO BREAK-IN", "BURGLARY ATTEMPT", etc. Broadening these closes
-// most of the gap while still excluding dispatch-administrative codes.
-const PERSONS_KEYS = [
-  "ASSAULT", "BATTERY", "FIGHT", "PHYSICAL DISPUTE",
-  "THREATEN", "THREATS", "DOM VIOL", "FAMILY TROUBLE", "VIOLENT FAMILY",
-  "ROBBERY", "HOMICIDE", "MURDER", "MANSLAUGHTER",
-  "KIDNAP", "ABDUCT", "HOSTAGE",
-  "PERSON THREAT", "INTIMIDAT", "MENACING",
-  "RAPE", "SEX OFFENSE", "SEX CRIME", "SEXUAL", "STALKING",
-  "AGGRAVATED", "SHOOTING",
-];
-const PROPERTY_KEYS = [
-  "BURGLAR", "B&E", "BREAKING ENTERING", "BREAK IN",
-  "THEFT", "LARC", "STOLEN", "AUTO RECOVERY", "AUTO BREAK", "AUTO STRIP",
-  "MOTOR VEHICLE THEFT", "GTA", "GRAND THEFT", "PETTY THEFT",
-  "DAMAGE", "VANDAL", "MISCHIEF",
-  "ARSON",
-  "FRAUD", "FORGERY", "EMBEZ", "COUNTERFEIT",
-  "SHOPLIFT",
-  "PROPERTY CRIME",
-];
-const SOCIETY_KEYS = [
-  "WEAPON", "DRUG", "NARCOTIC", "TRESPASS", "DISORDERLY", "OUI", "DUI",
-];
-// Anything that doesn't match the three lists above is administrative
-// (officer-initiated patrol, follow-ups, traffic stops, alarms, welfare
-// checks, MH responses) and is filtered out at ingest.
-function classify(desc: string): CrimeCategory | null {
-  const t = desc.toUpperCase();
-  if (PERSONS_KEYS.some((k) => t.includes(k))) return CrimeCategory.PERSONS;
-  if (PROPERTY_KEYS.some((k) => t.includes(k))) return CrimeCategory.PROPERTY;
-  if (SOCIETY_KEYS.some((k) => t.includes(k))) return CrimeCategory.SOCIETY;
-  return null;
+// PERSONS Part-1 (UCR Violent): Aggravated Assault, Robbery,
+// Murder/Nonnegligent Manslaughter, Rape.
+// PROPERTY Part-1 (UCR Property): Burglary/Breaking and Entering,
+// Larceny (any subtype), Motor Vehicle Theft, Arson.
+// Everything else (Simple Assault, Intimidation, Drug Equipment,
+// Weapon Law Violations, Family Offenses, DUI, etc.) → SOCIETY,
+// which the safety-score doesn't grade against.
+const PERSONS_NIBRS: ReadonlySet<string> = new Set([
+  "Aggravated Assault",
+  "Robbery",
+  "Murder/Nonnegligent Manslaughter",
+  "Rape",
+  "Justifiable Homicide",
+  "Negligent Manslaughter",
+  "Kidnapping/Abduction",
+  "Forcible Rape",
+  "Sex Offenses",
+]);
+const PROPERTY_NIBRS: ReadonlySet<string> = new Set([
+  "Burglary/Breaking and Entering",
+  "Motor Vehicle Theft",
+  "All Other Larceny",
+  "Theft From Building",
+  "Theft From Motor Vehicle",
+  "Theft of Motor Vehicle Parts or Accessories",
+  "Shoplifting",
+  "Pocket-Picking",
+  "Purse-Snatching",
+  "Arson",
+]);
+
+function classify(incidentDesc: string | undefined): CrimeCategory {
+  if (!incidentDesc) return CrimeCategory.SOCIETY;
+  const trimmed = incidentDesc.trim();
+  if (PERSONS_NIBRS.has(trimmed)) return CrimeCategory.PERSONS;
+  if (PROPERTY_NIBRS.has(trimmed)) return CrimeCategory.PROPERTY;
+  return CrimeCategory.SOCIETY;
 }
 
 const PROVENANCE: DataProvenance = {
-  source: "Cleveland Division of Police — Calls for Service (City of Cleveland Open Data, ArcGIS Feature Server)",
-  datasetUrl: "https://data.clevelandohio.gov/datasets/clevelandgis::police-calls-for-service",
-  recency: "Refreshed near-daily by CDP; includes some same-day dispatches",
+  source: "Cleveland Division of Police — Part-1 Crime Incidents (NIBRS RMS, City of Cleveland Open Data)",
+  datasetUrl: "https://opendata.clevelandohio.gov/datasets/clevelandgis::crime-incidents",
+  recency: "Refreshed regularly by CDP from the Records Management System",
   granularity: "neighborhood",
   disclaimer:
-    "These are Cleveland Police Calls for Service (dispatched calls) rather than " +
-    "closed NIBRS reports. CommunitySafe filters out administrative dispatches " +
-    "(traffic stops, alarms, follow-ups, community-engagement entries) and keeps " +
-    "only rows that represent a real reported persons/property/society offense. " +
-    "Some incidents may later be reclassified or unfounded by CDP investigators.",
+    "These are Cleveland Division of Police Part-1 Crime Incident records — the " +
+    "same FBI NIBRS-classified reports CDP submits to UCR. CommunitySafe aggregates " +
+    "by CDP's Statistical Planning Area (NEIGHBORHOOD field) and reports the violent " +
+    "(Aggravated Assault / Robbery / Murder / Rape) and property (Burglary / Larceny " +
+    "/ Motor Vehicle Theft / Arson) totals. Some incidents may be reclassified or " +
+    "unfounded by CDP investigators after publication.",
 };
 
-async function fetchPage(offset: number): Promise<CleRow[]> {
+interface CleFeature {
+  attributes: CleRow;
+  geometry?: { x?: number; y?: number };
+}
+
+async function fetchPage(offset: number): Promise<CleFeature[]> {
   const url = new URL(BASE);
-  url.searchParams.set("where", "latitude IS NOT NULL AND latitude <> 0 AND neighborhood IS NOT NULL");
-  url.searchParams.set("outFields", "IncidentNumber,eid,IncidentDate,IncidentTypeDescription,DispositionDescription1,address,neighborhood,police_district,ward_2026,latitude,longitude");
-  url.searchParams.set("returnGeometry", "false");
-  // v78 — switched orderBy from "IncidentDate DESC" to "OBJECTID DESC".
-  // Cleveland's ArcGIS endpoint started returning a silent timeout/400
-  // when paginating with orderBy on the Date field (probed directly:
-  // every paginated request hung). OBJECTID is monotonically assigned
-  // at insert time, so DESC still surfaces the freshest rows first.
-  // Lost: strict chronological ordering across late-arriving back-fills,
-  // which is negligible for our 30-day-window safety scoring.
+  url.searchParams.set("where", "NEIGHBORHOOD IS NOT NULL");
+  url.searchParams.set("outFields", "PrimaryKey,CaseNumber,District,IncidentDesc,StatDesc,ReportedDate,OffenseDate,NEIGHBORHOOD,WARD_2026,Address_Public");
+  url.searchParams.set("returnGeometry", "true");
+  url.searchParams.set("outSR", "4326");
+  // Same OBJECTID DESC sort rationale as the prior CAD layer — Esri
+  // pagination on a non-unique date column under-counts.
   url.searchParams.set("orderByFields", "OBJECTID DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
-  url.searchParams.set("cacheHint", "true"); // v87 — Esri edge cache
+  url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/CommunitySafe)" },
   });
   if (!res.ok) throw new Error(`Cleveland ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: CleRow }> };
-  return (body.features ?? []).map((f) => f.attributes);
+  const body = await res.json() as { features?: CleFeature[]; error?: { code?: number; message?: string } };
+  if (body.error) throw new Error(`Cleveland ArcGIS error ${body.error.code}: ${body.error.message}`);
+  return body.features ?? [];
 }
 
 // v63 — bounded concurrency. Cleveland's ArcGIS endpoint rate-limits
@@ -177,7 +175,10 @@ async function fetchPagesBounded<T>(
     while (true) {
       const idx = cursor++;
       if (idx >= offsets.length) return;
-      results[idx] = await fetcher(offsets[idx]).catch(() => [] as T[]);
+      results[idx] = await fetcher(offsets[idx]).catch((err) => {
+        console.warn(`[cle] page offset=${offsets[idx]} failed: ${(err as Error).message}`);
+        return [] as T[];
+      });
     }
   });
   await Promise.all(workers);
@@ -185,28 +186,30 @@ async function fetchPagesBounded<T>(
 }
 
 async function fetchCleveland(): Promise<Incident[]> {
-  // Concurrency tuning history: at 30 (all-parallel) every page
-  // returned empty (rate-limit). At 6 the host throttled mid-cycle
-  // and we collected fewer rows than at 4. 4 is the sweet spot
-  // (~5min cold, ~9.8k rows). The warm-worker's 4-min interval
-  // has an inFlight guard so the slight overlap doesn't compound.
-  const pages = await fetchPagesBounded<CleRow>(PAGES, PAGE_SIZE, fetchPage, 4);
-  const rows = pages.flat();
+  // Same concurrency posture as the prior layer; Cleveland's host
+  // throttles parallel bursts above 4.
+  const pages = await fetchPagesBounded<CleFeature>(PAGES, PAGE_SIZE, fetchPage, 4);
+  const features = pages.flat();
   const out: Incident[] = [];
-  for (const r of rows) {
-    const desc = r.IncidentTypeDescription?.trim() ?? "";
-    const cat = classify(desc);
-    if (cat == null) continue;
+  for (const f of features) {
+    const r = f.attributes;
+    const desc = (r.IncidentDesc ?? "").trim();
+    // Skip rows with no valid timestamp (data quality on this layer).
+    const ts = r.ReportedDate ?? r.OffenseDate;
+    if (!ts) continue;
+    // Skip the "No Crime" / "-" placeholder rows — these are case
+    // entries that CDP later marked as not actually criminal.
+    if (!desc || desc === "-" || desc.toLowerCase() === "no crime") continue;
     out.push({
-      id: `cle-${r.eid ?? r.IncidentNumber ?? out.length}`,
-      area: r.neighborhood?.trim() || "Unknown",
-      occurredAt: r.IncidentDate ? new Date(r.IncidentDate).toISOString() : new Date(0).toISOString(),
-      nibrsCategory: cat,
+      id: `cle-${r.PrimaryKey ?? r.CaseNumber ?? out.length}`,
+      area: r.NEIGHBORHOOD?.trim() || "Unknown",
+      occurredAt: new Date(ts).toISOString(),
+      nibrsCategory: classify(desc),
       ibrOffenseDescription: titleCaseOffense(desc),
-      beat: r.police_district ? `District ${r.police_district}` : null,
+      beat: r.District ? `District ${r.District}` : null,
       blockLabel: undefined,
-      lat: typeof r.latitude === "number" && r.latitude !== 0 ? r.latitude : undefined,
-      lng: typeof r.longitude === "number" && r.longitude !== 0 ? r.longitude : undefined,
+      lat: typeof f.geometry?.y === "number" && f.geometry.y !== 0 ? f.geometry.y : undefined,
+      lng: typeof f.geometry?.x === "number" && f.geometry.x !== 0 ? f.geometry.x : undefined,
     });
   }
   return out;

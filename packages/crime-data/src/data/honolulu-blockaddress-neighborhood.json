@@ -1,47 +1,71 @@
 {
-  "generatedAt": "2026-05-27T00:34:48.570Z",
+  "generatedAt": "2026-05-27T00:43:57.224Z",
   "source": "OpenStreetMap Nominatim (https://nominatim.openstreetmap.org/)",
-  "addressCount": 1761,
-  "neighborhoodCount": 77,
+  "addressCount": 2039,
+  "neighborhoodCount": 82,
   "neighborhoods": [
     {
       "name": "McCully",
-      "count": 137,
+      "count": 161,
       "centroid": {
-        "lat": 21.293625428467152,
-        "lng": -157.8296441291971
+        "lat": 21.2930723,
+        "lng": -157.82967876335408
       }
     },
     {
       "name": "Hawaii Capital Historic District",
-      "count": 92,
+      "count": 104,
       "centroid": {
-        "lat": 21.309980266304347,
-        "lng": -157.85791982173913
+        "lat": 21.30932402403846,
+        "lng": -157.85804324134614
       }
     },
     {
       "name": "Kapahulu",
-      "count": 89,
+      "count": 103,
       "centroid": {
-        "lat": 21.27930577977528,
-        "lng": -157.81436502584273
+        "lat": 21.27956823786408,
+        "lng": -157.81442872330106
       }
     },
     {
       "name": "Liliha",
+      "count": 82,
+      "centroid": {
+        "lat": 21.326372358536585,
+        "lng": -157.85920624756096
+      }
+    },
+    {
+      "name": "Makiki Kai",
       "count": 73,
       "centroid": {
-        "lat": 21.32642628767123,
-        "lng": -157.85931822739724
+        "lat": 21.30399155890411,
+        "lng": -157.84646652191782
       }
     },
     {
       "name": "Waikīkī",
-      "count": 71,
+      "count": 72,
       "centroid": {
-        "lat": 21.279163869014084,
-        "lng": -157.8266953760563
+        "lat": 21.279250968055557,
+        "lng": -157.8266166625
+      }
+    },
+    {
+      "name": "Enchanted Lake",
+      "count": 67,
+      "centroid": {
+        "lat": 21.38784576716417,
+        "lng": -157.73867014029852
+      }
+    },
+    {
+      "name": "Wahiawa",
+      "count": 66,
+      "centroid": {
+        "lat": 21.499074056060604,
+        "lng": -158.02188025151514
       }
     },
     {
@@ -53,19 +77,19 @@
       }
     },
     {
-      "name": "Wahiawa",
-      "count": 62,
+      "name": "Kalihi Kai",
+      "count": 61,
       "centroid": {
-        "lat": 21.49918843064516,
-        "lng": -158.02149383225807
+        "lat": 21.327850059016402,
+        "lng": -157.88225309508192
       }
     },
     {
-      "name": "Makiki Kai",
-      "count": 61,
+      "name": "Iwilei",
+      "count": 60,
       "centroid": {
-        "lat": 21.303640409836063,
-        "lng": -157.84570163442623
+        "lat": 21.321573836666666,
+        "lng": -157.8689902016667
       }
     },
     {
@@ -85,67 +109,51 @@
       }
     },
     {
-      "name": "Enchanted Lake",
-      "count": 58,
+      "name": "Pawaa",
+      "count": 52,
       "centroid": {
-        "lat": 21.387153541379305,
-        "lng": -157.73831798793103
-      }
-    },
-    {
-      "name": "Kalihi Kai",
-      "count": 50,
-      "centroid": {
-        "lat": 21.326974702000008,
-        "lng": -157.88239699
+        "lat": 21.296841244230773,
+        "lng": -157.84013756923076
       }
     },
     {
       "name": "Āliamanu",
-      "count": 47,
+      "count": 50,
       "centroid": {
-        "lat": 21.352874404255317,
-        "lng": -157.92850322553195
-      }
-    },
-    {
-      "name": "Iwilei",
-      "count": 43,
-      "centroid": {
-        "lat": 21.321816395348836,
-        "lng": -157.86909629999997
+        "lat": 21.352074863999995,
+        "lng": -157.92888474200004
       }
     },
     {
       "name": "Mapunapuna",
-      "count": 41,
+      "count": 50,
       "centroid": {
-        "lat": 21.338545621951216,
-        "lng": -157.90149469512193
+        "lat": 21.338574912,
+        "lng": -157.90153935399996
       }
     },
     {
       "name": "Kaimukī",
-      "count": 41,
+      "count": 46,
       "centroid": {
-        "lat": 21.277284665853664,
-        "lng": -157.8011372146341
+        "lat": 21.27700935434783,
+        "lng": -157.80117393043477
       }
     },
     {
       "name": "Salt Lake",
-      "count": 41,
+      "count": 45,
       "centroid": {
-        "lat": 21.3425076097561,
-        "lng": -157.9121658878049
+        "lat": 21.342472588888892,
+        "lng": -157.91233015555557
       }
     },
     {
-      "name": "Pawaa",
-      "count": 40,
+      "name": "Kaka‘ako",
+      "count": 44,
       "centroid": {
-        "lat": 21.297406765000005,
-        "lng": -157.83946424500002
+        "lat": 21.29798624318182,
+        "lng": -157.85804772954543
       }
     },
     {
@@ -158,18 +166,18 @@
     },
     {
       "name": "Pacific Heights",
-      "count": 37,
+      "count": 38,
       "centroid": {
-        "lat": 21.320656762162166,
-        "lng": -157.8449329702703
+        "lat": 21.320640228947372,
+        "lng": -157.84506686315794
       }
     },
     {
       "name": "Nuʻuanu",
-      "count": 36,
+      "count": 37,
       "centroid": {
-        "lat": 21.342787649999998,
-        "lng": -157.8498804666666
+        "lat": 21.34248525405405,
+        "lng": -157.84986342702697
       }
     },
     {
@@ -181,11 +189,35 @@
       }
     },
     {
-      "name": "Pacific Palisades",
-      "count": 28,
+      "name": "Maunawili",
+      "count": 33,
       "centroid": {
-        "lat": 21.416813296428575,
-        "lng": -157.95813452857143
+        "lat": 21.37628862727272,
+        "lng": -157.7693053151515
+      }
+    },
+    {
+      "name": "Ala Moana",
+      "count": 30,
+      "centroid": {
+        "lat": 21.293427956666665,
+        "lng": -157.84584679
+      }
+    },
+    {
+      "name": "Kāhala",
+      "count": 30,
+      "centroid": {
+        "lat": 21.26655314333333,
+        "lng": -157.79387295
+      }
+    },
+    {
+      "name": "Pacific Palisades",
+      "count": 29,
+      "centroid": {
+        "lat": 21.41662914482759,
+        "lng": -157.95810661724138
       }
     },
     {
@@ -197,35 +229,27 @@
       }
     },
     {
-      "name": "Ala Moana",
-      "count": 26,
+      "name": "Iroquois Point",
+      "count": 27,
       "centroid": {
-        "lat": 21.292954026923073,
-        "lng": -157.84594106538458
-      }
-    },
-    {
-      "name": "Kaka‘ako",
-      "count": 25,
-      "centroid": {
-        "lat": 21.296999108000005,
-        "lng": -157.85763836
+        "lat": 21.322421625925926,
+        "lng": -157.98145092592597
       }
     },
     {
       "name": "Chinatown",
-      "count": 22,
+      "count": 24,
       "centroid": {
-        "lat": 21.31432045,
-        "lng": -157.86340352272725
+        "lat": 21.314919091666667,
+        "lng": -157.86335861666666
       }
     },
     {
-      "name": "Maunawili",
-      "count": 22,
+      "name": "Mariner's Cove",
+      "count": 23,
       "centroid": {
-        "lat": 21.375962299999998,
-        "lng": -157.76792966363632
+        "lat": 21.29877544782609,
+        "lng": -157.68918089130437
       }
     },
     {
@@ -245,11 +269,19 @@
       }
     },
     {
-      "name": "Kāhala",
-      "count": 19,
+      "name": "Lanikai",
+      "count": 18,
       "centroid": {
-        "lat": 21.266241936842107,
-        "lng": -157.79526389999998
+        "lat": 21.391993233333334,
+        "lng": -157.7210877166667
+      }
+    },
+    {
+      "name": "Waiau",
+      "count": 18,
+      "centroid": {
+        "lat": 21.397557355555552,
+        "lng": -157.96456619444444
       }
     },
     {
@@ -261,6 +293,14 @@
       }
     },
     {
+      "name": "Niu Valley",
+      "count": 17,
+      "centroid": {
+        "lat": 21.288631064705882,
+        "lng": -157.7282919764706
+      }
+    },
+    {
       "name": "Moanalua Gardens",
       "count": 17,
       "centroid": {
@@ -269,35 +309,27 @@
       }
     },
     {
-      "name": "Iroquois Point",
-      "count": 17,
+      "name": "‘Āina Haina",
+      "count": 15,
       "centroid": {
-        "lat": 21.321018241176475,
-        "lng": -157.98168267647063
+        "lat": 21.285262699999997,
+        "lng": -157.75383238666666
       }
     },
     {
-      "name": "Lanikai",
-      "count": 16,
-      "centroid": {
-        "lat": 21.39162078125,
-        "lng": -157.72125884375
-      }
-    },
-    {
-      "name": "Waiau",
+      "name": "Kalaeloa",
       "count": 14,
       "centroid": {
-        "lat": 21.397931171428574,
-        "lng": -157.9644946785714
+        "lat": 21.325743078571428,
+        "lng": -158.07176230000002
       }
     },
     {
-      "name": "Niu Valley",
-      "count": 12,
+      "name": "Makakilo City",
+      "count": 13,
       "centroid": {
-        "lat": 21.28665408333333,
-        "lng": -157.73048486666667
+        "lat": 21.3319638,
+        "lng": -158.08349617692303
       }
     },
     {
@@ -309,19 +341,11 @@
       }
     },
     {
-      "name": "Kalaeloa",
+      "name": "Pearl Highlands",
       "count": 11,
       "centroid": {
-        "lat": 21.324921081818182,
-        "lng": -158.06965653636362
-      }
-    },
-    {
-      "name": "‘Āina Haina",
-      "count": 11,
-      "centroid": {
-        "lat": 21.28395177272727,
-        "lng": -157.75321007272726
+        "lat": 21.399677736363632,
+        "lng": -157.97433796363637
       }
     },
     {
@@ -333,19 +357,11 @@
       }
     },
     {
-      "name": "Makakilo City",
-      "count": 10,
+      "name": "Wahiawā",
+      "count": 9,
       "centroid": {
-        "lat": 21.33183274,
-        "lng": -158.08388442999998
-      }
-    },
-    {
-      "name": "Pearl Highlands",
-      "count": 10,
-      "centroid": {
-        "lat": 21.400009509999997,
-        "lng": -157.97465826
+        "lat": 21.503456611111105,
+        "lng": -158.0373689111111
       }
     },
     {
@@ -357,19 +373,27 @@
       }
     },
     {
-      "name": "Wahiawā",
-      "count": 8,
+      "name": "Crestview",
+      "count": 9,
       "centroid": {
-        "lat": 21.505290637499996,
-        "lng": -158.03731601249999
+        "lat": 21.395452333333335,
+        "lng": -157.98026754444447
       }
     },
     {
-      "name": "Mariner's Cove",
+      "name": "Mehana",
       "count": 8,
       "centroid": {
-        "lat": 21.30134715,
-        "lng": -157.68878765000002
+        "lat": 21.325357200000003,
+        "lng": -158.07497253749997
+      }
+    },
+    {
+      "name": "Hickam",
+      "count": 7,
+      "centroid": {
+        "lat": 21.3429979,
+        "lng": -157.9444407285714
       }
     },
     {
@@ -381,19 +405,19 @@
       }
     },
     {
-      "name": "Hickam",
-      "count": 6,
+      "name": "Lunalilo Park Mauka",
+      "count": 7,
       "centroid": {
-        "lat": 21.341988133333334,
-        "lng": -157.9443454833333
+        "lat": 21.290813042857142,
+        "lng": -157.68954658571428
       }
     },
     {
-      "name": "Mehana",
+      "name": "Whitmore Village",
       "count": 6,
       "centroid": {
-        "lat": 21.325280483333334,
-        "lng": -158.07462465
+        "lat": 21.51196595,
+        "lng": -158.02323058333334
       }
     },
     {
@@ -413,11 +437,19 @@
       }
     },
     {
-      "name": "Whitmore Village",
+      "name": "Kamo‘oloa",
+      "count": 6,
+      "centroid": {
+        "lat": 21.5685385,
+        "lng": -158.10956310000003
+      }
+    },
+    {
+      "name": "Kalama Valley",
       "count": 5,
       "centroid": {
-        "lat": 21.51176554,
-        "lng": -158.0228175
+        "lat": 21.29945,
+        "lng": -157.67086744
       }
     },
     {
@@ -437,11 +469,11 @@
       }
     },
     {
-      "name": "Kalama Valley",
+      "name": "Kuliʻouʻou",
       "count": 4,
       "centroid": {
-        "lat": 21.29698025,
-        "lng": -157.67031755
+        "lat": 21.294823375,
+        "lng": -157.71443525
       }
     },
     {
@@ -450,6 +482,14 @@
       "centroid": {
         "lat": 21.337467550000003,
         "lng": -157.7006054
+      }
+    },
+    {
+      "name": "Mokuleia, Waialua",
+      "count": 4,
+      "centroid": {
+        "lat": 21.582728600000003,
+        "lng": -158.138605425
       }
     },
     {
@@ -509,27 +549,19 @@
       }
     },
     {
-      "name": "Kuliʻouʻou",
-      "count": 2,
-      "centroid": {
-        "lat": 21.2905,
-        "lng": -157.7153807
-      }
-    },
-    {
-      "name": "Crestview",
-      "count": 2,
-      "centroid": {
-        "lat": 21.3955459,
-        "lng": -157.9796629
-      }
-    },
-    {
       "name": "Hawaiʻiloa Ridge",
       "count": 2,
       "centroid": {
         "lat": 21.285343849999997,
         "lng": -157.74429865000002
+      }
+    },
+    {
+      "name": "Kunia Camp",
+      "count": 2,
+      "centroid": {
+        "lat": 21.459436,
+        "lng": -158.062365
       }
     },
     {
@@ -581,27 +613,11 @@
       }
     },
     {
-      "name": "Kunia Camp",
-      "count": 1,
-      "centroid": {
-        "lat": 21.460034,
-        "lng": -158.061863
-      }
-    },
-    {
       "name": "Hahaione High Rise",
       "count": 1,
       "centroid": {
         "lat": 21.295601,
         "lng": -157.70798
-      }
-    },
-    {
-      "name": "Lunalilo Park Mauka",
-      "count": 1,
-      "centroid": {
-        "lat": 21.2873985,
-        "lng": -157.6970435
       }
     },
     {
@@ -618,6 +634,30 @@
       "centroid": {
         "lat": 21.6456838,
         "lng": -158.046301
+      }
+    },
+    {
+      "name": "ʻAiea Heights",
+      "count": 1,
+      "centroid": {
+        "lat": 21.3765442,
+        "lng": -157.942126
+      }
+    },
+    {
+      "name": "Ranch Camp",
+      "count": 1,
+      "centroid": {
+        "lat": 21.5674555,
+        "lng": -158.1225223
+      }
+    },
+    {
+      "name": "Haleiwa",
+      "count": 1,
+      "centroid": {
+        "lat": 21.5760543,
+        "lng": -158.1120734
       }
     }
   ],
@@ -9426,6 +9466,1396 @@
       "neighborhood": "Mapunapuna",
       "lat": 21.335792,
       "lng": -157.89877
+    },
+    "600 BLOCK AIPO ST": {
+      "neighborhood": "Lunalilo Park Mauka",
+      "lat": 21.289832,
+      "lng": -157.694951
+    },
+    "600 BLOCK AIPUNI ST": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.289246,
+      "lng": -157.75808
+    },
+    "600 BLOCK AKOAKOA ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.386832,
+      "lng": -157.737374
+    },
+    "600 BLOCK ALA MOANA BLVD": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.299329,
+      "lng": -157.862928
+    },
+    "600 BLOCK AUAHI ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.298933,
+      "lng": -157.861221
+    },
+    "600 BLOCK CALIFORNIA AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.496578,
+      "lng": -158.028422
+    },
+    "600 BLOCK COOKE ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2997574,
+      "lng": -157.8574578
+    },
+    "600 BLOCK COOLIDGE ST": {
+      "neighborhood": "McCully",
+      "lat": 21.288688,
+      "lng": -157.827242
+    },
+    "600 BLOCK CORAL ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.300133,
+      "lng": -157.858104
+    },
+    "600 BLOCK HALEKAUWILA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.300815,
+      "lng": -157.858776
+    },
+    "600 BLOCK HALELA ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3979518,
+      "lng": -157.7488406
+    },
+    "600 BLOCK HAUSTEN ST": {
+      "neighborhood": "McCully",
+      "lat": 21.287797,
+      "lng": -157.826867
+    },
+    "600 BLOCK HOOMOANA ST": {
+      "neighborhood": "Pacific Palisades",
+      "lat": 21.4114729,
+      "lng": -157.9573251
+    },
+    "600 BLOCK HUNAPAA ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.2667426,
+      "lng": -157.7920311
+    },
+    "600 BLOCK ILALO ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.297086,
+      "lng": -157.863487
+    },
+    "600 BLOCK ISENBERG ST": {
+      "neighborhood": "McCully",
+      "lat": 21.288039,
+      "lng": -157.827742
+    },
+    "600 BLOCK IWILEI RD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.315646,
+      "lng": -157.871744
+    },
+    "600 BLOCK JALUIT ST": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3429748,
+      "lng": -157.917897
+    },
+    "600 BLOCK KAILUA RD": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3941449,
+      "lng": -157.7410863
+    },
+    "600 BLOCK KALAAU PL": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.300337,
+      "lng": -157.724721
+    },
+    "600 BLOCK KALANIPUU ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.290469,
+      "lng": -157.695175
+    },
+    "600 BLOCK KAMOKILA BLVD": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3268475,
+      "lng": -158.0862511
+    },
+    "600 BLOCK KANIAHE ST": {
+      "neighborhood": "Whitmore Village",
+      "lat": 21.512968,
+      "lng": -158.025296
+    },
+    "600 BLOCK KAPAHULU AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2775873,
+      "lng": -157.8142461
+    },
+    "600 BLOCK KAPAIA ST": {
+      "neighborhood": "Lunalilo Park Mauka",
+      "lat": 21.2873984,
+      "lng": -157.6942811
+    },
+    "600 BLOCK KAPIOLANI BLVD": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3032174,
+      "lng": -157.8549997
+    },
+    "600 BLOCK KEAWE ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.30006,
+      "lng": -157.8600108
+    },
+    "600 BLOCK KEEAUMOKU": {
+      "neighborhood": "Pawaa",
+      "lat": 21.293931,
+      "lng": -157.842212
+    },
+    "600 BLOCK KEEAUMOKU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.293931,
+      "lng": -157.842212
+    },
+    "600 BLOCK KILANI AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.498263,
+      "lng": -158.029189
+    },
+    "600 BLOCK KUANA ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.264052,
+      "lng": -157.787892
+    },
+    "600 BLOCK KULIOUOU RD": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.2985391,
+      "lng": -157.7248312
+    },
+    "600 BLOCK KUNAWAI LN": {
+      "neighborhood": "Liliha",
+      "lat": 21.325808,
+      "lng": -157.8570728
+    },
+    "600 BLOCK LAUMAKA ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.331022,
+      "lng": -157.884435
+    },
+    "600 BLOCK LAWELAWE ST": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.285961,
+      "lng": -157.752679
+    },
+    "600 BLOCK MAGELLAN AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.308897,
+      "lng": -157.851317
+    },
+    "600 BLOCK MANAWAI ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3304817,
+      "lng": -158.0769512
+    },
+    "600 BLOCK MAPUNAPUNA ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.335995,
+      "lng": -157.900252
+    },
+    "600 BLOCK MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.288632,
+      "lng": -157.832716
+    },
+    "600 BLOCK MCGREW LOOP": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3765442,
+      "lng": -157.942126
+    },
+    "600 BLOCK MIDDLE ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3377947,
+      "lng": -157.8837216
+    },
+    "600 BLOCK MOKAUEA ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.328965,
+      "lng": -157.880637
+    },
+    "600 BLOCK N JUDD ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3277531,
+      "lng": -157.8548372
+    },
+    "600 BLOCK N KING ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.319318,
+      "lng": -157.865228
+    },
+    "600 BLOCK N KUAKINI ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.324419,
+      "lng": -157.857983
+    },
+    "600 BLOCK N KUKUI ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.320762,
+      "lng": -157.86441
+    },
+    "600 BLOCK N NIMITZ HWY": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3372177,
+      "lng": -157.9163526
+    },
+    "600 BLOCK N SCHOOL ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.322833,
+      "lng": -157.8606
+    },
+    "600 BLOCK N VINEYARD BLVD": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3217693,
+      "lng": -157.8633166
+    },
+    "600 BLOCK ONAHA ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.263605,
+      "lng": -157.788708
+    },
+    "600 BLOCK PAIKAU ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.261895,
+      "lng": -157.79795
+    },
+    "600 BLOCK PIIKOI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.295829,
+      "lng": -157.845889
+    },
+    "600 BLOCK POHUKAINA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.299974,
+      "lng": -157.85988
+    },
+    "600 BLOCK POKOLE ST": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.272752,
+      "lng": -157.803138
+    },
+    "600 BLOCK POOL ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.341238,
+      "lng": -157.90623
+    },
+    "600 BLOCK PROSPECT ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.310183,
+      "lng": -157.849605
+    },
+    "600 BLOCK PUMEHANA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.289699,
+      "lng": -157.833646
+    },
+    "600 BLOCK PUUHALE RD": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.329941,
+      "lng": -157.882866
+    },
+    "600 BLOCK PUULOA RD": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.336716,
+      "lng": -157.901479
+    },
+    "600 BLOCK QUEEN ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3018901,
+      "lng": -157.8572905
+    },
+    "600 BLOCK S KING ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.303888,
+      "lng": -157.855711
+    },
+    "600 BLOCK SHERIDAN ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.294665,
+      "lng": -157.845631
+    },
+    "600 BLOCK THATCHER CT": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.345113,
+      "lng": -157.939298
+    },
+    "600 BLOCK ULUKAHIKI ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.381484,
+      "lng": -157.757397
+    },
+    "600 BLOCK ULULANI ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.379196,
+      "lng": -157.754447
+    },
+    "600 BLOCK ULUMAIKA ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.266101,
+      "lng": -157.785997
+    },
+    "600 BLOCK ULUOA ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.382382,
+      "lng": -157.753114
+    },
+    "600 BLOCK UNIVERSITY AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.287633,
+      "lng": -157.826061
+    },
+    "600 BLOCK WAIAKAMILO RD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.325004,
+      "lng": -157.874979
+    },
+    "600 BLOCK WAIPA LN": {
+      "neighborhood": "Chinatown",
+      "lat": 21.321239,
+      "lng": -157.8624127
+    },
+    "600 BLOCK WAKEA ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3324784,
+      "lng": -158.0809468
+    },
+    "600 BLOCK WYLLIE ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.331599,
+      "lng": -157.84925
+    },
+    "6000 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "6000 BLOCK NALEIALOHA PL": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.290562,
+      "lng": -157.724184
+    },
+    "6000 BLOCK PALI HWY": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3200285,
+      "lng": -157.8500209
+    },
+    "6100 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "6100 BLOCK WAKINE PL": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.287508,
+      "lng": -157.723153
+    },
+    "6200 BLOCK KEOKEA PL": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.289933,
+      "lng": -157.718256
+    },
+    "6200 BLOCK UPOLO PL": {
+      "neighborhood": "Kuliʻouʻou",
+      "lat": 21.288221,
+      "lng": -157.714563
+    },
+    "6300 BLOCK IBIS AVE": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.325051,
+      "lng": -157.9844677
+    },
+    "6400 BLOCK 101ST ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.3237728,
+      "lng": -157.9820859
+    },
+    "6400 BLOCK 102ND ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.325674,
+      "lng": -157.983363
+    },
+    "6400 BLOCK HAWAII KAI DR": {
+      "neighborhood": "Lunalilo Park Mauka",
+      "lat": 21.2941693,
+      "lng": -157.6795585
+    },
+    "6500 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "6600 BLOCK 105TH ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.3251277,
+      "lng": -157.9797478
+    },
+    "6600 BLOCK 106TH ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.324378,
+      "lng": -157.977529
+    },
+    "6600 BLOCK 107TH ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.327075,
+      "lng": -157.979889
+    },
+    "6600 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "6600 BLOCK NIU ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2866776,
+      "lng": -157.8326652
+    },
+    "660100 BLOCK HALEIWA RD": {
+      "neighborhood": "Kamo‘oloa",
+      "lat": 21.5685385,
+      "lng": -158.1095631
+    },
+    "660200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "660400 BLOCK HALEIWA RD": {
+      "neighborhood": "Kamo‘oloa",
+      "lat": 21.5685385,
+      "lng": -158.1095631
+    },
+    "660500 BLOCK HALEIWA RD": {
+      "neighborhood": "Kamo‘oloa",
+      "lat": 21.5685385,
+      "lng": -158.1095631
+    },
+    "660600 BLOCK HALEIWA RD": {
+      "neighborhood": "Kamo‘oloa",
+      "lat": 21.5685385,
+      "lng": -158.1095631
+    },
+    "660600 BLOCK KAUKONAHUA RD": {
+      "neighborhood": "Kamo‘oloa",
+      "lat": 21.5685385,
+      "lng": -158.1095631
+    },
+    "661000 BLOCK KAUKONAHUA RD": {
+      "neighborhood": "Kamo‘oloa",
+      "lat": 21.5685385,
+      "lng": -158.1095631
+    },
+    "6700 BLOCK 107TH ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.3258121,
+      "lng": -157.9786355
+    },
+    "6700 BLOCK 108TH ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.325405,
+      "lng": -157.97686
+    },
+    "6700 BLOCK HAHAIONE PL": {
+      "neighborhood": "Kuliʻouʻou",
+      "lat": 21.3100725,
+      "lng": -157.7124166
+    },
+    "6700 BLOCK HAWAII KAI DR": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.2963097,
+      "lng": -157.689286
+    },
+    "670400 BLOCK GOODALE AVE": {
+      "neighborhood": "Ranch Camp",
+      "lat": 21.5674555,
+      "lng": -158.1225223
+    },
+    "6800 BLOCK 110TH ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.326479,
+      "lng": -157.976325
+    },
+    "6800 BLOCK CORMORANT AVE": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.3192992,
+      "lng": -157.9916666
+    },
+    "6800 BLOCK NIUMALU LOOP": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.300268,
+      "lng": -157.693077
+    },
+    "680000 BLOCK AKULE ST": {
+      "neighborhood": "Mokuleia, Waialua",
+      "lat": 21.5826825,
+      "lng": -158.1388119
+    },
+    "680000 BLOCK APUHIHI ST": {
+      "neighborhood": "Mokuleia, Waialua",
+      "lat": 21.5820854,
+      "lng": -158.1375179
+    },
+    "680000 BLOCK AU ST": {
+      "neighborhood": "Mokuleia, Waialua",
+      "lat": 21.5835698,
+      "lng": -158.1379008
+    },
+    "680000 BLOCK AWEOWEO ST": {
+      "neighborhood": "Mokuleia, Waialua",
+      "lat": 21.5825767,
+      "lng": -158.1401911
+    },
+    "680000 BLOCK WAIALUA BEACH RD": {
+      "neighborhood": "Haleiwa",
+      "lat": 21.5760543,
+      "lng": -158.1120734
+    },
+    "680600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "680700 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "680900 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "6900 BLOCK HAWAII KAI DR": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.286789,
+      "lng": -157.705619
+    },
+    "6900 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "690100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "690300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "690400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "700 BLOCK 11TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.275508,
+      "lng": -157.804554
+    },
+    "700 BLOCK 20TH AVE": {
+      "neighborhood": "Kāhala",
+      "lat": 21.270675,
+      "lng": -157.795132
+    },
+    "700 BLOCK 21ST AVE": {
+      "neighborhood": "Kāhala",
+      "lat": 21.270226,
+      "lng": -157.794231
+    },
+    "700 BLOCK 7TH AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.277884,
+      "lng": -157.8092
+    },
+    "700 BLOCK AHUKINI ST": {
+      "neighborhood": "Lunalilo Park Mauka",
+      "lat": 21.2905168,
+      "lng": -157.6928345
+    },
+    "700 BLOCK AHUWALE ST": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.290968,
+      "lng": -157.757114
+    },
+    "700 BLOCK AKUMU ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.380886,
+      "lng": -157.729633
+    },
+    "700 BLOCK ALA MOANA BLVD": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.297305,
+      "lng": -157.861441
+    },
+    "700 BLOCK ALDER ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.296234,
+      "lng": -157.84502
+    },
+    "700 BLOCK AMANA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.293241,
+      "lng": -157.840649
+    },
+    "700 BLOCK AULOA RD": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3736455,
+      "lng": -157.7671083
+    },
+    "700 BLOCK BIRCH ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.29597,
+      "lng": -157.844296
+    },
+    "700 BLOCK BISHOP ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3077674,
+      "lng": -157.8634866
+    },
+    "700 BLOCK CALIFORNIA AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.497053,
+      "lng": -158.027246
+    },
+    "700 BLOCK CAPTAIN COOK AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.307284,
+      "lng": -157.850586
+    },
+    "700 BLOCK COOLIDGE ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2898,
+      "lng": -157.826072
+    },
+    "700 BLOCK EKELA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.281759,
+      "lng": -157.816796
+    },
+    "700 BLOCK ELEPAIO ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.266019,
+      "lng": -157.790339
+    },
+    "700 BLOCK HAUMEA ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3317246,
+      "lng": -158.0825472
+    },
+    "700 BLOCK HAUSTEN ST": {
+      "neighborhood": "McCully",
+      "lat": 21.289273,
+      "lng": -157.825441
+    },
+    "700 BLOCK HOAWA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.288461,
+      "lng": -157.828899
+    },
+    "700 BLOCK HOOMAEMAE ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.40098,
+      "lng": -157.961232
+    },
+    "700 BLOCK HOOMALIMALI ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.401689,
+      "lng": -157.96065
+    },
+    "700 BLOCK ISENBERG ST": {
+      "neighborhood": "McCully",
+      "lat": 21.288795,
+      "lng": -157.827429
+    },
+    "700 BLOCK IWILEI RD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3163146,
+      "lng": -157.870011
+    },
+    "700 BLOCK KAHEKA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.292753,
+      "lng": -157.839546
+    },
+    "700 BLOCK KAILUA RD": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.394556,
+      "lng": -157.743553
+    },
+    "700 BLOCK KAKOI ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.336734,
+      "lng": -157.8962959
+    },
+    "700 BLOCK KALANIPUU ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.2923817,
+      "lng": -157.6943361
+    },
+    "700 BLOCK KALINA PL": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.308813,
+      "lng": -157.673594
+    },
+    "700 BLOCK KAMUELA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.280023,
+      "lng": -157.814791
+    },
+    "700 BLOCK KANOA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.321623,
+      "lng": -157.865941
+    },
+    "700 BLOCK KAPAHULU AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2796553,
+      "lng": -157.8143077
+    },
+    "700 BLOCK KAPIOLANI BLVD": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.302107,
+      "lng": -157.854769
+    },
+    "700 BLOCK KAWAIAHAO ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.300643,
+      "lng": -157.855874
+    },
+    "700 BLOCK KEEAUMOKU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2948451,
+      "lng": -157.8432043
+    },
+    "700 BLOCK KEOLU DR": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3853216,
+      "lng": -157.7345038
+    },
+    "700 BLOCK KIHAPAI PL": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.394291,
+      "lng": -157.747305
+    },
+    "700 BLOCK KII ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.29924,
+      "lng": -157.711162
+    },
+    "700 BLOCK KINALAU PL": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.306223,
+      "lng": -157.850474
+    },
+    "700 BLOCK KINAU ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.305642,
+      "lng": -157.851306
+    },
+    "700 BLOCK KOPKE ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3314,
+      "lng": -157.881402
+    },
+    "700 BLOCK KUNEHI ST": {
+      "neighborhood": "Mehana",
+      "lat": 21.3251509,
+      "lng": -158.0730459
+    },
+    "700 BLOCK LUKEPANE AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.282353,
+      "lng": -157.817476
+    },
+    "700 BLOCK MAKALEKA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.281177,
+      "lng": -157.816126
+    },
+    "700 BLOCK MANAWAI ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.328942,
+      "lng": -158.075248
+    },
+    "700 BLOCK MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.28961,
+      "lng": -157.832342
+    },
+    "700 BLOCK MENEHUNE LN": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.285435,
+      "lng": -157.821028
+    },
+    "700 BLOCK MOKULUA DR": {
+      "neighborhood": "Lanikai",
+      "lat": 21.3953987,
+      "lng": -157.7199144
+    },
+    "700 BLOCK MOMOLIO ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.324454,
+      "lng": -157.861775
+    },
+    "700 BLOCK MOOWAA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.323954,
+      "lng": -157.873726
+    },
+    "700 BLOCK N KING ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3205552,
+      "lng": -157.8661447
+    },
+    "700 BLOCK N SCHOOL ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3236075,
+      "lng": -157.8610448
+    },
+    "700 BLOCK OLOKELE AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.282942,
+      "lng": -157.818153
+    },
+    "700 BLOCK ONAHA ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.265896,
+      "lng": -157.789317
+    },
+    "700 BLOCK ONEAWA ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.404677,
+      "lng": -157.750395
+    },
+    "700 BLOCK PAANI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.288867,
+      "lng": -157.830035
+    },
+    "700 BLOCK PALANI AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2809967,
+      "lng": -157.8149883
+    },
+    "700 BLOCK PENSACOLA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2979188,
+      "lng": -157.8469484
+    },
+    "700 BLOCK PIIKOI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.296443,
+      "lng": -157.845637
+    },
+    "700 BLOCK POOL ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.340803,
+      "lng": -157.906496
+    },
+    "700 BLOCK PROSPECT ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.308954,
+      "lng": -157.84914
+    },
+    "700 BLOCK PUMEHANA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.29003,
+      "lng": -157.833502
+    },
+    "700 BLOCK PUNAHOU ST": {
+      "neighborhood": "McCully",
+      "lat": 21.29259,
+      "lng": -157.83577
+    },
+    "700 BLOCK PUNCHBOWL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3028772,
+      "lng": -157.8620702
+    },
+    "700 BLOCK PUULOA RD": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.336716,
+      "lng": -157.901479
+    },
+    "700 BLOCK QUEEN ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3008185,
+      "lng": -157.8568287
+    },
+    "700 BLOCK RICHARDS ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3061577,
+      "lng": -157.8623027
+    },
+    "700 BLOCK S HOTEL ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.304305,
+      "lng": -157.853344
+    },
+    "700 BLOCK S KING ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.303622,
+      "lng": -157.854552
+    },
+    "700 BLOCK SHERIDAN ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.295651,
+      "lng": -157.843519
+    },
+    "700 BLOCK SIBLEY ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.340054,
+      "lng": -157.906437
+    },
+    "700 BLOCK SPENCER ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.308341,
+      "lng": -157.849659
+    },
+    "700 BLOCK TWIN VIEW DR": {
+      "neighborhood": "Liliha",
+      "lat": 21.3309928,
+      "lng": -157.8521469
+    },
+    "700 BLOCK UMI ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3339438,
+      "lng": -157.8825607
+    },
+    "700 BLOCK UNIVERSITY AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.288819,
+      "lng": -157.824928
+    },
+    "700 BLOCK WAIAKAMILO RD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3254105,
+      "lng": -157.8746572
+    },
+    "700 BLOCK WARD AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.299094,
+      "lng": -157.852657
+    },
+    "700 BLOCK WILIKINA DR": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.4887844,
+      "lng": -158.0377921
+    },
+    "700 BLOCK WILIWILI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.289284,
+      "lng": -157.831176
+    },
+    "7000 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "7100 BLOCK KALANIANAOLE HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "7200 BLOCK HAWAII KAI DR": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.294308,
+      "lng": -157.698331
+    },
+    "7200 BLOCK KIPU PL": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.297929,
+      "lng": -157.687558
+    },
+    "7200 BLOCK ONOHI ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.294931,
+      "lng": -157.697904
+    },
+    "7400 BLOCK KOKONANI ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.2942272,
+      "lng": -157.6744975
+    },
+    "7500 BLOCK HUIALOHA ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.300174,
+      "lng": -157.674891
+    },
+    "7500 BLOCK KEKAA ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.2964672,
+      "lng": -157.6752139
+    },
+    "7500 BLOCK MAKAA ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.2992783,
+      "lng": -157.6966898
+    },
+    "7700 BLOCK HAWAII KAI DR": {
+      "neighborhood": "Lunalilo Park Mauka",
+      "lat": 21.2941693,
+      "lng": -157.6795585
+    },
+    "800 BLOCK 12TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.276497,
+      "lng": -157.802486
+    },
+    "800 BLOCK 16TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.274115,
+      "lng": -157.797822
+    },
+    "800 BLOCK 20TH AVE": {
+      "neighborhood": "Kāhala",
+      "lat": 21.272265,
+      "lng": -157.794212
+    },
+    "800 BLOCK 3RD ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.391039,
+      "lng": -157.968383
+    },
+    "800 BLOCK 4TH ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.391288,
+      "lng": -157.969001
+    },
+    "800 BLOCK 6TH AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.280228,
+      "lng": -157.809938
+    },
+    "800 BLOCK AALAPAPA DR": {
+      "neighborhood": "Lanikai",
+      "lat": 21.394547,
+      "lng": -157.719523
+    },
+    "800 BLOCK AHUA ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.339521,
+      "lng": -157.89687
+    },
+    "800 BLOCK ALA LILIKOI ST": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.343787,
+      "lng": -157.913168
+    },
+    "800 BLOCK ALA MOANA BLVD": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.295993,
+      "lng": -157.859797
+    },
+    "800 BLOCK ALA NIOI PL": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.344475,
+      "lng": -157.908638
+    },
+    "800 BLOCK ALDER ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.297528,
+      "lng": -157.84439
+    },
+    "800 BLOCK AUAHI ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.296854,
+      "lng": -157.859158
+    },
+    "800 BLOCK BANNISTER ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.332912,
+      "lng": -157.881049
+    },
+    "800 BLOCK BIRCH ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.29727,
+      "lng": -157.843666
+    },
+    "800 BLOCK BISHOP ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.307727,
+      "lng": -157.862752
+    },
+    "800 BLOCK CALIFORNIA AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.497311,
+      "lng": -158.026622
+    },
+    "800 BLOCK CEDAR ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.297005,
+      "lng": -157.842912
+    },
+    "800 BLOCK CURTIS ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.301515,
+      "lng": -157.856313
+    },
+    "800 BLOCK DILLINGHAM BLVD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3196813,
+      "lng": -157.8692723
+    },
+    "800 BLOCK FREDERICK ST": {
+      "neighborhood": "Hickam",
+      "lat": 21.3490565,
+      "lng": -157.9450122
+    },
+    "800 BLOCK GREEN ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.307187,
+      "lng": -157.848898
+    },
+    "800 BLOCK GULICK AVE": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.332461,
+      "lng": -157.880764
+    },
+    "800 BLOCK HALEKAUWILA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.298512,
+      "lng": -157.856863
+    },
+    "800 BLOCK HIND IUKA DR": {
+      "neighborhood": "‘Āina Haina",
+      "lat": 21.289296,
+      "lng": -157.754302
+    },
+    "800 BLOCK ILANIWAI ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2988631,
+      "lng": -157.8562187
+    },
+    "800 BLOCK IWILEI RD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3160388,
+      "lng": -157.8681499
+    },
+    "800 BLOCK KAALOA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2892,
+      "lng": -157.822799
+    },
+    "800 BLOCK KAHEKA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.293885,
+      "lng": -157.8395105
+    },
+    "800 BLOCK KAILUA RD": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3921007,
+      "lng": -157.7357654
+    },
+    "800 BLOCK KAIWIULA ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3274263,
+      "lng": -157.8750229
+    },
+    "800 BLOCK KAKALA ST": {
+      "neighborhood": "Mehana",
+      "lat": 21.3260238,
+      "lng": -158.0789865
+    },
+    "800 BLOCK KALALEA ST": {
+      "neighborhood": "Lunalilo Park Mauka",
+      "lat": 21.292207,
+      "lng": -157.688599
+    },
+    "800 BLOCK KALIHI ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.329028,
+      "lng": -157.877561
+    },
+    "800 BLOCK KAMOKILA BLVD": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.332999,
+      "lng": -158.083112
+    },
+    "800 BLOCK KANOA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.322299,
+      "lng": -157.866449
+    },
+    "800 BLOCK KAPAHULU AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.281933,
+      "lng": -157.814221
+    },
+    "800 BLOCK KAPIOLANI BLVD": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3002369,
+      "lng": -157.8535776
+    },
+    "800 BLOCK KAWAIAHAO ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3021193,
+      "lng": -157.8567813
+    },
+    "800 BLOCK KEALAHOU ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.309473,
+      "lng": -157.673525
+    },
+    "800 BLOCK KEEAUMOKU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.296327,
+      "lng": -157.841226
+    },
+    "800 BLOCK KIAALA PL": {
+      "neighborhood": "Kalama Valley",
+      "lat": 21.309329,
+      "lng": -157.673067
+    },
+    "800 BLOCK KINAU ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.30529,
+      "lng": -157.850322
+    },
+    "800 BLOCK KUIKAHI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.294248,
+      "lng": -157.835514
+    },
+    "800 BLOCK KUNIA DR": {
+      "neighborhood": "Kunia Camp",
+      "lat": 21.458838,
+      "lng": -158.062867
+    },
+    "800 BLOCK LOPEZ LN": {
+      "neighborhood": "Iwilei",
+      "lat": 21.322811,
+      "lng": -157.865872
+    },
+    "800 BLOCK LUAWAI ST": {
+      "neighborhood": "Kāhala",
+      "lat": 21.2705209,
+      "lng": -157.7903653
+    },
+    "800 BLOCK LUEHU PL": {
+      "neighborhood": "Pearl Highlands",
+      "lat": 21.39636,
+      "lng": -157.971135
+    },
+    "800 BLOCK LUKEPANE AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2836438,
+      "lng": -157.8161161
+    },
+    "800 BLOCK MAIN ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3378882,
+      "lng": -157.9310218
+    },
+    "800 BLOCK MAKAHIKI WAY": {
+      "neighborhood": "McCully",
+      "lat": 21.292211,
+      "lng": -157.82811
+    },
+    "800 BLOCK MAKALEKA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.282523,
+      "lng": -157.814801
+    },
+    "800 BLOCK MANALO ST": {
+      "neighborhood": "McCully",
+      "lat": 21.294145,
+      "lng": -157.835035
+    },
+    "800 BLOCK MAPUNAPUNA ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.3405981,
+      "lng": -157.9001463
+    },
+    "800 BLOCK MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.291956,
+      "lng": -157.831395
+    },
+    "800 BLOCK MIDDLE ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3352247,
+      "lng": -157.8875701
+    },
+    "800 BLOCK MILILANI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.305531,
+      "lng": -157.860777
+    },
+    "800 BLOCK MISSION LN": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.302935,
+      "lng": -157.858547
+    },
+    "800 BLOCK MOOWAA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3253247,
+      "lng": -157.8723831
+    },
+    "800 BLOCK N JUDD ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.328959,
+      "lng": -157.857618
+    },
+    "800 BLOCK N KING ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.321777,
+      "lng": -157.867034
+    },
+    "800 BLOCK N SCHOOL ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.324588,
+      "lng": -157.861604
+    },
+    "800 BLOCK N VINEYARD BLVD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3227421,
+      "lng": -157.864044
+    },
+    "800 BLOCK OCEAN VIEW DR": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.274887,
+      "lng": -157.799375
+    },
+    "800 BLOCK OHANA NUI CIR": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.335645,
+      "lng": -157.9342657
+    },
+    "800 BLOCK OLOKELE AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.284609,
+      "lng": -157.816511
+    },
+    "800 BLOCK PAANI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.291135,
+      "lng": -157.829107
+    },
+    "800 BLOCK PINE ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.317064,
+      "lng": -157.868226
+    },
+    "800 BLOCK POHUKAINA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.297699,
+      "lng": -157.857915
+    },
+    "800 BLOCK PUMEHANA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.292367,
+      "lng": -157.832542
+    },
+    "800 BLOCK PUNCHBOWL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.303565,
+      "lng": -157.861125
     }
   }
 }
