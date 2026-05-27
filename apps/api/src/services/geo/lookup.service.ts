@@ -11,12 +11,16 @@ import { CITIES, cityBySlug } from "@travelsafe/crime-data/cities";
 async function nearestAreaForCity(point: { lat: number; lng: number }, citySlug: string | undefined): Promise<KnownArea | null> {
   if (!citySlug) return nearestArea(point);
   const city = cityBySlug(citySlug);
-  if (!city) return nearestArea(point);
+  if (!city) {
+    console.warn(`[geo/lookup] no city for slug=${citySlug}, falling back to SD nearestArea`);
+    return nearestArea(point);
+  }
   try {
     const areas = await city.discover();
-    if (areas.length === 0) return nearestArea(point);
-    // Reuse haversine via a quick inline (avoid exposing it from
-    // neighborhoods.ts).
+    if (areas.length === 0) {
+      console.warn(`[geo/lookup] city=${citySlug} discover returned 0 areas`);
+      return nearestArea(point);
+    }
     const R = 6371, toRad = (d: number) => (d * Math.PI) / 180;
     let best: { area: KnownArea; km: number } | null = null;
     for (const area of areas) {
@@ -26,10 +30,12 @@ async function nearestAreaForCity(point: { lat: number; lng: number }, citySlug:
       const km = 2 * R * Math.asin(Math.sqrt(s));
       if (!best || km < best.km) best = { area, km };
     }
-    // Wider cap (60km) — large cities like LA have neighborhoods
-    // spread 30+km apart; the SD-only 20km cap was conservative.
+    if (best) {
+      console.log(`[geo/lookup] city=${citySlug} nearest=${best.area.slug} (${best.km.toFixed(1)}km)`);
+    }
     return best && best.km < 60 ? best.area : null;
-  } catch {
+  } catch (err) {
+    console.warn(`[geo/lookup] city=${citySlug} discover threw:`, (err as Error).message);
     return nearestArea(point);
   }
 }
