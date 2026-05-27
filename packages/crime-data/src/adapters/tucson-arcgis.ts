@@ -80,13 +80,25 @@ const PROVENANCE: DataProvenance = {
     "Not live, not street-level. CommunitySafe does not track individuals.",
 };
 
-async function fetchPage(offset: number): Promise<TucRow[]> {
+interface TucFeature {
+  attributes: TucRow;
+  geometry?: { x?: number; y?: number };
+}
+
+async function fetchPage(offset: number): Promise<TucFeature[]> {
   const url = new URL(BASE);
   // Layer 42 populates DATETIME_OCCU (epoch ms) and leaves DATE_OCCU
   // null; filter on the populated field so we don't drop every row.
   url.searchParams.set("where", "DATETIME_OCCU IS NOT NULL");
-  url.searchParams.set("outFields", "INCI_ID,DATE_OCCU,DATETIME_OCCU,UCRSummary,UCRSummaryDesc,OFFENSE,STATUTDESC,CrimeCategory,CrimeType,NHA_NAME,NEIGHBORHD,emdivision,DIVISION,WARD,LAT,LONG,X,Y");
-  url.searchParams.set("returnGeometry", "false");
+  // v95p8 — outFields=* dodges the layer-42 field-name typo trap
+  // (UCRSummary vs UCRsummary, LAT/LONG missing entirely) that made
+  // every named-field query return HTTP 200 with an empty 400-error
+  // body. Plus we need returnGeometry=true because layer 42's X/Y
+  // attribute fields are uniformly null — coordinates live in the
+  // geometry object (outSR=4326 → {x: lng, y: lat}).
+  url.searchParams.set("outFields", "*");
+  url.searchParams.set("returnGeometry", "true");
+  url.searchParams.set("outSR", "4326");
   url.searchParams.set("orderByFields", "OBJECTID DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
@@ -94,47 +106,52 @@ async function fetchPage(offset: number): Promise<TucRow[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Tucson ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: TucRow }> };
-  return (body.features ?? []).map((f) => f.attributes);
+  const body = await res.json() as { features?: TucFeature[]; error?: { code?: number; message?: string } };
+  if (body.error) throw new Error(`Tucson ArcGIS error ${body.error.code}: ${body.error.message}`);
+  return body.features ?? [];
 }
 
 async function fetchTucson(): Promise<Incident[]> {
-  const results: TucRow[][] = new Array(PAGES);
+  const results: TucFeature[][] = new Array(PAGES);
   let cursor = 0;
   const workers = Array.from({ length: 4 }, async () => {
     while (true) {
       const i = cursor++;
       if (i >= PAGES) return;
-      results[i] = await fetchPage(i * PAGE_SIZE).catch(() => [] as TucRow[]);
+      results[i] = await fetchPage(i * PAGE_SIZE).catch((err) => {
+        console.warn(`[tuc] page offset=${i * PAGE_SIZE} failed: ${(err as Error).message}`);
+        return [] as TucFeature[];
+      });
     }
   });
   await Promise.all(workers);
-  const rows = results.flat();
+  const features = results.flat();
   const out: Incident[] = [];
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
+  for (let i = 0; i < features.length; i++) {
+    const f = features[i];
+    const r = f.attributes;
     // Prefer DATETIME_OCCU (layer 42), fall back to DATE_OCCU (any
     // year-specific layer if we ever re-add one).
     const ts = r.DATETIME_OCCU ?? r.DATE_OCCU;
     if (!ts) continue;
+    // Layer 42's geometry is the only source of coordinates. x=lng,
+    // y=lat at outSR=4326 (standard WGS84).
+    const lng = f.geometry?.x;
+    const lat = f.geometry?.y;
     out.push({
       id: `tuc-${r.INCI_ID ?? i}`,
-      // Prefer NHA_NAME (display name matches polygon file); fall
-      // back to NEIGHBORHD code when NHA_NAME is missing.
-      area: (r.NHA_NAME && r.NHA_NAME.trim()) || (r.NEIGHBORHD ?? "Unknown"),
+      // Prefer NHA_NAME (display name like "Eastside"); fall back to
+      // NEIGHBORHD code (e.g. "T206" — TPD operations zone). About
+      // half of layer-42 rows have an empty NHA_NAME so the zone-
+      // code fallback keeps those rows visible in the per-area split.
+      area: (r.NHA_NAME && r.NHA_NAME.trim()) || (r.NEIGHBORHD?.trim() ?? "Unknown"),
       occurredAt: new Date(ts).toISOString(),
       nibrsCategory: classify(r),
       ibrOffenseDescription: (r.OFFENSE ?? r.UCRSummaryDesc ?? r.STATUTDESC ?? "Unknown").trim(),
       beat: r.emdivision ?? r.DIVISION ?? r.WARD ?? null,
       blockLabel: undefined,
-      // Layer 42 returns coords as LAT/LONG OR X/Y depending on
-      // outSR; accept either so we don't lose discovery.
-      lat: typeof r.LAT === "number" && r.LAT !== 0 ? r.LAT
-        : typeof r.Y === "number" && r.Y !== 0 ? r.Y
-        : undefined,
-      lng: typeof r.LONG === "number" && r.LONG !== 0 ? r.LONG
-        : typeof r.X === "number" && r.X !== 0 ? r.X
-        : undefined,
+      lat: typeof lat === "number" && lat !== 0 ? lat : undefined,
+      lng: typeof lng === "number" && lng !== 0 ? lng : undefined,
     });
   }
   return out;
