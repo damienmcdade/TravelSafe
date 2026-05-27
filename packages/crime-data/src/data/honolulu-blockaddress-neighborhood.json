@@ -1,239 +1,295 @@
 {
-  "generatedAt": "2026-05-27T01:54:02.204Z",
+  "generatedAt": "2026-05-27T02:13:54.408Z",
   "source": "OpenStreetMap Nominatim (https://nominatim.openstreetmap.org/)",
-  "addressCount": 3327,
-  "neighborhoodCount": 120,
+  "addressCount": 4124,
+  "neighborhoodCount": 121,
   "neighborhoods": [
     {
       "name": "McCully",
-      "count": 173,
+      "count": 232,
       "centroid": {
-        "lat": 21.293028218497106,
-        "lng": -157.82960393641622
-      }
-    },
-    {
-      "name": "Crestview",
-      "count": 143,
-      "centroid": {
-        "lat": 21.401644973426563,
-        "lng": -157.98940462727265
+        "lat": 21.29241298103448,
+        "lng": -157.82966675603444
       }
     },
     {
       "name": "Hawaii Capital Historic District",
-      "count": 115,
+      "count": 184,
       "centroid": {
-        "lat": 21.30930216695652,
-        "lng": -157.85819775652178
+        "lat": 21.3092684423913,
+        "lng": -157.85814314456522
       }
     },
     {
-      "name": "Kapahulu",
-      "count": 113,
+      "name": "Crestview",
+      "count": 170,
       "centroid": {
-        "lat": 21.279710321238937,
-        "lng": -157.8142503991151
+        "lat": 21.40179592882353,
+        "lng": -157.9895469935292
       }
     },
     {
       "name": "ʻAiea Heights",
-      "count": 100,
+      "count": 166,
       "centroid": {
-        "lat": 21.377499502000013,
-        "lng": -157.93403763899968
-      }
-    },
-    {
-      "name": "Village Park",
-      "count": 94,
-      "centroid": {
-        "lat": 21.388292746808517,
-        "lng": -158.01816777765956
-      }
-    },
-    {
-      "name": "Liliha",
-      "count": 82,
-      "centroid": {
-        "lat": 21.326372358536585,
-        "lng": -157.85920624756096
-      }
-    },
-    {
-      "name": "Makiki Kai",
-      "count": 82,
-      "centroid": {
-        "lat": 21.303953176829268,
-        "lng": -157.84680868902439
+        "lat": 21.378060103614448,
+        "lng": -157.93277198313245
       }
     },
     {
       "name": "Waikīkī",
-      "count": 73,
+      "count": 138,
       "centroid": {
-        "lat": 21.27935866712329,
-        "lng": -157.8265674356164
+        "lat": 21.27870941449278,
+        "lng": -157.8258775079711
       }
     },
     {
-      "name": "Wahiawa",
-      "count": 71,
+      "name": "Kapahulu",
+      "count": 131,
       "centroid": {
-        "lat": 21.499009115492953,
-        "lng": -158.02214922112677
+        "lat": 21.279934281679388,
+        "lng": -157.81433743664124
       }
     },
     {
-      "name": "Kalihi Kai",
-      "count": 71,
+      "name": "Makiki Kai",
+      "count": 119,
       "centroid": {
-        "lat": 21.32827216056339,
-        "lng": -157.88232214647883
+        "lat": 21.303745599159658,
+        "lng": -157.8467648546219
       }
     },
     {
-      "name": "Enchanted Lake",
-      "count": 70,
+      "name": "Village Park",
+      "count": 109,
       "centroid": {
-        "lat": 21.387642671428562,
-        "lng": -157.7384219514286
+        "lat": 21.388237961467897,
+        "lng": -158.01752605963307
       }
     },
     {
-      "name": "Iwilei",
-      "count": 70,
+      "name": "Liliha",
+      "count": 97,
       "centroid": {
-        "lat": 21.321460747142858,
-        "lng": -157.86915054714285
-      }
-    },
-    {
-      "name": "Ewa Beach",
-      "count": 70,
-      "centroid": {
-        "lat": 21.318510568571423,
-        "lng": -158.01488239428576
-      }
-    },
-    {
-      "name": "Ho‘opili",
-      "count": 66,
-      "centroid": {
-        "lat": 21.35268821515152,
-        "lng": -158.03516894999996
-      }
-    },
-    {
-      "name": "Waianae",
-      "count": 65,
-      "centroid": {
-        "lat": 21.445079160000002,
-        "lng": -158.18066468615385
-      }
-    },
-    {
-      "name": "Kalihi",
-      "count": 63,
-      "centroid": {
-        "lat": 21.33663427619048,
-        "lng": -157.87441754920636
-      }
-    },
-    {
-      "name": "Makiki",
-      "count": 63,
-      "centroid": {
-        "lat": 21.30717191746032,
-        "lng": -157.8335842031746
-      }
-    },
-    {
-      "name": "Mānoa",
-      "count": 62,
-      "centroid": {
-        "lat": 21.31104465806452,
-        "lng": -157.8109199177419
+        "lat": 21.327800573195887,
+        "lng": -157.8597513494845
       }
     },
     {
       "name": "Pawaa",
-      "count": 59,
+      "count": 91,
       "centroid": {
-        "lat": 21.296747735593225,
-        "lng": -157.84019733898307
+        "lat": 21.297426417582408,
+        "lng": -157.84004263406607
       }
     },
     {
-      "name": "Kaimukī",
-      "count": 56,
+      "name": "Iwilei",
+      "count": 85,
       "centroid": {
-        "lat": 21.27710787142857,
-        "lng": -157.80099407857136
+        "lat": 21.321255351764712,
+        "lng": -157.86863093294122
       }
     },
     {
-      "name": "Maunawili",
-      "count": 56,
+      "name": "Kalihi Kai",
+      "count": 83,
       "centroid": {
-        "lat": 21.37586592321428,
-        "lng": -157.77291129464294
-      }
-    },
-    {
-      "name": "Kaka‘ako",
-      "count": 54,
-      "centroid": {
-        "lat": 21.298121427777776,
-        "lng": -157.8578443148148
-      }
-    },
-    {
-      "name": "Salt Lake",
-      "count": 53,
-      "centroid": {
-        "lat": 21.342784849056606,
-        "lng": -157.91258046226417
-      }
-    },
-    {
-      "name": "Āliamanu",
-      "count": 52,
-      "centroid": {
-        "lat": 21.35166904615384,
-        "lng": -157.92890308846157
+        "lat": 21.328217109638558,
+        "lng": -157.8821546638554
       }
     },
     {
       "name": "Waimalu",
-      "count": 51,
+      "count": 81,
       "centroid": {
-        "lat": 21.39050874117647,
-        "lng": -157.94474749215686
+        "lat": 21.392701366666664,
+        "lng": -157.94383198888886
       }
     },
     {
-      "name": "Mapunapuna",
-      "count": 50,
+      "name": "Ho‘opili",
+      "count": 78,
       "centroid": {
-        "lat": 21.338574912,
-        "lng": -157.90153935399996
+        "lat": 21.352056617948726,
+        "lng": -158.03642224230765
+      }
+    },
+    {
+      "name": "Ewa Beach",
+      "count": 78,
+      "centroid": {
+        "lat": 21.318499124358972,
+        "lng": -158.01559728461538
+      }
+    },
+    {
+      "name": "Wahiawa",
+      "count": 77,
+      "centroid": {
+        "lat": 21.499132618181815,
+        "lng": -158.02171438181816
+      }
+    },
+    {
+      "name": "Kalihi",
+      "count": 75,
+      "centroid": {
+        "lat": 21.336616338666666,
+        "lng": -157.87438367999997
+      }
+    },
+    {
+      "name": "Enchanted Lake",
+      "count": 74,
+      "centroid": {
+        "lat": 21.388043274324314,
+        "lng": -157.73869088108108
+      }
+    },
+    {
+      "name": "Makiki",
+      "count": 70,
+      "centroid": {
+        "lat": 21.30741447857143,
+        "lng": -157.83381872857146
+      }
+    },
+    {
+      "name": "Waianae",
+      "count": 69,
+      "centroid": {
+        "lat": 21.4453428057971,
+        "lng": -158.18021447826087
+      }
+    },
+    {
+      "name": "Kaka‘ako",
+      "count": 68,
+      "centroid": {
+        "lat": 21.29819781176471,
+        "lng": -157.85855391764704
+      }
+    },
+    {
+      "name": "Maunawili",
+      "count": 66,
+      "centroid": {
+        "lat": 21.375890631818177,
+        "lng": -157.77360918636376
+      }
+    },
+    {
+      "name": "Ala Moana",
+      "count": 65,
+      "centroid": {
+        "lat": 21.294145876923086,
+        "lng": -157.84539548615388
+      }
+    },
+    {
+      "name": "Mānoa",
+      "count": 64,
+      "centroid": {
+        "lat": 21.311098026562505,
+        "lng": -157.81080759531247
+      }
+    },
+    {
+      "name": "Kaimukī",
+      "count": 61,
+      "centroid": {
+        "lat": 21.27743449508196,
+        "lng": -157.8006474639344
+      }
+    },
+    {
+      "name": "Āliamanu",
+      "count": 60,
+      "centroid": {
+        "lat": 21.352982983333327,
+        "lng": -157.9293973983334
       }
     },
     {
       "name": "Makakilo City",
+      "count": 59,
+      "centroid": {
+        "lat": 21.342191767796603,
+        "lng": -158.08222898135597
+      }
+    },
+    {
+      "name": "Salt Lake",
+      "count": 56,
+      "centroid": {
+        "lat": 21.342963107142857,
+        "lng": -157.91256264642857
+      }
+    },
+    {
+      "name": "Mapunapuna",
+      "count": 54,
+      "centroid": {
+        "lat": 21.33851824074074,
+        "lng": -157.90157656666665
+      }
+    },
+    {
+      "name": "Pacific Heights",
+      "count": 50,
+      "centroid": {
+        "lat": 21.320871526,
+        "lng": -157.84608512
+      }
+    },
+    {
+      "name": "Villages of Kapolei",
       "count": 49,
       "centroid": {
-        "lat": 21.342143753061222,
-        "lng": -158.08287113061223
+        "lat": 21.333910373469383,
+        "lng": -158.06418017346942
+      }
+    },
+    {
+      "name": "Nuʻuanu",
+      "count": 48,
+      "centroid": {
+        "lat": 21.34185586041667,
+        "lng": -157.85033050416664
+      }
+    },
+    {
+      "name": "ʻEwa Gentry",
+      "count": 46,
+      "centroid": {
+        "lat": 21.334996550000003,
+        "lng": -158.02527779347835
       }
     },
     {
       "name": "Iroquois Point",
-      "count": 42,
+      "count": 44,
       "centroid": {
-        "lat": 21.319681461904768,
-        "lng": -157.98672627619038
+        "lat": 21.319419550000006,
+        "lng": -157.98721688181806
+      }
+    },
+    {
+      "name": "Chinatown",
+      "count": 40,
+      "centroid": {
+        "lat": 21.313981645000005,
+        "lng": -157.86363871500004
+      }
+    },
+    {
+      "name": "Nanakuli",
+      "count": 40,
+      "centroid": {
+        "lat": 21.390365947500005,
+        "lng": -158.14730049000002
       }
     },
     {
@@ -245,131 +301,123 @@
       }
     },
     {
-      "name": "Pacific Heights",
+      "name": "Pālolo",
       "count": 38,
       "centroid": {
-        "lat": 21.320640228947372,
-        "lng": -157.84506686315794
-      }
-    },
-    {
-      "name": "Nuʻuanu",
-      "count": 38,
-      "centroid": {
-        "lat": 21.342344484210525,
-        "lng": -157.84980104736837
+        "lat": 21.292817526315794,
+        "lng": -157.79926091842108
       }
     },
     {
       "name": "Mililani Mauka",
-      "count": 37,
+      "count": 38,
       "centroid": {
-        "lat": 21.475384732432445,
-        "lng": -157.99602526486487
-      }
-    },
-    {
-      "name": "Villages of Kapolei",
-      "count": 36,
-      "centroid": {
-        "lat": 21.334185011111103,
-        "lng": -158.0648576305556
-      }
-    },
-    {
-      "name": "Nanakuli",
-      "count": 36,
-      "centroid": {
-        "lat": 21.390455697222226,
-        "lng": -158.14783874166673
-      }
-    },
-    {
-      "name": "ʻEwa Gentry",
-      "count": 36,
-      "centroid": {
-        "lat": 21.33499434722223,
-        "lng": -158.02498382500005
-      }
-    },
-    {
-      "name": "Ala Moana",
-      "count": 35,
-      "centroid": {
-        "lat": 21.29345495142857,
-        "lng": -157.84550599428576
-      }
-    },
-    {
-      "name": "Pālolo",
-      "count": 34,
-      "centroid": {
-        "lat": 21.29257826176471,
-        "lng": -157.799241
-      }
-    },
-    {
-      "name": "Kāhala",
-      "count": 32,
-      "centroid": {
-        "lat": 21.265911684374995,
-        "lng": -157.79503527187498
-      }
-    },
-    {
-      "name": "Chinatown",
-      "count": 29,
-      "centroid": {
-        "lat": 21.314361255172418,
-        "lng": -157.86345401724137
-      }
-    },
-    {
-      "name": "Wailupe",
-      "count": 29,
-      "centroid": {
-        "lat": 21.27647094827587,
-        "lng": -157.77842206206896
-      }
-    },
-    {
-      "name": "Pacific Palisades",
-      "count": 29,
-      "centroid": {
-        "lat": 21.41662914482759,
-        "lng": -157.95810661724138
-      }
-    },
-    {
-      "name": "Makaha",
-      "count": 29,
-      "centroid": {
-        "lat": 21.4707727724138,
-        "lng": -158.21144794482763
+        "lat": 21.475251892105277,
+        "lng": -157.99627191842106
       }
     },
     {
       "name": "Kalaeloa",
-      "count": 26,
+      "count": 36,
       "centroid": {
-        "lat": 21.32382797307692,
-        "lng": -158.07040844615386
+        "lat": 21.324472041666656,
+        "lng": -158.0698369527778
       }
     },
     {
-      "name": "Mariner's Cove",
-      "count": 24,
+      "name": "Kāhala",
+      "count": 34,
       "centroid": {
-        "lat": 21.29911674166667,
-        "lng": -157.69008555000002
+        "lat": 21.266266305882347,
+        "lng": -157.79485653823528
+      }
+    },
+    {
+      "name": "Pacific Palisades",
+      "count": 32,
+      "centroid": {
+        "lat": 21.417245315625003,
+        "lng": -157.958218115625
+      }
+    },
+    {
+      "name": "Wailupe",
+      "count": 31,
+      "centroid": {
+        "lat": 21.275668170967744,
+        "lng": -157.7787961096774
+      }
+    },
+    {
+      "name": "Makaha",
+      "count": 31,
+      "centroid": {
+        "lat": 21.470958887096778,
+        "lng": -158.210979183871
       }
     },
     {
       "name": "Waiau",
+      "count": 30,
+      "centroid": {
+        "lat": 21.396032933333334,
+        "lng": -157.96579753666668
+      }
+    },
+    {
+      "name": "Mariner's Cove",
+      "count": 26,
+      "centroid": {
+        "lat": 21.29902848076923,
+        "lng": -157.68893264230772
+      }
+    },
+    {
+      "name": "Hālawa",
+      "count": 26,
+      "centroid": {
+        "lat": 21.37542134230769,
+        "lng": -157.92294120769236
+      }
+    },
+    {
+      "name": "Sea Country",
       "count": 24,
       "centroid": {
-        "lat": 21.395984170833334,
-        "lng": -157.96609627916666
+        "lat": 21.408434954166665,
+        "lng": -158.1650203125
+      }
+    },
+    {
+      "name": "Lanikai",
+      "count": 23,
+      "centroid": {
+        "lat": 21.39233127826087,
+        "lng": -157.72093240869566
+      }
+    },
+    {
+      "name": "Saint Louis Heights",
+      "count": 23,
+      "centroid": {
+        "lat": 21.29566657826087,
+        "lng": -157.8070127173913
+      }
+    },
+    {
+      "name": "Kapalama",
+      "count": 22,
+      "centroid": {
+        "lat": 21.332608827272725,
+        "lng": -157.86587176818182
+      }
+    },
+    {
+      "name": "Waimanalo",
+      "count": 22,
+      "centroid": {
+        "lat": 21.34341251363637,
+        "lng": -157.72055574545453
       }
     },
     {
@@ -381,51 +429,35 @@
       }
     },
     {
-      "name": "Saint Louis Heights",
-      "count": 21,
+      "name": "Mā‘ili",
+      "count": 22,
       "centroid": {
-        "lat": 21.29612426666667,
-        "lng": -157.80668955714287
-      }
-    },
-    {
-      "name": "Sea Country",
-      "count": 21,
-      "centroid": {
-        "lat": 21.40838052380952,
-        "lng": -158.16627588571427
+        "lat": 21.4180022,
+        "lng": -158.17516014545456
       }
     },
     {
       "name": "Ahuimanu",
+      "count": 21,
+      "centroid": {
+        "lat": 21.44110638095238,
+        "lng": -157.83340551904763
+      }
+    },
+    {
+      "name": "Moanalua Gardens",
       "count": 20,
       "centroid": {
-        "lat": 21.441463275,
-        "lng": -157.83334866500002
+        "lat": 21.352601690000004,
+        "lng": -157.89246273999998
       }
     },
     {
-      "name": "Mā‘ili",
-      "count": 20,
-      "centroid": {
-        "lat": 21.417937375,
-        "lng": -158.17526318999998
-      }
-    },
-    {
-      "name": "Lanikai",
+      "name": "Niu Valley",
       "count": 19,
       "centroid": {
-        "lat": 21.3920928,
-        "lng": -157.72118216842108
-      }
-    },
-    {
-      "name": "Waimanalo",
-      "count": 19,
-      "centroid": {
-        "lat": 21.343854747368425,
-        "lng": -157.72166013157894
+        "lat": 21.28831376842105,
+        "lng": -157.72835334210527
       }
     },
     {
@@ -437,27 +469,19 @@
       }
     },
     {
-      "name": "Moanalua Gardens",
+      "name": "Hickam",
       "count": 18,
       "centroid": {
-        "lat": 21.352817933333338,
-        "lng": -157.89251345555556
+        "lat": 21.34599846666666,
+        "lng": -157.94499603333335
       }
     },
     {
-      "name": "Kapalama",
+      "name": "Pearl Highlands",
       "count": 18,
       "centroid": {
-        "lat": 21.332460777777776,
-        "lng": -157.86593674444444
-      }
-    },
-    {
-      "name": "Niu Valley",
-      "count": 17,
-      "centroid": {
-        "lat": 21.288631064705882,
-        "lng": -157.7282919764706
+        "lat": 21.39909999444444,
+        "lng": -157.97451930000003
       }
     },
     {
@@ -469,51 +493,99 @@
       }
     },
     {
-      "name": "Pearl Highlands",
-      "count": 14,
-      "centroid": {
-        "lat": 21.399159307142856,
-        "lng": -157.97416832857147
-      }
-    },
-    {
-      "name": "Waimanalo Beach",
-      "count": 13,
-      "centroid": {
-        "lat": 21.33176640769231,
-        "lng": -157.69649353846154
-      }
-    },
-    {
       "name": "Kapunahala",
-      "count": 13,
+      "count": 17,
       "centroid": {
-        "lat": 21.40989093846154,
-        "lng": -157.80895196153844
+        "lat": 21.41017553529412,
+        "lng": -157.80909211764705
+      }
+    },
+    {
+      "name": "Wahiawā",
+      "count": 16,
+      "centroid": {
+        "lat": 21.505680918749995,
+        "lng": -158.036769825
       }
     },
     {
       "name": "Moanalua Valley",
-      "count": 12,
+      "count": 15,
       "centroid": {
-        "lat": 21.36748662500001,
-        "lng": -157.89547477499997
+        "lat": 21.36818315333334,
+        "lng": -157.89659073333328
       }
     },
     {
-      "name": "Puohala",
-      "count": 12,
+      "name": "Waimanalo Beach",
+      "count": 15,
       "centroid": {
-        "lat": 21.410568533333333,
-        "lng": -157.79690924166667
+        "lat": 21.331903173333338,
+        "lng": -157.69665840666667
       }
     },
     {
       "name": "Keapuka",
+      "count": 14,
+      "centroid": {
+        "lat": 21.395679242857145,
+        "lng": -157.80052124285712
+      }
+    },
+    {
+      "name": "Royal Kunia",
+      "count": 14,
+      "centroid": {
+        "lat": 21.399467078571426,
+        "lng": -158.03517177857142
+      }
+    },
+    {
+      "name": "Puohala",
+      "count": 13,
+      "centroid": {
+        "lat": 21.41100713076923,
+        "lng": -157.79757454615384
+      }
+    },
+    {
+      "name": "Haleiwa",
+      "count": 13,
+      "centroid": {
+        "lat": 21.58254162307692,
+        "lng": -158.10876987692308
+      }
+    },
+    {
+      "name": "Nānākuli",
       "count": 12,
       "centroid": {
-        "lat": 21.395398975000003,
-        "lng": -157.800075475
+        "lat": 21.381699741666665,
+        "lng": -158.1376717916667
+      }
+    },
+    {
+      "name": "Waipio Acres",
+      "count": 12,
+      "centroid": {
+        "lat": 21.463032808333335,
+        "lng": -158.01825738333335
+      }
+    },
+    {
+      "name": "Sand Island",
+      "count": 11,
+      "centroid": {
+        "lat": 21.306702036363635,
+        "lng": -157.87890703636364
+      }
+    },
+    {
+      "name": "Red Hill",
+      "count": 11,
+      "centroid": {
+        "lat": 21.364703354545455,
+        "lng": -157.9112773090909
       }
     },
     {
@@ -525,14 +597,6 @@
       }
     },
     {
-      "name": "Royal Kunia",
-      "count": 11,
-      "centroid": {
-        "lat": 21.399318254545452,
-        "lng": -158.03526256363637
-      }
-    },
-    {
       "name": "Makakilo Heights",
       "count": 11,
       "centroid": {
@@ -541,59 +605,11 @@
       }
     },
     {
-      "name": "Sand Island",
-      "count": 10,
-      "centroid": {
-        "lat": 21.30626663,
-        "lng": -157.87813470999998
-      }
-    },
-    {
-      "name": "Wahiawā",
-      "count": 10,
-      "centroid": {
-        "lat": 21.506125569999995,
-        "lng": -158.0366512
-      }
-    },
-    {
-      "name": "Red Hill",
-      "count": 10,
-      "centroid": {
-        "lat": 21.36390196,
-        "lng": -157.91187632
-      }
-    },
-    {
-      "name": "Haleiwa",
-      "count": 10,
-      "centroid": {
-        "lat": 21.58064953,
-        "lng": -158.10992218
-      }
-    },
-    {
-      "name": "Nānākuli",
-      "count": 10,
-      "centroid": {
-        "lat": 21.374327689999998,
-        "lng": -158.13789493000002
-      }
-    },
-    {
-      "name": "Waipio Acres",
-      "count": 10,
-      "centroid": {
-        "lat": 21.46330312,
-        "lng": -158.01747548000003
-      }
-    },
-    {
-      "name": "Hickam",
+      "name": "Mehana",
       "count": 9,
       "centroid": {
-        "lat": 21.344044477777782,
-        "lng": -157.94428825555553
+        "lat": 21.32561158888889,
+        "lng": -158.07478118888886
       }
     },
     {
@@ -605,11 +621,27 @@
       }
     },
     {
-      "name": "Mehana",
+      "name": "Waialua",
+      "count": 9,
+      "centroid": {
+        "lat": 21.573352211111107,
+        "lng": -158.1211465111111
+      }
+    },
+    {
+      "name": "Whitmore Village",
       "count": 8,
       "centroid": {
-        "lat": 21.325357200000003,
-        "lng": -158.07497253749997
+        "lat": 21.511726437500002,
+        "lng": -158.0223404625
+      }
+    },
+    {
+      "name": "Crown Terrace",
+      "count": 8,
+      "centroid": {
+        "lat": 21.422058212499998,
+        "lng": -157.807442775
       }
     },
     {
@@ -621,19 +653,27 @@
       }
     },
     {
+      "name": "Hālawa Heights",
+      "count": 8,
+      "centroid": {
+        "lat": 21.377860075,
+        "lng": -157.91196468750002
+      }
+    },
+    {
+      "name": "Kalama Valley",
+      "count": 7,
+      "centroid": {
+        "lat": 21.29927717142857,
+        "lng": -157.6679603285714
+      }
+    },
+    {
       "name": "Lunalilo Park Makai",
       "count": 7,
       "centroid": {
         "lat": 21.278205314285717,
         "lng": -157.6997784142857
-      }
-    },
-    {
-      "name": "Hālawa",
-      "count": 7,
-      "centroid": {
-        "lat": 21.37495494285714,
-        "lng": -157.92491574285714
       }
     },
     {
@@ -661,11 +701,11 @@
       }
     },
     {
-      "name": "Crown Terrace",
+      "name": "West Loch",
       "count": 7,
       "centroid": {
-        "lat": 21.421760242857143,
-        "lng": -157.8075594
+        "lat": 21.37830942857143,
+        "lng": -158.02008464285714
       }
     },
     {
@@ -677,14 +717,6 @@
       }
     },
     {
-      "name": "Waialua",
-      "count": 7,
-      "centroid": {
-        "lat": 21.576170357142853,
-        "lng": -158.1231903
-      }
-    },
-    {
       "name": "‘Ewa Villages",
       "count": 7,
       "centroid": {
@@ -693,27 +725,11 @@
       }
     },
     {
-      "name": "Whitmore Village",
-      "count": 6,
-      "centroid": {
-        "lat": 21.51196595,
-        "lng": -158.02323058333334
-      }
-    },
-    {
       "name": "West Kapolei",
       "count": 6,
       "centroid": {
         "lat": 21.321590366666666,
         "lng": -158.0919381
-      }
-    },
-    {
-      "name": "Kalama Valley",
-      "count": 6,
-      "centroid": {
-        "lat": 21.29803385,
-        "lng": -157.66994266666666
       }
     },
     {
@@ -749,14 +765,6 @@
       }
     },
     {
-      "name": "West Loch",
-      "count": 5,
-      "centroid": {
-        "lat": 21.37843758,
-        "lng": -158.02090368
-      }
-    },
-    {
       "name": "Mahinui",
       "count": 5,
       "centroid": {
@@ -781,6 +789,14 @@
       }
     },
     {
+      "name": "Marina East",
+      "count": 4,
+      "centroid": {
+        "lat": 21.2832963,
+        "lng": -157.70201325
+      }
+    },
+    {
       "name": "Marina Central",
       "count": 4,
       "centroid": {
@@ -797,19 +813,19 @@
       }
     },
     {
+      "name": "Heeia",
+      "count": 4,
+      "centroid": {
+        "lat": 21.4212256,
+        "lng": -157.805805
+      }
+    },
+    {
       "name": "Kulana Apartments",
       "count": 4,
       "centroid": {
         "lat": 21.3124788,
         "lng": -158.0081651
-      }
-    },
-    {
-      "name": "Marina East",
-      "count": 3,
-      "centroid": {
-        "lat": 21.283499966666664,
-        "lng": -157.70253066666666
       }
     },
     {
@@ -842,14 +858,6 @@
       "centroid": {
         "lat": 21.4105192,
         "lng": -157.787317
-      }
-    },
-    {
-      "name": "Heeia",
-      "count": 3,
-      "centroid": {
-        "lat": 21.4212256,
-        "lng": -157.805805
       }
     },
     {
@@ -17600,6 +17608,3991 @@
       "neighborhood": "Waimalu",
       "lat": 21.4018204,
       "lng": -157.9376535
+    },
+    "980700 BLOCK NOHOAUPUNI PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4014574,
+      "lng": -157.9375602
+    },
+    "980800 BLOCK AINANUI LOOP": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4050965,
+      "lng": -157.9341808
+    },
+    "980800 BLOCK IHO PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3932158,
+      "lng": -157.9273031
+    },
+    "980800 BLOCK KAONOHI ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3984715,
+      "lng": -157.9201829
+    },
+    "980800 BLOCK MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "980800 BLOCK NAALII ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4018204,
+      "lng": -157.9376535
+    },
+    "980800 BLOCK NAUKEWAI PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4044434,
+      "lng": -157.9312693
+    },
+    "980800 BLOCK NOELANI ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.3970323,
+      "lng": -157.9617181
+    },
+    "980900 BLOCK KAAMILO ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3794234,
+      "lng": -157.9355131
+    },
+    "980900 BLOCK KAONOHI PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3966125,
+      "lng": -157.9270325
+    },
+    "980900 BLOCK MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "980900 BLOCK NOELANI ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.3970323,
+      "lng": -157.9617181
+    },
+    "981000 BLOCK KAAMILO ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3794234,
+      "lng": -157.9355131
+    },
+    "981000 BLOCK KOMO MAI DR": {
+      "neighborhood": "Pacific Palisades",
+      "lat": 21.4291253,
+      "lng": -157.9525132
+    },
+    "981000 BLOCK MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "981200 BLOCK KULAWAI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.393365,
+      "lng": -157.9170662
+    },
+    "981200 BLOCK MAHIPUA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3881542,
+      "lng": -157.9254701
+    },
+    "981200 BLOCK ULUNE ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3762492,
+      "lng": -157.9217141
+    },
+    "981300 BLOCK AKAAKA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3931131,
+      "lng": -157.9156999
+    },
+    "981300 BLOCK HINU PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3946276,
+      "lng": -157.9571061
+    },
+    "981300 BLOCK KOAHEAHE PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3949992,
+      "lng": -157.9556497
+    },
+    "981300 BLOCK NOLA ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3948772,
+      "lng": -157.953652
+    },
+    "981400 BLOCK KOAHEAHE ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3965913,
+      "lng": -157.9567792
+    },
+    "981500 BLOCK HOOMAIKE ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.400026,
+      "lng": -157.9516197
+    },
+    "981600 BLOCK HAPAKI ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4035888,
+      "lng": -157.9423645
+    },
+    "981600 BLOCK PIKI ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4013601,
+      "lng": -157.9436971
+    },
+    "981900 BLOCK WILOU ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4081248,
+      "lng": -157.9386864
+    },
+    "982000 BLOCK PAHIOLO ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4070195,
+      "lng": -157.9344323
+    },
+    "990000 BLOCK IEIE PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3781765,
+      "lng": -157.9324077
+    },
+    "990000 BLOCK KALALOA ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3666072,
+      "lng": -157.9333679
+    },
+    "990000 BLOCK KAM HWY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "990000 BLOCK KAUHALE ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3783196,
+      "lng": -157.9345015
+    },
+    "990000 BLOCK KINOOLE PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3796563,
+      "lng": -157.9329664
+    },
+    "990000 BLOCK KOAHA WAY": {
+      "neighborhood": "Moanalua Valley",
+      "lat": 21.373259,
+      "lng": -157.902727
+    },
+    "990000 BLOCK NALOPAKA PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.379953,
+      "lng": -157.9342035
+    },
+    "990000 BLOCK OHIAKU ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3651364,
+      "lng": -157.9328397
+    },
+    "990100 BLOCK AIEA HTS DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3839437,
+      "lng": -157.9219876
+    },
+    "990100 BLOCK HAPUKU ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3821218,
+      "lng": -157.9274813
+    },
+    "990100 BLOCK KEALAKAHA DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3869071,
+      "lng": -157.9206164
+    },
+    "990100 BLOCK KOHOMUA ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3672826,
+      "lng": -157.9351724
+    },
+    "990100 BLOCK MIKALEMI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3792093,
+      "lng": -157.9332261
+    },
+    "990100 BLOCK MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "990100 BLOCK NANU PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3777,
+      "lng": -157.9299231
+    },
+    "990100 BLOCK OHEKANI LOOP": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3651364,
+      "lng": -157.9328397
+    },
+    "990100 BLOCK PUAKALA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3775181,
+      "lng": -157.9295464
+    },
+    "990100-990170 KAIMAKANI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3763864,
+      "lng": -157.9283514
+    },
+    "990200 BLOCK AIEA HTS DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3839437,
+      "lng": -157.9219876
+    },
+    "990200 BLOCK ANOUNOU PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.378693,
+      "lng": -157.9274218
+    },
+    "990200 BLOCK KAM HWY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "990200 BLOCK MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "990200 BLOCK OHENANA LOOP": {
+      "neighborhood": "Hālawa",
+      "lat": 21.369735,
+      "lng": -157.9324311
+    },
+    "990200 BLOCK ULUNE ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3762492,
+      "lng": -157.9217141
+    },
+    "990300 BLOCK AHEAHE ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3826715,
+      "lng": -157.9270304
+    },
+    "990300 BLOCK AIEA HTS DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3839437,
+      "lng": -157.9219876
+    },
+    "990300 BLOCK KULAWEA PL": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3788647,
+      "lng": -157.9249976
+    },
+    "990300 BLOCK PAIHI ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3784554,
+      "lng": -157.9194626
+    },
+    "990300 BLOCK POHAI PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3807721,
+      "lng": -157.9270941
+    },
+    "990300 BLOCK UHALOA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3837023,
+      "lng": -157.9272918
+    },
+    "990400 BLOCK HAKINA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3816239,
+      "lng": -157.9266185
+    },
+    "990500 BLOCK HONOHINA ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3786155,
+      "lng": -157.9212897
+    },
+    "990500 BLOCK HUAKANU ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.376781,
+      "lng": -157.9201548
+    },
+    "990500 BLOCK KAM HWY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "990500 BLOCK PAIHI ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3784554,
+      "lng": -157.9194626
+    },
+    "990700 BLOCK ALIIPOE DR": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3801524,
+      "lng": -157.9202681
+    },
+    "990700 BLOCK IWAIWA ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.377191,
+      "lng": -157.9174459
+    },
+    "990700 BLOCK NAHIOLEA ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3776494,
+      "lng": -157.9144745
+    },
+    "990800 BLOCK AUMAKIKI LOOP": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3773369,
+      "lng": -157.9120159
+    },
+    "990800 BLOCK HALAWA HTS RD": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3745062,
+      "lng": -157.9220008
+    },
+    "990800 BLOCK IWAENA ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3767602,
+      "lng": -157.9104606
+    },
+    "990800 BLOCK IWAIWA ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.377191,
+      "lng": -157.9174459
+    },
+    "990900 BLOCK HULUMANU ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3762645,
+      "lng": -157.9145842
+    },
+    "990900 BLOCK IWAENA ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3767602,
+      "lng": -157.9104606
+    },
+    "990900 BLOCK MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "991000 BLOCK IWAENA ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3767602,
+      "lng": -157.9104606
+    },
+    "991000 BLOCK PUUMAKANI ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.384589,
+      "lng": -157.9128005
+    },
+    "991100 BLOCK AIEA HTS DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3839437,
+      "lng": -157.9219876
+    },
+    "991100 BLOCK HALAWA HTS RD": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3745062,
+      "lng": -157.9220008
+    },
+    "991200 BLOCK HALAWA HTS RD": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3745062,
+      "lng": -157.9220008
+    },
+    "991200 BLOCK IWAENA ST": {
+      "neighborhood": "Hālawa Heights",
+      "lat": 21.3767602,
+      "lng": -157.9104606
+    },
+    "991200 BLOCK WAIUA PL": {
+      "neighborhood": "Red Hill",
+      "lat": 21.3727173,
+      "lng": -157.9052872
+    },
+    "991300 BLOCK HALAWA HTS RD": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3745062,
+      "lng": -157.9220008
+    },
+    "991400 BLOCK KOAHA PL": {
+      "neighborhood": "Moanalua Valley",
+      "lat": 21.3729242,
+      "lng": -157.9020483
+    },
+    "991800 BLOCK AIEA HTS DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3839437,
+      "lng": -157.9219876
+    },
+    "AALAPAPA DR / KAIOLENA DR": {
+      "neighborhood": "Lanikai",
+      "lat": 21.3881983,
+      "lng": -157.7147163
+    },
+    "ACACIA RD / KAM HWY": {
+      "neighborhood": "Pearl Highlands",
+      "lat": 21.3985073,
+      "lng": -157.9770447
+    },
+    "ACACIA RD / MARINE MART LN": {
+      "neighborhood": "Pearl Highlands",
+      "lat": 21.3985073,
+      "lng": -157.9770447
+    },
+    "AHANA ST / LIONA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2964613,
+      "lng": -157.8396627
+    },
+    "AHONUI ST / HULALI PL": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3392612,
+      "lng": -157.8761771
+    },
+    "AHUA ST / KAIHIKAPU ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.3437488,
+      "lng": -157.8952128
+    },
+    "AHUUA ST / MAKAALOA ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3579904,
+      "lng": -158.0275576
+    },
+    "ALA LILIKOI PL / ALA LILIKOI ST": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.351661,
+      "lng": -157.9109273
+    },
+    "ALA MOANA BLVD / HOLOMOANA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2998181,
+      "lng": -157.8631316
+    },
+    "ALA MOANA BLVD / KALAKAUA AVE": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2998181,
+      "lng": -157.8631316
+    },
+    "ALA MOANA BLVD / PIIKOI ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2998181,
+      "lng": -157.8631316
+    },
+    "ALA MOANA BLVD / S NIMITZ HWY": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2998181,
+      "lng": -157.8631316
+    },
+    "ALA MOANA PARK DR / ALA MOANA BLVD": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2923627,
+      "lng": -157.8545052
+    },
+    "ALA WAI BLVD / KALAIMOKU ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / KANEKAPOLEI ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / NAMAHANA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / OHUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / OLOHANA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / PAU ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALA WAI BLVD / SEASIDE AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2795232,
+      "lng": -157.8233636
+    },
+    "ALAKEA ST / S BERETANIA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3078328,
+      "lng": -157.8608563
+    },
+    "ALAPAI ST / PROSPECT ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3076425,
+      "lng": -157.8504831
+    },
+    "ALDER ST / ELM ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2978426,
+      "lng": -157.8441809
+    },
+    "ALDER ST / KAMAILE ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2978426,
+      "lng": -157.8441809
+    },
+    "ALOHA DR / ROYAL HAWAIIAN AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2816427,
+      "lng": -157.826982
+    },
+    "AMANA ST / MAKALOA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2940328,
+      "lng": -157.840401
+    },
+    "AMELIA ST / N SCHOOL ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3386791,
+      "lng": -157.8733962
+    },
+    "ANOIKI ST / KEAHUA LOOP": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.4058781,
+      "lng": -158.0323753
+    },
+    "ANONUI ST / HALEPILI ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3970801,
+      "lng": -158.0360707
+    },
+    "APAPANE ST / LULUKU RD": {
+      "neighborhood": "Keapuka",
+      "lat": 21.3966699,
+      "lng": -157.800485
+    },
+    "ARIZONA RD / RENTON RD": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3418294,
+      "lng": -157.9093545
+    },
+    "AUIKI ST / PUUHALE RD": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3219401,
+      "lng": -157.8883262
+    },
+    "AULD LN / HALONA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3240188,
+      "lng": -157.8674527
+    },
+    "AULIKE ST / ULUNIU ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3960241,
+      "lng": -157.7426261
+    },
+    "AUPUNI ST / KEALIA DR": {
+      "neighborhood": "Kapalama",
+      "lat": 21.3365689,
+      "lng": -157.8639632
+    },
+    "AWAWA ST / PALAILAI ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3454545,
+      "lng": -158.0808869
+    },
+    "BETHEL ST / CHAPLAIN LN": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3110946,
+      "lng": -157.8606947
+    },
+    "BETHEL ST / S PAUAHI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3110946,
+      "lng": -157.8606947
+    },
+    "BRIGHAM ST / KAPALAMA AVE": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3316314,
+      "lng": -157.8697669
+    },
+    "BURBANK ST / WYLLIE ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3305969,
+      "lng": -157.8475067
+    },
+    "CALIFORNIA AVE / N CANE ST": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.508749,
+      "lng": -157.9933749
+    },
+    "CARTWRIGHT RD / PAOAKALANI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2726644,
+      "lng": -157.8211999
+    },
+    "CENTER DR / N NIMITZ HWY": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3491568,
+      "lng": -157.9344575
+    },
+    "CHAPLAIN LN / BETHEL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3115566,
+      "lng": -157.8605792
+    },
+    "COLLEGE WALK / N BERETANIA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3154423,
+      "lng": -157.8608082
+    },
+    "COLLEGE WALK / N KUKUI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3154423,
+      "lng": -157.8608082
+    },
+    "COOKE ST / POHUKAINA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.296089,
+      "lng": -157.8615611
+    },
+    "CORAL SEA RD / FD ROOSEVELT AVE": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3289261,
+      "lng": -158.0554498
+    },
+    "CORAL SEA RD / VINSON RD": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3292048,
+      "lng": -158.0488589
+    },
+    "DAVENPORT ST / PIIKOI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3056144,
+      "lng": -157.8415971
+    },
+    "DILLINGHAM BLVD / KAAAHI ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3253504,
+      "lng": -157.8776219
+    },
+    "DOLE ST / SPRECKELS ST": {
+      "neighborhood": "Saint Louis Heights",
+      "lat": 21.2914266,
+      "lng": -157.8104428
+    },
+    "EKELA AVE / WINAM AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2825501,
+      "lng": -157.8159435
+    },
+    "ELM ST / SHERIDAN ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2987034,
+      "lng": -157.8447629
+    },
+    "EMERSON ST / GREEN ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3083218,
+      "lng": -157.8486011
+    },
+    "ENTERPRISE AVE / MIDWAY ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3250323,
+      "lng": -158.0667207
+    },
+    "FACTORY ST / STANLEY ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3320061,
+      "lng": -157.8793217
+    },
+    "FARRINGTON HWY / AWANUI ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / HIKUKAHI ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / KAM HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / KAMAILEHOPE ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / KUALAKAI PKWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / LAALOA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / LAWAIA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / LEOOLE ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / LUALUALEI HMSTD RD": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / MALIONA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / MOKUOLA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / MOUNT KAALA RD": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FARRINGTON HWY / PALEHUA RD": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "FD ROOSEVELT AVE / CORREGIDOR ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3289261,
+      "lng": -158.0554498
+    },
+    "FD ROOSEVELT AVE / FORT BARRETTE RD": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3289261,
+      "lng": -158.0554498
+    },
+    "FERN ST / PUNAHOU ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2909597,
+      "lng": -157.8314061
+    },
+    "FORT BARRETTE RD / FD ROOSEVELT AVE": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.337152,
+      "lng": -158.0732568
+    },
+    "FORT BARRETTE RD / KAPOLEI PKWY": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.337152,
+      "lng": -158.0732568
+    },
+    "FORT ST MALL / S HOTEL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3102545,
+      "lng": -157.8606625
+    },
+    "FORT WEAVER RD / KAIMALIE ST": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.3139194,
+      "lng": -157.9975196
+    },
+    "FORT WEAVER RD / OLD FORT WEAVER RD": {
+      "neighborhood": "Iroquois Point",
+      "lat": 21.3139194,
+      "lng": -157.9975196
+    },
+    "GREEN ST / ALAPAI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3075612,
+      "lng": -157.8496258
+    },
+    "GREEN ST / ERNEST ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3075612,
+      "lng": -157.8496258
+    },
+    "H3E LIKELIKE OFF": {
+      "neighborhood": "Kapunahala",
+      "lat": 21.4030011,
+      "lng": -157.8073241
+    },
+    "HAIKU RD / OHALA ST": {
+      "neighborhood": "Heeia",
+      "lat": 21.4212256,
+      "lng": -157.805805
+    },
+    "HAKIMO RD / FARRINGTON HWY": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.4006963,
+      "lng": -158.1534083
+    },
+    "HALAWA DR / KAM HWY": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3595728,
+      "lng": -157.9365575
+    },
+    "HALEKAUWILA ST / AHUI ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3009421,
+      "lng": -157.8589945
+    },
+    "HALEKAUWILA ST / CORAL ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3009421,
+      "lng": -157.8589945
+    },
+    "HALEKAUWILA ST / SOUTH ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.3009421,
+      "lng": -157.8589945
+    },
+    "HALEKULA WAY / WILDER AVE": {
+      "neighborhood": "Makiki",
+      "lat": 21.301561,
+      "lng": -157.8316253
+    },
+    "HALEMAUMAU ST / KALANIANAOLE HWY": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.2813427,
+      "lng": -157.7393036
+    },
+    "HALOA DR / HALUPA ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3626824,
+      "lng": -157.9243504
+    },
+    "HANAI LOOP / KAPALAMA AVE": {
+      "neighborhood": "Kapalama",
+      "lat": 21.3363725,
+      "lng": -157.8658143
+    },
+    "HANGAR AVE / E ST": {
+      "neighborhood": "Hickam",
+      "lat": 21.3432275,
+      "lng": -157.9494135
+    },
+    "HASSINGER ST / PIIKOI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3049318,
+      "lng": -157.8422985
+    },
+    "HAUMEA ST / KEALAKAPU ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3317246,
+      "lng": -158.0825472
+    },
+    "HAUOLI ST / ALGAROBA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2942263,
+      "lng": -157.8307706
+    },
+    "HAWAII KAI DR / KALANIANAOLE HWY": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.2957104,
+      "lng": -157.6751859
+    },
+    "HAWAII ST / PUUNUI AVE": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.336146,
+      "lng": -157.8455983
+    },
+    "HAWEA ST / WAAULA ST": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3343357,
+      "lng": -158.0578809
+    },
+    "HEKAHA ST / MOANALUA RD": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3860512,
+      "lng": -157.9508651
+    },
+    "HELELUA ST / HELELUA PL": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.3868469,
+      "lng": -158.1468336
+    },
+    "HENE ST / HONOWAI ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3812928,
+      "lng": -158.0275204
+    },
+    "HEULU ST / KEEAUMOKU ST": {
+      "neighborhood": "Makiki",
+      "lat": 21.3067793,
+      "lng": -157.8360255
+    },
+    "HEULU ST / KEWALO ST": {
+      "neighborhood": "Makiki",
+      "lat": 21.3067793,
+      "lng": -157.8360255
+    },
+    "HIGGINS RD / KAM HWY": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.4867698,
+      "lng": -158.0281278
+    },
+    "HIGGINS RD / SANTOS DUMONT AVE": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.4867698,
+      "lng": -158.0281278
+    },
+    "HIHIMANU ST / LAUMILO ST": {
+      "neighborhood": "Waimanalo",
+      "lat": 21.3406117,
+      "lng": -157.7135613
+    },
+    "HIHIMANU ST / NONOKIO ST": {
+      "neighborhood": "Waimanalo",
+      "lat": 21.3406117,
+      "lng": -157.7135613
+    },
+    "HIHIMANU ST / WAIKUPANAHA ST": {
+      "neighborhood": "Waimanalo",
+      "lat": 21.3406117,
+      "lng": -157.7135613
+    },
+    "HOBRON LN / ALA MOANA BLVD": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2851528,
+      "lng": -157.8394404
+    },
+    "HOLOMOANA ST / HOBRON LN": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2845244,
+      "lng": -157.8395431
+    },
+    "HOLOMOANA ST / KAHANAMOKU ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2845244,
+      "lng": -157.8395431
+    },
+    "HOOMALU ST / PUU PONI ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.393329,
+      "lng": -157.9632042
+    },
+    "HOOWALEA ST / HOOMANAO ST": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.3347952,
+      "lng": -158.0128449
+    },
+    "HOPAKA ST / PENSACOLA ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2949174,
+      "lng": -157.8480544
+    },
+    "HOPAKA ST / PIIKOI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2949174,
+      "lng": -157.8480544
+    },
+    "HORNET AVE / SARATOGA AVE": {
+      "neighborhood": "Hickam",
+      "lat": 21.3612336,
+      "lng": -157.9587758
+    },
+    "HOUGHTAILING ST / OLOMEA ST": {
+      "neighborhood": "Kapalama",
+      "lat": 21.3320332,
+      "lng": -157.8665112
+    },
+    "HUI IWA ST / KAHEKILI HWY": {
+      "neighborhood": "Ahuimanu",
+      "lat": 21.4339685,
+      "lng": -157.8345426
+    },
+    "HUIPU DR / MAUNAOLU ST": {
+      "neighborhood": "Makaha",
+      "lat": 21.4796275,
+      "lng": -158.2000841
+    },
+    "HUNAKAI ST / WAIALAE AVE": {
+      "neighborhood": "Kāhala",
+      "lat": 21.273348,
+      "lng": -157.7888512
+    },
+    "IKELOA ST / HEAHEA ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3972016,
+      "lng": -158.027242
+    },
+    "ILALO ST / WARD AVE": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.295262,
+      "lng": -157.8618138
+    },
+    "IOLANI AVE / PROSPECT ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3097608,
+      "lng": -157.8503726
+    },
+    "IROQUOIS RD / HOOMAKA ST": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3375519,
+      "lng": -158.0179424
+    },
+    "IWILEI RD / SUMNER ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.315585,
+      "lng": -157.8659117
+    },
+    "JADE ST / HANA ST": {
+      "neighborhood": "Makaha",
+      "lat": 21.4676876,
+      "lng": -158.2082802
+    },
+    "JOSEPH P LEONG HWY / EMERSON RD": {
+      "neighborhood": "Haleiwa",
+      "lat": 21.5914158,
+      "lng": -158.1017415
+    },
+    "KAAHELE ST / HOLOPUNI ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.39276,
+      "lng": -157.9484635
+    },
+    "KAAHUMANU ST / HOOKANIKE ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4037002,
+      "lng": -157.9504964
+    },
+    "KAAHUMANU ST / KAM HWY": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4037002,
+      "lng": -157.9504964
+    },
+    "KAAHUMANU ST / NOELANI ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.4037002,
+      "lng": -157.9504964
+    },
+    "KAAKEPA / KUALA ST": {
+      "neighborhood": "Pearl Highlands",
+      "lat": 21.3992775,
+      "lng": -157.9744507
+    },
+    "KAHALA AVE / KAINAPAU PL": {
+      "neighborhood": "Wailupe",
+      "lat": 21.2640279,
+      "lng": -157.7842198
+    },
+    "KAHALA AVE / ULILI ST": {
+      "neighborhood": "Wailupe",
+      "lat": 21.2640279,
+      "lng": -157.7842198
+    },
+    "KAHALEWAI PL / KAM HWY": {
+      "neighborhood": "Haleiwa",
+      "lat": 21.6006796,
+      "lng": -158.1025167
+    },
+    "KAHANAMOKU ST / HOLOMOANA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2838646,
+      "lng": -157.8383732
+    },
+    "KAHAUIKI ST / MIDDLE ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.33964,
+      "lng": -157.8803765
+    },
+    "KAHEKA ST / KANUNU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2960964,
+      "lng": -157.8388526
+    },
+    "KAHEKA ST / MAKALOA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2960964,
+      "lng": -157.8388526
+    },
+    "KAHEKA ST / RYCROFT ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2960964,
+      "lng": -157.8388526
+    },
+    "KAHEKILI HWY / AHUIMANU PL": {
+      "neighborhood": "Kapunahala",
+      "lat": 21.4146313,
+      "lng": -157.8114832
+    },
+    "KAHEKILI HWY / KAM HWY": {
+      "neighborhood": "Kapunahala",
+      "lat": 21.4146313,
+      "lng": -157.8114832
+    },
+    "KAHUALENA ST / KAHUANANI ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.3916223,
+      "lng": -157.9929589
+    },
+    "KAHUANANI ST / KAHUANUI ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.3899323,
+      "lng": -157.9997478
+    },
+    "KAHUAPAANI ST / ALA ALII ST": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3749021,
+      "lng": -157.9187799
+    },
+    "KAHUHIPA ST / ALALOA ST": {
+      "neighborhood": "Puohala",
+      "lat": 21.4162703,
+      "lng": -157.8055582
+    },
+    "KAHULUI ST / HONOKAHUA ST": {
+      "neighborhood": "Mariner's Cove",
+      "lat": 21.3002283,
+      "lng": -157.6750096
+    },
+    "KAIHOLO ST / MALAKOLE ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3136754,
+      "lng": -158.0921355
+    },
+    "KAILUA RD / AOLOA ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3942009,
+      "lng": -157.7438784
+    },
+    "KAIMAKANI ST / MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3763864,
+      "lng": -157.9283514
+    },
+    "KAIMALIE ST / KAIPU ST": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.315594,
+      "lng": -158.0172514
+    },
+    "KAINEHE ST / KIHAPAI ST": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.394158,
+      "lng": -157.7456869
+    },
+    "KAIOLI ST / KAPOLEI PKWY": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAIOLU ST / ALA WAI BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2827178,
+      "lng": -157.8284718
+    },
+    "KAIOLU ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2827178,
+      "lng": -157.8284718
+    },
+    "KAIULANI AVE / ALA WAI BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2780465,
+      "lng": -157.8233363
+    },
+    "KAIULANI AVE / CLEGHORN ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2780465,
+      "lng": -157.8233363
+    },
+    "KAIULANI AVE / KOA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2780465,
+      "lng": -157.8233363
+    },
+    "KAIULANI AVE / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2780465,
+      "lng": -157.8233363
+    },
+    "KAIWIULA ST / ALOKELE ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.327379,
+      "lng": -157.8749868
+    },
+    "KALAIMOKU ST / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2836929,
+      "lng": -157.8296033
+    },
+    "KALAKAUA AVE / ALA MOANA BLVD": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / ALA WAI BLVD": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / KAIULANI AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / KAPAHULU AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / KAPIOLANI BLVD": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / KEALOHILANI AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / KEONIANA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / KUHIO AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / LEWERS ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / LILIUOKALANI AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / MAKALOA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / MONSARRAT AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / OHUA AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / PAOAKALANI AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / PAU ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / PHILIP ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / S BERETANIA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / S KING ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / SEASIDE AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / ULUNIU AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALAKAUA AVE / YOUNG ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2864136,
+      "lng": -157.8333398
+    },
+    "KALANI ST / MCNEILL ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3268682,
+      "lng": -157.8826504
+    },
+    "KALANIANAOLE HWY / AINAKOA AVE": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / AULOA RD": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / HALEMAUMAU ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / HAWAII LOA ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / KAM HWY": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / TINKER RD": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / ULUHALA ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / ULUPII ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALANIANAOLE HWY / WAILUPE CIR": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3756638,
+      "lng": -157.7800795
+    },
+    "KALIA RD / ALA MOANA BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2825136,
+      "lng": -157.8341106
+    },
+    "KALIHI ST / BECKLEY ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALIHI ST / DEMOCRAT ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALIHI ST / HAKA DR": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALIHI ST / HOE ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALIHI ST / MAKUAHINE ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALIHI ST / NALANIEHA ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALIHI ST / UKIUKI PL": {
+      "neighborhood": "Liliha",
+      "lat": 21.3437793,
+      "lng": -157.8652544
+    },
+    "KALO PL / VARSITY PL": {
+      "neighborhood": "McCully",
+      "lat": 21.2919256,
+      "lng": -157.8202156
+    },
+    "KAM HWY / ACACIA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / AIEA KAI PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / CANE HAUL RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / HALAULANI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / HEKAHA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / HIGGINS RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / JOSEPH P LEONG HWY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / KALALOA ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / KANUKU ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / KAONOHI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / KAWELA CAMP RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / KIHALE ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / LEHUA AVE": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / LEHUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / MCGREW LOOP": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / MOANALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / N NIMITZ HWY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / NAPOONALA PL": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / PUU PONI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / WAIAHOLE HMSTD RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / WAIKALUA RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / WAIMANO HOME RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM HWY / WILLIAM HENRY RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3770382,
+      "lng": -157.9343168
+    },
+    "KAM IV RD / KINO ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3413676,
+      "lng": -157.8718251
+    },
+    "KAM IV RD / ROSE ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.341273,
+      "lng": -157.8798554
+    },
+    "KAMAAHA AVE / FORT BARRETTE RD": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3363708,
+      "lng": -158.0643924
+    },
+    "KAMAAHA AVE / KAKALA ST": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3363708,
+      "lng": -158.0643924
+    },
+    "KAMAAHA AVE / KAPOLEI PKWY": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3363708,
+      "lng": -158.0643924
+    },
+    "KAMAAHA AVE / KEKUILANI LOOP": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3363708,
+      "lng": -158.0643924
+    },
+    "KAMAKEE ST / AUAHI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.294448,
+      "lng": -157.8519807
+    },
+    "KAMAKEE ST / WAIMANU ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.294448,
+      "lng": -157.8519807
+    },
+    "KAMALIE MUA ST / LALAHIWA ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3623402,
+      "lng": -158.0432789
+    },
+    "KAMAMALU AVE / MADEIRA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.312641,
+      "lng": -157.8517754
+    },
+    "KAMAU PL / KEAAHALA RD": {
+      "neighborhood": "Kapunahala",
+      "lat": 21.4121382,
+      "lng": -157.8079
+    },
+    "KANEAPU PL / ALALA RD": {
+      "neighborhood": "Lanikai",
+      "lat": 21.3947341,
+      "lng": -157.7220809
+    },
+    "KANEKAPOLEI ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2785573,
+      "lng": -157.8237655
+    },
+    "KANUNU ST / AMANA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2945799,
+      "lng": -157.839347
+    },
+    "KANUNU ST / KALAKAUA AVE": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2945799,
+      "lng": -157.839347
+    },
+    "KANUNU ST / KEEAUMOKU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2945799,
+      "lng": -157.839347
+    },
+    "KAONOHI ST / MOANALUA LOOP": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3984715,
+      "lng": -157.9201829
+    },
+    "KAONOHI ST / MOANALUA RD": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3984715,
+      "lng": -157.9201829
+    },
+    "KAPAHULU AVE / CARTWRIGHT RD": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPAHULU AVE / DATE ST": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPAHULU AVE / HARDING AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPAHULU AVE / KALAKAUA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPAHULU AVE / KUHIO AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPAHULU AVE / LEAHI AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPAHULU AVE / PALIULI ST": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2889645,
+      "lng": -157.8130545
+    },
+    "KAPALAMA AVE / BRIGHAM ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3316237,
+      "lng": -157.8705195
+    },
+    "KAPALAMA AVE / N SCHOOL ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3316237,
+      "lng": -157.8705195
+    },
+    "KAPAPAPUHI ST / LAULAUNUI ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3678129,
+      "lng": -158.0231129
+    },
+    "KAPIOLANI BLVD / ATKINSON DR": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / KAHEKA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / KALAKAUA AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / KALAUOKALANI WAY": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / KAMAKEE ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / KEEAUMOKU ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / KONA IKI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / MAHUKONA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / MCCULLY ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / PENSACOLA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / PIIKOI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / S KING ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / SHERIDAN ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / UNIVERSITY AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPIOLANI BLVD / WILIWILI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3026535,
+      "lng": -157.8551489
+    },
+    "KAPOLEI PKWY / ALOHIKEA ST": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAPOLEI PKWY / KAILEOLEA DR": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAPOLEI PKWY / KAMAAHA AVE": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAPOLEI PKWY / KAMOKILA BLVD": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAPOLEI PKWY / KEONEULA BLVD": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAPOLEI PKWY / KUALAKAI PKWY": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3310518,
+      "lng": -158.0621269
+    },
+    "KAUHANA ST / PALOLO AVE": {
+      "neighborhood": "Pālolo",
+      "lat": 21.3027984,
+      "lng": -157.7931231
+    },
+    "KAUKAMA RD / FARRINGTON HWY": {
+      "neighborhood": "Sea Country",
+      "lat": 21.4109626,
+      "lng": -158.1590601
+    },
+    "KAUKOLU ST / KAULONA PL": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3421609,
+      "lng": -158.0204516
+    },
+    "KAUKONAHUA RD / NUI AVE": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.5115809,
+      "lng": -158.0413202
+    },
+    "KAUKONAHUA RD / POAMOHO ST": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.5115809,
+      "lng": -158.0413202
+    },
+    "KAUMAKANI ST / HANAMAULU ST": {
+      "neighborhood": "Marina East",
+      "lat": 21.2826853,
+      "lng": -157.700461
+    },
+    "KAUMUALII ST / MCNEILL ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3291723,
+      "lng": -157.8800446
+    },
+    "KAWAIAHAO ST / EMILY ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3021193,
+      "lng": -157.8567813
+    },
+    "KAWAIAHAO ST / KAMANI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3021193,
+      "lng": -157.8567813
+    },
+    "KAWAIHAE ST / KALANIANAOLE HWY": {
+      "neighborhood": "Niu Valley",
+      "lat": 21.2898908,
+      "lng": -157.7184463
+    },
+    "KEAHUMOA PKWY / IWIKUAMOO ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3501137,
+      "lng": -158.0392317
+    },
+    "KEAHUMOA PKWY / MAUNAKAPU ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3501137,
+      "lng": -158.0392317
+    },
+    "KEAKULA ST / KAUKONAHUA RD": {
+      "neighborhood": "Waialua",
+      "lat": 21.573106,
+      "lng": -158.1089877
+    },
+    "KEALAMAKAI ST / S HOTEL ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3033437,
+      "lng": -157.8524369
+    },
+    "KEAUNUI DR / HOLOPAPA ST": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3282265,
+      "lng": -158.0217191
+    },
+    "KEAUNUI DR / KOLOWAKA DR": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3282265,
+      "lng": -158.0217191
+    },
+    "KEEAUMOKU ST / H1E FWY": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / KANUNU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / KAPIOLANI BLVD": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / KINAU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / LUNALILO ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / MAKALOA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / S BERETANIA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEEAUMOKU ST / S KING ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3006099,
+      "lng": -157.8393508
+    },
+    "KEKAULIKE ST / N HOTEL ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.312255,
+      "lng": -157.864544
+    },
+    "KEKAULIKE ST / N KING ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.312255,
+      "lng": -157.864544
+    },
+    "KELIKOI ST / COOKE ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2939583,
+      "lng": -157.8624814
+    },
+    "KEONEULA BLVD / LAUKAPUNA ST": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.3094765,
+      "lng": -158.0317678
+    },
+    "KEONIANA ST / KALAKAUA AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2855592,
+      "lng": -157.8317481
+    },
+    "KEPAUALA PL / KANEAKI ST": {
+      "neighborhood": "Waianae",
+      "lat": 21.4575372,
+      "lng": -158.1668547
+    },
+    "KILANI AVE / PALM ST": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.4984969,
+      "lng": -158.0284754
+    },
+    "KILAUEA AVE / WAIALAE AVE": {
+      "neighborhood": "Kāhala",
+      "lat": 21.2705325,
+      "lng": -157.7951424
+    },
+    "KILIHAU ST / KAKOI ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.3354927,
+      "lng": -157.8975198
+    },
+    "KINAU ST / KEEAUMOKU ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018319,
+      "lng": -157.8410692
+    },
+    "KINAU ST / PENSACOLA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018319,
+      "lng": -157.8410692
+    },
+    "KINAU ST / PIIKOI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018319,
+      "lng": -157.8410692
+    },
+    "KINAU ST / WARD AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018319,
+      "lng": -157.8410692
+    },
+    "KINO ST / N SCHOOL ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3413676,
+      "lng": -157.8718251
+    },
+    "KIWILA ST / AHE ST": {
+      "neighborhood": "Pālolo",
+      "lat": 21.3002319,
+      "lng": -157.7949652
+    },
+    "KOA AVE / ULUNIU AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2764138,
+      "lng": -157.8249218
+    },
+    "KOANA ST / KAPOLEI PKWY": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.326596,
+      "lng": -158.0260081
+    },
+    "KOANA ST / PAPAU ST": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.326596,
+      "lng": -158.0260081
+    },
+    "KOAPAKA ST / PAIEA ST": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.3347734,
+      "lng": -157.9067068
+    },
+    "KOAUKA ST / KOAUKA LOOP": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3835686,
+      "lng": -157.93699
+    },
+    "KOHOMUA ST / KALALOA ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3672826,
+      "lng": -157.9351724
+    },
+    "KOKEA ST / LAA LN": {
+      "neighborhood": "Kapalama",
+      "lat": 21.3281256,
+      "lng": -157.8660288
+    },
+    "KOKO HEAD AVE / PAHOA AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.2802002,
+      "lng": -157.7988645
+    },
+    "KOLO PL / VARSITY PL": {
+      "neighborhood": "McCully",
+      "lat": 21.293062,
+      "lng": -157.8191287
+    },
+    "KOLOWAKA DR / FORT WEAVER RD": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3366709,
+      "lng": -158.0323777
+    },
+    "KOLOWAKA DR / KAPOLEI PKWY": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3366709,
+      "lng": -158.0323777
+    },
+    "KOLOWAKA DR / KUHIALOKO ST": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3366709,
+      "lng": -158.0323777
+    },
+    "KOLOWAKA DR / PUANIU ST": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3366709,
+      "lng": -158.0323777
+    },
+    "KOMO MAI DR / KAAHUMANU ST": {
+      "neighborhood": "Pacific Palisades",
+      "lat": 21.4291253,
+      "lng": -157.9525132
+    },
+    "KONA ST / ATKINSON DR": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.294148,
+      "lng": -157.8474955
+    },
+    "KONA ST / KONA IKI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.294148,
+      "lng": -157.8474955
+    },
+    "KONA ST / PENSACOLA ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.294148,
+      "lng": -157.8474955
+    },
+    "KONA ST / PIIKOI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.294148,
+      "lng": -157.8474955
+    },
+    "KUALA ST / KAM HWY": {
+      "neighborhood": "Pearl Highlands",
+      "lat": 21.3992775,
+      "lng": -157.9744507
+    },
+    "KUALAKAI PKWY / FARRINGTON HWY": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3406981,
+      "lng": -158.0534882
+    },
+    "KUALAKAI PKWY / H1E FWY": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3406981,
+      "lng": -158.0534882
+    },
+    "KUALAKAI PKWY / KAPOLEI PKWY": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3406981,
+      "lng": -158.0534882
+    },
+    "KUALAKAI PKWY / KEAHUMOA PKWY": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3406981,
+      "lng": -158.0534882
+    },
+    "KUHAULUA PL / KUHAULUA ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3921824,
+      "lng": -158.0087212
+    },
+    "KUHAULUA ST / KUMUKULA ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3909693,
+      "lng": -158.0081144
+    },
+    "KUHIO AVE / KAIULANI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / KALAIMOKU ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / KANEKAPOLEI ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / KAPUNI ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / KEALOHILANI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / KUAMOO ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / LEWERS ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / NAHUA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / OHUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / OLOHANA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / PAOAKALANI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / SEASIDE AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / ULUNIU AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUHIO AVE / WALINA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.274318,
+      "lng": -157.8215304
+    },
+    "KUILEI ST / KAHOALOHA LN": {
+      "neighborhood": "McCully",
+      "lat": 21.2897562,
+      "lng": -157.8212309
+    },
+    "KULEANA RD / KAAHUMANU ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3911229,
+      "lng": -157.9564503
+    },
+    "KULEANA RD / KULEANA PL": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3911229,
+      "lng": -157.9564503
+    },
+    "KULIHI ST / MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3453066,
+      "lng": -158.0763317
+    },
+    "KUNEHI ST / KAPOLEI PKWY": {
+      "neighborhood": "Mehana",
+      "lat": 21.3276467,
+      "lng": -158.0732504
+    },
+    "KUNIA RD / ANONUI ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3970801,
+      "lng": -158.0360707
+    },
+    "KUOU ST / MANAWAI ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3300552,
+      "lng": -158.0779603
+    },
+    "KUPUNA LOOP / OPEHA ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3868173,
+      "lng": -158.0330503
+    },
+    "KUULEI RD / MALUNIU AVE": {
+      "neighborhood": "Enchanted Lake",
+      "lat": 21.3958323,
+      "lng": -157.7413972
+    },
+    "KUWILI ST / PINE ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3170031,
+      "lng": -157.8673252
+    },
+    "LAUKAPUNA ST / KEONEULA BLVD": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.3094765,
+      "lng": -158.0317678
+    },
+    "LAUNIU ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2832154,
+      "lng": -157.8290476
+    },
+    "LAUULA ST / LEWERS ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2796808,
+      "lng": -157.8282517
+    },
+    "LEHUA AVE / 4TH ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.3932088,
+      "lng": -157.9715237
+    },
+    "LEHUA ST / CALIFORNIA AVE": {
+      "neighborhood": "Liliha",
+      "lat": 21.3454094,
+      "lng": -157.8616173
+    },
+    "LEIA ST / PALAI ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3981128,
+      "lng": -158.0248803
+    },
+    "LEIHOKU ST / FARRINGTON HWY": {
+      "neighborhood": "Waianae",
+      "lat": 21.4368097,
+      "lng": -158.1763065
+    },
+    "LEMON RD / PAOAKALANI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2723981,
+      "lng": -157.821796
+    },
+    "LEOKANE ST / LEOWAHINE ST": {
+      "neighborhood": "West Loch",
+      "lat": 21.3781741,
+      "lng": -158.0184992
+    },
+    "LEOWAHINE ST / LEOKANE ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3819337,
+      "lng": -158.0201356
+    },
+    "LEWERS ST / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2790547,
+      "lng": -157.8311087
+    },
+    "LEWERS ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2790547,
+      "lng": -157.8311087
+    },
+    "LEWERS ST / LAUULA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2790547,
+      "lng": -157.8311087
+    },
+    "LIHOLIHO ST / LUNALILO ST": {
+      "neighborhood": "Makiki",
+      "lat": 21.3054754,
+      "lng": -157.8391389
+    },
+    "LIKELIKE HWY / KONO ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3494099,
+      "lng": -157.8628007
+    },
+    "LIKELIKE HWY / KULA KOLEA DR": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3494099,
+      "lng": -157.8628007
+    },
+    "LILIHA ST / KIAPU PL": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3339025,
+      "lng": -157.8470823
+    },
+    "LILIHA ST / N KING ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3339025,
+      "lng": -157.8470823
+    },
+    "LILIHA ST / N KUAKINI ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3339025,
+      "lng": -157.8470823
+    },
+    "LILIHA ST / N SCHOOL ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3339025,
+      "lng": -157.8470823
+    },
+    "LILIUOKALANI AVE / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2749678,
+      "lng": -157.8233657
+    },
+    "LILIUOKALANI AVE / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2749678,
+      "lng": -157.8233657
+    },
+    "LIME ST / MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.290977,
+      "lng": -157.8339079
+    },
+    "LIME ST / PAANI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.290977,
+      "lng": -157.8339079
+    },
+    "LINAPUNI ST / N SCHOOL ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3382241,
+      "lng": -157.8764149
+    },
+    "LIONA ST / SHERIDAN ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2973442,
+      "lng": -157.8395119
+    },
+    "LIPEEPEE ST / HOBRON LN": {
+      "neighborhood": "McCully",
+      "lat": 21.2878151,
+      "lng": -157.8371533
+    },
+    "LIPOA PL / KAM HWY": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3814291,
+      "lng": -157.9450903
+    },
+    "LISBON ST / S BERETANIA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3060737,
+      "lng": -157.8528896
+    },
+    "LUALUALEI NAVAL RD / HAKIMO RD": {
+      "neighborhood": "Nānākuli",
+      "lat": 21.41856,
+      "lng": -158.1365561
+    },
+    "LUALUALEI NAVAL RD / PAAKEA RD": {
+      "neighborhood": "Nānākuli",
+      "lat": 21.41856,
+      "lng": -158.1365561
+    },
+    "LULUKU RD / APAPANE ST": {
+      "neighborhood": "Keapuka",
+      "lat": 21.3980518,
+      "lng": -157.8059067
+    },
+    "LUMIAUAU ST / ALAU ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4070992,
+      "lng": -157.9937881
+    },
+    "LUMIAUAU ST / LUMIAINA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4070992,
+      "lng": -157.9937881
+    },
+    "LUMIAUAU ST / LUMIHOAHU ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4070992,
+      "lng": -157.9937881
+    },
+    "LUNALILO ST / ERNEST ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.30601,
+      "lng": -157.8513396
+    },
+    "LUSITANA ST / AUWAIOLIMU ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3177333,
+      "lng": -157.848895
+    },
+    "LUSITANA ST / CAPTAIN COOK AVE": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3177333,
+      "lng": -157.848895
+    },
+    "LUSITANA ST / S KUAKINI ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3177333,
+      "lng": -157.848895
+    },
+    "LUSITANA ST / S VINEYARD BLVD": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3177333,
+      "lng": -157.848895
+    },
+    "MA KE KULA ST / MA KE KULA PL": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.3171227,
+      "lng": -158.0077902
+    },
+    "MAGELLAN AVE / MILLER ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3084983,
+      "lng": -157.8512887
+    },
+    "MAHIOLE ST / ONIPAA ST": {
+      "neighborhood": "Moanalua Gardens",
+      "lat": 21.3518913,
+      "lng": -157.8883365
+    },
+    "MAKAHEHI LOOP / KEAUNUI DR": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3282265,
+      "lng": -158.0217191
+    },
+    "MAKAKILO DR / FARRINGTON HWY": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3421399,
+      "lng": -158.0778095
+    },
+    "MAKAKILO DR / KANEHOA LOOP": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3421399,
+      "lng": -158.0778095
+    },
+    "MAKAKILO DR / NOHOHALE ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3421399,
+      "lng": -158.0778095
+    },
+    "MAKALOA ST / AMANA ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2943669,
+      "lng": -157.8434614
+    },
+    "MAKALOA ST / KAHEKA ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2943669,
+      "lng": -157.8434614
+    },
+    "MAKALOA ST / KEEAUMOKU ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2943669,
+      "lng": -157.8434614
+    },
+    "MAKALOA ST / PONI ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2943669,
+      "lng": -157.8434614
+    },
+    "MAKALOA ST / SHERIDAN ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2943669,
+      "lng": -157.8434614
+    },
+    "MAKANANI DR / KAMALII ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.3330455,
+      "lng": -157.8591721
+    },
+    "MAKAPUU LIGHTHOUSE": {
+      "neighborhood": "Kalama Valley",
+      "lat": 21.3067371,
+      "lng": -157.6560663
+    },
+    "MALAAI ST / LAWEHANA ST": {
+      "neighborhood": "Āliamanu",
+      "lat": 21.3559386,
+      "lng": -157.9294937
+    },
+    "MALIONA ST / KULAAUPUNI ST": {
+      "neighborhood": "Mā‘ili",
+      "lat": 21.4202165,
+      "lng": -158.1762631
+    },
+    "MANANA ST / LAUMILO ST": {
+      "neighborhood": "Waimanalo Beach",
+      "lat": 21.3359391,
+      "lng": -157.6985736
+    },
+    "MANAWAI ST / HAUMEA ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3304817,
+      "lng": -158.0769512
+    },
+    "MANAWAI ST / KUKULU ST": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3304817,
+      "lng": -158.0769512
+    },
+    "MANAWALEA ST / KOLOWAKA DR": {
+      "neighborhood": "ʻEwa Gentry",
+      "lat": 21.3389689,
+      "lng": -158.0302987
+    },
+    "MANGO ST / MANGO PL": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.4973149,
+      "lng": -158.0289097
+    },
+    "MATLOCK AVE / KEEAUMOKU ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3024015,
+      "lng": -157.8407533
+    },
+    "MATLOCK AVE / PIIKOI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3024015,
+      "lng": -157.8407533
+    },
+    "MAUNAKAPU ST / LAKONA ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3445284,
+      "lng": -158.0492887
+    },
+    "MAUNAKEA ST / N BERETANIA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.312796,
+      "lng": -157.8620183
+    },
+    "MAUNAKEA ST / N HOTEL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.312796,
+      "lng": -157.8620183
+    },
+    "MAUNAKEA ST / N KING ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.312796,
+      "lng": -157.8620183
+    },
+    "MAUNAKEA ST / N KUKUI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.312796,
+      "lng": -157.8620183
+    },
+    "MAUNAKEA ST / N PAUAHI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.312796,
+      "lng": -157.8620183
+    },
+    "MAWEKE ST / MAUNAKAPU ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3445284,
+      "lng": -158.0492887
+    },
+    "MCCULLY ST / ALA WAI BLVD": {
+      "neighborhood": "McCully",
+      "lat": 21.2972409,
+      "lng": -157.8293229
+    },
+    "MCCULLY ST / KALAKAUA AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2972409,
+      "lng": -157.8293229
+    },
+    "MCCULLY ST / KAPIOLANI BLVD": {
+      "neighborhood": "McCully",
+      "lat": 21.2972409,
+      "lng": -157.8293229
+    },
+    "MCGREW LOOP / KAM HWY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3762194,
+      "lng": -157.941142
+    },
+    "MCNEILL ST / KAUMUALII ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3255559,
+      "lng": -157.8777907
+    },
+    "MFW KAHUAPAANI OP": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3749021,
+      "lng": -157.9187799
+    },
+    "MIDWAY ST / FD ROOSEVELT AVE": {
+      "neighborhood": "Kalaeloa",
+      "lat": 21.3157568,
+      "lng": -158.0775835
+    },
+    "MILILANI ST / HALEKAUWILA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3057107,
+      "lng": -157.8603952
+    },
+    "MILLER ST / MAGELLAN AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3099917,
+      "lng": -157.8507344
+    },
+    "MOANALUA LOOP / KAONOHI ST": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3867118,
+      "lng": -157.9473143
+    },
+    "MOANALUA LOOP / MOANALUA RD": {
+      "neighborhood": "Waimalu",
+      "lat": 21.3867118,
+      "lng": -157.9473143
+    },
+    "MOANALUA RD / AIEA HTS DR": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUA RD / HARBOR POINTE DRIVEWAY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUA RD / KAAHELE ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUA RD / KAONOHI ST": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUA RD / MOANALUA LOOP": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUA RD / WAIMALU PLAZA DRIVEWAY": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUA RD / WAIMANO HOME RD": {
+      "neighborhood": "ʻAiea Heights",
+      "lat": 21.3766015,
+      "lng": -157.9305211
+    },
+    "MOANALUALANI PL / ALA KAPUNA": {
+      "neighborhood": "Moanalua Valley",
+      "lat": 21.3667246,
+      "lng": -157.8983884
+    },
+    "MOKAUEA ST / AUIKI ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.325662,
+      "lng": -157.8837287
+    },
+    "MOKAUEA ST / HOMERULE ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.325662,
+      "lng": -157.8837287
+    },
+    "MOKULUA DR / KAIOLENA DR": {
+      "neighborhood": "Lanikai",
+      "lat": 21.3954619,
+      "lng": -157.7210935
+    },
+    "MOKULUA DR / MOKUMANU DR": {
+      "neighborhood": "Lanikai",
+      "lat": 21.3954619,
+      "lng": -157.7210935
+    },
+    "MOKUOLA ST / NALII ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.38679,
+      "lng": -158.0047662
+    },
+    "MONSARRAT AVE / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2708343,
+      "lng": -157.8223909
+    },
+    "MONSARRAT AVE / PAKI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2708343,
+      "lng": -157.8223909
+    },
+    "N BERETANIA ST / AALA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3137449,
+      "lng": -157.8615768
+    },
+    "N BERETANIA ST / N KING ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3137449,
+      "lng": -157.8615768
+    },
+    "N BERETANIA ST / NUUANU AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3137449,
+      "lng": -157.8615768
+    },
+    "N BERETANIA ST / RIVER ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3137449,
+      "lng": -157.8615768
+    },
+    "N BERETANIA ST / SMITH ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3137449,
+      "lng": -157.8615768
+    },
+    "N HOTEL ST / KEKAULIKE ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.31233,
+      "lng": -157.8629121
+    },
+    "N HOTEL ST / MAUNAKEA ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.31233,
+      "lng": -157.8629121
+    },
+    "N HOTEL ST / RIVER ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.31233,
+      "lng": -157.8629121
+    },
+    "N HOTEL ST / SMITH ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.31233,
+      "lng": -157.8629121
+    },
+    "N KAM HWY / CALIFORNIA AVE": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.508749,
+      "lng": -157.9933749
+    },
+    "N KING ST / DILLINGHAM BLVD": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / KEKAULIKE ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / LILIHA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / MIDDLE ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / N BERETANIA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / PALAMA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / RICHARD LN": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KING ST / RIVER ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3208102,
+      "lng": -157.8664616
+    },
+    "N KUKUI ST / AALA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3199063,
+      "lng": -157.8639164
+    },
+    "N KUKUI ST / MAUNAKEA ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3199063,
+      "lng": -157.8639164
+    },
+    "N KUKUI ST / RIVER ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3199063,
+      "lng": -157.8639164
+    },
+    "N NIMITZ HWY / AOLELE ST": {
+      "neighborhood": "Hickam",
+      "lat": 21.3443129,
+      "lng": -157.9407282
+    },
+    "N NIMITZ HWY / CATLIN DR": {
+      "neighborhood": "Hickam",
+      "lat": 21.3443129,
+      "lng": -157.9407282
+    },
+    "N NIMITZ HWY / KAM HWY": {
+      "neighborhood": "Hickam",
+      "lat": 21.3443129,
+      "lng": -157.9407282
+    },
+    "N NIMITZ HWY / MAUNAKEA ST": {
+      "neighborhood": "Hickam",
+      "lat": 21.3443129,
+      "lng": -157.9407282
+    },
+    "N NIMITZ HWY / SAND ISLAND ACC RD": {
+      "neighborhood": "Hickam",
+      "lat": 21.3443129,
+      "lng": -157.9407282
+    },
+    "N PAUAHI ST / MAUNAKEA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3126309,
+      "lng": -157.8620742
+    },
+    "N PAUAHI ST / NUUANU AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3126309,
+      "lng": -157.8620742
+    },
+    "N SCHOOL ST / AALA ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.327586,
+      "lng": -157.8634115
+    },
+    "N SCHOOL ST / DEMENT ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.327586,
+      "lng": -157.8634115
+    },
+    "N SCHOOL ST / HOUGHTAILING ST": {
+      "neighborhood": "Liliha",
+      "lat": 21.327586,
+      "lng": -157.8634115
+    },
+    "N SCHOOL ST / LANAKILA AVE": {
+      "neighborhood": "Liliha",
+      "lat": 21.327586,
+      "lng": -157.8634115
+    },
+    "N VINEYARD BLVD / LILIHA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3132434,
+      "lng": -157.8566689
+    },
+    "N VINEYARD BLVD / NUUANU AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3132434,
+      "lng": -157.8566689
+    },
+    "NAHAKU PL / MAHIAI ST": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2867822,
+      "lng": -157.8199704
+    },
+    "NAHUA ST / ALA WAI BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2797248,
+      "lng": -157.8250293
+    },
+    "NAHUA ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2797248,
+      "lng": -157.8250293
+    },
+    "NAKINI ST / KALANIANAOLE HWY": {
+      "neighborhood": "Waimanalo Beach",
+      "lat": 21.3296452,
+      "lng": -157.6968865
+    },
+    "NANAKULI AVE / FARRINGTON HWY": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.3853448,
+      "lng": -158.1347915
+    },
+    "NANAKULI AVE / KAWAO AVE": {
+      "neighborhood": "Nanakuli",
+      "lat": 21.3853448,
+      "lng": -158.1347915
+    },
+    "NEHOA ST / NEHOA PL": {
+      "neighborhood": "Makiki",
+      "lat": 21.3100327,
+      "lng": -157.8378362
+    },
+    "NENELEA ST / PALAILAI ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3476587,
+      "lng": -158.0883273
+    },
+    "NIHI ST / NOBREGA ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3476801,
+      "lng": -157.8560912
+    },
+    "NIMITZ RD / PELTIER AVE": {
+      "neighborhood": "Mapunapuna",
+      "lat": 21.3372245,
+      "lng": -157.9087275
+    },
+    "NOELANI ST / HOOHIKI ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.3970323,
+      "lng": -157.9617181
+    },
+    "NOHONANI ST / ALA WAI BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2803213,
+      "lng": -157.8257132
+    },
+    "NOHONANI ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2803213,
+      "lng": -157.8257132
+    },
+    "NUUANU AVE / MERCHANT ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / N HOTEL ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / N KUAKINI ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / N NIMITZ HWY": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / N SCHOOL ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / N VINEYARD BLVD": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / S KING ST": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU AVE / S VINEYARD BLVD": {
+      "neighborhood": "Pacific Heights",
+      "lat": 21.3235393,
+      "lng": -157.8495169
+    },
+    "NUUANU PALI DR / PALI HWY": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.316015,
+      "lng": -157.8532077
+    },
+    "OAHU AVE / E MANOA RD": {
+      "neighborhood": "Mānoa",
+      "lat": 21.311426,
+      "lng": -157.8135853
+    },
+    "OHALA ST / AELOA ST": {
+      "neighborhood": "Crown Terrace",
+      "lat": 21.424144,
+      "lng": -157.8066264
+    },
+    "OHUA AVE / KALAKAUA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2756955,
+      "lng": -157.8207898
+    },
+    "OLIANA ST / WAIALUA BEACH RD": {
+      "neighborhood": "Haleiwa",
+      "lat": 21.5744504,
+      "lng": -158.1105284
+    },
+    "OLIVE AVE / OHAI ST": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.4951273,
+      "lng": -158.0276389
+    },
+    "OLIVE AVE / S KAM HWY": {
+      "neighborhood": "Wahiawa",
+      "lat": 21.4951273,
+      "lng": -158.0276389
+    },
+    "OLOHANA ST / ALA WAI BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2841605,
+      "lng": -157.8301477
+    },
+    "OLOHANA ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2841605,
+      "lng": -157.8301477
+    },
+    "OLOKELE AVE / DATE ST": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2841444,
+      "lng": -157.8168793
+    },
+    "PAAKEA RD / LUALUALEI NAVAL RD": {
+      "neighborhood": "Sea Country",
+      "lat": 21.4082065,
+      "lng": -158.1451115
+    },
+    "PAHOA AVE / 12TH AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2839927,
+      "lng": -157.8093633
+    },
+    "PAKEKE ST / KUAHA ST": {
+      "neighborhood": "Sea Country",
+      "lat": 21.4072788,
+      "lng": -158.1645223
+    },
+    "PAKI AVE / KAPAHULU AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.264408,
+      "lng": -157.8179496
+    },
+    "PAKI AVE / MONSARRAT AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.264408,
+      "lng": -157.8179496
+    },
+    "PAKI AVE / PONI MOI RD": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.264408,
+      "lng": -157.8179496
+    },
+    "PALAMA ST / PANALAAU ST": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3238331,
+      "lng": -157.8643765
+    },
+    "PALI HWY / KALANIANAOLE HWY": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.316015,
+      "lng": -157.8532077
+    },
+    "PALI HWY / S KUKUI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.316015,
+      "lng": -157.8532077
+    },
+    "PALI HWY / S VINEYARD BLVD": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.316015,
+      "lng": -157.8532077
+    },
+    "PALI HWY / WAOKANAKA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.316015,
+      "lng": -157.8532077
+    },
+    "PALI MOMI ST / MOANALUA RD": {
+      "neighborhood": "Waimalu",
+      "lat": 21.383011,
+      "lng": -157.9383066
+    },
+    "PALOLO AVE / KEHAU PL": {
+      "neighborhood": "Pālolo",
+      "lat": 21.2881874,
+      "lng": -157.8048163
+    },
+    "PALOLO AVE / KIWILA ST": {
+      "neighborhood": "Pālolo",
+      "lat": 21.2881874,
+      "lng": -157.8048163
+    },
+    "PAOA PL / KALIA RD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2821039,
+      "lng": -157.8358678
+    },
+    "PAPAKU PL / PIIKOI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3034809,
+      "lng": -157.8429203
+    },
+    "PAPIPI RD / HAILIPO ST": {
+      "neighborhood": "Ewa Beach",
+      "lat": 21.307535,
+      "lng": -158.0213823
+    },
+    "PELE ST / PROSPECT ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3108622,
+      "lng": -157.8511225
+    },
+    "PENSACOLA ST / KAPIOLANI BLVD": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2976525,
+      "lng": -157.8469989
+    },
+    "PENSACOLA ST / KONA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2976525,
+      "lng": -157.8469989
+    },
+    "PENSACOLA ST / LUNALILO ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2976525,
+      "lng": -157.8469989
+    },
+    "PENSACOLA ST / S BERETANIA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2976525,
+      "lng": -157.8469989
+    },
+    "PENSACOLA ST / S KING ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2976525,
+      "lng": -157.8469989
+    },
+    "PENSACOLA ST / WILDER AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.2976525,
+      "lng": -157.8469989
+    },
+    "PHILIP ST / PUNAHOU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2950725,
+      "lng": -157.8361701
+    },
+    "PIIKOI ST / ALOHI WAY": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / AMSC MAKAI PIIKOI": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / ELM ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / HOPAKA ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / KAPIOLANI BLVD": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / LUNALILO ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / RYCROFT ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / S BERETANIA ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / S KING ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PIIKOI ST / YOUNG ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2984331,
+      "lng": -157.8447741
+    },
+    "PILIWAI ST / NALANIEHA ST": {
+      "neighborhood": "Nuʻuanu",
+      "lat": 21.3511381,
+      "lng": -157.8602976
+    },
+    "PLANTATION RD / MILL ST": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.5301462,
+      "lng": -158.0301918
+    },
+    "PROSPECT ST / NEHOA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3121294,
+      "lng": -157.8504637
+    },
+    "PUMEHANA ST / ALGAROBA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2926364,
+      "lng": -157.8323794
+    },
+    "PUNAHOU ST / H1W FWY": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2978597,
+      "lng": -157.8357367
+    },
+    "PUNAHOU ST / PHILIP ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2978597,
+      "lng": -157.8357367
+    },
+    "PUNAHOU ST / S BERETANIA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2978597,
+      "lng": -157.8357367
+    },
+    "PUNCHBOWL ST / QUEEN ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3055002,
+      "lng": -157.8574759
+    },
+    "PUNCHBOWL ST / S BERETANIA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3055002,
+      "lng": -157.8574759
+    },
+    "PUNCHBOWL ST / S VINEYARD BLVD": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3055002,
+      "lng": -157.8574759
+    },
+    "PUPUOLE PL / PUPUOLE ST": {
+      "neighborhood": "West Loch",
+      "lat": 21.377804,
+      "lng": -158.0175749
+    },
+    "PUPUPUHI ST / FARRINGTON HWY": {
+      "neighborhood": "Village Park",
+      "lat": 21.3802757,
+      "lng": -158.0151281
+    },
+    "PUUHALE RD / N KING ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3285763,
+      "lng": -157.8840556
+    },
+    "PUULOA RD / MOKUMOA ST": {
+      "neighborhood": "Moanalua Gardens",
+      "lat": 21.3494197,
+      "lng": -157.8956761
+    },
+    "QUEEN EMMA ST / S SCHOOL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3100707,
+      "lng": -157.8579647
+    },
+    "QUEEN ST / KAMAKEE ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3055491,
+      "lng": -157.8609689
+    },
+    "QUEEN ST / KEAWE ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3055491,
+      "lng": -157.8609689
+    },
+    "QUEEN ST / PUNCHBOWL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3055491,
+      "lng": -157.8609689
+    },
+    "RENTON RD / PAHIKA ST": {
+      "neighborhood": "Ho‘opili",
+      "lat": 21.3427739,
+      "lng": -158.0348412
+    },
+    "RICHARD LN / N KING ST": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3365922,
+      "lng": -157.8767128
+    },
+    "RIVER ST / N BERETANIA ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3133436,
+      "lng": -157.8646835
+    },
+    "RIVER ST / N HOTEL ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3133436,
+      "lng": -157.8646835
+    },
+    "RIVER ST / N KING ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3133436,
+      "lng": -157.8646835
+    },
+    "RIVER ST / N KUKUI ST": {
+      "neighborhood": "Chinatown",
+      "lat": 21.3133436,
+      "lng": -157.8646835
+    },
+    "ROYAL HAWAIIAN AVE / ALOHA DR": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2800948,
+      "lng": -157.8284759
+    },
+    "ROYAL HAWAIIAN AVE / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2800948,
+      "lng": -157.8284759
+    },
+    "ROYAL HAWAIIAN AVE / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2800948,
+      "lng": -157.8284759
+    },
+    "ROYAL HAWAIIAN AVE / LAUULA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2800948,
+      "lng": -157.8284759
+    },
+    "ROYAL HAWAIIAN AVE / WAIKOLU WAY": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2800948,
+      "lng": -157.8284759
+    },
+    "S BERETANIA ST / ARTESIAN ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / FORT ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / KEEAUMOKU ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / PIIKOI ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / PUNCHBOWL ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / S KING ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / VICTORIA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S BERETANIA ST / WARD AVE": {
+      "neighborhood": "Pawaa",
+      "lat": 21.3011701,
+      "lng": -157.8420999
+    },
+    "S HOTEL ST / ALAKEA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3100486,
+      "lng": -157.8613422
+    },
+    "S HOTEL ST / BETHEL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3100486,
+      "lng": -157.8613422
+    },
+    "S HOTEL ST / BISHOP ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3100486,
+      "lng": -157.8613422
+    },
+    "S HOTEL ST / FORT ST MALL": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3100486,
+      "lng": -157.8613422
+    },
+    "S HOTEL ST / NUUANU AVE": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3100486,
+      "lng": -157.8613422
+    },
+    "S KING ST / AKALA LN": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / ALAKEA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / ALAPAI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / ALDER ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / BETHEL ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / CEDAR ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / ISENBERG ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / KALAKAUA AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / KEEAUMOKU ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / RICHARDS ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / UNIVERSITY AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / VICTORIA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KING ST / WARD AVE": {
+      "neighborhood": "McCully",
+      "lat": 21.2940987,
+      "lng": -157.8279683
+    },
+    "S KUAKINI ST / PALI HWY": {
+      "neighborhood": "Liliha",
+      "lat": 21.3185579,
+      "lng": -157.852718
+    },
+    "S KUKUI ST / PALI HWY": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3105246,
+      "lng": -157.8573162
+    },
+    "S NIMITZ HWY / FORT ST MALL": {
+      "neighborhood": "Iwilei",
+      "lat": 21.3133971,
+      "lng": -157.8704946
+    },
+    "S PAUAHI ST / BETHEL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3110891,
+      "lng": -157.8610258
+    },
+    "S VINEYARD BLVD / PALI HWY": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3118024,
+      "lng": -157.8558327
+    },
+    "S VINEYARD BLVD / PUNCHBOWL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3118024,
+      "lng": -157.8558327
+    },
+    "SALT LAKE BLVD / BOUGAINVILLE DR": {
+      "neighborhood": "Salt Lake",
+      "lat": 21.3448466,
+      "lng": -157.9164619
+    },
+    "SAND ISLAND ACC RD / N NIMITZ HWY": {
+      "neighborhood": "Hickam",
+      "lat": 21.3443129,
+      "lng": -157.9407282
+    },
+    "SAND ISLAND DRIVEWAY / SAND ISLAND PKWY": {
+      "neighborhood": "Sand Island",
+      "lat": 21.3110561,
+      "lng": -157.8866303
+    },
+    "SEASIDE AVE / KALAKAUA AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2792647,
+      "lng": -157.8280319
+    },
+    "SEASIDE AVE / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2792647,
+      "lng": -157.8280319
+    },
+    "SEASIDE AVE / LAUULA ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2792647,
+      "lng": -157.8280319
+    },
+    "SEASIDE AVE / MANUKAI ST": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2792647,
+      "lng": -157.8280319
+    },
+    "SHERIDAN ST / MAKALOA ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2983096,
+      "lng": -157.8410255
+    },
+    "SHERIDAN ST / RYCROFT ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2983096,
+      "lng": -157.8410255
+    },
+    "SHERIDAN ST / S KING ST": {
+      "neighborhood": "Pawaa",
+      "lat": 21.2983096,
+      "lng": -157.8410255
+    },
+    "SMITH ST / MARIN ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3124213,
+      "lng": -157.8613956
+    },
+    "SMITH ST / N BERETANIA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3124213,
+      "lng": -157.8613956
+    },
+    "SMITH ST / N HOTEL ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3124213,
+      "lng": -157.8613956
+    },
+    "SMITH ST / N PAUAHI ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3124213,
+      "lng": -157.8613956
+    },
+    "SOUTH ST / POHUKAINA ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2997078,
+      "lng": -157.862734
+    },
+    "SOUTH ST / QUEEN ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2997078,
+      "lng": -157.862734
+    },
+    "SOUTH ST / S KING ST": {
+      "neighborhood": "Kaka‘ako",
+      "lat": 21.2997078,
+      "lng": -157.862734
+    },
+    "ST JOHNS RD / KULAAUPUNI ST": {
+      "neighborhood": "Mā‘ili",
+      "lat": 21.4170844,
+      "lng": -158.1719963
+    },
+    "ST LOUIS DR / KAMINAKA DR": {
+      "neighborhood": "Saint Louis Heights",
+      "lat": 21.2902951,
+      "lng": -157.810369
+    },
+    "STILLMAN LN / PUUHUE PL": {
+      "neighborhood": "Liliha",
+      "lat": 21.3203103,
+      "lng": -157.8570344
+    },
+    "TANTALUS DR / IAUKEA ST": {
+      "neighborhood": "Makiki",
+      "lat": 21.3182775,
+      "lng": -157.8354274
+    },
+    "TANTALUS DR / MAKIKI HTS DR": {
+      "neighborhood": "Makiki",
+      "lat": 21.3182775,
+      "lng": -157.8354274
+    },
+    "TUSITALA ST / LILIUOKALANI AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2777852,
+      "lng": -157.8225748
+    },
+    "UKEE ST / OLI LOOP": {
+      "neighborhood": "Crestview",
+      "lat": 21.422821,
+      "lng": -158.0053128
+    },
+    "UKEE ST / WAIOLINA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.422821,
+      "lng": -158.0053128
+    },
+    "UKEE ST / WAIPIO UKA ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.422821,
+      "lng": -158.0053128
+    },
+    "UKUWAI ST / KOOLANI DR": {
+      "neighborhood": "Mililani Mauka",
+      "lat": 21.4703368,
+      "lng": -158.0053981
+    },
+    "ULULANI ST / ULUHALA ST": {
+      "neighborhood": "Maunawili",
+      "lat": 21.3793158,
+      "lng": -157.7544583
+    },
+    "ULUNIU AVE / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2763191,
+      "lng": -157.8237983
+    },
+    "UMI ST / N KING ST": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.3341984,
+      "lng": -157.8819443
+    },
+    "UNIVERSITY AVE / DOLE ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2938169,
+      "lng": -157.8212611
+    },
+    "UNIVERSITY AVE / HIHIWAI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2938169,
+      "lng": -157.8212611
+    },
+    "UNIVERSITY AVE / S KING ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2938169,
+      "lng": -157.8212611
+    },
+    "VARSITY PL / KALO PL": {
+      "neighborhood": "McCully",
+      "lat": 21.2925664,
+      "lng": -157.8189773
+    },
+    "VICTORIA ST / KINAU ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3038013,
+      "lng": -157.8478958
+    },
+    "VICTORIA ST / LUNALILO ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3038013,
+      "lng": -157.8478958
+    },
+    "VICTORIA ST / S BERETANIA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3038013,
+      "lng": -157.8478958
+    },
+    "VICTORIA ST / SPENCER ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3038013,
+      "lng": -157.8478958
+    },
+    "VINEYARD ST / QUEEN EMMA ST": {
+      "neighborhood": "Hawaii Capital Historic District",
+      "lat": 21.3107127,
+      "lng": -157.8556795
+    },
+    "W MOANALUA FWY / H1W FWY": {
+      "neighborhood": "Hālawa",
+      "lat": 21.3738943,
+      "lng": -157.9267438
+    },
+    "WAAKEA PL / KEKUILANI LOOP": {
+      "neighborhood": "Villages of Kapolei",
+      "lat": 21.3337664,
+      "lng": -158.059615
+    },
+    "WAENA GARDEN DRIVEWAY / HORNET AVE": {
+      "neighborhood": "Hickam",
+      "lat": 21.3612336,
+      "lng": -157.9587758
+    },
+    "WAIAKA RD / KUILEI ST": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2881466,
+      "lng": -157.8190992
+    },
+    "WAIAKAMILO RD / N NIMITZ HWY": {
+      "neighborhood": "Kalihi",
+      "lat": 21.3269824,
+      "lng": -157.8730814
+    },
+    "WAIALAE AVE / 6TH AVE": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.2813158,
+      "lng": -157.7962406
+    },
+    "WAIALAE AVE / HUNAKAI ST": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.2813158,
+      "lng": -157.7962406
+    },
+    "WAIALAE AVE / SIERRA DR": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.2813158,
+      "lng": -157.7962406
+    },
+    "WAIALAE AVE / ST LOUIS DR": {
+      "neighborhood": "Kaimukī",
+      "lat": 21.2813158,
+      "lng": -157.7962406
+    },
+    "WAIANAE VALLEY RD / FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.39595,
+      "lng": -157.9824852
+    },
+    "WAIANAE VALLEY RD / KANEAKI ST": {
+      "neighborhood": "Waianae",
+      "lat": 21.4575218,
+      "lng": -158.1678844
+    },
+    "WAIANAE VALLEY RD / PULAPULA PL": {
+      "neighborhood": "Waianae",
+      "lat": 21.4466395,
+      "lng": -158.1805488
+    },
+    "WAIHAU ST / WAIMAKUA DR": {
+      "neighborhood": "Waipio Acres",
+      "lat": 21.4606261,
+      "lng": -158.021486
+    },
+    "WAIHONA PL / WAIHONA ST": {
+      "neighborhood": "Pacific Palisades",
+      "lat": 21.4113543,
+      "lng": -157.9728614
+    },
+    "WAIKALANI DR / WAIKALANI PL": {
+      "neighborhood": "Waipio Acres",
+      "lat": 21.4627364,
+      "lng": -158.0228478
+    },
+    "WAIMANO HOME RD / NOELANI ST": {
+      "neighborhood": "Waiau",
+      "lat": 21.3997332,
+      "lng": -157.9677332
+    },
+    "WAIMANU ST / KAMAKEE ST": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2935918,
+      "lng": -157.8480041
+    },
+    "WAIMANU ST / WARD AVE": {
+      "neighborhood": "Ala Moana",
+      "lat": 21.2935918,
+      "lng": -157.8480041
+    },
+    "WAIOLA ST / MCCULLY ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2940749,
+      "lng": -157.8327667
+    },
+    "WAIPAHU DEPOT ST / FARRINGTON HWY": {
+      "neighborhood": "Village Park",
+      "lat": 21.384244,
+      "lng": -158.0066154
+    },
+    "WAIPAHU ST / HONOWAI ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.38772,
+      "lng": -158.0052791
+    },
+    "WAIPAHU ST / IKEPONO ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.38772,
+      "lng": -158.0052791
+    },
+    "WAIPAHU ST / LEOKU ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.38772,
+      "lng": -158.0052791
+    },
+    "WAIPAHU ST / MALAKEKE ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.38772,
+      "lng": -158.0052791
+    },
+    "WAIPAHU ST / WAIPAHU DEPOT ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.38772,
+      "lng": -158.0052791
+    },
+    "WAIPIO POINT ACC RD / CANE HAUL RD": {
+      "neighborhood": "Waialua",
+      "lat": 21.5538714,
+      "lng": -158.1189988
+    },
+    "WAIPIO UKA ST / MELE ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4110923,
+      "lng": -157.998665
+    },
+    "WAIPIO UKA ST / MOANIANI ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4110923,
+      "lng": -157.998665
+    },
+    "WAIPIO UKA ST / MOOLELO ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4110923,
+      "lng": -157.998665
+    },
+    "WAIPIO UKA ST / PULAI ST": {
+      "neighborhood": "Crestview",
+      "lat": 21.4110923,
+      "lng": -157.998665
+    },
+    "WAIPIO UKA ST / WELINA LOOP": {
+      "neighborhood": "Crestview",
+      "lat": 21.4110923,
+      "lng": -157.998665
+    },
+    "WALINA ST / ALA WAI BLVD": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2792189,
+      "lng": -157.8242368
+    },
+    "WALINA ST / KUHIO AVE": {
+      "neighborhood": "Waikīkī",
+      "lat": 21.2792189,
+      "lng": -157.8242368
+    },
+    "WARD AVE / ILANIWAI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3051047,
+      "lng": -157.8489407
+    },
+    "WARD AVE / KAPIOLANI BLVD": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3051047,
+      "lng": -157.8489407
+    },
+    "WARD AVE / KINALAU PL": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3051047,
+      "lng": -157.8489407
+    },
+    "WATERHOUSE ST / GULICK AVE": {
+      "neighborhood": "Kalihi Kai",
+      "lat": 21.332326,
+      "lng": -157.8797651
+    },
+    "WAUKE ST / CAMPBELL AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2691205,
+      "lng": -157.8091755
+    },
+    "WELO ST / PANANA ST": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3534023,
+      "lng": -158.0827893
+    },
+    "WHITMORE AVE / KAM HWY": {
+      "neighborhood": "Whitmore Village",
+      "lat": 21.5110079,
+      "lng": -158.0196701
+    },
+    "WHITMORE AVE / SAIPAN DR": {
+      "neighborhood": "Whitmore Village",
+      "lat": 21.5110079,
+      "lng": -158.0196701
+    },
+    "WILDER AVE / HALEKULA WAY": {
+      "neighborhood": "McCully",
+      "lat": 21.2959213,
+      "lng": -157.8232324
+    },
+    "WILDER AVE / MAKIKI ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2959213,
+      "lng": -157.8232324
+    },
+    "WILDER AVE / METCALF ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2959213,
+      "lng": -157.8232324
+    },
+    "WILIKINA DR / KAMANANUI RD": {
+      "neighborhood": "Wahiawā",
+      "lat": 21.5027914,
+      "lng": -158.0527174
+    },
+    "WILIWILI ST / LIME ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2911049,
+      "lng": -157.830364
+    },
+    "WILIWILI ST / WAIOLA ST": {
+      "neighborhood": "McCully",
+      "lat": 21.2911049,
+      "lng": -157.830364
+    },
+    "WINAM AVE / MAKALEKA AVE": {
+      "neighborhood": "Kapahulu",
+      "lat": 21.2777171,
+      "lng": -157.8114578
+    },
+    "WOODLAWN DR / LOWREY AVE": {
+      "neighborhood": "Mānoa",
+      "lat": 21.3140789,
+      "lng": -157.8010659
+    },
+    "YOUNG ST / ISENBERG ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018883,
+      "lng": -157.8469414
+    },
+    "YOUNG ST / KAHEKA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018883,
+      "lng": -157.8469414
+    },
+    "YOUNG ST / KALAKAUA AVE": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018883,
+      "lng": -157.8469414
+    },
+    "YOUNG ST / PIIKOI ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018883,
+      "lng": -157.8469414
+    },
+    "YOUNG ST / VICTORIA ST": {
+      "neighborhood": "Makiki Kai",
+      "lat": 21.3018883,
+      "lng": -157.8469414
     }
   }
 }
