@@ -1,11 +1,16 @@
 import { CrimeCategory } from "@prisma/client";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { socrataHeaders } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+// v95p7 — switched from runtime fs.readFileSync to a static JSON import.
+// The fs/path/url imports tripped Next's webpack edge-bundling for
+// opengraph-image.tsx ("UnhandledSchemeError: node:url"), failing the
+// last 2 Vercel deploys. Static imports work in both Node + edge AND
+// give the same data at zero runtime cost. The JSON is checked in
+// (geocoder script writes to the same path) and the package build
+// copies src/data/*.json → dist/data/ so the file ships alongside.
+import GEOCODE_RAW from "../data/honolulu-blockaddress-neighborhood.json" with { type: "json" };
 
 // Honolulu — Honolulu Police Department incidents published on
 // data.honolulu.gov (Socrata dataset vg88-5rn5). The feed publishes
@@ -57,25 +62,7 @@ interface GeocodeJson {
   addresses?: Record<string, GeocodedEntry>;
 }
 
-// Load the address→neighborhood map shipped with the package. The
-// build copies src/data/*.json to dist/data/, so resolve relative
-// to this file's location and the JSON sits next to us regardless
-// of whether we're running from src (dev/typecheck) or dist (prod).
-function loadGeocodeMap(): GeocodeJson {
-  try {
-    const here = path.dirname(fileURLToPath(import.meta.url));
-    // adapters/ → data/honolulu-blockaddress-neighborhood.json (sibling dir)
-    const filePath = path.resolve(here, "..", "data", "honolulu-blockaddress-neighborhood.json");
-    const raw = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(raw) as GeocodeJson;
-  } catch {
-    // File missing or unreadable — return empty map; adapter falls
-    // back to citywide-only behavior. Useful during dev before the
-    // one-time geocode batch has run.
-    return { addresses: {}, neighborhoods: [] };
-  }
-}
-const GEOCODE_MAP = loadGeocodeMap();
+const GEOCODE_MAP = GEOCODE_RAW as GeocodeJson;
 
 const HONOLULU_CENTROID = { lat: 21.3099, lng: -157.8581 };
 

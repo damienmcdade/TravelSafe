@@ -35,19 +35,27 @@ let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 
 interface TucRow {
   INCI_ID?: string;
-  DATE_OCCU?: number;
+  // Layer 42 (45D rolling) leaves DATE_OCCU null and uses
+  // DATETIME_OCCU as the only populated timestamp. Layer 81 (year-
+  // specific) populated both. Adapter reads DATETIME_OCCU first,
+  // falls back to DATE_OCCU so a future layer switch back is safe.
+  DATE_OCCU?: number | null;
+  DATETIME_OCCU?: number | null;
   UCRSummary?: string;
   UCRSummaryDesc?: string;
   OFFENSE?: string;
   STATUTDESC?: string;
   CrimeCategory?: string;
   CrimeType?: string;
-  NEIGHBORHD?: string;  // TPD short code like "T2ED"
-  NHA_NAME?: string;    // display name like "Downtown"
+  NEIGHBORHD?: string;  // TPD short code like "T206"
+  NHA_NAME?: string;    // display name like "Eastside"
+  emdivision?: string;
   DIVISION?: string;
   WARD?: string;
   LAT?: number;
   LONG?: number;
+  X?: number;
+  Y?: number;
 }
 
 function classify(row: TucRow): CrimeCategory {
@@ -74,13 +82,10 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchPage(offset: number): Promise<TucRow[]> {
   const url = new URL(BASE);
-  // v90p3 — NEIGHBORHD field returns TPD short codes (e.g. "T2ED")
-  // which don't match the polygon NAME field. NHA_NAME is the
-  // display name ("Downtown") that does match. Filter on
-  // DATE_OCCU instead so we don't drop rows with empty NHA_NAME
-  // (some HOAs aren't in the city's neighborhood association list).
-  url.searchParams.set("where", "DATE_OCCU IS NOT NULL");
-  url.searchParams.set("outFields", "INCI_ID,DATE_OCCU,UCRSummary,UCRSummaryDesc,OFFENSE,STATUTDESC,CrimeCategory,CrimeType,NHA_NAME,NEIGHBORHD,DIVISION,WARD,LAT,LONG");
+  // Layer 42 populates DATETIME_OCCU (epoch ms) and leaves DATE_OCCU
+  // null; filter on the populated field so we don't drop every row.
+  url.searchParams.set("where", "DATETIME_OCCU IS NOT NULL");
+  url.searchParams.set("outFields", "INCI_ID,DATE_OCCU,DATETIME_OCCU,UCRSummary,UCRSummaryDesc,OFFENSE,STATUTDESC,CrimeCategory,CrimeType,NHA_NAME,NEIGHBORHD,emdivision,DIVISION,WARD,LAT,LONG,X,Y");
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("orderByFields", "OBJECTID DESC");
   url.searchParams.set("resultOffset", String(offset));
@@ -105,21 +110,34 @@ async function fetchTucson(): Promise<Incident[]> {
   });
   await Promise.all(workers);
   const rows = results.flat();
-  return rows
-    .filter((r) => r.DATE_OCCU)
-    .map((r, i) => ({
+  const out: Incident[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    // Prefer DATETIME_OCCU (layer 42), fall back to DATE_OCCU (any
+    // year-specific layer if we ever re-add one).
+    const ts = r.DATETIME_OCCU ?? r.DATE_OCCU;
+    if (!ts) continue;
+    out.push({
       id: `tuc-${r.INCI_ID ?? i}`,
       // Prefer NHA_NAME (display name matches polygon file); fall
       // back to NEIGHBORHD code when NHA_NAME is missing.
       area: (r.NHA_NAME && r.NHA_NAME.trim()) || (r.NEIGHBORHD ?? "Unknown"),
-      occurredAt: new Date(r.DATE_OCCU!).toISOString(),
+      occurredAt: new Date(ts).toISOString(),
       nibrsCategory: classify(r),
       ibrOffenseDescription: (r.OFFENSE ?? r.UCRSummaryDesc ?? r.STATUTDESC ?? "Unknown").trim(),
-      beat: r.DIVISION ?? r.WARD ?? null,
+      beat: r.emdivision ?? r.DIVISION ?? r.WARD ?? null,
       blockLabel: undefined,
-      lat: typeof r.LAT === "number" && r.LAT !== 0 ? r.LAT : undefined,
-      lng: typeof r.LONG === "number" && r.LONG !== 0 ? r.LONG : undefined,
-    }));
+      // Layer 42 returns coords as LAT/LONG OR X/Y depending on
+      // outSR; accept either so we don't lose discovery.
+      lat: typeof r.LAT === "number" && r.LAT !== 0 ? r.LAT
+        : typeof r.Y === "number" && r.Y !== 0 ? r.Y
+        : undefined,
+      lng: typeof r.LONG === "number" && r.LONG !== 0 ? r.LONG
+        : typeof r.X === "number" && r.X !== 0 ? r.X
+        : undefined,
+    });
+  }
+  return out;
 }
 
 export async function getRowsTucson(): Promise<Incident[]> {
