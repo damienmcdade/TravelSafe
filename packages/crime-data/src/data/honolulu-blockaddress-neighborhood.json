@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-05-27T01:00:41.206Z",
+  "generatedAt": "2026-05-27T01:04:29.003Z",
   "source": "OpenStreetMap Nominatim (https://nominatim.openstreetmap.org/)",
-  "addressCount": 2217,
-  "neighborhoodCount": 85,
+  "addressCount": 2232,
+  "neighborhoodCount": 88,
   "neighborhoods": [
     {
       "name": "McCully",
@@ -69,6 +69,14 @@
       }
     },
     {
+      "name": "Crestview",
+      "count": 69,
+      "centroid": {
+        "lat": 21.395429086956494,
+        "lng": -157.98041776666653
+      }
+    },
+    {
       "name": "Iwilei",
       "count": 66,
       "centroid": {
@@ -82,14 +90,6 @@
       "centroid": {
         "lat": 21.32815120923078,
         "lng": -157.88213102769225
-      }
-    },
-    {
-      "name": "Crestview",
-      "count": 64,
-      "centroid": {
-        "lat": 21.395429359374972,
-        "lng": -157.98041600624987
       }
     },
     {
@@ -253,6 +253,14 @@
       }
     },
     {
+      "name": "Makakilo City",
+      "count": 26,
+      "centroid": {
+        "lat": 21.335353023076916,
+        "lng": -158.08097728846153
+      }
+    },
+    {
       "name": "Mariner's Cove",
       "count": 24,
       "centroid": {
@@ -274,14 +282,6 @@
       "centroid": {
         "lat": 21.351183622727273,
         "lng": -157.86046364090905
-      }
-    },
-    {
-      "name": "Makakilo City",
-      "count": 21,
-      "centroid": {
-        "lat": 21.33404197619047,
-        "lng": -158.08198716190475
       }
     },
     {
@@ -549,6 +549,14 @@
       }
     },
     {
+      "name": "Village Park",
+      "count": 3,
+      "centroid": {
+        "lat": 21.3851123,
+        "lng": -158.0330657
+      }
+    },
+    {
       "name": "Wailupe Peninsula",
       "count": 2,
       "centroid": {
@@ -682,6 +690,22 @@
       "centroid": {
         "lat": 21.5760543,
         "lng": -158.1120734
+      }
+    },
+    {
+      "name": "Royal Kunia",
+      "count": 1,
+      "centroid": {
+        "lat": 21.3973581,
+        "lng": -158.0383373
+      }
+    },
+    {
+      "name": "West Loch",
+      "count": 1,
+      "centroid": {
+        "lat": 21.379061,
+        "lng": -158.0241712
       }
     }
   ],
@@ -11770,6 +11794,81 @@
       "neighborhood": "Makakilo City",
       "lat": 21.3408828,
       "lng": -158.0768309
+    },
+    "920900 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "921000 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "921100 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "921200 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3407659,
+      "lng": -158.0763555
+    },
+    "921400 BLOCK MAKAKILO DR": {
+      "neighborhood": "Makakilo City",
+      "lat": 21.3408828,
+      "lng": -158.0768309
+    },
+    "940000 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940000 BLOCK WAIPAHU ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3973581,
+      "lng": -158.0383373
+    },
+    "940100 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940200 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940200 BLOCK LEOKU ST": {
+      "neighborhood": "West Loch",
+      "lat": 21.379061,
+      "lng": -158.0241712
+    },
+    "940200 BLOCK WAIPAHU ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3851123,
+      "lng": -158.0330657
+    },
+    "940300 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940400 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940400 BLOCK KUPUOHI ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3851123,
+      "lng": -158.0330657
+    },
+    "940400 BLOCK WAIPAHU ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3851123,
+      "lng": -158.0330657
     }
   }
 }
