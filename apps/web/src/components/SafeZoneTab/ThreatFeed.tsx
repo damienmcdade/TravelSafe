@@ -55,10 +55,12 @@ const CONFIDENCE_BADGE: Record<ThreatConfidence, { label: string; cls: string; t
 
 // Cap how many we'll ever render in a single scroll container — the
 // adapter can return thousands of rows for a large window and DOM
-// node count matters. 200 is well past the visual scroll budget
-// users tolerate (~30 days of activity in a busy area is typically
-// 50-150 incidents).
-const HARD_CAP = 200;
+// node count matters.
+// v95p18 — raised 200 → 2000 per user directive to include every
+// event in the selected interval. A 90-day busy-neighborhood window
+// can exceed 1500 events; 2000 gives that comfortable headroom while
+// keeping the DOM under React's scroll-virtualization threshold.
+const HARD_CAP = 2000;
 
 // Window presets the in-card selector exposes. Tied to the shared
 // useTimeWindow store so picking a window here drives every other

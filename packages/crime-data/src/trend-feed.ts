@@ -215,16 +215,18 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
 
   // Recent dispatches across the whole city — include the neighborhood
   // name in each bullet so users see which area the dispatch came from.
-  // BUG FIX: inWindow was built by iterating areas in turn; without a
-  // global sort, the first 12 rows were all from the FIRST area
-  // iterated — which (because each area's rows are sorted DESC by
-  // occurredAt) meant every bullet was from the most recent day of
-  // that first area's data. Users saw "all dispatches from May 23"
-  // instead of "12 most recent dispatches citywide". Sort by
-  // occurredAt DESC across the whole window, then slice. Cap raised
-  // to 200 so the client-side ThreatFeed scroll can show real volume.
+  // Sort by occurredAt DESC across the full window so bullets read
+  // newest-first chronologically (bug history at line 218 explains the
+  // global-sort fix).
+  //
+  // v95p18 — cap raised from 200 → 5000 per user directive to
+  // "include all events from time interval." 30 days × 200/day worst
+  // case = 6000, so 5000 covers nearly every realistic window without
+  // unbounded payload growth. The client cap on ThreatFeed is the UI
+  // budget; this server cap exists only as a payload safety net.
   const sortedWindow = [...inWindow].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, 200).map((i) => ({
+  const DISPATCH_CAP = 5000;
+  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, DISPATCH_CAP).map((i) => ({
     kind: "dispatch",
     at: i.occurredAt,
     text: `${ymd(i.occurredAt)} · ${i.area} — ${i.ibrOffenseDescription}${i.blockLabel ? ` near ${i.blockLabel}` : ""}.`,
@@ -347,10 +349,12 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
 
   // Recent dispatches — formatted as bullets. Sort DESC by
   // occurredAt first (the underlying area rows arrive in adapter-
-  // specific order which isn't guaranteed to be newest-first); cap
-  // at 200 so the client-side ThreatFeed scroll has real volume.
+  // specific order which isn't guaranteed to be newest-first).
+  // v95p18 — cap raised 200 → 5000. Per user directive that every
+  // event in the selected interval must be present. Per-area windows
+  // are smaller than citywide so 5000 covers any realistic interval.
   const sortedWindow = [...inWindow].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, 200).map((i) => ({
+  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, 5000).map((i) => ({
     kind: "dispatch",
     at: i.occurredAt,
     text: `${ymd(i.occurredAt)} — ${i.ibrOffenseDescription}${i.blockLabel ? ` near ${i.blockLabel}` : ""}.`,

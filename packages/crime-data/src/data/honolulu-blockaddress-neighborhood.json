@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-05-27T01:04:29.003Z",
+  "generatedAt": "2026-05-27T01:07:01.356Z",
   "source": "OpenStreetMap Nominatim (https://nominatim.openstreetmap.org/)",
-  "addressCount": 2232,
+  "addressCount": 2245,
   "neighborhoodCount": 88,
   "neighborhoods": [
     {
@@ -45,6 +45,14 @@
       }
     },
     {
+      "name": "Crestview",
+      "count": 74,
+      "centroid": {
+        "lat": 21.395428851351323,
+        "lng": -157.98041928918906
+      }
+    },
+    {
       "name": "Waikīkī",
       "count": 72,
       "centroid": {
@@ -66,14 +74,6 @@
       "centroid": {
         "lat": 21.387571672463757,
         "lng": -157.7384339478261
-      }
-    },
-    {
-      "name": "Crestview",
-      "count": 69,
-      "centroid": {
-        "lat": 21.395429086956494,
-        "lng": -157.98041776666653
       }
     },
     {
@@ -453,6 +453,22 @@
       }
     },
     {
+      "name": "Royal Kunia",
+      "count": 6,
+      "centroid": {
+        "lat": 21.397522233333333,
+        "lng": -158.03841249999996
+      }
+    },
+    {
+      "name": "Village Park",
+      "count": 6,
+      "centroid": {
+        "lat": 21.3851123,
+        "lng": -158.03306569999998
+      }
+    },
+    {
       "name": "Kalama Valley",
       "count": 5,
       "centroid": {
@@ -546,14 +562,6 @@
       "centroid": {
         "lat": 21.279807966666667,
         "lng": -157.7633198
-      }
-    },
-    {
-      "name": "Village Park",
-      "count": 3,
-      "centroid": {
-        "lat": 21.3851123,
-        "lng": -158.0330657
       }
     },
     {
@@ -690,14 +698,6 @@
       "centroid": {
         "lat": 21.5760543,
         "lng": -158.1120734
-      }
-    },
-    {
-      "name": "Royal Kunia",
-      "count": 1,
-      "centroid": {
-        "lat": 21.3973581,
-        "lng": -158.0383373
       }
     },
     {
@@ -11869,6 +11869,71 @@
       "neighborhood": "Village Park",
       "lat": 21.3851123,
       "lng": -158.0330657
+    },
+    "940500 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940500 BLOCK KUPUOHI ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3851123,
+      "lng": -158.0330657
+    },
+    "940500 BLOCK WAIPAHU ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3851123,
+      "lng": -158.0330657
+    },
+    "940600 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940600 BLOCK KUPUOHI ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3983429,
+      "lng": -158.0387885
+    },
+    "940600 BLOCK WAIPAHU ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3973581,
+      "lng": -158.0383373
+    },
+    "940700 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940700 BLOCK KUPUOHI ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3973581,
+      "lng": -158.0383373
+    },
+    "940800 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940800 BLOCK KUPUOHI ST": {
+      "neighborhood": "Village Park",
+      "lat": 21.3851123,
+      "lng": -158.0330657
+    },
+    "940800 BLOCK WAIPAHU ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3973581,
+      "lng": -158.0383373
+    },
+    "940900 BLOCK FARRINGTON HWY": {
+      "neighborhood": "Crestview",
+      "lat": 21.3954256,
+      "lng": -157.9804403
+    },
+    "940900 BLOCK WAIPAHU ST": {
+      "neighborhood": "Royal Kunia",
+      "lat": 21.3973581,
+      "lng": -158.0383373
     }
   }
 }
