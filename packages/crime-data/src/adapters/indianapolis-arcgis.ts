@@ -117,6 +117,11 @@ export async function getDiscoveredAreasIndianapolis(): Promise<KnownArea[]> {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
+    // v95p36 — drop "Excluded" placeholder. IMPD's dataset uses this
+    // string for incidents the city policy excludes from public
+    // mapping (e.g. juvenile, sensitive-location). It is NOT a
+    // neighborhood and was surfacing as an area in the catalog.
+    if (r.area === "Excluded") continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat; e.lngSum += r.lng; e.count += 1;

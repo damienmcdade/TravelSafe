@@ -351,7 +351,13 @@ export async function getDiscoveredAreasBoston(): Promise<KnownArea[]> {
   const rows = await getRowsBoston();
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
-    if (!r.area || r.area === "Unknown" || r.area === "External") continue;
+    if (!r.area || r.area === "Unknown") continue;
+    // v95p36 — drop ALL "External" placeholder labels. The original
+    // filter only matched "External" exactly, but enrich() produces
+    // "BPD District EXTERNAL" for unmapped district codes, which was
+    // surfacing to users as an unrecognizable "neighborhood". Case-
+    // insensitive check covers both shapes.
+    if (/external/i.test(r.area)) continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat; e.lngSum += r.lng; e.count += 1;
