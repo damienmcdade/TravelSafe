@@ -159,13 +159,26 @@ app.use(csrfGuard);
 // SHA via RAILWAY_GIT_COMMIT_SHA; fall back to "unknown" locally.
 const BUILD_SHA = (process.env.RAILWAY_GIT_COMMIT_SHA ?? process.env.GIT_COMMIT_SHA ?? "unknown").slice(0, 7);
 const BOOT_TIME = new Date().toISOString();
+// v96 — heap stats in /health. Today's Prisma 6 + Zod 4 deploy went
+// into crashloop with "Ineffective mark-compacts near heap limit"
+// after the warm-worker accumulated ~3.5 GB across all city
+// adapters. The crash was invisible until exit 134, because /health
+// only reported ok:true. Exposing heap used / heap total lets an
+// external uptime monitor watch the trajectory and page ops before
+// the next OOM rather than after.
 const healthHandler = (_req: import("express").Request, res: import("express").Response) => {
+  const mem = process.memoryUsage();
   res.json({
     ok: true,
     service: "travelsafe-api",
     time: new Date().toISOString(),
     buildSha: BUILD_SHA,
     bootedAt: BOOT_TIME,
+    heap: {
+      usedMB: Math.round(mem.heapUsed / 1024 / 1024),
+      totalMB: Math.round(mem.heapTotal / 1024 / 1024),
+      rssMB: Math.round(mem.rss / 1024 / 1024),
+    },
   });
 };
 app.get("/health", healthHandler);
