@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { dallasPolygons } from "../data/dallas-neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
@@ -114,14 +114,17 @@ function titleCaseDivision(raw: string): string {
 }
 
 async function fetchDallas(): Promise<Incident[]> {
+  // v96 — migrated to fetchSocrata helper (was a hand-built template-
+  // string URL; the audit also flagged this for future $where
+  // expansion risk if conditions grew. The helper handles encoding.)
   // EXPLICIT $select — never request demographic columns.
-  const select = "incidentnum,servnumid,offincident,date1,division,sector,beat,nibrs_crime,nibrs_crime_category,nibrs_crimeagainst,geocoded_column";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date1%20DESC&$where=date1%20IS%20NOT%20NULL%20AND%20geocoded_column%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  const rows = await fetchSocrata<DallasRow>("Dallas Socrata", {
+    url: BASE,
+    select: "incidentnum,servnumid,offincident,date1,division,sector,beat,nibrs_crime,nibrs_crime_category,nibrs_crimeagainst,geocoded_column",
+    where: "date1 IS NOT NULL AND geocoded_column IS NOT NULL",
+    order: "date1 DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Dallas Socrata ${res.status}`);
-  const rows = (await res.json()) as DallasRow[];
   return rows.map((r, i) => {
     const lat = Number(r.geocoded_column?.latitude);
     const lng = Number(r.geocoded_column?.longitude);

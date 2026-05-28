@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Buffalo NY — Buffalo Police Crime Incidents on data.buffalony.gov
@@ -66,13 +66,14 @@ function safeIso(raw: string | null | undefined): string {
 }
 
 async function fetchBuffalo(): Promise<Incident[]> {
-  const select = "case_number,incident_datetime,incident_type_primary,parent_incident_type,address_1,city,zip_code,neighborhood,council_district,police_district,census_tract,latitude,longitude";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=incident_datetime%20DESC&$where=neighborhood%20IS%20NOT%20NULL%20AND%20latitude%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  // v96 — migrated to fetchSocrata helper.
+  const rows = await fetchSocrata<BufRow>("Buffalo Socrata", {
+    url: BASE,
+    select: "case_number,incident_datetime,incident_type_primary,parent_incident_type,address_1,city,zip_code,neighborhood,council_district,police_district,census_tract,latitude,longitude",
+    where: "neighborhood IS NOT NULL AND latitude IS NOT NULL",
+    order: "incident_datetime DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Buffalo Socrata ${res.status}`);
-  const rows = (await res.json()) as BufRow[];
   return rows.map((r, i) => {
     const lat = Number(r.latitude);
     const lng = Number(r.longitude);

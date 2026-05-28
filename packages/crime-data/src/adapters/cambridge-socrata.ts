@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // Cambridge MA — Cambridge Police Crime Reports (xuad-73uj on
 // data.cambridgema.gov). The crime data dataset publishes a native
@@ -78,13 +78,14 @@ function safeIso(raw: string | null | undefined): string {
 }
 
 async function fetchCambridge(): Promise<Incident[]> {
-  const select = "file_number,date_of_report,crime,reporting_area,neighborhood,reporting_area_lat,reporting_area_lon,location";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_of_report%20DESC&$where=neighborhood%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  // v96 — migrated to fetchSocrata helper.
+  const rows = await fetchSocrata<CamRow>("Cambridge Socrata", {
+    url: BASE,
+    select: "file_number,date_of_report,crime,reporting_area,neighborhood,reporting_area_lat,reporting_area_lon,location",
+    where: "neighborhood IS NOT NULL",
+    order: "date_of_report DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Cambridge Socrata ${res.status}`);
-  const rows = (await res.json()) as CamRow[];
   return rows.map((r, i) => {
     const lat = Number(r.reporting_area_lat);
     const lng = Number(r.reporting_area_lon);

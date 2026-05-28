@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 // v95p7 — switched from runtime fs.readFileSync to a static JSON import.
 // The fs/path/url imports tripped Next's webpack edge-bundling for
@@ -144,13 +144,14 @@ function buildIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRow
 }
 
 async function fetchHonolulu(): Promise<Incident[]> {
-  const select = "objectid,incidentnum,blockaddress,date,type,status";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date%20DESC&$where=date%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  // v96 — migrated to fetchSocrata helper.
+  const rows = await fetchSocrata<HnlRow>("Honolulu Socrata", {
+    url: BASE,
+    select: "objectid,incidentnum,blockaddress,date,type,status",
+    where: "date IS NOT NULL",
+    order: "date DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Honolulu Socrata ${res.status}`);
-  const rows = (await res.json()) as HnlRow[];
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];

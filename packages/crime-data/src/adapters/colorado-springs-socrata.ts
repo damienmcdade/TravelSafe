@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { coSpPolygons } from "../data/colorado-springs-neighborhoods.js";
 
 // Colorado Springs PD — "Crime Level Data" on policedata.coloradosprings.gov.
@@ -109,16 +109,17 @@ function safeIso(raw: string | null | undefined): string {
 }
 
 async function fetchCoSp(): Promise<Incident[]> {
+  // v96 — migrated to fetchSocrata helper.
   // Pull the freshest slice. `occurredfromdate IS NOT NULL` guards
   // against partially-filed rows. CSPD also publishes a sparser
   // `reporteddate`; using occurred-date keeps timestamps aligned
   // with when the incident actually happened.
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$order=occurredfromdate%20DESC&$where=occurredfromdate%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  const rows = await fetchSocrata<CoSpRow>("CoSp Socrata", {
+    url: BASE,
+    where: "occurredfromdate IS NOT NULL",
+    order: "occurredfromdate DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`CoSp Socrata ${res.status}`);
-  const rows = (await res.json()) as CoSpRow[];
   return rows.map((r, i) => {
     const c = r.location_point?.coordinates;
     const lng = Array.isArray(c) ? Number(c[0]) : NaN;

@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { oaklandPolygons } from "../data/oakland-neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
@@ -142,12 +142,14 @@ function safeIso(raw: string | null | undefined): string {
 }
 
 async function fetchOaklandPage(offset: number): Promise<OakRow[]> {
-  const u = `${BASE}?$limit=${PAGE_SIZE}&$offset=${offset}&$order=datetime%20DESC&$where=location_1%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  // v96 — migrated to fetchSocrata helper.
+  return fetchSocrata<OakRow>(`Oakland Socrata at offset ${offset}`, {
+    url: BASE,
+    where: "location_1 IS NOT NULL",
+    order: "datetime DESC",
+    limit: PAGE_SIZE,
+    offset,
   });
-  if (!res.ok) throw new Error(`Oakland Socrata ${res.status} at offset ${offset}`);
-  return (await res.json()) as OakRow[];
 }
 
 async function fetchOakland(): Promise<Incident[]> {

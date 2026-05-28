@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // Baton Rouge — Baton Rouge Police Crime Incidents.
 // Socrata dataset pbin-pcm7 on data.brla.gov. Updated daily.
@@ -61,15 +61,16 @@ function safeIso(raw: string | null | undefined): string {
 }
 
 async function fetchBr(): Promise<Incident[]> {
+  // v96 — migrated to fetchSocrata helper.
   // Explicit $select — never request demographic columns even though BRPD
   // doesn't publish them on this dataset.
-  const select = "incident_number,charge_id,report_date,offense_description,statute_category,crime_against,neighborhood,district,zone,latitude,longitude";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=report_date%20DESC&$where=neighborhood%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  const rows = await fetchSocrata<BrRow>("BR Socrata", {
+    url: BASE,
+    select: "incident_number,charge_id,report_date,offense_description,statute_category,crime_against,neighborhood,district,zone,latitude,longitude",
+    where: "neighborhood IS NOT NULL",
+    order: "report_date DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`BR Socrata ${res.status}`);
-  const rows = (await res.json()) as BrRow[];
   return rows.map((r, i) => {
     const lat = Number(r.latitude);
     const lng = Number(r.longitude);

@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // Norfolk VA — Norfolk Police Incident Reports on data.norfolk.gov
 // (Socrata dataset r7bn-2egr). Replaces Tucson in the supported-city
@@ -136,13 +136,14 @@ function titleCaseArea(raw: string | null | undefined): string | undefined {
 }
 
 async function fetchNorfolk(): Promise<Incident[]> {
-  const select = "inci_id,offense,streetno,street,date_occu,hour_occu,tract,zone,district,reportarea,dow1,neighborhd";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=date_occu%20DESC&$where=date_occu%20IS%20NOT%20NULL%20AND%20neighborhd%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  // v96 — migrated to fetchSocrata helper.
+  const rows = await fetchSocrata<NorRow>("Norfolk Socrata", {
+    url: BASE,
+    select: "inci_id,offense,streetno,street,date_occu,hour_occu,tract,zone,district,reportarea,dow1,neighborhd",
+    where: "date_occu IS NOT NULL AND neighborhd IS NOT NULL",
+    order: "date_occu DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Norfolk Socrata ${res.status}`);
-  const rows = (await res.json()) as NorRow[];
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];

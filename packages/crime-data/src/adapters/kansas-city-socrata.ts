@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
 
 // Kansas City MO — KCPD Crime Data, current + prior year.
@@ -179,14 +179,15 @@ function safeIso(raw: string | null | undefined): string | null {
 }
 
 async function fetchKansasCityYear(datasetId: string): Promise<KcRow[]> {
+  // v96 — migrated to fetchSocrata helper.
   // EXPLICIT $select — never request the `race`/`sex` demographic columns.
-  const select = "report,report_date,from_date,offense,ibrs,beat,address,city,zipcode,rep_dist,area,location";
-  const u = `https://data.kcmo.org/resource/${datasetId}.json?$limit=${ROW_LIMIT}&$select=${select}&$order=report_date%20DESC&$where=location%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  return fetchSocrata<KcRow>(`Kansas City Socrata ${datasetId}`, {
+    url: `https://data.kcmo.org/resource/${datasetId}.json`,
+    select: "report,report_date,from_date,offense,ibrs,beat,address,city,zipcode,rep_dist,area,location",
+    where: "location IS NOT NULL",
+    order: "report_date DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Kansas City Socrata ${datasetId} ${res.status}`);
-  return (await res.json()) as KcRow[];
 }
 
 async function fetchKansasCity(): Promise<Incident[]> {

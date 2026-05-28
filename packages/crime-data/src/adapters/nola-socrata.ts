@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { nolaPolygons } from "../data/new-orleans-neighborhoods.js";
 
 // New Orleans — NOPD Calls for Service 2026.
@@ -155,15 +155,16 @@ function districtToNeighborhood(raw: string | undefined | null): string {
 }
 
 async function fetchNola(): Promise<Incident[]> {
+  // v96 — migrated to fetchSocrata helper.
   // Explicit $select — never pull anything we don't render. (Calls for
   // Service 2026 doesn't publish demographics anyway, but belt-and-braces.)
-  const select = "nopd_item,type_,typetext,priority,policedistrict,beat,block_address,timecreate,location,disposition,dispositiontext";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=timecreate%20DESC&$where=location%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  const rows = await fetchSocrata<NolaRow>("NOLA Socrata", {
+    url: BASE,
+    select: "nopd_item,type_,typetext,priority,policedistrict,beat,block_address,timecreate,location,disposition,dispositiontext",
+    where: "location IS NOT NULL",
+    order: "timecreate DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`NOLA Socrata ${res.status}`);
-  const rows = (await res.json()) as NolaRow[];
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
