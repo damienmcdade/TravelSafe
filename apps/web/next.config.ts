@@ -55,17 +55,35 @@ import type { NextConfig } from "next";
 // connect-src now includes the Railway API origin so the Vercel-side
 // fetch in tryProxy() and any client-side same-origin /api/* calls
 // don't get blocked. Adjust if a new external endpoint is added.
+// v95p37 — AdSense-compatible origins. These are required for ad
+// loading whether or not NEXT_PUBLIC_ADSENSE_CLIENT_ID is currently
+// set, because the CSP is static. With the env var off the AdSense
+// script never loads and the CSP allowances are unused; with the
+// env var on the script/iframes/images/beacons all resolve.
+//   pagead2.googlesyndication.com   — adsbygoogle.js loader
+//   googleads.g.doubleclick.net     — ad creatives + click tracking
+//   www.googletagservices.com       — tag delivery
+//   ep1.adtrafficquality.google     — ad-quality bots
+//   www.google.com                  — adsense back-channel
+const ADSENSE_ORIGINS =
+  "https://pagead2.googlesyndication.com " +
+  "https://googleads.g.doubleclick.net " +
+  "https://www.googletagservices.com " +
+  "https://ep1.adtrafficquality.google " +
+  "https://www.google.com";
+
 const CSP_ENFORCING = [
   "default-src 'self'",
   "base-uri 'self'",
   "form-action 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
-  "img-src 'self' data: blob: https://upload.wikimedia.org https://*.basemaps.cartocdn.com",
-  "script-src 'self' 'unsafe-inline'",
+  `img-src 'self' data: blob: https://upload.wikimedia.org https://*.basemaps.cartocdn.com https://*.googleusercontent.com ${ADSENSE_ORIGINS}`,
+  `script-src 'self' 'unsafe-inline' ${ADSENSE_ORIGINS}`,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
-  "connect-src 'self' https://communitysafe-api-production.up.railway.app https://nominatim.openstreetmap.org",
+  `connect-src 'self' https://communitysafe-api-production.up.railway.app https://nominatim.openstreetmap.org ${ADSENSE_ORIGINS}`,
+  `frame-src ${ADSENSE_ORIGINS}`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
   "upgrade-insecure-requests",
