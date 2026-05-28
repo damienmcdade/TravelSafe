@@ -111,18 +111,25 @@ export function TrustedContactsManager({ embedded = false }: Props) {
       >
         <input
           required disabled={atLimit || busy}
+          aria-label="Contact label, for example Roommate"
           placeholder="Label (e.g. Roommate)"
           value={label} onChange={(e) => setLabel(e.target.value)}
           className="px-3 py-2 surface text-sm"
         />
         <input
           disabled={atLimit || busy}
-          type="email" placeholder="Email"
+          type="email"
+          aria-label="Contact email address"
+          autoComplete="email"
+          placeholder="Email"
           value={email} onChange={(e) => setEmail(e.target.value)}
           className="px-3 py-2 surface text-sm"
         />
         <input
           disabled={atLimit || busy}
+          type="tel"
+          aria-label="Contact phone number"
+          autoComplete="tel"
           placeholder="Phone"
           value={phone} onChange={(e) => setPhone(e.target.value)}
           className="px-3 py-2 surface text-sm"

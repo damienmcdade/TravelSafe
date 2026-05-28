@@ -32,16 +32,16 @@ export default function LoginPage() {
   return (
     <main className="max-w-md mx-auto px-6 py-16 animate-rise-in">
       <h1 className="font-display text-3xl text-slate2-900">Sign in</h1>
-      <form className="mt-8 space-y-4" onSubmit={onSubmit}>
+      <form className="mt-8 space-y-4" onSubmit={onSubmit} aria-describedby={error ? "login-error" : undefined}>
         <div>
-          <label className="text-sm text-slate2-700">Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 input" />
+          <label htmlFor="login-email" className="text-sm text-slate2-700">Email</label>
+          <input id="login-email" name="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 input" />
         </div>
         <div>
-          <label className="text-sm text-slate2-700">Password</label>
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 input" />
+          <label htmlFor="login-password" className="text-sm text-slate2-700">Password</label>
+          <input id="login-password" name="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 input" />
         </div>
-        {error && <p className="text-sm text-dusk-700">{error}</p>}
+        {error && <p id="login-error" role="alert" className="text-sm text-dusk-700">{error}</p>}
         <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-50">
           {busy ? "Signing in…" : "Sign in"}
         </button>

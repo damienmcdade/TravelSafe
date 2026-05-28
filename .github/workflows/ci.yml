@@ -1,0 +1,60 @@
+# v96 — quality gate. Runs on every PR and every push to main. The
+# dependency-hygiene audit flagged that nothing automated was running
+# typecheck/lint/test before deploys — the only PR-time check was the
+# data-sync nightly. Now we gate merges.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Build crime-data (prerequisite for api + web)
+        run: npm run build --workspace packages/crime-data
+
+      - name: Typecheck (api)
+        run: npm run typecheck --workspace apps/api
+
+      - name: Typecheck (web)
+        run: npm run typecheck --workspace apps/web
+
+      - name: Lint (web)
+        run: npm run lint --workspace apps/web
+
+      - name: Test (api)
+        run: npm test --workspace apps/api
+
+      - name: Build (api)
+        run: npm run build --workspace apps/api
+
+      - name: Build (web)
+        run: npm run build --workspace apps/web

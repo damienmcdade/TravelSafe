@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // v93p2 — COPPA affirmative-defense interstitial. Privacy policy
 // already declares the service is not directed to children under 13,
@@ -27,7 +27,38 @@ function readChoice(): Choice {
 
 export function AgeGate() {
   const [show, setShow] = useState(false);
+  const acceptRef = useRef<HTMLButtonElement | null>(null);
+  const under13Ref = useRef<HTMLButtonElement | null>(null);
+
   useEffect(() => { if (readChoice() === null) setShow(true); }, []);
+
+  // v96 — focus management. When the dialog opens, focus moves to the
+  // primary action (the "I'm 13 or older" button). Tab loops between
+  // the two buttons (focus trap). On dismissal the prior focus is
+  // restored.
+  useEffect(() => {
+    if (!show) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    acceptRef.current?.focus();
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Tab") return;
+      const focusables = [acceptRef.current, under13Ref.current].filter(Boolean) as HTMLElement[];
+      if (focusables.length === 0) return;
+      const active = document.activeElement as HTMLElement | null;
+      const idx = active ? focusables.indexOf(active) : -1;
+      const nextIdx = e.shiftKey
+        ? (idx <= 0 ? focusables.length - 1 : idx - 1)
+        : (idx === focusables.length - 1 ? 0 : idx + 1);
+      e.preventDefault();
+      focusables[nextIdx].focus();
+    }
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      previouslyFocused?.focus?.();
+    };
+  }, [show]);
+
   if (!show) return null;
   function accept() {
     try { window.localStorage.setItem(KEY, "ok"); } catch {}
@@ -59,6 +90,7 @@ export function AgeGate() {
         <div className="flex flex-col sm:flex-row gap-2 pt-2">
           <button
             type="button"
+            ref={acceptRef}
             onClick={accept}
             className="btn-primary flex-1 px-4 py-2 text-sm"
           >
@@ -66,6 +98,7 @@ export function AgeGate() {
           </button>
           <button
             type="button"
+            ref={under13Ref}
             onClick={under13}
             className="btn-secondary flex-1 px-4 py-2 text-sm"
           >

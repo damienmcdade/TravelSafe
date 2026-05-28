@@ -45,6 +45,7 @@ import { startAuditRetentionWorker } from "./services/audit/retention.worker.js"
 import { Agent, setGlobalDispatcher } from "undici";
 import { globalLimiter } from "./middleware/rate-limit.js";
 import { csrfGuard } from "./middleware/csrf.js";
+import { requestId } from "./middleware/request-id.js";
 
 // v90p5 — pooled HTTP dispatcher inlined here (was previously in
 // @travelsafe/crime-data/lib/http but undici's node: scheme imports
@@ -94,6 +95,11 @@ app.use(helmet({
   referrerPolicy: { policy: "no-referrer" },
 }));
 
+// v96 — assign a request correlation ID FIRST so every downstream
+// middleware (cors, rate-limit, csrf, route handlers, errors) can
+// reference it.
+app.use(requestId);
+
 app.use(express.json({ limit: "200kb" }));
 app.use(
   cors({
@@ -104,7 +110,12 @@ app.use(
     credentials: true,
   }),
 );
-app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
+// v96 — register :request-id token so the combined access log carries
+// the correlation ID. Format extends standard `combined` with the ID
+// at the end.
+morgan.token("request-id", (_req, res) => (res as import("express").Response).locals?.requestId ?? "-");
+const PROD_FORMAT = ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" rid=:request-id';
+app.use(morgan(env.NODE_ENV === "production" ? PROD_FORMAT : "dev"));
 
 // v92 — global per-IP rate limit (skips /health + /diag/*).
 app.use(globalLimiter);
@@ -117,8 +128,20 @@ app.use(csrfGuard);
 // kubernetes-style alias an external uptime monitor was hitting and
 // getting 404s every 6s. Both return the same payload so either probe
 // shape is silently supported.
+// v96 — include the git SHA + boot time in the health payload so a
+// log line "rid=abc123 status=500" can be cross-referenced to the
+// exact deploy that served it. Railway exposes the deploy's commit
+// SHA via RAILWAY_GIT_COMMIT_SHA; fall back to "unknown" locally.
+const BUILD_SHA = (process.env.RAILWAY_GIT_COMMIT_SHA ?? process.env.GIT_COMMIT_SHA ?? "unknown").slice(0, 7);
+const BOOT_TIME = new Date().toISOString();
 const healthHandler = (_req: import("express").Request, res: import("express").Response) => {
-  res.json({ ok: true, service: "travelsafe-api", time: new Date().toISOString() });
+  res.json({
+    ok: true,
+    service: "travelsafe-api",
+    time: new Date().toISOString(),
+    buildSha: BUILD_SHA,
+    bootedAt: BOOT_TIME,
+  });
 };
 app.get("/health", healthHandler);
 app.get("/healthz", healthHandler);
