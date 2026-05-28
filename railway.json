@@ -4,8 +4,8 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "//note": "preDeployCommand stays on db:push until the operator runs `bash scripts/prisma-deploy.sh` once against Neon (or sets MIGRATIONS_BASELINED=1). See scripts/prisma-deploy.sh header for the baselining steps. After that, switch this to `bash scripts/prisma-deploy.sh`.",
-    "preDeployCommand": "npm run db:push",
+    "//note": "v96 — baseline 0_init was marked applied against Neon on 2026-05-28; production DB has the v96 schema (User.deletedAt + 4 new indexes). All future schema changes go through prisma migrate dev locally + are applied here via migrate deploy.",
+    "preDeployCommand": "bash scripts/prisma-deploy.sh",
     "startCommand": "npm run start:api",
     "healthcheckPath": "/health",
     "healthcheckTimeout": 30,
