@@ -23,9 +23,20 @@
     "db:seed": "npm run seed --workspace packages/db",
     "db:studio": "npm run prisma:studio --workspace packages/db",
     "lint": "npm run lint --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "apps/api/**/*.ts": [
+      "bash -c 'cd apps/api && npx eslint --fix'"
+    ],
+    "apps/web/**/*.{ts,tsx}": [
+      "bash -c 'cd apps/web && npx next lint --fix --file ${1#apps/web/}' --"
+    ]
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2",
     "npm-run-all": "^4.1.5",
     "typescript": "^5.6.3"
   },

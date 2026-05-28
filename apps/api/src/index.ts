@@ -9,12 +9,17 @@
 // HTTP response that the calling code has already moved past.
 process.on("uncaughtException", (err) => {
   // Format the error verbosely so log greps still catch the stack.
-  // eslint-disable-next-line no-console
+   
   console.error("[uncaughtException]", err?.name, err?.message, err?.stack);
+  // v96 — also forward to Sentry if armed. No-op when SENTRY_DSN is
+  // unset (uses the local import below; module load order is fine
+  // because Sentry's init runs before any handler can fire).
+  try { void import("./lib/sentry.js").then((s) => s.captureException(err, { route: "uncaughtException" })); } catch {}
 });
 process.on("unhandledRejection", (reason) => {
-  // eslint-disable-next-line no-console
+   
   console.error("[unhandledRejection]", reason);
+  try { void import("./lib/sentry.js").then((s) => s.captureException(reason, { route: "unhandledRejection" })); } catch {}
 });
 
 import express from "express";
@@ -46,6 +51,14 @@ import { Agent, setGlobalDispatcher } from "undici";
 import { globalLimiter } from "./middleware/rate-limit.js";
 import { csrfGuard } from "./middleware/csrf.js";
 import { requestId } from "./middleware/request-id.js";
+import { initSentry } from "./lib/sentry.js";
+
+// v96 — initSentry must run BEFORE the rest of the middleware mounts so
+// that error tracking captures cold-start crashes too. No-op when
+// SENTRY_DSN is unset (local dev, every env without observability
+// config). When set in prod, every unhandledRejection / uncaughtException
+// already wired above also routes through Sentry via the lazy import.
+initSentry();
 
 // v90p5 — pooled HTTP dispatcher inlined here (was previously in
 // @travelsafe/crime-data/lib/http but undici's node: scheme imports

@@ -131,6 +131,16 @@ interface CleFeature {
   geometry?: { x?: number; y?: number };
 }
 
+async function fetchPageOnce(url: URL): Promise<CleFeature[]> {
+  const res = await fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+  });
+  if (!res.ok) throw new Error(`Cleveland ArcGIS ${res.status}`);
+  const body = await res.json() as { features?: CleFeature[]; error?: { code?: number; message?: string } };
+  if (body.error) throw new Error(`Cleveland ArcGIS error ${body.error.code}: ${body.error.message}`);
+  return body.features ?? [];
+}
+
 async function fetchPage(offset: number): Promise<CleFeature[]> {
   const url = new URL(BASE);
   url.searchParams.set("where", "NEIGHBORHOOD IS NOT NULL");
@@ -144,13 +154,29 @@ async function fetchPage(offset: number): Promise<CleFeature[]> {
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
-  const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
-  });
-  if (!res.ok) throw new Error(`Cleveland ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: CleFeature[]; error?: { code?: number; message?: string } };
-  if (body.error) throw new Error(`Cleveland ArcGIS error ${body.error.code}: ${body.error.message}`);
-  return body.features ?? [];
+  // v96 — Cleveland's ArcGIS host throws transient "fetch failed"
+  // errors (undici TLS/connect aborts) during cold-start cycles
+  // before its CDN edge has been warmed. The warm-worker logs
+  // showed four boot-cycle pages all failing at once. Add a
+  // single retry with a 250 ms backoff for the boot scenario;
+  // steady-state cycles aren't affected (they hit the CDN
+  // edge and never need the retry).
+  try {
+    return await fetchPageOnce(url);
+  } catch (err) {
+    const msg = (err as Error).message || "";
+    // Only retry the transient connect-failure class. 4xx/5xx
+    // SHOULD fail fast — retrying a 400 just wastes work.
+    if (!/fetch failed|ECONNRESET|UND_ERR|socket hang up|terminated/i.test(msg)) {
+      throw new Error(`${msg} offset=${offset}`);
+    }
+    await new Promise((r) => setTimeout(r, 250));
+    try {
+      return await fetchPageOnce(url);
+    } catch (err2) {
+      throw new Error(`${(err2 as Error).message} offset=${offset} (after 1 retry)`);
+    }
+  }
 }
 
 // v63 — bounded concurrency. Cleveland's ArcGIS endpoint rate-limits

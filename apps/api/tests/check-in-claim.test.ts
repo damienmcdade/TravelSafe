@@ -15,7 +15,7 @@ import { describe, it, expect } from "vitest";
 // run by default.
 
 describe("triggerExpiry atomic-claim invariant", () => {
-  it("the updateMany WHERE clause is the single source of truth", () => {
+  it("the updateMany WHERE clause is the single source of truth", async () => {
     // The SQL Prisma generates from:
     //   prisma.checkInTimer.updateMany({
     //     where: { id: timerId, status: ACTIVE },
@@ -31,7 +31,7 @@ describe("triggerExpiry atomic-claim invariant", () => {
     // Verify by reading the service source for the right shape.
     // This is intentionally a static check — making a real
     // concurrent claim test needs the dedicated integration lane.
-    const fs = require("fs") as typeof import("fs");
+    const fs = await import("node:fs");
     const src = fs.readFileSync(
       new URL("../src/services/safety/check-in.service.ts", import.meta.url),
       "utf8",

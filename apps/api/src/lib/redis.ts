@@ -44,3 +44,36 @@ export function getRedis(): Redis | null {
 export function isRedisEnabled(): boolean {
   return !!env.REDIS_URL;
 }
+
+// v96 — wait helper for the boot-time race between the workers and the
+// Redis client. The client is lazyConnect=true with enableOfflineQueue=
+// false, which means any command issued during the brief "connecting"
+// window is rejected with "Stream isn't writeable". Specifically, the
+// digest worker's boot tick was logging
+// "[digest-worker] redis check failed, proceeding: Stream isn't
+// writeable" on every container start. The cache fallback path worked,
+// but the noise was misleading. Callers that want the warm Redis path
+// can `await redisReady()` once at the start of their boot tick to
+// avoid issuing commands until the socket is up. Resolves with the
+// client when ready, null when REDIS_URL is unset or the connection
+// can't be established within READY_TIMEOUT_MS.
+const READY_TIMEOUT_MS = 5_000;
+export async function redisReady(): Promise<Redis | null> {
+  const c = getRedis();
+  if (!c) return null;
+  if (c.status === "ready") return c;
+  return new Promise<Redis | null>((resolve) => {
+    const onReady = () => { cleanup(); resolve(c); };
+    const onErr = () => { cleanup(); resolve(null); };
+    const timer = setTimeout(() => { cleanup(); resolve(null); }, READY_TIMEOUT_MS);
+    function cleanup() {
+      clearTimeout(timer);
+      c?.off("ready", onReady);
+      c?.off("error", onErr);
+    }
+    c.once("ready", onReady);
+    c.once("error", onErr);
+    // Nudge the client to start connecting if it hasn't yet (lazy mode).
+    void c.connect().catch(() => { /* swallowed; error event handles it */ });
+  });
+}

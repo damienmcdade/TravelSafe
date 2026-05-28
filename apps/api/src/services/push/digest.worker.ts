@@ -1,5 +1,5 @@
 import { runDailyDigest } from "./digest.service.js";
-import { getRedis } from "../../lib/redis.js";
+import { getRedis, redisReady } from "../../lib/redis.js";
 
 // Daily-fire scheduler for the push digest. Replaces Vercel Cron's
 // "0 16 * * *" entry; Railway runs a persistent container so we can
@@ -83,7 +83,16 @@ export function startDigestWorker() {
   timer = setInterval(() => {
     tick().catch((err) => console.error("[digest-worker] tick threw:", err));
   }, TICK_INTERVAL_MS);
-  tick().catch((err) => console.error("[digest-worker] boot tick threw:", err));
+  // v96 — wait for Redis to be ready before the FIRST tick. The
+  // lazy-connect client used to reject the boot tick's redis.get
+  // with "Stream isn't writeable" because the socket was still
+  // connecting. Now the tick lands only after the socket is up
+  // (or after the helper's 5 s timeout, in which case the in-
+  // memory fallback path kicks in correctly without the misleading
+  // warning).
+  void redisReady().finally(() => {
+    tick().catch((err) => console.error("[digest-worker] boot tick threw:", err));
+  });
 }
 
 export function stopDigestWorker() {

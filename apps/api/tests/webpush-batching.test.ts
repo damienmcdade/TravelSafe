@@ -7,8 +7,8 @@ import { describe, it, expect } from "vitest";
 // is caught locally before deploying.
 
 describe("sendToMany batching invariant", () => {
-  it("uses a single findMany with userId: { in: userIds }", () => {
-    const fs = require("fs") as typeof import("fs");
+  it("uses a single findMany with userId: { in: userIds }", async () => {
+    const fs = await import("node:fs");
     const src = fs.readFileSync(
       new URL("../src/services/push/webpush.service.ts", import.meta.url),
       "utf8",
@@ -19,8 +19,8 @@ describe("sendToMany batching invariant", () => {
     expect(src).not.toMatch(/for\s*\(.*uid.*of\s+userIds[\s\S]{0,80}sendToUser/);
   });
 
-  it("races each webpush call against a deadline", () => {
-    const fs = require("fs") as typeof import("fs");
+  it("races each webpush call against a deadline", async () => {
+    const fs = await import("node:fs");
     const src = fs.readFileSync(
       new URL("../src/services/push/webpush.service.ts", import.meta.url),
       "utf8",

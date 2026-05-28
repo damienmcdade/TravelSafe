@@ -47,6 +47,9 @@ jobs:
       - name: Typecheck (web)
         run: npm run typecheck --workspace apps/web
 
+      - name: Lint (api)
+        run: npm run lint --workspace apps/api
+
       - name: Lint (web)
         run: npm run lint --workspace apps/web
 

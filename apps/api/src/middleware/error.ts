@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import { captureException } from "../lib/sentry.js";
 
 export class HttpError extends Error {
   constructor(public status: number, public code: string, message?: string) {
@@ -11,8 +12,8 @@ export function notFound(_req: Request, res: Response) {
   res.status(404).json({ error: "not_found" });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction) {
+ 
+export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
   if (err instanceof ZodError) {
     return res.status(400).json({ error: "validation_failed", issues: err.issues });
   }
@@ -34,5 +35,14 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     }
   }
   console.error("[unhandled]", err);
+  // v96 — forward to Sentry if armed. The user-facing response is
+  // still the generic 500 we already had; this just makes the
+  // failure visible in the error dashboard with the request ID +
+  // route. No-op when SENTRY_DSN is unset.
+  captureException(err, {
+    requestId: res.locals?.requestId,
+    userId: req.session?.uid,
+    route: `${req.method} ${req.path}`,
+  });
   res.status(500).json({ error: "internal_error" });
 }

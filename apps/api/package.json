@@ -10,12 +10,14 @@
     "start": "node --max-old-space-size=3584 dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
+    "lint": "eslint 'src/**/*.ts' 'tests/**/*.ts'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.79",
     "@ai-sdk/groq": "^3.0.39",
     "@prisma/client": "^5.22.0",
+    "@sentry/node": "^8.55.2",
     "@travelsafe/crime-data": "*",
     "@travelsafe/db": "*",
     "ai": "^6.0.0",
@@ -44,8 +46,12 @@
     "@types/node": "^22.9.0",
     "@types/nodemailer": "^6.4.16",
     "@types/web-push": "^3.6.4",
+    "@typescript-eslint/eslint-plugin": "^8.60.0",
+    "@typescript-eslint/parser": "^8.60.0",
+    "eslint": "^9.39.4",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
+    "typescript-eslint": "^8.60.0",
     "vitest": "^2.1.4"
   }
 }

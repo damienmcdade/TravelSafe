@@ -1,0 +1,4 @@
+# v96 — lint-staged runs lint --fix on just the files staged for
+# commit. Fast enough to live on a pre-commit hook; doesn't run the
+# full test suite (the CI workflow handles that on every PR).
+npx lint-staged
