@@ -46,7 +46,13 @@ export default function CoveragePage() {
   const { setCity } = useCity();
   const [data, setData] = useState<CoverageResp | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  // v96 — was useState(() => Date.now()) but useState initializers
+  // run on the server too, which produced a build-time timestamp that
+  // didn't match the client's first render and threw a hydration
+  // warning. Defer to a client-only useEffect — the visible "freshness"
+  // text just stays blank for the first ~16 ms tick, which is
+  // imperceptible vs the alternative red console error.
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +64,7 @@ export default function CoveragePage() {
   }, []);
 
   useEffect(() => {
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(id);
   }, []);
@@ -77,7 +84,7 @@ export default function CoveragePage() {
         {data && (
           <p className="mt-2 text-sm text-slate2-700 max-w-2xl">
             {data.totalNeighborhoods.toLocaleString()} neighborhoods discovered across {data.liveCities} active police-data
-            feeds. Per-city ping last refreshed {relativeAgo(now - new Date(data.generatedAt).getTime())}.
+            feeds. Per-city ping last refreshed {now != null ? relativeAgo(now - new Date(data.generatedAt).getTime()) : "—"}.
           </p>
         )}
       </header>
@@ -131,11 +138,11 @@ export default function CoveragePage() {
                   <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                     <dt className="text-slate2-500">Adapter ping</dt>
                     <dd className="text-slate2-700 tabular-nums text-right">
-                      {fetched ? relativeAgo(now - fetched.getTime()) : "—"}
+                      {fetched && now != null ? relativeAgo(now - fetched.getTime()) : "—"}
                     </dd>
                     <dt className="text-slate2-500">Newest report</dt>
                     <dd className="text-slate2-700 tabular-nums text-right">
-                      {newest ? relativeAgo(now - newest.getTime()) : "—"}
+                      {newest && now != null ? relativeAgo(now - newest.getTime()) : "—"}
                     </dd>
                   </dl>
 

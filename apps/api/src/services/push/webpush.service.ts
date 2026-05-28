@@ -69,12 +69,44 @@ export async function sendToMany(
   userIds: string[],
   payload: PushPayload,
 ): Promise<{ users: number; sent: number; failed: number; pruned: number }> {
+  if (userIds.length === 0) return { users: 0, sent: 0, failed: 0, pruned: 0 };
+  if (!ensureVapid()) return { users: userIds.length, sent: 0, failed: 0, pruned: 0 };
+
+  // v96 — was N sequential findMany calls (one per user). On a digest
+  // fan-out to 10k users that's 10k DB roundtrips. Batch-fetch every
+  // subscription in a single query, group by userId in memory, then
+  // dispatch in parallel.
+  const allSubs = await prisma.pushSubscription.findMany({
+    where: { userId: { in: userIds } },
+    select: { userId: true, endpoint: true, p256dh: true, auth: true },
+  });
+  if (allSubs.length === 0) return { users: userIds.length, sent: 0, failed: 0, pruned: 0 };
+
+  const body = JSON.stringify(payload);
   let sent = 0, failed = 0, pruned = 0;
-  for (const uid of userIds) {
-    const r = await sendToUser(uid, payload);
-    sent += r.sent;
-    failed += r.failed;
-    pruned += r.pruned;
+  const toPrune: string[] = [];
+
+  await Promise.all(allSubs.map(async (s) => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+        body,
+      );
+      sent += 1;
+    } catch (err) {
+      const e = err as { statusCode?: number };
+      if (e.statusCode === 404 || e.statusCode === 410) {
+        toPrune.push(s.endpoint);
+        pruned += 1;
+      } else {
+        failed += 1;
+      }
+    }
+  }));
+
+  if (toPrune.length > 0) {
+    await prisma.pushSubscription.deleteMany({ where: { endpoint: { in: toPrune } } });
   }
+
   return { users: userIds.length, sent, failed, pruned };
 }

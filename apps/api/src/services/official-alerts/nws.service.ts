@@ -45,6 +45,7 @@ export async function getOfficialAlerts(): Promise<OfficialAlert[]> {
         Accept: "application/geo+json",
         "User-Agent": "TravelSafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
       },
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return cache?.alerts ?? [];
     const json = (await res.json()) as { features?: NwsFeature[] };
