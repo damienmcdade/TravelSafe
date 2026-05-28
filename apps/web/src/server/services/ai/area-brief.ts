@@ -39,12 +39,23 @@ Hard rules:
 `.trim();
 
 interface CacheEntry { fetchedAt: number; brief: string }
+// v95p40 — cache version bumped + scoped by city. Mirrors the v95p32
+// fix in the Railway-side area-brief.service.ts. This is the file
+// the Neighborhood Watch tab on the web app actually imports (via
+// watch/watch.ts), so any in-process cache reuse here surfaces
+// directly to users of that tab. Key shape: "v2:<city>:<area>".
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h per area
 
+function scopedKey(area: string): string {
+  const city = cityForArea(area);
+  return `v2:${city.slug}:${area}`;
+}
+
 export async function generateAreaBrief(area: string): Promise<string | null> {
   if (!aiConfigured()) return null;
-  const cached = cache.get(area);
+  const key = scopedKey(area);
+  const cached = cache.get(key);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.brief;
 
   const city = cityForArea(area);
@@ -103,6 +114,6 @@ Write the two-paragraph brief now.
   text = text.replace(/^#+\s*/gm, "").replace(/\*\*([^*]+)\*\*/g, "$1");
   if (text.length > 800) text = text.slice(0, 800);
 
-  cache.set(area, { fetchedAt: Date.now(), brief: text });
+  cache.set(scopedKey(area), { fetchedAt: Date.now(), brief: text });
   return text;
 }
