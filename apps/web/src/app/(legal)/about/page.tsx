@@ -74,6 +74,19 @@ export default function AboutPage() {
         </p>
       </section>
 
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed" id="founder">
+        <h2 className="font-display text-xl text-slate2-900">Founder</h2>
+        <p>
+          CommunitySafe&rsquo;s founder is a{" "}
+          <strong>U.S. Army Veteran</strong>. The product was shaped around
+          what actually keeps people safer at the neighborhood level: honest
+          open data, moderated community input, and personal-safety tools
+          that respect the user&rsquo;s autonomy &mdash; no surveillance, no
+          profiling, no alarmism. The same standard of accuracy and care
+          expected of any tool we&rsquo;d trust ourselves.
+        </p>
+      </section>
+
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">How it&rsquo;s funded</h2>
         <p>
@@ -94,7 +107,16 @@ export default function AboutPage() {
         </p>
         <ul className="list-disc pl-5 space-y-1">
           <li>
-            GitHub issues:{" "}
+            Email:{" "}
+            <a
+              href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20inquiry"
+              className="text-bay-700 underline"
+            >
+              info@cyberwaveglobal.com
+            </a>
+          </li>
+          <li>
+            GitHub issues (bug reports, code-level questions):{" "}
             <a
               href="https://github.com/damienmcdade/TravelSafe/issues"
               target="_blank"
@@ -103,9 +125,6 @@ export default function AboutPage() {
             >
               github.com/damienmcdade/TravelSafe/issues
             </a>
-          </li>
-          <li>
-            Email: <code className="text-xs">communitysafe@damienmcdade.com</code>
           </li>
         </ul>
         <p className="text-xs text-slate2-500">

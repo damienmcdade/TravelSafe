@@ -61,7 +61,7 @@ export default function WelcomePage() {
       </section>
 
       {/* Not list */}
-      <section className="max-w-5xl mx-auto px-6 pb-24">
+      <section className="max-w-5xl mx-auto px-6 pb-16">
         <div className="surface p-8">
           <h2 className="font-display text-2xl text-slate2-900">What this application does not do</h2>
           <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate2-700">
@@ -70,6 +70,49 @@ export default function WelcomePage() {
             <Bullet>It does not collect demographic data (no age, gender, ethnicity, religion).</Bullet>
             <Bullet>Community posts are reviewed and are never presented as official police data.</Bullet>
           </ul>
+        </div>
+      </section>
+
+      {/* Founder + contact */}
+      <section className="max-w-5xl mx-auto px-6 pb-24">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <article className="surface p-6">
+            <span className="inline-block text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full text-bay-700 bg-bay-200">
+              Founder
+            </span>
+            <h2 className="mt-3 font-display text-2xl text-slate2-900">Built by a U.S. Army Veteran</h2>
+            <p className="mt-3 text-sm text-slate2-700 leading-relaxed">
+              CommunitySafe is founded by a U.S. Army Veteran. The product was
+              built around what actually keeps people safe in a neighborhood:
+              honest open data, calm community input, and personal-safety tools
+              that respect the user&apos;s autonomy. No surveillance, no
+              profiling, no alarmism — the same standards we&apos;d hold any
+              tool we relied on ourselves.
+            </p>
+          </article>
+
+          <article className="surface p-6">
+            <span className="inline-block text-[11px] uppercase tracking-wider px-2 py-0.5 rounded-full text-coral-700 bg-coral-200">
+              Contact
+            </span>
+            <h2 className="mt-3 font-display text-2xl text-slate2-900">Questions, press, partnerships</h2>
+            <p className="mt-3 text-sm text-slate2-700 leading-relaxed">
+              For any inquiry — feedback, press, data-source corrections,
+              privacy-rights requests, partnerships — email us. We read
+              every message and reply within two business days.
+            </p>
+            <a
+              href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20inquiry"
+              className="btn-coral text-base px-5 py-2.5 mt-4 inline-flex items-center"
+            >
+              info@cyberwaveglobal.com →
+            </a>
+            <p className="mt-3 text-xs text-slate2-500">
+              For privacy-rights requests under GDPR, CCPA/CPRA or equivalent
+              laws, use the same email. We respond within 30 days per the{" "}
+              <Link href="/privacy" className="text-bay-700 hover:underline">privacy policy</Link>.
+            </p>
+          </article>
         </div>
       </section>
     </main>
