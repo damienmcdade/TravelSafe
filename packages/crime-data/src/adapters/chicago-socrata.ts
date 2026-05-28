@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // City of Chicago — Crimes 2001 to Present.
@@ -88,17 +88,15 @@ const PROVENANCE: DataProvenance = {
 };
 
 async function fetchChicago(): Promise<{ rows: Incident[]; areaByNum: Map<number, string> }> {
-  const url = new URL(BASE);
-  // Same 50k-row ceiling as LA/SF so per-community-area counts stay
-  // statistically meaningful.
-  url.searchParams.set("$select", "id,primary_type,description,community_area,date,latitude,longitude,beat,district,fbi_code");
-  url.searchParams.set("$order", "date DESC");
-  url.searchParams.set("$limit", "50000");
-  const res = await fetch(url, {
-    headers: socrataHeaders(url),
+  // v96 — migrated to fetchSocrata helper.
+  const sodaRows = await fetchSocrata<SodaRow>("Chicago SODA", {
+    url: BASE,
+    // Same 50k-row ceiling as LA/SF so per-community-area counts stay
+    // statistically meaningful.
+    select: "id,primary_type,description,community_area,date,latitude,longitude,beat,district,fbi_code",
+    order: "date DESC",
+    limit: 50000,
   });
-  if (!res.ok) throw new Error(`Chicago SODA ${res.status} ${url}`);
-  const sodaRows = (await res.json()) as SodaRow[];
   const areaByNum = new Map<number, string>();
   const rows: Incident[] = sodaRows.map((r, i) => {
     const lat = Number(r.latitude);

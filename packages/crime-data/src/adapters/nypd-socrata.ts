@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // City of New York — NYPD Complaint Data Current (Year-To-Date).
 // Socrata dataset 5uac-w243 on data.cityofnewyork.us. We use the YTD feed
@@ -187,26 +187,21 @@ function precinctName(p: string | undefined): string | null {
 }
 
 async function fetchNypdPage(offset: number): Promise<SodaRow[]> {
-  const url = new URL(BASE);
-  url.searchParams.set("$select", "cmplnt_num,cmplnt_fr_dt,cmplnt_fr_tm,boro_nm,addr_pct_cd,ofns_desc,pd_desc,law_cat_cd,latitude,longitude");
-  url.searchParams.set("$order", "cmplnt_fr_dt DESC");
-  url.searchParams.set("$limit", String(PAGE_SIZE));
-  url.searchParams.set("$offset", String(offset));
+  // v96 — migrated to fetchSocrata helper. Pagination support comes
+  // via the offset param; the helper takes care of $select/$order/
+  // $where encoding + 30 s timeout + X-App-Token via socrataHeaders.
   // v88 — bound to last 400 days so we don't pull ancient backfill
   // rows that safety-score immediately discards (rate window is
-  // capped at 365 days). Pre-v88 NYPD's 200k row fetch routinely
-  // included rows from 5+ years ago; ~60% of bytes were thrown out
-  // downstream. SoQL accepts ISO date literals here.
+  // capped at 365 days). SoQL accepts ISO date literals here.
   const cutoff = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  url.searchParams.set("$where", `cmplnt_fr_dt >= '${cutoff}'`);
-  // v89 — attach X-App-Token when configured (per-host or generic env
-  // var). Anonymous Socrata throttles aggressively when a single IP
-  // fires 4× 50k-row queries in parallel; with a token NYPD lifts into
-  // the per-app pool with 4-8× higher concurrency budget.
-  const headers = socrataHeaders(url);
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`NYPD SODA ${res.status} at offset ${offset}`);
-  return (await res.json()) as SodaRow[];
+  return fetchSocrata<SodaRow>(`NYPD SODA at offset ${offset}`, {
+    url: BASE,
+    select: "cmplnt_num,cmplnt_fr_dt,cmplnt_fr_tm,boro_nm,addr_pct_cd,ofns_desc,pd_desc,law_cat_cd,latitude,longitude",
+    where: `cmplnt_fr_dt >= '${cutoff}'`,
+    order: "cmplnt_fr_dt DESC",
+    limit: PAGE_SIZE,
+    offset,
+  });
 }
 
 async function fetchNypd(): Promise<Incident[]> {

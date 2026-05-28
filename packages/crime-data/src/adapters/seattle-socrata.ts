@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // Seattle — SPD Crime Data.
 // Socrata dataset tazs-3rd5 on data.seattle.gov. NIBRS-coded by SPD, which
@@ -53,15 +53,13 @@ function titleCase(s: string): string {
 }
 
 async function fetchSeattle(): Promise<Incident[]> {
-  const url = new URL(BASE);
-  url.searchParams.set("$select", "offense_id,offense_date,neighborhood,precinct,beat,offense_category,nibrs_offense_code_description,nibrs_crime_against_category,latitude,longitude");
-  url.searchParams.set("$order", "offense_date DESC");
-  url.searchParams.set("$limit", "50000");
-  const res = await fetch(url, {
-    headers: socrataHeaders(url),
+  // v96 — migrated to fetchSocrata helper.
+  const rows = await fetchSocrata<SodaRow>("Seattle SODA", {
+    url: BASE,
+    select: "offense_id,offense_date,neighborhood,precinct,beat,offense_category,nibrs_offense_code_description,nibrs_crime_against_category,latitude,longitude",
+    order: "offense_date DESC",
+    limit: 50000,
   });
-  if (!res.ok) throw new Error(`Seattle SODA ${res.status} ${url}`);
-  const rows = (await res.json()) as SodaRow[];
   return rows.map((r, i) => {
     const lat = Number(r.latitude);
     const lon = Number(r.longitude);

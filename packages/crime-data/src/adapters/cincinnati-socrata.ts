@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // Cincinnati — Reported Crime (STARS Category Offenses) on or after
 // 6/3/2024. Socrata dataset 7aqy-xrv9 on data.cincinnati-oh.gov.
@@ -87,16 +87,19 @@ function safeIso(raw: string | null | undefined): string | null {
 }
 
 async function fetchCin(): Promise<Incident[]> {
+  // v96 — migrated to fetchSocrata helper. The earlier hand-built URL
+  // template-string is replaced with structured query params; the
+  // helper handles URL encoding of $where consistently.
   // Explicit $select — never request demographic columns. Order by
   // datefrom (incident occurrence) DESC so the newest pull covers
   // recent activity rather than backlog that skews datereported.
-  const select = "incident_no,stars_category,type,datefrom,datereported,cpd_neighborhood,latitude_x,longitude_x";
-  const u = `${BASE}?$limit=${ROW_LIMIT}&$select=${select}&$order=datefrom%20DESC&$where=datefrom%20IS%20NOT%20NULL%20AND%20cpd_neighborhood%20IS%20NOT%20NULL`;
-  const res = await fetch(u, {
-    headers: socrataHeaders(u),
+  const rows = await fetchSocrata<CinRow>("Cincinnati Socrata", {
+    url: BASE,
+    select: "incident_no,stars_category,type,datefrom,datereported,cpd_neighborhood,latitude_x,longitude_x",
+    where: "datefrom IS NOT NULL AND cpd_neighborhood IS NOT NULL",
+    order: "datefrom DESC",
+    limit: ROW_LIMIT,
   });
-  if (!res.ok) throw new Error(`Cincinnati Socrata ${res.status}`);
-  const rows = (await res.json()) as CinRow[];
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
