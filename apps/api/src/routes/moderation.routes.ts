@@ -34,8 +34,19 @@ async function requireModerator(req: Request): Promise<void> {
   // role table has zero MODERATOR rows. Once a real moderator exists
   // we stop trusting the env var (prevents drift if a deploy forgets
   // to unset MODERATOR_EMAILS after seeding).
+  // v96 — audit flagged a stale-env risk: if every MODERATOR is
+  // demoted (offboarding, accidental update), the count drops to 0
+  // and the CSV path re-activates indefinitely, granting access to
+  // anyone still listed in MODERATOR_EMAILS. Add a grace window
+  // measured from boot: 24 h after the process starts, we stop
+  // trusting the CSV even at count=0 and force a deploy to recover.
+  // Bootstrap on a fresh install still has the full window to
+  // promote the first moderator.
   const moderatorCount = await prisma.user.count({ where: { trustLevel: TrustLevel.MODERATOR } });
   if (moderatorCount > 0) throw new HttpError(403, "moderator_only");
+  if (Date.now() - BOOT_TIME > BOOTSTRAP_GRACE_MS) {
+    throw new HttpError(403, "moderator_bootstrap_window_closed");
+  }
   const list = (env.MODERATOR_EMAILS ?? "")
     .split(",")
     .map((s) => s.trim().toLowerCase())
@@ -44,6 +55,9 @@ async function requireModerator(req: Request): Promise<void> {
     throw new HttpError(403, "moderator_only");
   }
 }
+
+const BOOT_TIME = Date.now();
+const BOOTSTRAP_GRACE_MS = 24 * 60 * 60 * 1000;
 
 moderationRouter.get("/queue", requireAuth, async (req, res, next) => {
   try {

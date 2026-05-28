@@ -20,6 +20,16 @@ declare global {
 const TOKEN_VERSION_CACHE = new Map<string, { ver: number; exp: number }>();
 const TOKEN_VERSION_TTL_MS = 30_000;
 
+// v96 — invoked by /auth/logout, /auth/password-change, /auth/account/delete
+// so the in-process cache stops authenticating the just-revoked token
+// inside the 30 s TTL window. Single-instance Railway covers most of
+// the gap; for multi-instance the next deploy/edge will hit the DB
+// on first request anyway, so this is "best effort on the local
+// node" rather than a distributed bus.
+export function invalidateTokenVersionCache(uid: string): void {
+  TOKEN_VERSION_CACHE.delete(uid);
+}
+
 async function isTokenRevoked(payload: SessionPayload): Promise<boolean> {
   const now = Date.now();
   const cached = TOKEN_VERSION_CACHE.get(payload.uid);

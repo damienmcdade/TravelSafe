@@ -17,7 +17,14 @@ const Env = z.object({
   DATABASE_URL: z.string().url(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 chars"),
   JWT_EXPIRES_IN: z.string().default("7d"),
-  BCRYPT_ROUNDS: z.coerce.number().default(12),
+  // v96 — bumped 12 → 13 per dep audit (OWASP 2025 guidance pushes
+  // cost factor toward 13–14 as commodity GPU speed climbs). bcryptjs
+  // pure-JS at cost 13 lands around 350 ms per hash on Railway's
+  // shared CPU — slow enough to slow brute-force, fast enough that
+  // a single login still feels instant. Holding at 13 (not 14) to
+  // keep the anonymous-device-session cold start under 1 s; if the
+  // app later switches to the native bcrypt binding, revisit.
+  BCRYPT_ROUNDS: z.coerce.number().default(13),
   CORS_ORIGINS: z.string().default("http://localhost:3000"),
 
   // Crime-data adapters

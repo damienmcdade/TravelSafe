@@ -120,9 +120,17 @@ app.use(sentryRequestMiddleware);
 app.use(express.json({ limit: "200kb" }));
 app.use(
   cors({
+    // v96 — was `cb(new Error(...))` for unknown origins, which
+    // propagated through the global error handler as HTTP 500
+    // (cluttering Sentry + Railway error metrics). `cb(null, false)`
+    // makes cors() emit the response WITHOUT an Access-Control-
+    // Allow-Origin header — the browser still blocks the cross-
+    // origin request, but the status code stays clean (200 for
+    // simple methods, 204 for preflight) instead of polluting error
+    // dashboards.
     origin: (origin, cb) => {
       if (!origin || corsOrigins.includes(origin)) return cb(null, true);
-      cb(new Error(`origin ${origin} not allowed`));
+      cb(null, false);
     },
     credentials: true,
   }),

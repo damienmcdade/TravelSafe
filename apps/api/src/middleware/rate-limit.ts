@@ -44,3 +44,18 @@ export const tokenLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => `token:${req.params.token ?? req.ip}`,
 });
+
+// v96 — pen-test follow-up. Anonymous LLM endpoints (the AI brief +
+// incident summary GETs) previously only had the 600 req/min/IP
+// global limit, so a single attacker could burn ~600 LLM calls/min
+// from one IP. The 300s public cache deflects repeat queries for
+// the SAME area, but `?area=` varies by attacker control. 30/min/IP
+// matches the writeLimiter envelope while still letting a normal
+// session hit the brief for every neighborhood on the map without
+// being throttled.
+export const aiReadLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-7",
+  legacyHeaders: false,
+});

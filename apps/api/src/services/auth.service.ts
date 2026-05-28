@@ -155,11 +155,16 @@ export async function refreshAccessToken(refreshToken: string) {
 // v93p2 — increment tokenVersion to revoke all existing tokens for the
 // user (logout, password change, "sign out everywhere"). The client
 // should drop its locally-stored tokens after calling this.
+// v96 — also flush the in-process tokenVersion cache so the just-
+// revoked access token stops authenticating immediately on this
+// node instead of riding the documented 30 s TTL.
 export async function logout(userId: string): Promise<void> {
+  const { invalidateTokenVersionCache } = await import("../middleware/auth.js");
   await prisma.user.update({
     where: { id: userId },
     data: { tokenVersion: { increment: 1 } },
   });
+  invalidateTokenVersionCache(userId);
 }
 
 export async function me(userId: string) {
@@ -182,6 +187,7 @@ export async function me(userId: string) {
 // active token is rejected on next request. The retention worker
 // hard-deletes any row whose deletedAt is past the grace window.
 export async function softDeleteAccount(userId: string): Promise<void> {
+  const { invalidateTokenVersionCache } = await import("../middleware/auth.js");
   const obfuscatedEmail = `deleted-${userId}-${Date.now().toString(36)}@deleted.travelsafe.local`;
   await prisma.user.update({
     where: { id: userId },
@@ -192,4 +198,7 @@ export async function softDeleteAccount(userId: string): Promise<void> {
       tokenVersion: { increment: 1 },
     },
   });
+  // v96 — same rationale as logout(): drop the cache entry so the
+  // just-revoked token can't ride the 30s TTL.
+  invalidateTokenVersionCache(userId);
 }

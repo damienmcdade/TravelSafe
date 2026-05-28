@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { writeLimiter } from "../middleware/rate-limit.js";
+import { writeLimiter, aiReadLimiter } from "../middleware/rate-limit.js";
 import { streamComposeFeedback } from "../services/ai/compose-feedback.js";
 import { explainIncident } from "../services/ai/incident-explain.service.js";
 import { generateAreaBrief } from "../services/ai/area-brief.service.js";
@@ -51,7 +51,7 @@ function withAreaBriefTimeout<T>(p: Promise<T>): Promise<T | typeof AREA_BRIEF_T
   ]);
 }
 
-aiRouter.get("/area-brief", async (req, res, next) => {
+aiRouter.get("/area-brief", aiReadLimiter, async (req, res, next) => {
   try {
     const area = typeof req.query.area === "string" ? req.query.area : "";
     if (!area) return res.status(400).json({ error: "area_required" });
@@ -89,7 +89,7 @@ const summaryQuery = z.object({
 const SUMMARY_TIMEOUT_MS = 22_000;
 const SUMMARY_TIMEOUT = Symbol("incident-summary-timeout");
 
-aiRouter.get("/incident-summary", async (req, res, next) => {
+aiRouter.get("/incident-summary", aiReadLimiter, async (req, res, next) => {
   try {
     const q = summaryQuery.parse(req.query);
     if (!q.area && !q.city) {
