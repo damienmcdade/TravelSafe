@@ -38,6 +38,67 @@ export function socrataHeaders(url: string | URL, extra: Record<string, string> 
   return h;
 }
 
+// v96 — shared Socrata fetch helper. Every Socrata adapter (currently
+// 18+ files) opens with the same boilerplate: build URL with
+// $select/$where/$order/$limit, fetch with socrataHeaders, check
+// status, parse JSON, throw with a prefixed error message on failure.
+// Extracting it here:
+//   * lets adapters declare just the SoQL query + row mapping
+//   * gives them a single source of truth for status-code handling
+//     (4xx/5xx, empty body, JSON error envelope)
+//   * makes upstream rate-limit response tweaks (e.g., honoring
+//     Retry-After) a one-line change instead of an 18-file edit
+//
+// Adapters opt in by replacing their hand-rolled fetch with
+// fetchSocrata(); they still own their own row → Incident mapping.
+//
+// Returns the raw row array. The caller decides the row shape (each
+// adapter has its own slightly-different SodaRow interface). Throws
+// with the supplied `name` prefix on any HTTP / JSON failure so the
+// log line reads like the existing convention ("NYPD 500" / "SFPD
+// 404").
+export interface SocrataQuery {
+  /// e.g. "https://data.cityofnewyork.us/resource/qgea-i56i.json"
+  url: URL | string;
+  /// Comma-separated $select. Optional — when omitted Socrata returns
+  /// every column.
+  select?: string;
+  /// $where SoQL filter. Optional.
+  where?: string;
+  /// $order clause (e.g., "cmplnt_fr_dt DESC").
+  order?: string;
+  /// $limit (caps at 50,000 per Socrata's hard ceiling).
+  limit?: number;
+  /// $offset for pagination.
+  offset?: number;
+  /// Per-call AbortSignal (defaults to AbortSignal.timeout(30s)).
+  signal?: AbortSignal;
+}
+
+export async function fetchSocrata<TRow>(
+  adapterName: string,
+  query: SocrataQuery,
+): Promise<TRow[]> {
+  const url = typeof query.url === "string" ? new URL(query.url) : new URL(query.url.toString());
+  if (query.select) url.searchParams.set("$select", query.select);
+  if (query.where) url.searchParams.set("$where", query.where);
+  if (query.order) url.searchParams.set("$order", query.order);
+  if (query.limit != null) url.searchParams.set("$limit", String(query.limit));
+  if (query.offset != null) url.searchParams.set("$offset", String(query.offset));
+  const res = await fetch(url, {
+    headers: socrataHeaders(url),
+    signal: query.signal ?? AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    throw new Error(`${adapterName} ${res.status} ${url}`);
+  }
+  const body = await res.json() as TRow[] | { error: true; message?: string };
+  if (!Array.isArray(body)) {
+    throw new Error(`${adapterName} error: ${("message" in body && body.message) || "unknown"}`);
+  }
+  return body;
+}
+
 // v90p4 — installPooledDispatcher REMOVED from this package.
 // It lived here briefly in v87-v90p3 but undici's node: scheme
 // imports (node:fs, node:dns, node:diagnostics_channel) crashed

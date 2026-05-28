@@ -296,6 +296,46 @@ const VIOLENT_CACHE = new Map<string, boolean>();
 const PROPERTY_CACHE = new Map<string, boolean>();
 const PART1_CACHE_CAP = 5000;
 
+// v96 — module-level rate-compute constants (previously declared
+// inside computeCitywideSafetyScore + getSafetyScore, duplicated).
+// Hoisting them here gives the safety-score algorithm a single
+// source of truth for the rate-window math and lets the constants
+// carry their rationale in one place.
+
+/// Number of milliseconds in a UTC day. Used to convert windowDays
+/// into a wall-clock cutoff (nowMs - RATE_WINDOW_DAYS * MS_PER_DAY).
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+/// Annualization horizon for the citywide rate. We accept up to
+/// 365 days of cached data; older rows are clamped because the
+/// per-100k computation assumes 1-year exposure. Sparser adapters
+/// (NYC with $limit=50000 covers ~3 days) get a much shorter
+/// effective window; the algorithm trusts dataEarliestMs to scale
+/// the annualization factor down accordingly.
+export const RATE_WINDOW_DAYS = 365;
+
+/// Same window applied at the per-area (rather than citywide) scale.
+/// Kept separate so a future tweak can decouple area-level and
+/// city-level windows if per-area sparsity becomes a problem.
+export const PER_AREA_RATE_WINDOW_DAYS = 365;
+
+/// Trim the oldest 5% of timestamps when computing dataEarliestMs.
+/// Without this, a single ancient row (from an adapter that occasionally
+/// surfaces backdated incidents) would set windowDays to 365+ and
+/// inflate the annualization factor, slashing the per-100k rate. 5%
+/// is small enough that legitimate dense data still drives the window,
+/// large enough to absorb adapter outliers.
+export const OLDEST_TIMESTAMP_TRIM_FRACTION = 0.05;
+
+/// Minimum fraction of citywide population that must be in the
+/// "fresh-data" subset before we use it as the rate denominator. Below
+/// this threshold we fall back to cityPop so a non-representative
+/// fresh subset (e.g., only high-crime neighborhoods reporting) can't
+/// amplify the per-100k rate. Seattle prod showed 31% fresh coverage
+/// at one point — v31 raised this from 0.10 to 0.70 after that
+/// produced a 3× FBI-baseline rate.
+export const FRESH_POP_FRACTION_THRESHOLD = 0.70;
+
 // v95p1 — explicit Part-1 INCLUDES for unambiguous aggravated indicators
 // that would otherwise be dropped by the EXCLUDE patterns. Cleveland's
 // CFS feed publishes "DOM VIOL ASLT/THREATS" (63k records/yr — clearly
@@ -664,8 +704,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // the adapter's characteristic data span (oldest row), capped at
   // 365. Clock anchors don't drift between refreshes; the adapter's
   // oldest row drifts by hours per refresh, not multiples.
-  const MS_PER_DAY = 24 * 60 * 60 * 1000;
-  const RATE_WINDOW_DAYS = 365;
+  // v96 — MS_PER_DAY + RATE_WINDOW_DAYS hoisted to module top.
   const nowMs = Date.now();
   const windowStartMs = nowMs - RATE_WINDOW_DAYS * MS_PER_DAY;
 
@@ -697,7 +736,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
     // Trim 5% of the oldest rows; use the remaining oldest row.
     // For a city with 100 rows, that's the 5th-from-oldest row.
     // For 50,000 rows, that's the 2,500th-from-oldest.
-    const trimIdx = Math.min(allTimestamps.length - 1, Math.floor(allTimestamps.length * 0.05));
+    const trimIdx = Math.min(allTimestamps.length - 1, Math.floor(allTimestamps.length * OLDEST_TIMESTAMP_TRIM_FRACTION));
     dataEarliestMs = allTimestamps[trimIdx];
   }
 
@@ -778,7 +817,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // ~30% of incidents by ~30% of pop, and amplified the per-100k
   // rate to ~3× FBI baseline because the fresh subset happened to
   // skew toward higher-crime neighborhoods.
-  const pop = (popFraction >= 0.70 && freshPopSum > 0) ? freshPopSum : cityPop;
+  const pop = (popFraction >= FRESH_POP_FRACTION_THRESHOLD && freshPopSum > 0) ? freshPopSum : cityPop;
   // CFS calibration — see CFS_CALIBRATION comment at the top of the file.
   // 1.0 for NIBRS-based adapters, ~0.35-0.50 for CFS-based.
   const cfsScale = CFS_CALIBRATION[city.slug] ?? 1.0;
@@ -992,10 +1031,11 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // citywide function's comment for full rationale; the per-area
   // variant amplifies the issue because per-area counts are smaller
   // and noisier, so windowDays swings cascade into bigger rate swings.
-  const PER_AREA_MS_PER_DAY = 24 * 60 * 60 * 1000;
-  const PER_AREA_RATE_WINDOW_DAYS = 365;
+  // v96 — PER_AREA_MS_PER_DAY and PER_AREA_RATE_WINDOW_DAYS hoisted
+  // to module top (PER_AREA_MS_PER_DAY collapsed into the shared
+  // MS_PER_DAY since they're literally identical).
   const nowMsArea = Date.now();
-  const windowStartMsArea = nowMsArea - PER_AREA_RATE_WINDOW_DAYS * PER_AREA_MS_PER_DAY;
+  const windowStartMsArea = nowMsArea - PER_AREA_RATE_WINDOW_DAYS * MS_PER_DAY;
 
   // v80 — parse timestamps once per row (same as the citywide variant).
   const tsPerArea: number[][] = incidentsPerArea.map((arr) => {
@@ -1099,7 +1139,7 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   // window via the per-area incident loop. Rounded to a 7-day boundary
   // to absorb sub-day cache drift; see roundWindowDays for rationale.
   const rawWindowDays = dataEarliestMsArea < nowMsArea
-    ? Math.min(PER_AREA_RATE_WINDOW_DAYS, Math.max(1, Math.round((nowMsArea - dataEarliestMsArea) / PER_AREA_MS_PER_DAY)))
+    ? Math.min(PER_AREA_RATE_WINDOW_DAYS, Math.max(1, Math.round((nowMsArea - dataEarliestMsArea) / MS_PER_DAY)))
     : 0;
   const windowDays = roundWindowDays(rawWindowDays);
 

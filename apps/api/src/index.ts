@@ -51,7 +51,7 @@ import { Agent, setGlobalDispatcher } from "undici";
 import { globalLimiter } from "./middleware/rate-limit.js";
 import { csrfGuard } from "./middleware/csrf.js";
 import { requestId } from "./middleware/request-id.js";
-import { initSentry } from "./lib/sentry.js";
+import { initSentry, sentryRequestMiddleware } from "./lib/sentry.js";
 
 // v96 — initSentry must run BEFORE the rest of the middleware mounts so
 // that error tracking captures cold-start crashes too. No-op when
@@ -112,6 +112,10 @@ app.use(helmet({
 // middleware (cors, rate-limit, csrf, route handlers, errors) can
 // reference it.
 app.use(requestId);
+// v96 — Sentry per-request breadcrumb. No-op when SENTRY_DSN is
+// unset. Sits right after requestId so the breadcrumb timeline is
+// scoped to a single rid.
+app.use(sentryRequestMiddleware);
 
 app.use(express.json({ limit: "200kb" }));
 app.use(

@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { socrataHeaders } from "../lib/http.js";
+import { fetchSocrata } from "../lib/http.js";
 
 // City of San Francisco — Police Department Incident Reports 2018 to Present.
 // Socrata dataset wg3w-h783 on data.sfgov.org. Documented + current.
@@ -56,18 +56,20 @@ const PROVENANCE: DataProvenance = {
 };
 
 async function fetchSF(): Promise<Incident[]> {
-  const url = new URL(BASE);
-  url.searchParams.set("$select", "incident_id,incident_datetime,analysis_neighborhood,police_district,incident_category,incident_subcategory,incident_description,latitude,longitude");
-  url.searchParams.set("$order", "incident_datetime DESC");
-  // SODA supports up to 50,000 in a single page. Bumped from 3,000 so the
-  // per-neighborhood crime counts are statistically meaningful, not flattened
-  // by a tiny sample that made every busy area show the same number.
-  url.searchParams.set("$limit", "50000");
-  const res = await fetch(url, {
-    headers: socrataHeaders(url),
+  // v96 — migrated to the shared fetchSocrata helper. Adapter now
+  // only owns: the dataset URL, the field-mapping logic, and the
+  // row → Incident transformation. HTTP status / JSON envelope /
+  // 30 s default timeout / X-App-Token handling all live in
+  // ../lib/http.ts.
+  const rows = await fetchSocrata<SodaRow>("SFPD", {
+    url: BASE,
+    select: "incident_id,incident_datetime,analysis_neighborhood,police_district,incident_category,incident_subcategory,incident_description,latitude,longitude",
+    order: "incident_datetime DESC",
+    // SODA supports up to 50,000 in a single page. Bumped from 3,000 so the
+    // per-neighborhood crime counts are statistically meaningful, not flattened
+    // by a tiny sample that made every busy area show the same number.
+    limit: 50000,
   });
-  if (!res.ok) throw new Error(`SFPD ${res.status} ${url}`);
-  const rows = (await res.json()) as SodaRow[];
   return rows.map((r, i) => {
     const lat = Number(r.latitude);
     const lon = Number(r.longitude);

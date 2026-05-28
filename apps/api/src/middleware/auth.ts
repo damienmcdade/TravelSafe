@@ -1,6 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifySession, type SessionPayload } from "../lib/jwt.js";
 import { prisma } from "../lib/prisma.js";
+import { setUserContext } from "../lib/sentry.js";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -55,6 +56,11 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return;
     }
     req.session = payload;
+    // v96 — attach the userId to the Sentry scope so any error captured
+    // later in the request lifecycle (route handler, DB call, external
+    // fetch) is tagged with who triggered it. No-op when Sentry isn't
+    // armed.
+    setUserContext(payload.uid);
     next();
   } catch {
     res.status(401).json({ error: "invalid_token" });

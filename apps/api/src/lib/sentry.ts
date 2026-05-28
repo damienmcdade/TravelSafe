@@ -51,4 +51,48 @@ export function captureException(err: unknown, ctx?: { requestId?: string; userI
   });
 }
 
+// v96 — breadcrumb helper. Every breadcrumb adds a small "step" to the
+// Sentry event timeline so that when an error fires you see the last
+// N actions the request took (city lookup, adapter dispatch, AI call,
+// etc.). No-op when Sentry isn't armed. The category groups related
+// breadcrumbs in the dashboard ("crime-data", "ai", "auth", etc.) so
+// you can filter the timeline.
+export function breadcrumb(category: string, message: string, data?: Record<string, unknown>): void {
+  if (!initialized) return;
+  Sentry.addBreadcrumb({
+    category,
+    message,
+    level: "info",
+    data,
+  });
+}
+
+// v96 — set the user context for the current request. Called by the
+// auth middleware right after token validation succeeds. Sentry then
+// attaches the userId to any error captured later in the request
+// lifecycle without each captureException call needing to thread it
+// through.
+export function setUserContext(uid: string): void {
+  if (!initialized) return;
+  Sentry.getCurrentScope().setUser({ id: uid });
+}
+
+// v96 — Express middleware that auto-tags every request with a
+// "request" breadcrumb. Saves having to sprinkle breadcrumb() calls
+// into every route handler. The breadcrumb captures method + path
+// only (no query string body — query may contain user-supplied PII
+// in edge cases; the path template already encodes intent).
+import type { Request, Response, NextFunction } from "express";
+export function sentryRequestMiddleware(req: Request, _res: Response, next: NextFunction): void {
+  if (initialized) {
+    Sentry.addBreadcrumb({
+      category: "request",
+      message: `${req.method} ${req.path}`,
+      level: "info",
+      data: { method: req.method, path: req.path },
+    });
+  }
+  next();
+}
+
 export { Sentry };

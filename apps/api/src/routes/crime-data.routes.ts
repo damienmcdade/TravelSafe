@@ -7,6 +7,7 @@ import { optionalAuth } from "../middleware/auth.js";
 // hardcoded SD_AREAS and ignored every per-city query, which made
 // Vercel proxies return SD data for every other city.
 import { crimeData } from "@travelsafe/crime-data/dispatcher";
+import { breadcrumb } from "../lib/sentry.js";
 import { nearestArea } from "../services/crime-data/neighborhoods.js";
 import { getCrimeMix, getCitywideCrimeMix } from "@travelsafe/crime-data/mix";
 import { getCitywideUpticks } from "@travelsafe/crime-data/upticks";
@@ -61,6 +62,7 @@ crimeDataRouter.get("/citywide", optionalAuth, async (req, res, next) => {
   try {
     const q = areaQuery.parse(req.query);
     const city = q.city ?? "san-diego";
+    breadcrumb("crime-data", "citywide", { city, offense: q.offense, windowDays: q.windowDays });
     const result = await withCitywideTimeout(
       crimeData.getCitywide(city, { offense: q.offense, windowDays: q.windowDays }),
     );
