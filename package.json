@@ -29,6 +29,9 @@
   "lint-staged": {
     "apps/api/**/*.ts": [
       "bash -c 'cd apps/api && npx eslint --fix'"
+    ],
+    "apps/web/**/*.{ts,tsx}": [
+      "bash -c 'cd apps/web && npx eslint --fix'"
     ]
   },
   "devDependencies": {
