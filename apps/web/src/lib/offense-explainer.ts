@@ -27,11 +27,11 @@ const RULES: ExplainerRule[] = [
     },
   },
   {
-    match: /simpleassault|misdemeanorassault|assaultsimple|nonaggravatedassault/,
+    match: /simpleassault|misdemeanorassault|assaultsimple|nonaggravatedassault|offensivecontact/,
     explain: {
-      label: "Simple Assault",
+      label: "Non-Aggravated Assault",
       description:
-        "Unlawful attack causing minor injury or threatening violence without a weapon. NIBRS distinguishes simple from aggravated by the absence of a deadly weapon and the lack of serious injury.",
+        "Unlawful attack causing minor injury, or threatening violence without a weapon. The FBI's NIBRS manual labels this 13B \"Simple Assault\" — CommunitySafe surfaces it as \"Non-Aggravated Assault\" because every assault is serious to the person involved. Distinguished from Aggravated Assault by the absence of a deadly weapon and the lack of serious bodily injury.",
     },
   },
   {
@@ -51,11 +51,11 @@ const RULES: ExplainerRule[] = [
     },
   },
   {
-    match: /rape|sodomy|sexualassault|forciblefondling|sexualbattery/,
+    match: /rape|sodomy|sexualassault|forciblefondling|sexualbattery|sexoffenses?|sexcrime|indecentexposure|peepingtom/,
     explain: {
       label: "Sex Offense",
       description:
-        "Non-consensual sexual contact or penetration. NIBRS tracks several sub-types (rape, sodomy, sexual assault with an object, forcible fondling); local feeds vary in how they label them.",
+        "Non-consensual sexual contact, penetration, or related conduct. NIBRS tracks several sub-types (rape, sodomy, sexual assault with an object, forcible fondling, indecent exposure, peeping tom); local feeds vary in how they label them. A NIBRS Crime Against Persons.",
     },
   },
   {
@@ -88,6 +88,14 @@ const RULES: ExplainerRule[] = [
       label: "Motor Vehicle Theft",
       description:
         "Theft of a self-propelled vehicle that runs on land surfaces (cars, trucks, motorcycles, buses, snowmobiles). Joyriding and taking-without-permission roll up to this category.",
+    },
+  },
+  {
+    match: /theftof.*motor.*(parts?|accessor)|theftfrommotorvehicleparts|motorvehiclepartsoraccessor/,
+    explain: {
+      label: "Theft of Vehicle Parts / Accessories",
+      description:
+        "Theft of components from a motor vehicle without taking the vehicle itself — catalytic converters, wheels, side mirrors, batteries, GPS units, or installed accessories. NIBRS code 23F. Tracked separately from full Motor Vehicle Theft.",
     },
   },
   {
@@ -218,6 +226,78 @@ const RULES: ExplainerRule[] = [
         "Generic NIBRS weapon-law violation when the local feed doesn't subdivide into possession vs. discharge vs. trafficking.",
     },
   },
+  {
+    match: /allotheroffenses|allothercrime|otheroffense(?!s?contact)|miscoffense|miscellaneous(crim|offen)|groupb(?!urg)|catchall/,
+    explain: {
+      label: "Other Offenses (NIBRS Group B catch-all)",
+      description:
+        "NIBRS code 90Z — the FBI's catch-all category for offenses that don't fit one of the named NIBRS codes. Each city's police feed routes a different mix of behaviors here (court-order violations, contempt, parole/probation violations, escape, harboring a fugitive, public-order infractions). The bucket is a remainder, not a specific crime — what's actually inside varies by jurisdiction.",
+    },
+  },
+  {
+    match: /badcheck|insufficientfunds|nsfcheck/,
+    explain: {
+      label: "Bad Check / Insufficient Funds",
+      description:
+        "Writing a check on an account with insufficient funds or no account, when the writer intended to defraud or knew the check wouldn't clear. NIBRS Group B code 90A.",
+    },
+  },
+  {
+    match: /curfew|loitering|vagran/,
+    explain: {
+      label: "Curfew / Loitering / Vagrancy",
+      description:
+        "Violations of municipal curfew ordinances, prohibited loitering (e.g. near schools, after hours), or vagrancy statutes. NIBRS Group B code 90B.",
+    },
+  },
+  {
+    match: /trafficviolation|trafficinfract|movingviolation|trafficoffense/,
+    explain: {
+      label: "Traffic Violation",
+      description:
+        "Moving violations (speeding, running a red light, reckless driving) and related infractions reported by the city's police feed. Most cities exclude routine traffic citations; what surfaces here is typically the more serious traffic-criminal subset.",
+    },
+  },
+  {
+    match: /intimidation|stalkingthreat|threats?of(violenc|harm)|harass(ment|ing)|terroristthreat/,
+    explain: {
+      label: "Intimidation / Threats",
+      description:
+        "Placing another person in reasonable fear of bodily harm through words, gestures, or conduct, without actually inflicting injury. NIBRS code 13C, a Crime Against Persons.",
+    },
+  },
+  {
+    match: /violationof(courtorder|protection|restraining|nocontact)|protectionorderviolation|restrainingorderviolation/,
+    explain: {
+      label: "Violation of Court / Protective Order",
+      description:
+        "Knowingly violating a no-contact, restraining, or protective order issued by a court. Often paired with a separate underlying offense (e.g., contacting a domestic-violence victim) but tracked here as a standalone violation.",
+    },
+  },
+  {
+    match: /fleeing|evadingarrest|resistingarrest|obstructingjustice|obstructpolice/,
+    explain: {
+      label: "Fleeing / Resisting / Obstruction",
+      description:
+        "Evading arrest, resisting a peace officer, or obstructing the administration of justice. Includes failing to comply with a lawful order from law enforcement. Typically a Society offense.",
+    },
+  },
+  {
+    match: /stalkin/,
+    explain: {
+      label: "Stalking",
+      description:
+        "Engaging in a course of conduct directed at a specific person that would cause a reasonable person to fear for their safety. NIBRS classifies stalking as a Crime Against Persons.",
+    },
+  },
+  {
+    match: /robberyattempt|attemptedrobbery/,
+    explain: {
+      label: "Attempted Robbery",
+      description:
+        "An attempt to commit robbery that does not complete — the offender flees, is interrupted, or the victim resists successfully. Charged separately from a completed robbery.",
+    },
+  },
 ];
 
 export function explainOffense(offenseName: string): OffenseExplanation {
@@ -228,9 +308,11 @@ export function explainOffense(offenseName: string): OffenseExplanation {
   return {
     label: offenseName,
     description:
-      "This offense category isn't in our common-NIBRS dictionary yet. " +
-      "It's pulled directly from the city's police feed using the upstream " +
-      "name. The FBI's NIBRS user manual at cde.ucr.cjis.gov publishes the " +
-      "full canonical definitions.",
+      "This offense label is published directly by the city's police-data feed " +
+      "and isn't in CommunitySafe's NIBRS dictionary yet. The FBI's NIBRS User " +
+      "Manual (cde.ucr.cjis.gov) publishes the canonical definitions, and the " +
+      "city's own open-data portal (cited inline on the methodology page) " +
+      "documents any local extensions. If a label looks wrong to you, please " +
+      "let us know at info@cyberwaveglobal.com.",
   };
 }

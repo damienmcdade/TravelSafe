@@ -9,6 +9,7 @@ import "leaflet/dist/leaflet.css";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea } from "@/lib/use-area";
+import { displayOffenseLabel } from "@/lib/offense-labels";
 
 // Module-level polygon cache shared across remounts of CrimeMap. Wiping
 // when the user reloads the page is fine; everything that matters lives
@@ -703,7 +704,7 @@ export default function CrimeMap() {
               >
                 <Tooltip>
                   <div className="text-xs">
-                    <div className="font-medium text-slate2-900">{r.ibrOffenseDescription}</div>
+                    <div className="font-medium text-slate2-900">{displayOffenseLabel(r.ibrOffenseDescription)}</div>
                     <div className="text-slate2-500">{c.label} · {new Date(r.occurredAt).toLocaleDateString()}</div>
                   </div>
                 </Tooltip>
@@ -1052,7 +1053,7 @@ function NeighborhoodPanel({ name, stats, recent }: { name: string; stats: AreaB
             {offenseCounts.map(([offense, { count, cat }]) => (
               <li key={offense} className="py-2 flex items-baseline gap-3 text-sm">
                 <span className="inline-block w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: CATEGORY_COLOR[cat].hex }} />
-                <span className="text-slate2-900 truncate">{offense}</span>
+                <span className="text-slate2-900 truncate">{displayOffenseLabel(offense)}</span>
                 <span className="ml-auto text-xs text-slate2-500 tabular-nums">{count}</span>
               </li>
             ))}

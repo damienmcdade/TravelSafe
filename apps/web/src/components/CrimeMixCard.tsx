@@ -4,6 +4,7 @@ import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { relativeTime } from "@/lib/sse";
 import { explainOffense } from "@/lib/offense-explainer";
+import { displayOffenseLabel } from "@/lib/offense-labels";
 import { INCIDENT_CATEGORIES, getIncidentCategory } from "@/lib/incident-categories";
 
 // localStorage key for the user's preferred category chip on the
@@ -199,7 +200,7 @@ export function CrimeMixCard({ areaSlug, jurisdictionSlug, title }: { areaSlug?:
                 <div className="flex items-baseline justify-between gap-3 text-sm">
                   <span className="flex items-center gap-1.5 text-slate2-900 min-w-0">
                     <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${CATEGORY_CHIP[s.category]}`} />
-                    <span className="truncate">{s.offense}</span>
+                    <span className="truncate">{displayOffenseLabel(s.offense)}</span>
                     <OffenseInfoButton offenseName={s.offense} />
                   </span>
                   <span className="tabular-nums text-slate2-700 shrink-0">{s.count.toLocaleString()}</span>
@@ -267,6 +268,9 @@ function OffenseInfoButton({ offenseName }: { offenseName: string }) {
             <p className="mt-1 text-slate2-700">{info.description}</p>
             <p className="mt-2 text-[11px] text-slate2-500">
               Reported as &ldquo;{offenseName}&rdquo; by the city&apos;s police feed.
+              {displayOffenseLabel(offenseName) !== offenseName && (
+                <> Displayed as &ldquo;{displayOffenseLabel(offenseName)}&rdquo; for clarity.</>
+              )}
             </p>
           </div>
         </>

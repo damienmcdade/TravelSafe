@@ -41,19 +41,27 @@ export interface CoverageResponse {
 /// Build per-city status by querying each adapter's discover() +
 /// getAreaStats() for a representative area. Runs in parallel across
 /// all cities; cold-cache cost is dominated by the slowest adapter.
-/// Edge-cached at the route layer for 5 minutes so repeat dashboard
+/// Edge-cached at the route layer for 30 minutes so repeat dashboard
 /// hits are instant.
 ///
 /// Per-city timeout prevents a single slow-loading adapter from
 /// blowing past Vercel's 60s function budget. Because Promise.all
-/// runs the per-city probes in parallel, the overall wall-clock
-/// is bounded by the SLOWEST single city, not the sum — so each
-/// city's timeout can be a significant fraction of the function
-/// budget without risking a 504. 30s gives high-volume cold-cache
-/// adapters (Charlotte and Cleveland's bumped 60-page fetches in
-/// particular) enough room to land their first pull without
-/// degrading to "warming-up" on the public dashboard.
-const PER_CITY_TIMEOUT_MS = 30_000;
+/// runs the per-city probes in parallel, the overall wall-clock is
+/// bounded by the SLOWEST single city, not the sum — so each city's
+/// timeout can be a significant fraction of the function budget
+/// without risking a 504. v95p45 — bumped from 30s to 55s after
+/// finding NYC, Charlotte, Atlanta, and Las Vegas were timing out
+/// their cold-pulls (200k-row Socrata / 146k-row ArcGIS scans) and
+/// degrading to "warming-up" on the public dashboard. 55s leaves
+/// 5s of headroom under Vercel's 60s function budget.
+const PER_CITY_TIMEOUT_MS = 55_000;
+
+/// Module-level last-known-good cache. Survives across requests on
+/// a warm Lambda; on cold start the map is empty. Used as a fallback
+/// when the live probe times out or returns 0 — keeps the dashboard
+/// honest about cities that ARE live but had a slow upstream pull
+/// this round.
+const lastKnownGood = new Map<string, { neighborhoodCount: number; newestIncidentAt: string | null; source: string; capturedAt: number }>();
 
 function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise<T>((resolve) => {
@@ -97,6 +105,30 @@ export async function getCoverage(): Promise<CoverageResponse> {
         if (neighborhoodCount === 0) health = "warming-up";
       } catch {
         health = "no-data";
+      }
+
+      // v95p45 — fall back to last-known-good if this probe came up
+      // empty. Cities like NYC, Charlotte, and Atlanta sometimes time
+      // out their cold-pull during the 55s coverage window — the
+      // adapter cache stays warm AFTER that point, so the *next*
+      // request gets full data, but the dashboard for the user who
+      // triggered the cold-pull saw zeros. Last-known-good carries
+      // those zeros forward to whatever the prior probe produced so
+      // the dashboard stays honest. Once the live probe succeeds we
+      // overwrite the cache.
+      const lkg = lastKnownGood.get(city.slug);
+      if (neighborhoodCount === 0 && lkg && lkg.neighborhoodCount > 0) {
+        neighborhoodCount = lkg.neighborhoodCount;
+        newestIncidentAt = lkg.newestIncidentAt;
+        sourceLabel = lkg.source;
+        health = "live";
+      } else if (neighborhoodCount > 0) {
+        lastKnownGood.set(city.slug, {
+          neighborhoodCount,
+          newestIncidentAt,
+          source: sourceLabel,
+          capturedAt: now,
+        });
       }
 
       return {

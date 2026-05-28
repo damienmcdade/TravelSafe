@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
+import { displayOffenseLabel } from "@/lib/offense-labels";
 
 interface Tip {
   id: string;
@@ -41,7 +42,7 @@ export function SafetyTipsPanel({ areaSlug, jurisdictionSlug }: { areaSlug?: str
       <header className="surface p-6 bg-gradient-to-br from-bay-50 via-white to-coral-200/30">
         <div className="flex items-baseline justify-between flex-wrap gap-2">
           <h2 className="font-display text-xl text-slate2-900">Practical guidance for {data?.city.label ?? "your area"}</h2>
-          {data?.basedOn.topOffense && <span className="text-xs text-slate2-500">Based on the most-reported offense: {data.basedOn.topOffense}</span>}
+          {data?.basedOn.topOffense && <span className="text-xs text-slate2-500">Based on the most-reported offense: {displayOffenseLabel(data.basedOn.topOffense)}</span>}
         </div>
         <p className="mt-2 text-sm text-slate2-700">
           The cards below are organized into three sections: practical prevention, personal self-defense principles, and a summary of California law. All material is drawn from official agency guidance or California statute.

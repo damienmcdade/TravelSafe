@@ -63,7 +63,8 @@ export async function getOfficialAlerts(): Promise<OfficialAlert[]> {
         effective: f.properties.effective ?? f.properties.sent ?? new Date().toISOString(),
         expires: f.properties.expires ?? null,
         url: `https://alerts.weather.gov/cap/wwacapget.php?x=${encodeURIComponent(f.id)}`,
-      }));
+      }))
+      .sort((a, b) => +new Date(b.effective) - +new Date(a.effective));
     cache = { fetchedAt: now, alerts };
     return alerts;
   } catch {

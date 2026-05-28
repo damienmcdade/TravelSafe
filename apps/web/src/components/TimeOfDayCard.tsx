@@ -42,6 +42,9 @@ const CITY_TZ: Record<string, string> = {
   "new-york": "America/New_York",
   "cambridge": "America/New_York",
   "boston": "America/New_York",
+  "raleigh": "America/New_York",
+  "indianapolis": "America/Indiana/Indianapolis",
+  "tucson": "America/Phoenix",
   "honolulu": "Pacific/Honolulu",
 };
 // Mirror cityForArea's slug-prefix scheme without pulling the server-only
@@ -58,7 +61,8 @@ const SLUG_PREFIXES: Array<[string, string]> = [
   ["kc-", "kansas-city"], ["sp-", "saint-paul"], ["pit-", "pittsburgh"],
   ["dal-", "dallas"], ["char-", "charlotte"], ["atl-", "atlanta"],
   ["denv-", "denver"], ["bat-", "baton-rouge"], ["cam-", "cambridge"],
-  ["hon-", "honolulu"],
+  ["hon-", "honolulu"], ["ral-", "raleigh"], ["indy-", "indianapolis"],
+  ["tuc-", "tucson"],
 ];
 
 function tzForAreaSlug(areaSlug: string): string {
@@ -166,7 +170,28 @@ export function TimeOfDayCard({
       Couldn&apos;t load the hour-of-day pattern right now.
     </section>
   );
-  if (!data || total === 0) return null;
+  if (!data) return null;
+  if (total === 0) {
+    // v95p44 — surface the zero-data state explicitly instead of
+    // returning null. Hiding the card on zero results created a sync
+    // illusion: the rest of the neighborhood page kept rendering data
+    // from the same upstream feed (CrimeMix, RecentIncidents, etc.),
+    // so users couldn't tell whether the trend feed was empty for
+    // legitimate reasons (truly quiet area) or stale. Now we say so.
+    return (
+      <section className="surface p-5">
+        <header>
+          <h3 className="font-display text-lg text-slate2-900">When incidents happen</h3>
+          <p className="text-xs text-slate2-500 mt-0.5">
+            No dispatchable incidents in the trend feed for {areaLabel} over the requested window.
+            This card buckets the same trend feed used by the rest of the neighborhood view — when
+            it&apos;s empty, the upstream police feed simply hasn&apos;t published recent records
+            for this exact area, not that nothing happened there.
+          </p>
+        </header>
+      </section>
+    );
+  }
 
   return (
     <section className="surface p-5">
