@@ -94,7 +94,19 @@ function classifyTrend(recent: number, prior: number): { trend: IncidentTrend; c
 
 export async function generateIncidentSummary(opts: BuildOpts): Promise<IncidentSummary | null> {
   const windowDays = opts.windowDays ?? 30;
-  const cacheKey = `${opts.area ?? "city:" + opts.cityOnly?.citySlug}::${windowDays}`;
+  // v95p32 — cache key now scopes by city slug so a neighborhood name
+  // shared across cities (e.g. "downtown" in Sacramento + SF + Detroit)
+  // doesn't collide. Bug parity with the Railway-side service: an
+  // in-memory Map keyed by area alone was serving the first-computed
+  // city's summary to every other city that shared the neighborhood
+  // slug. This is the duplicate cache the user saw "still apparent
+  // after all audits" — the API fix alone didn't help because the
+  // web app's server-rendered Neighborhood Watch tab has its own
+  // in-process cache here.
+  const citySlug = opts.area
+    ? cityForArea(opts.area).slug
+    : (opts.cityOnly?.citySlug ?? "unknown");
+  const cacheKey = `v2::${citySlug}::${opts.area ?? "_city_"}::${windowDays}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.data;
 

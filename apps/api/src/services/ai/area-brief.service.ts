@@ -36,36 +36,51 @@ Hard rules:
 `.trim();
 
 const CACHE_TTL_SECONDS = 6 * 60 * 60; // 6h per area
-const CACHE_KEY_PREFIX = "ai:area-brief:v1:";
+// v95p32 — cache-key prefix bumped v1 → v2 BECAUSE the v1 key was
+// `ai:area-brief:v1:` + neighborhood slug only, which collides across
+// cities (Sacramento's "downtown" and SF's "downtown" shared an entry,
+// users saw blended/wrong AI briefs). v2 prefixes the city slug.
+// Bumping the version invalidates every poisoned v1 entry immediately
+// rather than waiting out the 6h TTL.
+const CACHE_KEY_PREFIX = "ai:area-brief:v2:";
 const localCache = new Map<string, { fetchedAt: number; brief: string }>();
 const LOCAL_TTL_MS = CACHE_TTL_SECONDS * 1000;
 
+function scopedKey(area: string): string {
+  // Scope the cache key to the area's parent city so a neighborhood
+  // slug shared across cities does not collide.
+  const city = cityForArea(area);
+  return `${city.slug}:${area}`;
+}
+
 async function cacheGet(area: string): Promise<string | null> {
+  const k = scopedKey(area);
   const redis = getRedis();
   if (redis) {
     try {
-      const hit = await redis.get(CACHE_KEY_PREFIX + area);
+      const hit = await redis.get(CACHE_KEY_PREFIX + k);
       if (hit) return hit;
     } catch {
       // fall through to local
     }
   }
-  const local = localCache.get(area);
+  const local = localCache.get(k);
   if (local && Date.now() - local.fetchedAt < LOCAL_TTL_MS) return local.brief;
   return null;
 }
 
 async function cachePut(area: string, brief: string): Promise<void> {
+  const k = scopedKey(area);
   const redis = getRedis();
   if (redis) {
     try {
-      await redis.set(CACHE_KEY_PREFIX + area, brief, "EX", CACHE_TTL_SECONDS);
+      await redis.set(CACHE_KEY_PREFIX + k, brief, "EX", CACHE_TTL_SECONDS);
       return;
     } catch {
       // fall through
     }
   }
-  localCache.set(area, { fetchedAt: Date.now(), brief });
+  localCache.set(k, { fetchedAt: Date.now(), brief });
 }
 
 const sanitize = (s: string, maxLen = 80): string =>

@@ -70,7 +70,15 @@ function classifyTrend(recent: number, prior: number): { trend: IncidentTrend; c
 
 export async function generateIncidentSummary(opts: BuildOpts): Promise<IncidentSummary | null> {
   const windowDays = opts.windowDays ?? 30;
-  const cacheKey = `${opts.area ?? "city:" + opts.cityOnly?.citySlug}::${windowDays}`;
+  // v95p32 — cache key now scopes by city slug so a neighborhood name
+  // shared across cities (e.g. "downtown" in Sacramento + SF + Detroit)
+  // doesn't collide. The bug was an in-memory Map keyed by area alone,
+  // which served the first-computed city's summary to every other
+  // city that had the same neighborhood slug.
+  const citySlug = opts.area
+    ? cityForArea(opts.area).slug
+    : (opts.cityOnly?.citySlug ?? "unknown");
+  const cacheKey = `v2::${citySlug}::${opts.area ?? "_city_"}::${windowDays}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) return cached.data;
 
