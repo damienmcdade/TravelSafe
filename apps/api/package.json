@@ -16,7 +16,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.79",
     "@ai-sdk/groq": "^3.0.39",
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^6.19.3",
     "@sentry/node": "^8.55.2",
     "@travelsafe/crime-data": "*",
     "@travelsafe/db": "*",

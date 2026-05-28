@@ -42,5 +42,8 @@
   },
   "engines": {
     "node": "22.x"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3"
   }
 }
