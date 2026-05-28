@@ -46,7 +46,14 @@ async function pruneOnce(): Promise<{ deleted: number; cutoff: Date }> {
 }
 
 export function startAuditRetentionWorker(): void {
+  // v96 — backpressure: if a prior prune is still running when the
+  // next tick fires (rare with a 24h cycle, but possible on a very
+  // large audit table or a restart-loop scenario), skip rather than
+  // run two concurrent deleteMany's that contend on the same rows.
+  let inFlight = false;
   const tick = async () => {
+    if (inFlight) return;
+    inFlight = true;
     try {
       const { deleted, cutoff } = await pruneOnce();
       if (deleted > 0) {
@@ -54,6 +61,8 @@ export function startAuditRetentionWorker(): void {
       }
     } catch (err) {
       console.warn("[audit-retention] prune failed:", (err as Error).message);
+    } finally {
+      inFlight = false;
     }
   };
   console.log(`[audit-retention] starting (retention=${retentionDays()}d, tick every ${TICK_INTERVAL_MS / 1000}s)`);

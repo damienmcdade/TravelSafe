@@ -4,8 +4,18 @@ import { env } from "../../env.js";
 import { triggerExpiry } from "./check-in.service.js";
 
 let timer: NodeJS.Timeout | null = null;
+// v96 — backpressure flag. The 30 s tick was firing again before the
+// prior tick finished claiming + notifying its batch of 100 expired
+// timers (notifyContact does email + webpush per contact, easily
+// minutes on a slow SMTP). Without inFlight, both ticks read the
+// same ACTIVE rows. triggerExpiry now atomically claims, so the
+// notification can't double-fire — but the redundant tick still
+// burns DB I/O. inFlight keeps things clean.
+let inFlight = false;
 
 async function tick() {
+  if (inFlight) return;
+  inFlight = true;
   try {
     const due = await prisma.checkInTimer.findMany({
       where: { status: CheckInStatus.ACTIVE, scheduledFor: { lte: new Date() } },
@@ -18,6 +28,8 @@ async function tick() {
     }
   } catch (err) {
     console.error("[checkin-worker] tick failed:", err);
+  } finally {
+    inFlight = false;
   }
 }
 

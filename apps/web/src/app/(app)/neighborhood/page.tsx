@@ -1,5 +1,6 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api, useApi } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
@@ -20,7 +21,12 @@ import {
   ThreatFeed,
   useSafeZoneData,
 } from "@/components/SafeZoneTab";
-import SafetyPage from "../safety/page";
+// v96 — SafetyPage was eagerly imported here for the "personal" sub-tab,
+// which adds ~34 kB to /neighborhood's First Load JS even though most
+// visitors land on the default "neighborhood" tab and never click
+// "personal". Defer the import so the chunk only loads when the user
+// actually switches tabs.
+const SafetyPage = dynamic(() => import("../safety/page"), { ssr: false });
 
 interface Alert { area: string; category: "PERSONS"|"PROPERTY"|"SOCIETY"; riskLevel: 1|2|3|4|5; summary: string; recency: string; provenance: ProvenanceLike }
 

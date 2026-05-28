@@ -46,9 +46,25 @@ export async function listActive(userId: string) {
 }
 
 /// Called by the worker when a timer fires without being cancelled.
+///
+/// v96 — atomic claim. The prior implementation read the timer with
+/// findUnique, checked status === ACTIVE in JS, then fanned out
+/// notifications, then updated to TRIGGERED. Two concurrent worker
+/// ticks (cross-container races or a stuck tick + next tick firing)
+/// both passed the check and both notified the trusted contact list.
+/// Family received the "didn't check in" SMS / email twice. The fix
+/// uses Prisma updateMany with status=ACTIVE in the WHERE clause —
+/// only the first caller's UPDATE matches the row and gets count===1;
+/// concurrent callers get count===0 and return immediately.
 export async function triggerExpiry(timerId: string): Promise<DeliveryReceipt[]> {
+  const triggeredAt = new Date();
+  const claim = await prisma.checkInTimer.updateMany({
+    where: { id: timerId, status: CheckInStatus.ACTIVE },
+    data: { status: CheckInStatus.TRIGGERED, triggeredAt },
+  });
+  if (claim.count === 0) return [];
   const timer = await prisma.checkInTimer.findUnique({ where: { id: timerId } });
-  if (!timer || timer.status !== CheckInStatus.ACTIVE) return [];
+  if (!timer) return [];
   const confirmed = await getConfirmedContacts(timer.userId);
 
   const subject = "TravelSafe — a contact didn't check in";
@@ -64,10 +80,5 @@ export async function triggerExpiry(timerId: string): Promise<DeliveryReceipt[]>
     const r = await notifyContact(c, subject, body);
     receipts.push(...r);
   }
-
-  await prisma.checkInTimer.update({
-    where: { id: timer.id },
-    data: { status: CheckInStatus.TRIGGERED, triggeredAt: new Date() },
-  });
   return receipts;
 }

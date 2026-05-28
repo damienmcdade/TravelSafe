@@ -21,6 +21,14 @@ const REDIS_KEY = "digest-worker:last-fired-ymd";
 const REDIS_TTL_SECONDS = 36 * 60 * 60;
 let timer: NodeJS.Timeout | null = null;
 let lastFiredYmd: string | null = null;
+// v96 — backpressure flag. The 60 s tick checks the wall clock, but
+// once it decides to fire, runDailyDigest can run for minutes on a
+// 10k-user fan-out. Without this guard the next tick fires before
+// the prior runDailyDigest finishes, both pass the
+// `lastFiredYmd === todayYmd` check (still null in memory), Redis
+// might not be stamped yet either, and both call runDailyDigest()
+// concurrently — doubling the (paid) webpush fan-out work.
+let inFlight = false;
 
 function ymdUtc(d: Date): string {
   const y = d.getUTCFullYear();
@@ -30,10 +38,12 @@ function ymdUtc(d: Date): string {
 }
 
 async function tick() {
+  if (inFlight) return;
   const now = new Date();
   const todayYmd = ymdUtc(now);
   if (lastFiredYmd === todayYmd) return;
   if (now.getUTCHours() < DIGEST_HOUR_UTC) return;
+  inFlight = true;
   // Cross-restart guard: if Redis remembers we already fired today,
   // hydrate the in-memory copy and bail without rerunning the fan-out.
   const redis = getRedis();
@@ -62,6 +72,8 @@ async function tick() {
     }
   } catch (err) {
     console.error("[digest-worker] tick failed:", err);
+  } finally {
+    inFlight = false;
   }
 }
 

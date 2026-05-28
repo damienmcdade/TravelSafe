@@ -22,7 +22,11 @@ export const viewport: Viewport = {
   ],
 };
 import Script from "next/script";
-import { CityBackdrop } from "@/components/CityBackdrop";
+// v96 — CityBackdrop is ~169 kB of city photo URLs that was eagerly
+// imported into the root layout's First Load JS on every route.
+// The Lazy wrapper is a client-only dynamic import so the chunk
+// only ships when a page actually renders it.
+import { CityBackdropLazy as CityBackdrop } from "@/components/CityBackdropLazy";
 import { SessionBootstrap } from "@/components/SessionBootstrap";
 import { CookieConsentBanner } from "@/components/CookieConsentBanner";
 import { AgeGate } from "@/components/AgeGate";

@@ -86,15 +86,28 @@ export async function sendToMany(
   let sent = 0, failed = 0, pruned = 0;
   const toPrune: string[] = [];
 
+  // v96 — per-endpoint timeout. A few push service endpoints
+  // (mostly dead Firefox + iOS Safari ones) hang the underlying
+  // TLS connect rather than 4xx. web-push doesn't expose a per-call
+  // timeout option, so race each call against a 10 s deadline. A
+  // hung endpoint counts as "failed" but doesn't stall the whole
+  // digest fan-out (was previously holding the entire daily digest
+  // hostage until web-push's internal default timed out).
+  const PUSH_TIMEOUT_MS = 10_000;
   await Promise.all(allSubs.map(async (s) => {
     try {
-      await webpush.sendNotification(
-        { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-        body,
-      );
+      await Promise.race([
+        webpush.sendNotification(
+          { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+          body,
+        ),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("push_timeout")), PUSH_TIMEOUT_MS),
+        ),
+      ]);
       sent += 1;
     } catch (err) {
-      const e = err as { statusCode?: number };
+      const e = err as { statusCode?: number; message?: string };
       if (e.statusCode === 404 || e.statusCode === 410) {
         toPrune.push(s.endpoint);
         pruned += 1;

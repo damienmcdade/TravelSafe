@@ -51,6 +51,28 @@ const HEAVY_CITIES = [
   "los-angeles",
 ];
 
+// v96 — per-city deadline. Without this, a single hung adapter (one
+// that escapes the new global undici 30 s timeout because the JS
+// promise itself doesn't reject — e.g., an adapter that swallows
+// its own fetch errors and resolves with the cached empty array
+// forever) can hold the entire warm cycle hostage. The cycle log
+// would show "heavy avg 240000ms" and the next cycle never fires.
+// 90 s is generous (heaviest cold cycle observed was ~30 s); a tick
+// that exceeds it gets cancelled and we move on to the next city.
+const PER_CITY_DEADLINE_MS = 90_000;
+
+async function withDeadline<T>(p: Promise<T>, ms: number, label: string): Promise<T | "_deadline_"> {
+  try {
+    return await Promise.race<T | "_deadline_">([
+      p,
+      new Promise<"_deadline_">((resolve) => setTimeout(() => resolve("_deadline_"), ms)),
+    ]);
+  } catch (err) {
+    console.warn(`[warm-worker] ${label} threw:`, (err as Error).message);
+    return "_deadline_";
+  }
+}
+
 async function warmCity(slug: string) {
   const start = Date.now();
   // v69 — capture the safety-score result and persist to Redis so route
@@ -61,11 +83,14 @@ async function warmCity(slug: string) {
   // cache as before; their payloads are too large for cheap Redis
   // serialization on every cycle.
   const [, scoreResult] = await Promise.allSettled([
-    crimeData.getCitywide(slug),
-    getCitywideSafetyScore(slug),
-    getCitywideTrend(slug),
+    withDeadline(crimeData.getCitywide(slug), PER_CITY_DEADLINE_MS, `${slug}/getCitywide`),
+    withDeadline(getCitywideSafetyScore(slug), PER_CITY_DEADLINE_MS, `${slug}/safetyScore`),
+    withDeadline(getCitywideTrend(slug), PER_CITY_DEADLINE_MS, `${slug}/trend`),
   ]);
-  if (scoreResult.status === "fulfilled" && scoreResult.value) {
+  // The withDeadline wrapper resolves with the sentinel "_deadline_"
+  // when its inner promise didn't settle in time. Skip the Redis write
+  // and let the next cycle try again.
+  if (scoreResult.status === "fulfilled" && scoreResult.value && scoreResult.value !== "_deadline_") {
     // v70 followup — sanity-guard the Redis write. The audit caught
     // Detroit + Minneapolis serving windowDays=0 / all-zero counts
     // because a prior warm cycle had a transient upstream hiccup, the
@@ -79,7 +104,7 @@ async function warmCity(slug: string) {
     // non-zero windowDays. Otherwise the prior Redis entry stays
     // (it might be stale but it's not BROKEN) and the route can
     // fall through to in-process compute.
-    const v = scoreResult.value;
+    const v = scoreResult.value as { rows?: Array<{ count?: number }>; windowDays?: number };
     const rows = (v.rows ?? []) as Array<{ count?: number }>;
     const totalCounted = rows.reduce((s, r) => s + (r.count ?? 0), 0);
     const wd = (v as { windowDays?: number }).windowDays ?? 0;

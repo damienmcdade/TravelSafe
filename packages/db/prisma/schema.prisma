@@ -298,6 +298,9 @@ model Post {
   // Without the index Postgres can't short-circuit on the rare deleted
   // row and falls back to a heap scan over all posts.
   @@index([deletedAt])
+  // v96 — moderator dashboards filter by reviewerId (e.g., "posts
+  // reviewed by me this week"). FK was unindexed.
+  @@index([reviewerId])
 }
 
 model PostComment {
@@ -329,6 +332,11 @@ model PostReaction {
 
   @@unique([postId, userId, kind])
   @@index([postId])
+  // v96 — "my reactions" query (and future per-user moderation
+  // surfaces) filter by userId alone; the unique covers (postId,
+  // userId, kind) but Postgres can't use that prefix-less for a
+  // single-column userId scan. Add the explicit index.
+  @@index([userId])
 }
 
 model PostFlag {
@@ -357,6 +365,9 @@ model PostEdit {
   editor      User     @relation(fields: [editorId], references: [id])
 
   @@index([postId])
+  // v96 — moderator "edits by user X" query filters by editorId; FK
+  // without index made it a full table scan.
+  @@index([editorId])
 }
 
 /// Submission-time defamation/accuracy acknowledgement — required before insert.
@@ -427,6 +438,10 @@ model UserBlock {
   // Reverse-direction index — "has this user been blocked by anyone?"
   // runs on every authenticated community feed render. Finding #2.
   @@index([blockedId])
+  // v96 — forward "who have I blocked?" surface (Settings → blocks)
+  // would otherwise scan UserBlock; small table now, but cheap to
+  // keep the FK indexed before it grows.
+  @@index([blockerId])
 }
 
 model UserMute {
