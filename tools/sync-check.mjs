@@ -151,33 +151,83 @@ async function fetchJson(base, path) {
   }
 }
 
+// v95p41 — retry-once on transient failures, and re-classify
+// "both-sides-agree-on-non-2xx" as UPSTREAM (not drift). The whole
+// point of this check is to detect *divergence* between Vercel and
+// Railway. When both sides return the same 503 because the upstream
+// city ArcGIS is slow, that's an upstream signal — flagging it as
+// drift made the workflow misleadingly red even after my v95p39 fix
+// added a graceful 503 to /crime-data/citywide.
+async function probeWithRetry(base, path) {
+  let r = await fetchJson(base, path);
+  if (!r.ok && r.status === 0) {
+    // Transient fetch failure (timeout / network blip). One retry
+    // after a short backoff catches the common case where Railway
+    // was warming up.
+    await new Promise((resolve) => setTimeout(resolve, 2_000));
+    r = await fetchJson(base, path);
+  }
+  return r;
+}
+
 const report = [];
 let driftCount = 0;
+let upstreamCount = 0;
 for (const [label, vPath, rPath, check] of PROBES) {
-  const [v, r] = await Promise.all([fetchJson(VERCEL_BASE, vPath), fetchJson(RAILWAY_BASE, rPath)]);
-  const entry = { label, vercel: { path: vPath, status: v.status }, railway: { path: rPath, status: r.status }, drift: [] };
+  const [v, r] = await Promise.all([
+    probeWithRetry(VERCEL_BASE, vPath),
+    probeWithRetry(RAILWAY_BASE, rPath),
+  ]);
+  const entry = {
+    label,
+    vercel: { path: vPath, status: v.status },
+    railway: { path: rPath, status: r.status },
+    drift: [],
+    classification: "ok",
+  };
 
   if (v.status !== r.status) {
     entry.drift.push(`status mismatch: vercel=${v.status} railway=${r.status}`);
+    entry.classification = "drift";
   }
   if (v.ok && r.ok && v.body && r.body) {
-    entry.drift.push(...check(v.body, r.body));
+    const shapeDrift = check(v.body, r.body);
+    if (shapeDrift.length > 0) entry.classification = "drift";
+    entry.drift.push(...shapeDrift);
+  } else if (!v.ok && !r.ok && v.status === r.status) {
+    // Both sides equally non-2xx and statuses agree → upstream issue,
+    // NOT a frontend↔backend sync drift. Annotate so it surfaces in
+    // the report but doesn't fail strict mode.
+    entry.drift.push(
+      `upstream: both sides returned ${v.status} (treated as not-drift; ` +
+        `frontend and backend agree on the upstream's current state)`,
+    );
+    entry.classification = "upstream";
   } else if (!v.ok || !r.ok) {
     entry.drift.push(`one side returned non-2xx (vercel ok=${v.ok}, railway ok=${r.ok})`);
+    entry.classification = "drift";
   }
-  if (entry.drift.length > 0) driftCount++;
+  if (entry.classification === "drift") driftCount++;
+  if (entry.classification === "upstream") upstreamCount++;
   report.push(entry);
 }
 
 if (JSON_OUT) {
-  console.log(JSON.stringify({ probes: report.length, driftCount, report }, null, 2));
+  console.log(JSON.stringify({ probes: report.length, driftCount, upstreamCount, report }, null, 2));
 } else {
   for (const e of report) {
-    const marker = e.drift.length === 0 ? "OK" : "DRIFT";
+    const marker =
+      e.classification === "drift" ? "DRIFT"
+      : e.classification === "upstream" ? "UPSTREAM"
+      : "OK";
     console.log(`[${marker}] ${e.label}  vercel=${e.vercel.status}  railway=${e.railway.status}`);
     for (const d of e.drift) console.log(`   • ${d}`);
   }
-  console.log(`\n${driftCount}/${report.length} probes drifted.`);
+  console.log(
+    `\n${driftCount}/${report.length} probes drifted` +
+      (upstreamCount > 0 ? ` (${upstreamCount} upstream-only, not counted)` : "") +
+      ".",
+  );
 }
 
 if (STRICT && driftCount > 0) process.exit(1);
