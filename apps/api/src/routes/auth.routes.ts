@@ -64,6 +64,21 @@ authRouter.get("/me", requireAuth, async (req, res, next) => {
 // The refresh token itself isn't rotated here. If the user's
 // tokenVersion has advanced (logout / password change / "sign out
 // everywhere") this returns 401 token_revoked.
+//
+// v96 — CSRF posture documented per the security audit. This endpoint
+// does NOT sit behind the Sec-Fetch-Site CSRF guard for two reasons:
+//   1. The refresh token is a 256-bit HS256 JWT (jwt.io decodable but
+//      cryptographically unforgeable without JWT_SECRET) in the body,
+//      not a cookie. CSRF attacks rely on the browser auto-sending
+//      cookies; a body-supplied bearer-style token can only be sent
+//      by a client that already has it, which (by definition) is the
+//      same client that performed the original login. There is no
+//      "ambient authority" the attacker can hijack.
+//   2. authLimiter caps to 20 attempts per 15 min per IP — even if a
+//      token did leak (via log, accidental commit, third-party
+//      script), the brute-force surface is bounded.
+// If we ever move refresh to httpOnly cookies, this CSRF exemption
+// must be revisited.
 authRouter.post("/refresh", authLimiter, async (req, res, next) => {
   try {
     const { refreshToken } = z.object({ refreshToken: z.string().min(20).max(2000) }).parse(req.body);
