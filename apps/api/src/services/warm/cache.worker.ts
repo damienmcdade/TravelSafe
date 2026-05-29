@@ -153,8 +153,27 @@ function midCycleGc(): void {
   }
 }
 
+// v96p2 — heap headroom that forces a cycle to skip and GC instead
+// of piling on more adapter buffers. Set well below max-old-space
+// (3584 MB) so we have time to drop state before the heap-limit GC
+// starts failing to reclaim. Each adapter cache + transient JSON
+// parse adds ~50-100 MB during a cycle; skipping when heap is
+// already above 2000 MB has been empirically the difference between
+// surviving and OOMing 1-2 cycles later.
+const HEAP_BACKOFF_MB = 2000;
+
 async function tick() {
   if (inFlight) return; // skip overlap if prior tick is still running
+  // v96p2 — skip the cycle when heap is already in the danger zone.
+  // Force a major GC right away to drop whatever is dropping-eligible
+  // before the next interval fires.
+  const heapMB = process.memoryUsage().heapUsed / 1024 / 1024;
+  if (heapMB > HEAP_BACKOFF_MB) {
+    midCycleGc();
+    const afterMB = process.memoryUsage().heapUsed / 1024 / 1024;
+    console.log(`[warm-worker] heap-backoff ${Math.round(heapMB)}→${Math.round(afterMB)}MB · skipping cycle`);
+    return;
+  }
   inFlight = true;
   const cycleStart = Date.now();
   try {
