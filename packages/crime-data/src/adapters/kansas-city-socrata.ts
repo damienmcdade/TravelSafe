@@ -180,11 +180,19 @@ function safeIso(raw: string | null | undefined): string | null {
 
 async function fetchKansasCityYear(datasetId: string): Promise<KcRow[]> {
   // v96 — migrated to fetchSocrata helper.
+  // v96p2 — 180-day cutoff. The unbounded most-recent-50k pull was
+  // timing out at Vercel build prerender ("[kc] year-dataset
+  // dmnp-9ajg failed: timeout") because KCPD's per-year datasets
+  // hold the entire year and the upstream had to scan 50k+ rows.
+  // 180 days is more than safety-score's 90 d window needs, gives
+  // the trend feed enough history, and stays well inside our 30 s
+  // AbortSignal.
   // EXPLICIT $select — never request the `race`/`sex` demographic columns.
+  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
   return fetchSocrata<KcRow>(`Kansas City Socrata ${datasetId}`, {
     url: `https://data.kcmo.org/resource/${datasetId}.json`,
     select: "report,report_date,from_date,offense,ibrs,beat,address,city,zipcode,rep_dist,area,location",
-    where: "location IS NOT NULL",
+    where: `location IS NOT NULL AND report_date >= '${cutoff}'`,
     order: "report_date DESC",
     limit: ROW_LIMIT,
   });

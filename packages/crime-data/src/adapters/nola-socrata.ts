@@ -158,10 +158,14 @@ async function fetchNola(): Promise<Incident[]> {
   // v96 — migrated to fetchSocrata helper.
   // Explicit $select — never pull anything we don't render. (Calls for
   // Service 2026 doesn't publish demographics anyway, but belt-and-braces.)
+  // v96p2 — 180-day cutoff per the deployment-log scan. NOLA's CFS
+  // dataset is large; the unbounded "give me the most recent
+  // ROW_LIMIT" pull was timing out at Vercel build prerender.
+  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
   const rows = await fetchSocrata<NolaRow>("NOLA Socrata", {
     url: BASE,
     select: "nopd_item,type_,typetext,priority,policedistrict,beat,block_address,timecreate,location,disposition,dispositiontext",
-    where: "location IS NOT NULL",
+    where: `location IS NOT NULL AND timecreate >= '${cutoff}'`,
     order: "timecreate DESC",
     limit: ROW_LIMIT,
   });

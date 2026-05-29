@@ -61,13 +61,15 @@ async function fetchSF(): Promise<Incident[]> {
   // row → Incident transformation. HTTP status / JSON envelope /
   // 30 s default timeout / X-App-Token handling all live in
   // ../lib/http.ts.
+  // v96p2 — 180-day cutoff per the deployment-log scan. Vercel
+  // build-time prerender + Railway warm cycle were both timing out
+  // on the unbounded 50k pull. Matches Seattle/Dallas/NOLA/KC.
+  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
   const rows = await fetchSocrata<SodaRow>("SFPD", {
     url: BASE,
     select: "incident_id,incident_datetime,analysis_neighborhood,police_district,incident_category,incident_subcategory,incident_description,latitude,longitude",
+    where: `incident_datetime >= '${cutoff}'`,
     order: "incident_datetime DESC",
-    // SODA supports up to 50,000 in a single page. Bumped from 3,000 so the
-    // per-neighborhood crime counts are statistically meaningful, not flattened
-    // by a tiny sample that made every busy area show the same number.
     limit: 50000,
   });
   return rows.map((r, i) => {
