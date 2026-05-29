@@ -17,11 +17,11 @@
     "mobile:ios:build": "xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' CODE_SIGNING_ALLOWED=NO"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.79",
+    "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/groq": "^3.0.39",
     "@prisma/client": "^6.19.3",
     "@travelsafe/crime-data": "*",
-    "ai": "^6.0.0",
+    "ai": "^6.0.193",
     "bcryptjs": "^2.4.3",
     "csv-parse": "^5.5.6",
     "jsonwebtoken": "^9.0.2",
