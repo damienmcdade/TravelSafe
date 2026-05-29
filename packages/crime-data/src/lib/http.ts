@@ -38,6 +38,17 @@ export function socrataHeaders(url: string | URL, extra: Record<string, string> 
   return h;
 }
 
+// v96p2 — Socrata's floating_timestamp datatype rejects the standard
+// `Date#toISOString()` output because of the trailing
+// `.NNNZ` (millisecond + zone) suffix — the parser only accepts
+// `YYYY-MM-DDTHH:MM:SS` form. Several adapters that added recent
+// `$where` clauses to bound their pulls were getting HTTP 400 on
+// the resulting URL. Single helper so the strip is consistent.
+export function socrataDate(d: Date | number): string {
+  const ms = typeof d === "number" ? d : d.getTime();
+  return new Date(ms).toISOString().replace(/\.\d{3}Z$/, "");
+}
+
 // v96 — shared Socrata fetch helper. Every Socrata adapter (currently
 // 18+ files) opens with the same boilerplate: build URL with
 // $select/$where/$order/$limit, fetch with socrataHeaders, check

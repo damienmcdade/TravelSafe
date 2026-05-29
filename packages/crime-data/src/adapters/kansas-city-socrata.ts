@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
 
 // Kansas City MO — KCPD Crime Data, current + prior year.
@@ -188,7 +188,7 @@ async function fetchKansasCityYear(datasetId: string): Promise<KcRow[]> {
   // the trend feed enough history, and stays well inside our 30 s
   // AbortSignal.
   // EXPLICIT $select — never request the `race`/`sex` demographic columns.
-  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   return fetchSocrata<KcRow>(`Kansas City Socrata ${datasetId}`, {
     url: `https://data.kcmo.org/resource/${datasetId}.json`,
     select: "report,report_date,from_date,offense,ibrs,beat,address,city,zipcode,rep_dist,area,location",

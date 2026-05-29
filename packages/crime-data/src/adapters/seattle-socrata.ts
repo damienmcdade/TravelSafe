@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 
 // Seattle — SPD Crime Data.
 // Socrata dataset tazs-3rd5 on data.seattle.gov. NIBRS-coded by SPD, which
@@ -63,7 +63,7 @@ async function fetchSeattle(): Promise<Incident[]> {
   // a second on Socrata's hot path and well inside the 30 s
   // AbortSignal budget. If a future feature needs older rows it can
   // either pass a wider window or use a separate historical fetch.
-  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   const rows = await fetchSocrata<SodaRow>("Seattle SODA", {
     url: BASE,
     select: "offense_id,offense_date,neighborhood,precinct,beat,offense_category,nibrs_offense_code_description,nibrs_crime_against_category,latitude,longitude",

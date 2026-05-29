@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 import { dallasPolygons } from "../data/dallas-neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
@@ -123,7 +123,7 @@ async function fetchDallas(): Promise<Incident[]> {
   // timed out on Socrata's slow path. Dallas saw only 5 timeouts vs
   // Seattle's 169, but the fix is mechanical and the user-facing
   // surfaces never look past 180 days.
-  const cutoff = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString();
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   const rows = await fetchSocrata<DallasRow>("Dallas Socrata", {
     url: BASE,
     select: "incidentnum,servnumid,offincident,date1,division,sector,beat,nibrs_crime,nibrs_crime_category,nibrs_crimeagainst,geocoded_column",
