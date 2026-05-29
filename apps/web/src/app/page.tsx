@@ -24,13 +24,13 @@ export default function WelcomePage() {
               Calm, neighborhood-level safety context for major California cities. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
             </p>
             <div className="mt-8 flex flex-wrap gap-3 animate-rise-in">
-              <Link href="/now" className="btn-coral text-base px-6 py-3">Explore TravelSafe →</Link>
+              <Link href="/now" className="btn-coral text-base px-6 py-3">Explore CommunitySafe →</Link>
               <Link href="/map" className="btn-secondary text-base px-6 py-3 !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
                 Open the Crime Map
               </Link>
             </div>
             <p className="mt-6 text-xs text-sand-100/80">
-              No account is needed. Browsing and posting on TravelSafe are both anonymous. A check-in timer and trusted-contact features require an existing account.
+              No account is needed. Browsing and posting on CommunitySafe are both anonymous. A check-in timer and trusted-contact features require an existing account.
             </p>
           </div>
         </div>
@@ -82,7 +82,7 @@ export default function WelcomePage() {
             </span>
             <h2 className="mt-3 font-display text-2xl text-slate2-900">Built by a U.S. Army Veteran</h2>
             <p className="mt-3 text-sm text-slate2-700 leading-relaxed">
-              TravelSafe is founded by a U.S. Army Veteran. The product was
+              CommunitySafe is founded by a U.S. Army Veteran. The product was
               built around what actually keeps people safe in a neighborhood:
               honest open data, calm community input, and personal-safety tools
               that respect the user&apos;s autonomy. No surveillance, no
@@ -102,7 +102,7 @@ export default function WelcomePage() {
               every message and reply within two business days.
             </p>
             <a
-              href="mailto:info@cyberwaveglobal.com?subject=TravelSafe%20inquiry"
+              href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20inquiry"
               className="btn-coral text-base px-5 py-2.5 mt-4 inline-flex items-center"
             >
               info@cyberwaveglobal.com →
