@@ -44,7 +44,9 @@ import { officialAlertsRouter } from "./routes/official-alerts.routes.js";
 import { safezoneRouter } from "./routes/safezone.routes.js";
 import { startCheckInWorker } from "./services/safety/check-in.worker.js";
 import { startDigestWorker } from "./services/push/digest.worker.js";
-import { startWarmWorker } from "./services/warm/cache.worker.js";
+// v96p2 — startWarmWorker import removed from the call path. See
+// the boot section below for the rationale.
+// import { startWarmWorker } from "./services/warm/cache.worker.js";
 import { startGradeSanityWorker, getLastReport as getGradeSanityReport } from "./services/audit/grade-sanity.worker.js";
 import { startAuditRetentionWorker } from "./services/audit/retention.worker.js";
 import { Agent, setGlobalDispatcher } from "undici";
@@ -223,7 +225,21 @@ const server = app.listen(env.LISTEN_PORT, () => {
   console.log(`[api] listening on :${env.LISTEN_PORT} (env=${env.NODE_ENV})`);
   startCheckInWorker();
   startDigestWorker();
-  startWarmWorker();
+  // v96p2 — startWarmWorker() permanently removed from the boot path.
+  // The 6-cycle deployment-log scan confirmed pods OOM at ~+15 min
+  // every time the worker fires, regardless of mitigations (heavy
+  // bucket trim 14 → 6, GC at cycle / mid-cycle / heap-aware
+  // backoff). Steady-state heap during a heavy cycle reaches 2.8 GB
+  // and the GC reclaims only 24 MB at saturation — the worker
+  // simply outpaces V8's ability to recover. Routes serve from
+  // Redis L2 (warm from prior pods) and on-demand adapter fetches
+  // (each handler triggers one upstream call, 5-min in-process
+  // cache, GC-friendly), which together cover the steady-state load
+  // without the cumulative pressure. Re-enabling the worker is a
+  // future task once the underlying allocation path is profiled
+  // (likely undici body pools or adapter intermediate JSON.parse
+  // outputs not being released between cycles).
+  // startWarmWorker();
   startGradeSanityWorker();
   startAuditRetentionWorker();
 });
