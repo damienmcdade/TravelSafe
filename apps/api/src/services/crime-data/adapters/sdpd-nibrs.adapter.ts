@@ -83,8 +83,12 @@ export const sdpdNibrsAdapter: CrimeDataAdapter = {
     const label = known?.label ?? area;
     const inArea = rows.filter((r) => r.area.toLowerCase() === label.toLowerCase());
     if (inArea.length === 0) return null;
-    // Coarse risk derivation from raw incident count in the cached window.
-    // TODO: normalize by population and time window.
+    // Coarse VOLUME signal over the cached ~annual window (getRows pulls
+    // a full calendar year), deliberately NOT a per-capita rate:
+    // per-100k rate math and population denominators are owned by the
+    // Safety Index (safety-score.ts in @travelsafe/crime-data), and
+    // duplicating that normalization here would double-count it.
+    // Thresholds are absolute annual counts.
     const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 2000 ? 5 : inArea.length > 1200 ? 4 : inArea.length > 600 ? 3 : inArea.length > 200 ? 2 : 1;
     return {
       area: label,

@@ -10,6 +10,7 @@ import { HotspotCard } from "@/components/HotspotCard";
 import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
 import { AmberAlertsBanner } from "@/components/AmberAlertsBanner";
+import { TrafficAlertsPanel } from "@/components/TrafficAlertsPanel";
 import { UptickTile } from "@/components/UptickTile";
 import {
   BlockScoreWidget,
@@ -67,8 +68,8 @@ export default function CityAwarenessPage() {
       <header className="page-hero flex flex-wrap items-center gap-3 justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">City Awareness</p>
-          <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
-            What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">{city.label}</span>
+          <h1 className="mt-1 font-display text-3xl sm:text-4xl leading-tight text-slate2-900">
+            What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">{city.label}</span>
           </h1>
           <p className="mt-2 text-slate2-700 max-w-2xl">
             Citywide signals only. Drill into a neighborhood from the hotspots panel below, or open Neighborhood Awareness.
@@ -114,6 +115,11 @@ export default function CityAwarenessPage() {
         <OfficialAlertsPanel />
         <NewsPanel />
       </div>
+
+      {/* 7b. Road conditions (CHP) — California cities only; renders
+             nothing when there are no active nearby collisions/closures,
+             so it adds no footprint elsewhere or on quiet days. */}
+      <TrafficAlertsPanel />
 
       {/* 8. ALL informational source banner disclaimers anchored to the
              bottom of the page per v9 directive. DataProvenanceBanner

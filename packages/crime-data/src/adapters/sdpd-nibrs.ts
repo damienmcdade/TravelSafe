@@ -230,6 +230,12 @@ export const sdpdNibrsAdapter: CrimeDataAdapter = {
     const matchAgainst = upstreamName(displayed).toLowerCase();
     const inArea = rows.filter((r) => r.area.toLowerCase() === matchAgainst);
     if (inArea.length === 0) return null;
+    // This riskLevel is a coarse VOLUME signal over the cached ~annual
+    // window (getRows pulls a full calendar year), deliberately NOT a
+    // per-capita rate: the dispatcher documents that per-100k rate math
+    // and population denominators are owned by safety-score.ts (the
+    // user-facing Safety Index), and duplicating that normalization here
+    // would double-count it. Thresholds are absolute annual counts.
     const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 2000 ? 5 : inArea.length > 1200 ? 4 : inArea.length > 600 ? 3 : inArea.length > 200 ? 2 : 1;
     return { area: displayed, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },

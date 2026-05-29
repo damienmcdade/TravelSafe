@@ -2,8 +2,18 @@
 // api.weather.gov is a free, public, no-key US gov API. Caches the response
 // for 5 minutes per their rate-limit guidance.
 //
-// TODO: add SDPD press-release RSS, City of SD street-closure data, and
-//   CHP traffic incidents as additional adapters behind the same interface.
+// NOTE: This Express service is the legacy single-source path. The live
+// multi-source aggregator now lives on the web side
+// (apps/web/src/app/api/official-alerts/route.ts), which fans out across
+// NWS + USGS + AMBER + CHP adapters. CHP traffic incidents were added
+// there (apps/web/.../official-alerts/chp.ts) via the CalTrans QuickMap
+// public feed, gated to California cities.
+//
+// SDPD press-release RSS and City-of-SD street-closure data are
+// intentionally NOT implemented: both are single-city (San Diego) feeds,
+// and the app now spans 30+ cities, so a per-city press-release adapter
+// is low-leverage versus the statewide/national sources above. Revisit
+// only if a city-specific "local agency bulletin" surface is greenlit.
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; alerts: OfficialAlert[] } | null = null;

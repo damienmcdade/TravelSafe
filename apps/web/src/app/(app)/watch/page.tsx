@@ -120,8 +120,8 @@ export default function NeighborhoodWatchPage() {
     <main className="space-y-5">
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Neighborhood Watch · {city.label}</p>
-        <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
-          Awareness cards <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">tailored to a specific {city.label} neighborhood</span>
+        <h1 className="mt-1 font-display text-3xl sm:text-4xl leading-tight text-slate2-900">
+          Awareness cards <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">tailored to a specific {city.label} neighborhood</span>
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
           The cards below name your actual police department, the verified non-emergency line, what gets reported in this area, and how to plug into a real neighborhood-watch program. Every card cites an official source. Pick a different {city.label} neighborhood from the selector at the bottom of the page to rebuild the cards.

@@ -31,15 +31,65 @@ const PROVENANCE: DataProvenance = {
     "TravelSafe does not track individuals or street-level incidents.",
 };
 
-function bucketRisk(rate: number | null): 1 | 2 | 3 | 4 | 5 {
-  // crime_rate in the dataset is per 1,000 population. Bucket boundaries are
-  // a starting heuristic — TODO: calibrate against San Diego regional bands.
+// Static fallback bands (crime_rate per 1,000 population), the original
+// hand-tuned heuristic. Used only when the live regional distribution
+// can't be fetched, so behavior degrades to the previously-shipped
+// thresholds rather than to something arbitrary. Kept in parity with
+// the canonical packages/crime-data adapter.
+const STATIC_BANDS = [15, 25, 35, 50] as const;
+
+const BANDS_TTL_MS = 24 * 60 * 60 * 1000; // annual data — a daily refresh is ample
+let bandCache: { fetchedAt: number; bands: number[] } | null = null;
+
+function quantile(sorted: number[], q: number): number {
+  const pos = (sorted.length - 1) * q;
+  const lo = Math.floor(pos);
+  const hi = Math.ceil(pos);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+
+/// Derive risk bands from the LIVE distribution of crime rates across
+/// every San Diego County jurisdiction's most recent reported year — the
+/// quintile breakpoints ARE the "San Diego regional bands". Self-
+/// calibrates year to year; degrades to STATIC_BANDS on any upstream
+/// failure or too-few-jurisdictions so a dead feed can't distort risk.
+async function getRegionalBands(): Promise<number[]> {
+  const now = Date.now();
+  if (bandCache && now - bandCache.fetchedAt < BANDS_TTL_MS) return bandCache.bands;
+  try {
+    const rows = await sodaGet({
+      $select: "jurisdiction,crime_rate,year",
+      $order: "year DESC",
+      $limit: "500",
+    });
+    const latestByJur = new Map<string, number>();
+    for (const r of rows) {
+      const j = r.jurisdiction?.trim();
+      const rate = r.crime_rate != null ? Number(r.crime_rate) : NaN;
+      if (!j || !Number.isFinite(rate)) continue;
+      if (/total|region|countywide/i.test(j)) continue;
+      if (!latestByJur.has(j)) latestByJur.set(j, rate);
+    }
+    const rates = [...latestByJur.values()].sort((a, b) => a - b);
+    if (rates.length < 5) {
+      bandCache = { fetchedAt: now, bands: [...STATIC_BANDS] };
+      return bandCache.bands;
+    }
+    const bands = [0.2, 0.4, 0.6, 0.8].map((q) => quantile(rates, q));
+    const strictlyIncreasing = bands.every((b, i) => i === 0 || b > bands[i - 1]);
+    bandCache = { fetchedAt: now, bands: strictlyIncreasing ? bands : [...STATIC_BANDS] };
+    return bandCache.bands;
+  } catch {
+    return [...STATIC_BANDS];
+  }
+}
+
+function bucketRisk(rate: number | null, bands: number[]): 1 | 2 | 3 | 4 | 5 {
   if (rate == null) return 3;
-  if (rate < 15) return 1;
-  if (rate < 25) return 2;
-  if (rate < 35) return 3;
-  if (rate < 50) return 4;
-  return 5;
+  let level = 1;
+  for (const b of bands) if (rate >= b) level += 1;
+  return Math.min(level, 5) as 1 | 2 | 3 | 4 | 5;
 }
 
 async function sodaGet(query: Record<string, string>): Promise<SodaRow[]> {
@@ -67,12 +117,13 @@ export const sandagSocrataAdapter: CrimeDataAdapter = {
     if (rows.length === 0) return null;
     const r = rows[0];
     const crimeRate = r.crime_rate != null ? Number(r.crime_rate) : null;
+    const bands = await getRegionalBands();
     return {
       area: known?.label ?? jurisdiction,
       crimeRate,
       violentCrimeRate: r.violent_crime_rate != null ? Number(r.violent_crime_rate) : null,
       propertyCrimeRate: r.property_crime_rate != null ? Number(r.property_crime_rate) : null,
-      riskLevel: bucketRisk(crimeRate),
+      riskLevel: bucketRisk(crimeRate, bands),
       year: r.year != null ? Number(r.year) : undefined,
       provenance: PROVENANCE,
     };

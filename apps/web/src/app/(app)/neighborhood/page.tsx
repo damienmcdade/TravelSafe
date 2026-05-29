@@ -168,10 +168,10 @@ function NeighborhoodView() {
       <header className="page-hero flex flex-wrap items-center gap-3 justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Neighborhood Awareness</p>
-          <h1 className="mt-1 font-display text-3xl sm:text-4xl text-slate2-900">
+          <h1 className="mt-1 font-display text-3xl sm:text-4xl leading-tight text-slate2-900">
             {area
-              ? <>What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">{area.label}</span></>
-              : <>Pick a neighborhood in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x">{city.label}</span></>}
+              ? <>What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">{area.label}</span></>
+              : <>Pick a neighborhood in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">{city.label}</span></>}
           </h1>
           <p className="mt-2 text-slate2-700 max-w-2xl">
             Area-level only — no individuals tracked, no live street feeds. Search a {city.label} neighborhood below to focus.
