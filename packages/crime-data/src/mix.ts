@@ -1,6 +1,7 @@
 import { crimeData } from "./dispatcher.js";
 import { cityBySlug } from "./cities.js";
 import { dedupe } from "./lib/inflight.js";
+import { displayOffenseLabel } from "./lib/offense-display-label.js";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // Per-area cap for citywide aggregation. The single-area path pulls up to
@@ -43,7 +44,11 @@ export async function getCrimeMix(area: string, _windowDays?: number, topN = 12)
   let earliest = Infinity;
   let latest = 0;
   for (const i of incidents) {
-    const key = i.ibrOffenseDescription || "Unknown";
+    // v96p2 — was the raw upstream string ("ALL OTHER OFFENSES").
+    // displayOffenseLabel maps every observed variant to the same
+    // user-facing form the chart legend uses, so the API and AI
+    // summary surfaces don't fall out of sync with the UI label.
+    const key = displayOffenseLabel(i.ibrOffenseDescription || "Unknown");
     const t = +new Date(i.occurredAt);
     if (Number.isFinite(t) && t > 0) {
       if (t < earliest) earliest = t;
@@ -97,7 +102,11 @@ async function computeCitywideCrimeMix(citySlug: string, topN: number): Promise<
   for (const incidents of perArea) {
     total += incidents.length;
     for (const i of incidents) {
-      const key = i.ibrOffenseDescription || "Unknown";
+      // v96p2 — was the raw upstream string ("ALL OTHER OFFENSES").
+    // displayOffenseLabel maps every observed variant to the same
+    // user-facing form the chart legend uses, so the API and AI
+    // summary surfaces don't fall out of sync with the UI label.
+    const key = displayOffenseLabel(i.ibrOffenseDescription || "Unknown");
       const t = +new Date(i.occurredAt);
       if (Number.isFinite(t) && t > 0) {
         if (t < earliest) earliest = t;

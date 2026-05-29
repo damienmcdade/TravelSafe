@@ -2,6 +2,7 @@ import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 
 // Seattle — SPD Crime Data.
 // Socrata dataset tazs-3rd5 on data.seattle.gov. NIBRS-coded by SPD, which
@@ -78,7 +79,8 @@ async function fetchSeattle(): Promise<Incident[]> {
     return {
       id: `sea-${r.offense_id ?? i}`,
       area,
-      occurredAt: r.offense_date ?? new Date(0).toISOString(),
+      // v96p2 — Seattle offense_date is wall-clock PT local time.
+      occurredAt: cityLocalToUtcIso(r.offense_date, "America/Los_Angeles"),
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: r.nibrs_offense_code_description?.trim() || r.offense_category?.trim() || "Unknown",
       beat: r.beat ?? null,

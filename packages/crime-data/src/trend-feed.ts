@@ -3,6 +3,13 @@ import { cityForArea } from "./cities.js";
 import { dedupe } from "./lib/inflight.js";
 import { displayOffenseLabel } from "./lib/offense-display-label.js";
 
+// v96p2 — hoisted; used by both citywide and per-area dispatch
+// bullet construction. Per the v95p18 directive every event in the
+// chosen interval should be included; 5000 ≈ 30 d × 167/day worst
+// case is enough headroom for the UI cap (which is the visible cap)
+// without unbounded payload growth.
+const DISPATCH_CAP = 5000;
+
 /// Trend Feed — produces a bulleted chronological summary of the past
 /// 30 days for a given area, plus week-over-week shift markers. Bullets
 /// are grouped into:
@@ -226,7 +233,6 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
   // unbounded payload growth. The client cap on ThreatFeed is the UI
   // budget; this server cap exists only as a payload safety net.
   const sortedWindow = [...inWindow].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-  const DISPATCH_CAP = 5000;
   const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, DISPATCH_CAP).map((i) => ({
     kind: "dispatch",
     at: i.occurredAt,
@@ -360,7 +366,7 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
   // event in the selected interval must be present. Per-area windows
   // are smaller than citywide so 5000 covers any realistic interval.
   const sortedWindow = [...inWindow].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, 5000).map((i) => ({
+  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, DISPATCH_CAP).map((i) => ({
     kind: "dispatch",
     at: i.occurredAt,
     text: `${ymd(i.occurredAt)} — ${displayOffenseLabel(i.ibrOffenseDescription)}${i.blockLabel ? ` near ${i.blockLabel}` : ""}.`,

@@ -2,6 +2,7 @@ import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 
 // City of Los Angeles — LAPD NIBRS Offenses Dataset 2024 to 2025.
 // Socrata dataset y8y3-fqfu on data.lacity.org.
@@ -157,7 +158,11 @@ async function fetchLapd(): Promise<Incident[]> {
     return {
       id: `la-${r.uniquenibrno ?? r.caseno ?? i}`,
       area,
-      occurredAt: r.date_occ ?? new Date(0).toISOString(),
+      // v96p2 — Socrata's date_occ is wall-clock LA local time
+      // ("2026-05-16T22:40:49.000") with no TZ marker. Previously
+      // shipped as-is so the frontend's `relativeTime` interpreted
+      // it as local-of-browser and showed wrong "h ago" deltas.
+      occurredAt: cityLocalToUtcIso(r.date_occ, "America/Los_Angeles"),
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: r.nibr_description?.trim() || r.nibr_code?.trim() || "Unknown",
       beat: r.rpt_dist_no ?? null,

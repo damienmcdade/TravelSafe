@@ -86,6 +86,11 @@
       "import": "./dist/lib/inflight.js",
       "default": "./src/lib/inflight.ts"
     },
+    "./lib/city-time": {
+      "types": "./dist/lib/city-time.d.ts",
+      "import": "./dist/lib/city-time.js",
+      "default": "./src/lib/city-time.ts"
+    },
     "./adapters/*": {
       "types": "./dist/adapters/*.d.ts",
       "import": "./dist/adapters/*.js",

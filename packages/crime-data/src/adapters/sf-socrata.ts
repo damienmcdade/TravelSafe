@@ -2,6 +2,7 @@ import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 
 // City of San Francisco — Police Department Incident Reports 2018 to Present.
 // Socrata dataset wg3w-h783 on data.sfgov.org. Documented + current.
@@ -76,7 +77,8 @@ async function fetchSF(): Promise<Incident[]> {
     return {
       id: `sf-${r.incident_id ?? i}`,
       area: r.analysis_neighborhood?.trim() || r.police_district?.trim() || "Unknown",
-      occurredAt: r.incident_datetime ?? new Date(0).toISOString(),
+      // v96p2 — SFPD incident_datetime is wall-clock SF local time.
+      occurredAt: cityLocalToUtcIso(r.incident_datetime, "America/Los_Angeles"),
       nibrsCategory: mapToNibrs(r),
       // v31 calibration: prepend the subcategory so the downstream
       // Part-1 filter sees "Simple Assault" vs "Aggravated Assault"

@@ -177,6 +177,14 @@ async function fetchSacramento(): Promise<Incident[]> {
         // org) — we mark the row as Unknown so it doesn't appear as
         // an unrecognizable area.
         area: cleaned || "Unknown",
+        // Occurrence_Date_PT arrives as ArcGIS ms-since-epoch. ArcGIS
+        // Online normalizes datetimes to UTC at storage time, so the
+        // raw ms value should already be a true UTC instant despite
+        // the "_PT" suffix (which names the dataset author's intent,
+        // not the wire format). Leaving as-is pending end-to-end
+        // verification against a known incident; if that check shows
+        // the ms is actually PT-wall-clock, we'd plumb a numeric path
+        // through cityLocalToUtcIso.
         occurredAt: new Date(r.Occurrence_Date_PT!).toISOString(),
         nibrsCategory: classify(r),
         ibrOffenseDescription: (r.Description ?? r.Offense_Category ?? "Unknown").trim(),

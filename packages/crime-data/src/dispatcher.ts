@@ -1,6 +1,7 @@
 import { env } from "./env.js";
 import type { AreaRiskAlert, AreaStats, CrimeDataAdapter, Incident } from "./types.js";
 import { dedupe } from "./lib/inflight.js";
+import { displayOffenseLabel } from "./lib/offense-display-label.js";
 // Adapter modules moved to @travelsafe/crime-data in v34. The three
 // directly-referenced ones here are imported via the package's
 // adapters/ subpath; the rest are pulled in via cities.ts.
@@ -252,7 +253,18 @@ export const crimeData = {
         }
       }
     }
-    const topOffenses = Array.from(offenseCounts.entries())
+    // v96p2 — was outputting the raw upstream label ("ALL OTHER
+    // OFFENSES") in the citywide topOffenses. The chart, AI summary,
+    // and any direct API consumer would all see the unfriendly form
+    // while the per-area surfaces (via mix.ts) showed the friendly
+    // one. Collapse to the displayOffenseLabel key so adjacent
+    // surfaces agree.
+    const displayCounts = new Map<string, number>();
+    for (const [raw, n] of offenseCounts.entries()) {
+      const friendly = displayOffenseLabel(raw);
+      displayCounts.set(friendly, (displayCounts.get(friendly) ?? 0) + n);
+    }
+    const topOffenses = Array.from(displayCounts.entries())
       .map(([offense, count]) => ({ offense, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 30);

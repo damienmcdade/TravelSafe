@@ -3,6 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 
 // City of Chicago — Crimes 2001 to Present.
 // Socrata dataset ijzp-q8t2 on data.cityofchicago.org. The original public
@@ -108,7 +109,8 @@ async function fetchChicago(): Promise<{ rows: Incident[]; areaByNum: Map<number
     return {
       id: `chi-${r.id ?? i}`,
       area: areaName,
-      occurredAt: r.date ?? new Date(0).toISOString(),
+      // v96p2 — Chicago `date` is wall-clock CT local time.
+      occurredAt: cityLocalToUtcIso(r.date, "America/Chicago"),
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: titleCaseOffense(r.description || r.primary_type),
       beat: r.beat ?? null,
