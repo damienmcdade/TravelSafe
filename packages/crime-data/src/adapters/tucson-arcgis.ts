@@ -121,7 +121,16 @@ async function fetchPage(offset: number): Promise<TucFeature[]> {
   url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
-  if (!res.ok) throw new Error(`Tucson ArcGIS ${res.status} offset=${offset}`);
+  if (!res.ok) {
+    // The layer has fewer rows than PAGES×PAGE_SIZE, so high offsets page
+    // past the end — ArcGIS answers 404/400 there. On a non-first page
+    // that's just end-of-data, not a failure: return empty so the
+    // parallel fan-out doesn't log a stream of bogus "404 offset=N"
+    // warnings every cache cycle. A first-page (offset 0) error is real
+    // and still throws.
+    if (offset > 0 && (res.status === 404 || res.status === 400)) return [];
+    throw new Error(`Tucson ArcGIS ${res.status} offset=${offset}`);
+  }
   const body = await res.json() as { features?: TucFeature[]; error?: { code?: number; message?: string } };
   if (body.error) throw new Error(`Tucson ArcGIS error ${body.error.code}: ${body.error.message}`);
   return body.features ?? [];
