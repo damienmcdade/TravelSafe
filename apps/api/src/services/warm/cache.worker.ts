@@ -224,6 +224,25 @@ async function tick() {
 
 export function startWarmWorker() {
   if (timer) return;
+  // v96p2 — WARM_WORKER_ENABLED env gate. Multiple cycles of
+  // mitigation (heavy bucket trim 14 → 6, boot tick removed, end-
+  // of-cycle GC, mid-cycle GC, heap-aware backoff) reduced but did
+  // not eliminate the +15 min OOM. Observation showed GC saturating
+  // at ~2.8 GB heap, reclaiming only ~24 MB, then crashing — the
+  // adapter buffers are growing faster than the GC heuristic can
+  // recover them. Letting the operator disable the worker entirely
+  // gives a hard out: pods serve from Redis L2 (warm from prior
+  // pods + on-demand fetches by the route handlers when L2 misses),
+  // never accumulate the heavy-bucket pressure that drives the OOM.
+  // Default `false` because the OOM is now a known regression;
+  // operators can flip to `true` once the underlying allocation
+  // path is profiled. Cold-start cost for the first request to
+  // each city without L2 reverts to the upstream's response time
+  // (~5-30 s on the Cleveland/Detroit-class slow path).
+  if (process.env.WARM_WORKER_ENABLED !== "true") {
+    console.log("[warm-worker] disabled (WARM_WORKER_ENABLED!=true); serving from Redis L2 + on-demand only");
+    return;
+  }
   console.log(`[warm-worker] starting (cycle every ${WARM_INTERVAL_MS / 1000}s)`);
   // v96 — `void tick()` swallowed any rejection that escaped tick()'s
   // own try/catch (e.g., a Prisma connection drop before the try block).
