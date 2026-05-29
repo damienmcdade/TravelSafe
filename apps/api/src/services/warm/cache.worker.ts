@@ -164,7 +164,23 @@ async function tick() {
     const avgLight = lightTimings.length
       ? Math.round(lightTimings.reduce((a, b) => a + b, 0) / lightTimings.length)
       : 0;
-    console.log(`[warm-worker] cycle ${total}ms · heavy avg ${avgHeavy}ms · light avg ${avgLight}ms`);
+    // v96p2 — force a major GC at cycle boundaries so per-page row
+    // buffers + transient JSON parses don't accumulate across
+    // cycles. Empirically the pod was OOMing on cycle 3-4 because
+    // the GC's heuristic wasn't catching up between 4-minute
+    // intervals. With `--expose-gc` set in the start command,
+    // global.gc() blocks the event loop for a major collection,
+    // dropping cumulative resident state back near the steady-
+    // state cache size. Log the before/after so the
+    // observability surface shows the reclaim.
+    const beforeGc = process.memoryUsage().heapUsed;
+    if (typeof global.gc === "function") {
+      global.gc();
+      const afterGc = process.memoryUsage().heapUsed;
+      console.log(`[warm-worker] cycle ${total}ms · heavy avg ${avgHeavy}ms · light avg ${avgLight}ms · gc ${Math.round(beforeGc / 1024 / 1024)}→${Math.round(afterGc / 1024 / 1024)}MB`);
+    } else {
+      console.log(`[warm-worker] cycle ${total}ms · heavy avg ${avgHeavy}ms · light avg ${avgLight}ms · heap ${Math.round(beforeGc / 1024 / 1024)}MB (no --expose-gc)`);
+    }
   } catch (err) {
     console.error("[warm-worker] cycle failed:", err);
   } finally {
