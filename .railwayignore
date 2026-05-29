@@ -1,0 +1,12 @@
+# Railway only builds + runs the API (apps/api). Exclude everything the
+# API deploy doesn't need so `railway up` uploads a small, fast context
+# instead of ~170 MB+ of mobile/build artifacts (which were timing out
+# the upload). The web app deploys separately on Vercel.
+apps/web/ios
+apps/web/android
+apps/web/.next
+**/.next
+**/dist
+**/*.tsbuildinfo
+**/coverage-report
+*.log
