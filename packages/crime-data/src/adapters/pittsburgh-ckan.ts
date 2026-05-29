@@ -1,5 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 
 // Pittsburgh — Monthly Criminal Activity (WPRDC CKAN).
@@ -181,7 +182,7 @@ export const pittsburghAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 600 ? 5 : inArea.length > 300 ? 4 : inArea.length > 150 ? 3 : inArea.length > 40 ? 2 : 1;
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [40, 150, 300, 600]);
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 

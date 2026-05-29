@@ -2,6 +2,7 @@ import { parse as parseCsv } from "csv-parse/sync";
 import { env } from "../env.js";
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { findArea } from "../neighborhoods.js";
 
@@ -230,13 +231,14 @@ export const sdpdNibrsAdapter: CrimeDataAdapter = {
     const matchAgainst = upstreamName(displayed).toLowerCase();
     const inArea = rows.filter((r) => r.area.toLowerCase() === matchAgainst);
     if (inArea.length === 0) return null;
-    // This riskLevel is a coarse VOLUME signal over the cached ~annual
-    // window (getRows pulls a full calendar year), deliberately NOT a
-    // per-capita rate: the dispatcher documents that per-100k rate math
-    // and population denominators are owned by safety-score.ts (the
-    // user-facing Safety Index), and duplicating that normalization here
-    // would double-count it. Thresholds are absolute annual counts.
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 2000 ? 5 : inArea.length > 1200 ? 4 : inArea.length > 600 ? 3 : inArea.length > 200 ? 2 : 1;
+    // Coarse VOLUME signal over the cached ~annual window, now bucketed
+    // by self-calibrating quintile bands over San Diego's own
+    // per-neighborhood distribution (case-folded to match the
+    // case-insensitive area lookup) rather than absolute magic numbers;
+    // degrades to the prior thresholds. Still a volume signal, NOT a
+    // per-capita rate -- per-100k normalization is owned by the Safety
+    // Index (safety-score.ts) and is deliberately not duplicated here.
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [200, 600, 1200, 2000], (r) => r.area.toLowerCase());
     return { area: displayed, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 

@@ -1,5 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 
 // Boise — Boise Police Department Calls for Service.
@@ -163,7 +164,7 @@ export const boiseAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 300 ? 5 : inArea.length > 150 ? 4 : inArea.length > 70 ? 3 : inArea.length > 20 ? 2 : 1;
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [20, 70, 150, 300]);
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 

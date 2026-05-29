@@ -1,5 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT } from "../lib/http.js";
 
@@ -144,7 +145,7 @@ export const raleighAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    const riskLevel: 1|2|3|4|5 = inArea.length > 2000 ? 5 : inArea.length > 1000 ? 4 : inArea.length > 500 ? 3 : inArea.length > 150 ? 2 : 1;
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [150, 500, 1000, 2000]);
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
   async getIncidents(area, opts) {

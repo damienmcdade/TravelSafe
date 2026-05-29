@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 
 // Milwaukee WI — Milwaukee Police Department WIBR (Wisconsin Incident-
 // Based Reporting) crime data on data.milwaukee.gov.
@@ -252,12 +253,9 @@ export const milwaukeeAdapter: CrimeDataAdapter = {
       crimeRate: null,
       violentCrimeRate: null,
       propertyCrimeRate: null,
-      riskLevel: (
-        incs.length > 500 ? 5 :
-        incs.length > 200 ? 4 :
-        incs.length > 80  ? 3 :
-        incs.length > 20  ? 2 : 1
-      ) as 1 | 2 | 3 | 4 | 5,
+      // Self-calibrating quintile bands over Milwaukee's own
+      // per-neighborhood distribution; degrades to the prior thresholds.
+      riskLevel: riskLevelFromAreaCounts(c.rows, incs.length, [20, 80, 200, 500]),
       provenance: PROVENANCE,
     };
   },

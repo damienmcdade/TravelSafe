@@ -1,5 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
 import { cityLocalToUtcIso } from "../lib/city-time.js";
@@ -151,7 +152,10 @@ export const sfAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area.toLowerCase() === label.toLowerCase());
     if (inArea.length === 0) return null;
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 2000 ? 5 : inArea.length > 1200 ? 4 : inArea.length > 600 ? 3 : inArea.length > 200 ? 2 : 1;
+    // Self-calibrating quintile bands over SF's own per-area
+    // distribution (case-folded to match the case-insensitive area
+    // lookup); degrades to the prior hand-tuned thresholds.
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [200, 600, 1200, 2000], (r) => r.area.toLowerCase());
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
   async getIncidents(area: string, opts?: { limit?: number; since?: Date }) {

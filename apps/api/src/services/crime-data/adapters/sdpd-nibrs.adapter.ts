@@ -38,6 +38,37 @@ const PROVENANCE: DataProvenance = {
     "neighborhood/beat — not live, not street-level. TravelSafe does not track individuals.",
 };
 
+// Self-calibrating quintile risk bands, kept self-contained here to match
+// the api/sandag adapter's inline approach (the api workspace resolves
+// @travelsafe/crime-data against built dist, so the package's risk-bands
+// helper isn't importable across the build boundary). Mirrors
+// packages/crime-data/src/risk-bands.ts.
+const STATIC_SDPD_BANDS = [200, 600, 1200, 2000] as const;
+
+function sdpdRiskLevel(rows: Incident[], count: number): 1 | 2 | 3 | 4 | 5 {
+  const byArea = new Map<string, number>();
+  for (const r of rows) {
+    const a = r.area?.trim().toLowerCase();
+    if (!a || a === "unknown") continue;
+    byArea.set(a, (byArea.get(a) ?? 0) + 1);
+  }
+  const dist = [...byArea.values()].filter((n) => n >= 3).sort((a, b) => a - b);
+  let bands: readonly number[] = STATIC_SDPD_BANDS;
+  if (dist.length >= 5) {
+    const q = (p: number) => {
+      const pos = (dist.length - 1) * p;
+      const lo = Math.floor(pos);
+      const hi = Math.ceil(pos);
+      return lo === hi ? dist[lo] : dist[lo] + (dist[hi] - dist[lo]) * (pos - lo);
+    };
+    const cand = [0.2, 0.4, 0.6, 0.8].map(q);
+    if (cand.every((b, i) => i === 0 || b > cand[i - 1])) bands = cand;
+  }
+  let level = 1;
+  for (const b of bands) if (count > b) level += 1;
+  return Math.min(level, 5) as 1 | 2 | 3 | 4 | 5;
+}
+
 async function fetchYear(year: number): Promise<Incident[]> {
   const url = `${env.SDPD_NIBRS_CSV_BASE}/pd_nibrs_${year}_datasd.csv`;
   const res = await fetch(url);
@@ -83,13 +114,13 @@ export const sdpdNibrsAdapter: CrimeDataAdapter = {
     const label = known?.label ?? area;
     const inArea = rows.filter((r) => r.area.toLowerCase() === label.toLowerCase());
     if (inArea.length === 0) return null;
-    // Coarse VOLUME signal over the cached ~annual window (getRows pulls
-    // a full calendar year), deliberately NOT a per-capita rate:
-    // per-100k rate math and population denominators are owned by the
-    // Safety Index (safety-score.ts in @travelsafe/crime-data), and
-    // duplicating that normalization here would double-count it.
-    // Thresholds are absolute annual counts.
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 2000 ? 5 : inArea.length > 1200 ? 4 : inArea.length > 600 ? 3 : inArea.length > 200 ? 2 : 1;
+    // Coarse VOLUME signal over the cached ~annual window, now bucketed by
+    // self-calibrating quintile bands over San Diego's own per-neighborhood
+    // distribution (case-folded to match the lookup) rather than absolute
+    // magic numbers; degrades to the prior thresholds. Still a volume
+    // signal, NOT a per-capita rate — per-100k normalization is owned by
+    // the Safety Index (safety-score.ts) and is not duplicated here.
+    const riskLevel = sdpdRiskLevel(rows, inArea.length);
     return {
       area: label,
       crimeRate: null,

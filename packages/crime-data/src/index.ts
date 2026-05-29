@@ -21,6 +21,14 @@ export type {
 
 export { CITY_POPULATION, POPULATION_VINTAGE, populationFor } from "./population.js";
 
+export {
+  quantile,
+  areaCounts,
+  deriveBands,
+  bucketByBands,
+  riskLevelFromAreaCounts,
+} from "./risk-bands.js";
+
 export type { CityFbiBaseline } from "./fbi-baselines.js";
 export { CITY_FBI_BASELINES } from "./fbi-baselines.js";
 

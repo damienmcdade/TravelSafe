@@ -1,5 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { bucketByBands, deriveBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
 import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
@@ -312,7 +313,11 @@ export const kansasCityAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = cache?.labelToRows.get(label) ?? [];
     if (inArea.length === 0) return null;
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 300 ? 5 : inArea.length > 150 ? 4 : inArea.length > 70 ? 3 : inArea.length > 20 ? 2 : 1;
+    // Self-calibrating quintile bands over this city's own per-area
+    // distribution (the cached labelToRows map sizes, floored at 3 to
+    // ignore stray geocodes); degrades to the prior hand-tuned thresholds.
+    const dist = [...(cache?.labelToRows.values() ?? [])].map((g) => g.length).filter((n) => n >= 3);
+    const riskLevel = bucketByBands(inArea.length, deriveBands(dist, [20, 70, 150, 300]));
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 

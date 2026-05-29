@@ -1,5 +1,6 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 
 // Minneapolis — MPD Crime_Data on services.arcgis.com.
@@ -168,7 +169,7 @@ export const minneapolisAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    const riskLevel: 1 | 2 | 3 | 4 | 5 = inArea.length > 400 ? 5 : inArea.length > 200 ? 4 : inArea.length > 100 ? 3 : inArea.length > 40 ? 2 : 1;
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [40, 100, 200, 400]);
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
 

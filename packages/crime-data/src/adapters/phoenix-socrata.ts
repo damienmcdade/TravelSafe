@@ -1,6 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import { phoenixPolygons } from "../data/phoenix-neighborhoods.js";
 
 // Per-village centroid lookup, derived from the bundled official
@@ -313,14 +314,10 @@ export const phoenixAdapter: CrimeDataAdapter = {
       crimeRate: null,
       violentCrimeRate: null,
       propertyCrimeRate: null,
-      // Thresholds rescaled to per-village volume (15 villages
-      // vs 41 ZIPs — each village ~3x the ZIP-level count).
-      riskLevel: (
-        incs.length > 6000 ? 5 :
-        incs.length > 2400 ? 4 :
-        incs.length > 600  ? 3 :
-        incs.length > 150  ? 2 : 1
-      ) as 1 | 2 | 3 | 4 | 5,
+      // Self-calibrating quintile bands over Phoenix's own per-village
+      // distribution; degrades to the prior per-village thresholds (15
+      // villages vs 41 ZIPs — each village ~3x the ZIP-level count).
+      riskLevel: riskLevelFromAreaCounts(c.rows, incs.length, [150, 600, 2400, 6000]),
       provenance: PROVENANCE,
     };
   },
