@@ -34,10 +34,19 @@ cd "$(dirname "$0")/.." || exit 1
 # Step 1: baseline-resolve the initial migration. Safe to call every
 # deploy: Prisma exits 1 with "already recorded as applied" when
 # 0_init is already in _prisma_migrations, which we swallow.
+# v96p2 — the Prisma CLI prints "Error: P3008 ... migration already
+# applied" to stderr on every subsequent deploy, which the deploy-log
+# scan flagged as noise. Capture both streams, filter out the
+# expected P3008 lines (and the supporting "Datasource" / "schema
+# loaded" boilerplate that the CLI emits alongside), and re-emit the
+# rest so real failures still surface. The exit-code `|| true` is
+# unchanged.
 echo "[prisma-deploy] resolving baseline (0_init)..."
-npx prisma migrate resolve \
-  --applied 0_init \
-  --schema packages/db/prisma/schema.prisma \
+{
+  npx prisma migrate resolve \
+    --applied 0_init \
+    --schema packages/db/prisma/schema.prisma 2>&1 || true
+} | grep -Ev '^(Error: P3008|Prisma schema loaded|Datasource "db"|The migration .* is already recorded as applied|$)' \
   || echo "[prisma-deploy] baseline already resolved (expected on subsequent deploys)"
 
 # Step 2: apply any new migrations. No-op on a baselined DB with no

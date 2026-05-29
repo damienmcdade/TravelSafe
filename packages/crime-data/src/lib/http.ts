@@ -86,6 +86,59 @@ export interface SocrataQuery {
   signal?: AbortSignal;
 }
 
+// v96p2 — retry classifier. The deployment-log scan kept turning up
+// `fetch failed: fetch failed` lines that are undici-level transient
+// network errors (DNS blip, TLS handshake reset, connection drop)
+// rather than upstream-side parse errors or quota hits. They're
+// invisible from inside fetch() but show up in `err.cause` as
+// generic Error with messages like "fetch failed" or codes like
+// ECONNRESET / UND_ERR_*. Distinguish from a real HTTP-level
+// failure (which throws our own "<adapter> <status>" message) and
+// from request abort (deliberate timeout — retrying is pointless).
+function isTransientFetchError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === "AbortError") return false;
+  // undici wraps the underlying error in `.cause`. Match the codes
+  // that empirically retry-successfully: connection-level failures
+  // and DNS errors.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cause = (err as any).cause as { code?: string; message?: string } | undefined;
+  if (cause?.code && /^(ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|ENOTFOUND|UND_ERR_)/i.test(cause.code)) {
+    return true;
+  }
+  // Generic "fetch failed" with no useful body is the signature of
+  // an undici socket-level failure we want to retry.
+  return /fetch failed/i.test(err.message) || /fetch failed/i.test(cause?.message ?? "");
+}
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// v96p2 — generic transient-retry wrapper for adapters that don't go
+// through fetchSocrata (ArcGIS / CKAN / city-specific REST). Same
+// classifier + backoff as the Socrata path. Callers pass the same
+// fetch() invocation they were already using; the wrapper retries
+// up to twice on undici-level network drops only.
+export async function fetchWithRetry(
+  input: URL | string,
+  init?: RequestInit,
+): Promise<Response> {
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fetch(input, init);
+    } catch (err) {
+      if (attempt < maxAttempts && isTransientFetchError(err)) {
+        await sleep(250 * attempt);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("fetchWithRetry exhausted retries");
+}
+
 export async function fetchSocrata<TRow>(
   adapterName: string,
   query: SocrataQuery,
@@ -96,18 +149,40 @@ export async function fetchSocrata<TRow>(
   if (query.order) url.searchParams.set("$order", query.order);
   if (query.limit != null) url.searchParams.set("$limit", String(query.limit));
   if (query.offset != null) url.searchParams.set("$offset", String(query.offset));
-  const res = await fetch(url, {
-    headers: socrataHeaders(url),
-    signal: query.signal ?? AbortSignal.timeout(30_000),
-  });
-  if (!res.ok) {
-    throw new Error(`${adapterName} ${res.status} ${url}`);
+
+  // v96p2 — retry transient network failures up to 2 extra times
+  // with exponential backoff. The deployment-log scan kept showing
+  // `[<adapter>] fetch failed: fetch failed` lines that were just
+  // undici socket drops; a single quick retry silently recovers in
+  // the vast majority of cases. HTTP 4xx/5xx are NOT retried (we
+  // throw with the status code immediately so the caller sees the
+  // real upstream signal).
+  const maxAttempts = 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: socrataHeaders(url),
+        signal: query.signal ?? AbortSignal.timeout(30_000),
+      });
+      if (!res.ok) {
+        throw new Error(`${adapterName} ${res.status} ${url}`);
+      }
+      const body = await res.json() as TRow[] | { error: true; message?: string };
+      if (!Array.isArray(body)) {
+        throw new Error(`${adapterName} error: ${("message" in body && body.message) || "unknown"}`);
+      }
+      return body;
+    } catch (err) {
+      if (attempt < maxAttempts && isTransientFetchError(err)) {
+        await sleep(250 * attempt);  // 250 ms, 500 ms backoff
+        continue;
+      }
+      throw err;
+    }
   }
-  const body = await res.json() as TRow[] | { error: true; message?: string };
-  if (!Array.isArray(body)) {
-    throw new Error(`${adapterName} error: ${("message" in body && body.message) || "unknown"}`);
-  }
-  return body;
+  // Unreachable — the loop either returns or throws — but TypeScript
+  // wants an explicit fallthrough.
+  throw new Error(`${adapterName} exhausted retries`);
 }
 
 // v90p4 — installPooledDispatcher REMOVED from this package.
