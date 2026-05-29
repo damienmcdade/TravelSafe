@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // City of Chicago — Crimes 2001 to Present.
@@ -89,11 +89,14 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchChicago(): Promise<{ rows: Incident[]; areaByNum: Map<number, string> }> {
   // v96 — migrated to fetchSocrata helper.
+  // v96p2 — added 180-d cutoff matching seattle/dallas/sf/nola/kc.
+  // Chicago's unbounded 50k pull was timing out at the warm-worker
+  // cycle just like the others.
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   const sodaRows = await fetchSocrata<SodaRow>("Chicago SODA", {
     url: BASE,
-    // Same 50k-row ceiling as LA/SF so per-community-area counts stay
-    // statistically meaningful.
     select: "id,primary_type,description,community_area,date,latitude,longitude,beat,district,fbi_code",
+    where: `date >= '${cutoff}'`,
     order: "date DESC",
     limit: 50000,
   });
