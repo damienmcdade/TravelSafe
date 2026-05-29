@@ -29,26 +29,20 @@ let inFlight = false;
 
 // Prioritize the cities with the heaviest cold-cache cost. These all
 // have 100+ tracked neighborhoods, which fan out into many per-area
-// adapter calls during getCitywide. Lighter cities (cambridge, boise)
-// warm fast and don't need explicit attention.
+// adapter calls during getCitywide.
+// v96p2 — trimmed from 14 → 6. The bigger list kept the cumulative
+// adapter cache hot enough to OOM the pod after a few cycles
+// (multiple cities × 50k-row buffers × Incident object allocations
+// stayed root-reachable in their respective module-level caches).
+// Six heavyweights cover the high-traffic surfaces; everything else
+// falls back to the lighter on-demand path with Redis L2 fronting.
 const HEAVY_CITIES = [
-  "detroit",         // 199 areas
-  "kansas-city",     // 145 areas
-  "cleveland",       //  35 (but bundled CFS adapter is slow)
-  "san-diego",       // 125
-  "norfolk",         // 122
-  "oakland",         // 123
-  "minneapolis",     //  86
-  "pittsburgh",      //  90
-  "new-orleans",     //  74
-  "new-york",        //  78
-  "colorado-springs",//  78
-  "chicago",         //  77
-  // v74 — LV now fetches 90 pages × 2k = 180k rows for the 90d
-  // date-bounded window; belongs in the heavy bucket.
-  "las-vegas",
-  // LA pulls two SODA datasets (primary + historical merge); heavy bucket.
-  "los-angeles",
+  "detroit",      // 199 areas
+  "kansas-city",  // 145 areas
+  "san-diego",    // 125
+  "los-angeles",  // two-dataset merge
+  "new-york",     // dense per-area fan-out
+  "chicago",      // bounded by 180d in a8bb33c but still wide
 ];
 
 // v96 — per-city deadline. Without this, a single hung adapter (one
@@ -194,15 +188,17 @@ export function startWarmWorker() {
   // waiting the full 4 min. Pre-v71 the audit caught Cleveland
   // serving 503 warming_up for ~4 min on every container restart.
   // v74 — delay 15s → 30s for /health grace.
-  // v96 — bumped 30s → 90s after the post-deploy OOM crashloop. With
-  // heavy concurrency dropped to 1 the boot tick takes ~3 minutes
-  // sequentially; starting earlier just stacks the tick on top of
-  // initial user traffic, which is what put the pod into a heap
-  // pressure window the GC couldn't escape. Most user requests in
-  // the first 90 s hit Redis L2 (warm from the prior pod) anyway.
-  setTimeout(() => {
-    tick().catch((err) => console.error("[warm-worker] boot tick threw:", err));
-  }, 90_000);
+  // v96 — bumped 30s → 90s after a post-deploy OOM crashloop.
+  // v96p2 — DROPPED ENTIRELY. The boot tick kept putting the pod
+  // into an unrecoverable heap pressure window during the cold-
+  // start adapter-fetch storm (every adapter populates its own
+  // in-process cache, peaks in residency mid-cycle while old data
+  // is still GC-rooted, GC can't catch up before allocation
+  // failure). The pod now boots clean and serves from Redis L2
+  // (warm from the prior pod) for the first 4 minutes; the first
+  // scheduled cycle kicks in once memory is settled. Trade-off is
+  // ~4 min of staler-than-usual data after a container restart;
+  // worth it to stop the crashloop.
 }
 
 export function stopWarmWorker() {
