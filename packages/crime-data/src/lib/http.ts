@@ -82,7 +82,11 @@ export interface SocrataQuery {
   limit?: number;
   /// $offset for pagination.
   offset?: number;
-  /// Per-call AbortSignal (defaults to AbortSignal.timeout(30s)).
+  /// Per-call AbortSignal (defaults to AbortSignal.timeout(45s)).
+  /// v96p2 — bumped default 30s → 45s after Vercel build prerender
+  /// kept tripping the abort on SF/NOLA/Dallas. 30s wasn't enough
+  /// margin against Socrata's slow path; 45s sits comfortably under
+  /// the platform's 60s function ceiling.
   signal?: AbortSignal;
 }
 
@@ -162,7 +166,7 @@ export async function fetchSocrata<TRow>(
     try {
       const res = await fetch(url, {
         headers: socrataHeaders(url),
-        signal: query.signal ?? AbortSignal.timeout(30_000),
+        signal: query.signal ?? AbortSignal.timeout(45_000),
       });
       if (!res.ok) {
         throw new Error(`${adapterName} ${res.status} ${url}`);
