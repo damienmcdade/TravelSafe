@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Buffalo NY — Buffalo Police Crime Incidents on data.buffalony.gov
@@ -67,10 +67,12 @@ function safeIso(raw: string | null | undefined): string {
 
 async function fetchBuffalo(): Promise<Incident[]> {
   // v96 — migrated to fetchSocrata helper.
+  // v96p2 — defensive 180-d cutoff matching the other Socrata adapters.
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   const rows = await fetchSocrata<BufRow>("Buffalo Socrata", {
     url: BASE,
     select: "case_number,incident_datetime,incident_type_primary,parent_incident_type,address_1,city,zip_code,neighborhood,council_district,police_district,census_tract,latitude,longitude",
-    where: "neighborhood IS NOT NULL AND latitude IS NOT NULL",
+    where: `neighborhood IS NOT NULL AND latitude IS NOT NULL AND incident_datetime >= '${cutoff}'`,
     order: "incident_datetime DESC",
     limit: ROW_LIMIT,
   });

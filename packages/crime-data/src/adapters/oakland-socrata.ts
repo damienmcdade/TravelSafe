@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 import { oaklandPolygons } from "../data/oakland-neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
@@ -141,11 +141,14 @@ function safeIso(raw: string | null | undefined): string {
   return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
 }
 
+// v96p2 — defensive 180-d cutoff matching the other Socrata adapters.
+// Computed once per cycle so all paginated calls share the same window.
+const OAK_CUTOFF = () => socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
 async function fetchOaklandPage(offset: number): Promise<OakRow[]> {
   // v96 — migrated to fetchSocrata helper.
   return fetchSocrata<OakRow>(`Oakland Socrata at offset ${offset}`, {
     url: BASE,
-    where: "location_1 IS NOT NULL",
+    where: `location_1 IS NOT NULL AND datetime >= '${OAK_CUTOFF()}'`,
     order: "datetime DESC",
     limit: PAGE_SIZE,
     offset,

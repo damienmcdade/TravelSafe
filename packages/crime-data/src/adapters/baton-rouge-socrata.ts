@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 
 // Baton Rouge — Baton Rouge Police Crime Incidents.
 // Socrata dataset pbin-pcm7 on data.brla.gov. Updated daily.
@@ -64,10 +64,14 @@ async function fetchBr(): Promise<Incident[]> {
   // v96 — migrated to fetchSocrata helper.
   // Explicit $select — never request demographic columns even though BRPD
   // doesn't publish them on this dataset.
+  // v96p2 — defensive 180-d cutoff. BR hasn't failed in production
+  // (smaller city, lower row volume), but the pattern matches all
+  // the adapters that did fail (sf/seattle/chicago/etc.).
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   const rows = await fetchSocrata<BrRow>("BR Socrata", {
     url: BASE,
     select: "incident_number,charge_id,report_date,offense_description,statute_category,crime_against,neighborhood,district,zone,latitude,longitude",
-    where: "neighborhood IS NOT NULL",
+    where: `neighborhood IS NOT NULL AND report_date >= '${cutoff}'`,
     order: "report_date DESC",
     limit: ROW_LIMIT,
   });

@@ -1,7 +1,7 @@
 import { CrimeCategory } from "@prisma/client";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { fetchSocrata } from "../lib/http.js";
+import { fetchSocrata, socrataDate } from "../lib/http.js";
 
 // Cambridge MA — Cambridge Police Crime Reports (xuad-73uj on
 // data.cambridgema.gov). The crime data dataset publishes a native
@@ -79,10 +79,12 @@ function safeIso(raw: string | null | undefined): string {
 
 async function fetchCambridge(): Promise<Incident[]> {
   // v96 — migrated to fetchSocrata helper.
+  // v96p2 — defensive 180-d cutoff matching the other Socrata adapters.
+  const cutoff = socrataDate(Date.now() - 180 * 24 * 60 * 60 * 1000);
   const rows = await fetchSocrata<CamRow>("Cambridge Socrata", {
     url: BASE,
     select: "file_number,date_of_report,crime,reporting_area,neighborhood,reporting_area_lat,reporting_area_lon,location",
-    where: "neighborhood IS NOT NULL",
+    where: `neighborhood IS NOT NULL AND date_of_report >= '${cutoff}'`,
     order: "date_of_report DESC",
     limit: ROW_LIMIT,
   });
