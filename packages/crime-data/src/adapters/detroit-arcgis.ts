@@ -94,19 +94,48 @@ async function fetchPage(offset: number): Promise<DetroitRow[]> {
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true"); // v87 — Esri edge cache
   url.searchParams.set("f", "json");
-  const res = await fetch(url, {
-    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
-  });
-  if (!res.ok) throw new Error(`Detroit ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: DetroitRow }> };
-  return (body.features ?? []).map((f) => f.attributes);
+  // v99 — retry deep-offset pages. Detroit's Esri Feature Server
+  // intermittently returns 400 "Invalid query parameters" on deep-offset
+  // (resultOffset up to 28k) requests under concurrency. The old code
+  // .catch(()=>[])'d each failure and cached the partial result, so a
+  // 12k-instead-of-30k pull silently deflated Detroit's ENTIRE citywide rate
+  // ~2× (mis-grading a very-high-crime city as "A"). Retry up to 3× with
+  // backoff and throw on final failure so the caller can detect incompleteness.
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 250 * attempt));
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+      });
+      if (!res.ok) throw new Error(`Detroit ArcGIS ${res.status} offset=${offset}`);
+      const body = await res.json() as { features?: Array<{ attributes: DetroitRow }>; error?: unknown };
+      if (body.error) throw new Error(`Detroit ArcGIS body error offset=${offset}`);
+      return (body.features ?? []).map((f) => f.attributes);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr;
 }
 
-async function fetchDetroit(): Promise<Incident[]> {
-  const pages = await Promise.all(
-    Array.from({ length: PAGES }, (_, i) => fetchPage(i * PAGE_SIZE).catch(() => [] as DetroitRow[])),
-  );
-  const rows = pages.flat();
+async function fetchDetroit(): Promise<{ rows: Incident[]; complete: boolean }> {
+  // v99 — bounded concurrency (4) instead of firing all 15 deep-offset pages
+  // at once (the burst is what triggers the Esri 400s), plus completeness
+  // tracking so a partial pull is never silently cached.
+  const results: DetroitRow[][] = new Array(PAGES);
+  let cursor = 0;
+  let failures = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= PAGES) return;
+      try { results[i] = await fetchPage(i * PAGE_SIZE); }
+      catch { results[i] = []; failures += 1; }
+    }
+  });
+  await Promise.all(workers);
+  const rows = results.flat();
   // Drop rows with no parseable date — see nypd-socrata for rationale.
   // Epoch fallback would collapse Detroit citywide windowDays to 0.
   const out: Incident[] = [];
@@ -133,7 +162,7 @@ async function fetchDetroit(): Promise<Incident[]> {
       lng: typeof lon === "number" && lon !== 0 ? lon : undefined,
     });
   }
-  return out;
+  return { rows: out, complete: failures === 0 };
 }
 
 // v69 followup — build the two indexes once per cache load.
@@ -172,9 +201,16 @@ export async function getRowsDetroit(): Promise<Incident[]> {
   if (inFlightFetch) return inFlightFetch;
   inFlightFetch = (async () => {
     try {
-      const rows = await fetchDetroit();
-      if (rows.length > 0) cache = { fetchedAt: now, rows, ...buildIndexes(rows) };
-      return rows;
+      const { rows, complete } = await fetchDetroit();
+      // v99 — only overwrite a good cache when the pull was COMPLETE (every
+      // page loaded). A partial pull under-counts every neighborhood
+      // uniformly and would mis-grade the whole city; serve the prior
+      // last-known-good cache instead. With no prior cache, a partial pull is
+      // still better than nothing.
+      if (rows.length > 0 && (complete || !cache)) {
+        cache = { fetchedAt: now, rows, ...buildIndexes(rows) };
+      }
+      return cache?.rows ?? rows;
     } catch (err) {
       console.warn("[detroit] fetch failed:", (err as Error).message);
       return cache?.rows ?? [];

@@ -730,7 +730,9 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // oldest row drifts by hours per refresh, not multiples.
   // v96 — MS_PER_DAY + RATE_WINDOW_DAYS hoisted to module top.
   const nowMs = Date.now();
-  const windowStartMs = nowMs - RATE_WINDOW_DAYS * MS_PER_DAY;
+  // windowStartMs is computed after the data span is known — see the anchor
+  // block below (v99). It depends on anchorMs, which depends on the data's
+  // newest timestamp.
 
   // Step 1: find the data span. The PRIOR implementation used the
   // single oldest row as dataEarliestMs, which gave a windowDays
@@ -764,6 +766,23 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
     dataEarliestMs = allTimestamps[trimIdx];
   }
 
+  // v99 — anchor the rate window to the data's NEWEST timestamp when the feed
+  // lags wall-clock by >14 days. The STABILITY FIX above anchors both bounds
+  // to Date.now() to stop per-refresh rate swings, but for feeds with a large
+  // fixed publication lag (Kansas City ~54d behind) or a stalled upstream
+  // (Phoenix — no 2026 data) that charges the empty trailing days into
+  // windowDays, dividing the incident count across a span the data doesn't
+  // actually cover and systematically deflating the per-100k rate (KC property
+  // read 0.56× FBI, Phoenix 0.34/0.43×, almost entirely from this). Fresh
+  // feeds (latest within 14d of now) keep the stable wall-clock anchor — no
+  // behavior change; only lagged/stale feeds shift their window end to the
+  // last day that actually has data, so annualization divides by the real
+  // covered span. allTimestamps is sorted ascending and pre-filtered to
+  // t <= nowMs, so its last element is the newest non-future row.
+  const dataLatestMs = allTimestamps.length > 0 ? allTimestamps[allTimestamps.length - 1] : nowMs;
+  const anchorMs = (dataLatestMs > 0 && nowMs - dataLatestMs > 14 * MS_PER_DAY) ? dataLatestMs : nowMs;
+  const windowStartMs = anchorMs - RATE_WINDOW_DAYS * MS_PER_DAY;
+
   // Step 2: count incidents strictly in [windowStartMs, nowMs] AND
   // strictly within UCR Part 1 violent/property. The Part 1 filter is
   // applied on top of the adapter's NIBRS classification — see
@@ -784,7 +803,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
       const i = incidents[k];
       const t = tsList[k];
       if (t <= 0) continue;
-      if (t < windowStartMs || t > nowMs) continue;
+      if (t < windowStartMs || t > anchorMs) continue;
       const cat = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
       const desc = i.ibrOffenseDescription;
       let counted = false;
@@ -806,8 +825,11 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // because dataEarliestMs barely moves between cache cycles.
   // Rounded to a 7-day boundary to absorb sub-day cache drift; see
   // roundWindowDays for the rationale.
-  const rawWindowDays = dataEarliestMs < nowMs
-    ? Math.min(RATE_WINDOW_DAYS, Math.max(1, Math.round((nowMs - dataEarliestMs) / MS_PER_DAY)))
+  // v99 — windowDays spans dataEarliest → anchorMs (the data's covered range),
+  // NOT now, so a lagged/stale feed's empty trailing days don't dilute the
+  // annualization. For fresh feeds anchorMs === nowMs (unchanged).
+  const rawWindowDays = dataEarliestMs < anchorMs
+    ? Math.min(RATE_WINDOW_DAYS, Math.max(1, Math.round((anchorMs - dataEarliestMs) / MS_PER_DAY)))
     : 0;
   const windowDays = roundWindowDays(rawWindowDays);
   // FRESH-DATA DENOMINATOR. Sum the populations of only the areas
@@ -841,7 +863,15 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // ~30% of incidents by ~30% of pop, and amplified the per-100k
   // rate to ~3× FBI baseline because the fresh subset happened to
   // skew toward higher-crime neighborhoods.
-  const pop = (popFraction >= FRESH_POP_FRACTION_THRESHOLD && freshPopSum > 0) ? freshPopSum : cityPop;
+  // v99 — clamp at cityPop. The fresh-area denominator is meant only to
+  // SHRINK the population when part of a city's adapter coverage is stale
+  // (DC/KC pattern). But several cities' generated per-neighborhood polygons
+  // OVERLAP (Oakland's sum to 1.48× the real city population, Detroit 1.24×),
+  // so freshPopSum can EXCEED cityPop and silently deflate the per-100k rate
+  // (Oakland property read 0.52× FBI almost entirely from this). Capping at
+  // cityPop is always correct: the denominator can never legitimately exceed
+  // the city's actual residents.
+  const pop = (popFraction >= FRESH_POP_FRACTION_THRESHOLD && freshPopSum > 0) ? Math.min(freshPopSum, cityPop) : cityPop;
   // CFS calibration — see CFS_CALIBRATION comment at the top of the file.
   // 1.0 for NIBRS-based adapters, ~0.35-0.50 for CFS-based.
   const cfsScale = CFS_CALIBRATION[city.slug] ?? 1.0;
