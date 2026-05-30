@@ -23,7 +23,7 @@ const PAGE_SIZE = 2000;
 // v26 bump 5 → 15. Saint Paul was running ~1.8× under FBI baseline
 // on both PERSONS and PROPERTY; deeper cache reduces the
 // annualization tax.
-const PAGES = 15;
+const PAGES = 22;  // v99 — with proactive/community records filtered out (above), ~44k crime rows ≈ a representative year
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 registerRowCache(() => { cache = null; });
@@ -86,7 +86,13 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchPage(offset: number): Promise<SpRow[]> {
   const url = new URL(BASE);
-  url.searchParams.set("where", "NEIGHBORHOOD_NUMBER IS NOT NULL AND INCIDENT IS NOT NULL");
+  // v99 — exclude non-crime records at the QUERY level. ~52% of Saint Paul's
+  // feed is "Proactive Police Visit" (283k!) + "Community Engagement/Event" +
+  // "Proactive Foot Patrol" — all non-crimes the adapter dropped to null
+  // post-fetch, so half the 30k-row budget was wasted and only ~14k actual
+  // crimes got sampled, under-counting the violent rate to 0.41× FBI. Filtering
+  // here doubles the crime density and lengthens the window.
+  url.searchParams.set("where", "NEIGHBORHOOD_NUMBER IS NOT NULL AND INCIDENT IS NOT NULL AND INCIDENT NOT LIKE 'Proactive%' AND INCIDENT NOT LIKE 'Community%'");
   url.searchParams.set("outFields", "CASE_NUMBER,DATE,TIME,CODE,INCIDENT_TYPE,INCIDENT,POLICE_GRID_NUMBER,NEIGHBORHOOD_NUMBER,NEIGHBORHOOD_NAME,BLOCK,CALL_DISPOSITION_CODE,CALL_DISPOSITION");
   url.searchParams.set("returnGeometry", "false");
   url.searchParams.set("orderByFields", "DATE DESC");
