@@ -23,10 +23,18 @@ nixPkgs = ["nodejs_22", "npm-9_x", "openssl"]
 [phases.install]
 cmds = ["npm install --include=dev --include-workspace-root"]
 
+# v100 (Prisma 7 cutover) — the build phase is a cached Docker layer keyed on
+# the command STRING. The previous `npm run db:generate` indirection kept the
+# string identical across the v7 bump, so Railway reused a stale v6 layer (it
+# generated a 6.19.3 client to node_modules instead of the v7 client to
+# src/generated, which then failed build:api's tsc and left the old container
+# running). Invoking pinned prisma@7.8.0 DIRECTLY here (a) forces the v7 CLI
+# regardless of any stale node_modules/.bin/prisma, and (b) changes the command
+# string so the layer cache is busted and the phase actually re-runs.
 [phases.build]
 dependsOn = ["install"]
 cmds = [
-  "npm run db:generate",
+  "npx -y prisma@7.8.0 generate --schema=packages/db/prisma/schema.prisma",
   "npm run build --workspace packages/crime-data",
   "npm run build:api",
 ]
