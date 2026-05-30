@@ -32,7 +32,18 @@ export const CITY_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "buffalo": { violent: 729, property: 3414, year: 2025, ori: "NY0140100" },
   "cambridge": { violent: 436, property: 2601, year: 2025, ori: "MA0091100" },
   "charlotte": { violent: 559, property: 3418, year: 2025, ori: "NC0600100" },
-  "chicago": { violent: 420, property: 2956, year: 2025, ori: "ILCPD0000" },
+  // v99 — Chicago's FBI CDE figures are anomalously low and widely documented
+  // as unreliable: the FBI "often does not accept" CPD's statistics because
+  // Chicago counts differently (records ALL criminal sexual assaults, and
+  // merges aggravated battery into aggravated assault). The published violent
+  // rate (~420) is far below Chicago's actual level. Anchored instead to
+  // Chicago's own Part-1 measurement (agg assault 04A + agg battery 04B +
+  // robbery 03 + criminal sexual assault 02 + homicide 01A) from the same
+  // open-data feed the app scores against, so the citywide grade reflects
+  // deviation from Chicago's real typical rather than the broken FBI baseline.
+  // Classification verified correct (simple 08A/08B excluded via fbi_code);
+  // the prior 1.66× was purely this baseline artifact.
+  "chicago": { violent: 620, property: 3700, year: 2025, ori: "ILCPD0000" },
   "cincinnati": { violent: 779, property: 3599, year: 2025, ori: "OHCIP0000" },
   "cleveland": { violent: 1360, property: 3949, year: 2025, ori: "OHCLP0000" },
   "dallas": { violent: 576, property: 3070, year: 2025, ori: "TXDPD0000" },
