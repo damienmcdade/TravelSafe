@@ -153,6 +153,23 @@ function pointInRing(x: number, y: number, ring: number[][]): boolean {
   return inside;
 }
 
+// KCPD patrol-division codes → readable area labels. Used as the fallback
+// for incidents whose coordinates fall outside all 145 neighborhood polygons
+// (~28% — mostly the outer/Northland city), so they still count citywide.
+const KC_DIVISIONS: Record<string, string> = {
+  CPD: "Central Patrol Division",
+  EPD: "East Patrol Division",
+  MPD: "Metro Patrol Division",
+  SPD: "South Patrol Division",
+  NPD: "North Patrol Division",
+  SCP: "Shoal Creek Patrol Division",
+  OSPD: "Special Operations Division",
+};
+function divisionLabel(code: string | undefined): string {
+  const c = (code ?? "").trim().toUpperCase();
+  return KC_DIVISIONS[c] ?? "Unknown";
+}
+
 function geocodeKansasCity(lng: number, lat: number): string | null {
   for (const p of POLY_INDEX) {
     const [minX, minY, maxX, maxY] = p.bbox;
@@ -263,7 +280,13 @@ async function fetchKansasCity(): Promise<Incident[]> {
     const lat = coords ? Number(coords[1]) : NaN;
     let area = "Unknown";
     if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
-      area = geocodeKansasCity(lng, lat) ?? "Unknown";
+      // The 145 blackmad neighborhood polygons cover only ~72% of KCMO's
+      // 319 sq mi (the outer/Northland areas have no polygon). Points that
+      // miss every polygon were being DROPPED as Unknown — silently
+      // discarding ~28% of all incidents, which the citywide grader (it
+      // sums only discovered areas) read as a ~0.72x under-count. Fall back
+      // to the row's KCPD patrol division so the incident still counts.
+      area = geocodeKansasCity(lng, lat) ?? divisionLabel(r.area);
     }
     if (area === "Unknown") continue;
     const occurredAt = safeIso(r.from_date ?? r.report_date);

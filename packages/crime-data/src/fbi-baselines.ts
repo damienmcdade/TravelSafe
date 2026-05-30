@@ -101,8 +101,12 @@ const MANUAL_BASELINE_OVERRIDES: Record<string, Partial<Pick<CityFbiBaseline, "v
   "dallas": { violent: 658, property: 3352 },
   // CDE base is the older year; SF crime rose in 2024 (~560 / ~3400).
   "san-francisco": { violent: 560, property: 3400 },
-  // KCMO is high-crime; CDE base ran ~10% low (~1500 violent).
-  "kansas-city": { violent: 1500 },
+  // KCMO is high-crime. FBI 2024 (4 aggregators): violent 1,547/100k (8,698
+  // offenses, 77% aggravated assault), property 4,676/100k (23,920) — the
+  // stored base (1371/3970) was low on both. v100: corrected after the KC
+  // geocode-drop fix recovered the ~28% of incidents that were silently
+  // dropped (so raising property no longer produces a false grade-A).
+  "kansas-city": { violent: 1547, property: 4676 },
   // CDE property was a 5-year average inflated by pre-2020 years; the single
   // most-recent year is ~2100.
   "honolulu": { property: 2100 },
