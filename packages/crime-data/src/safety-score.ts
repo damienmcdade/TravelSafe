@@ -323,6 +323,13 @@ const PART1_PROPERTY_EXCLUDE = [
   /receiving.*stolen/i,
   /\bextortion\b/i,
   /\bbribery\b/i,
+  // v99 — non-theft vehicle EVENTS that adapters classify PROPERTY via a
+  // "motor vehicle" keyword but are NOT UCR Part-1 property (MV theft only).
+  // Boston's "TOWED MOTOR VEHICLE" + "M/V ACCIDENT" pushed its property rate to
+  // 1.94× FBI. ("M/V - LEAVING SCENE - PROPERTY DAMAGE" is already caught by
+  // /damage.*property/.) Safe across cities — a tow/accident is never Part-1.
+  /\btowed\b/i,
+  /\baccident\b/i,
 ];
 
 // Default-INCLUDE filter: trust the adapter's NIBRS classification
