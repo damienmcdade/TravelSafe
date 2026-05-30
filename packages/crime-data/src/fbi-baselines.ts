@@ -99,6 +99,13 @@ const MANUAL_BASELINE_OVERRIDES: Record<string, Partial<Pick<CityFbiBaseline, "v
   // feed carries almost no family-violence aggravated assault — only ~7/87d),
   // tracked separately; the baseline must still be the true FBI rate.
   "dallas": { violent: 658, property: 3352 },
+  // v100 — Denver + Phoenix base rates ran LOW vs FBI 2024 (NeighborhoodScout +
+  // AreaVibes agree). Denver: violent 985 (7,170; agg assault 5,151 + rape 676),
+  // property 4,740. Phoenix: violent 790 (~13,300; agg assault 9,068 + rape
+  // 1,069), property 2,325. Both feeds then read ~0.55-0.6× — a genuine
+  // redaction under-capture, calibrated separately.
+  "denver": { violent: 985, property: 4740 },
+  "phoenix": { violent: 790, property: 2325 },
   // CDE base is the older year; SF crime rose in 2024 (~560 / ~3400).
   "san-francisco": { violent: 560, property: 3400 },
   // KCMO is high-crime. FBI 2024 (4 aggregators): violent 1,547/100k (8,698

@@ -160,6 +160,19 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // rape) / DC (weapon-only). Scale persons ×1.82 to recover the FBI aggregate;
   // property is genuinely high (Dallas auto theft) and accurate → stays 1.0.
   "dallas":        { persons: 1.82, property: 1.0, sourceType: "partial" },
+  // v100 — Denver / Cambridge / Phoenix / Indianapolis cluster. FBI baselines
+  // VERIFIED (4 aggregators): none too high — Denver/Phoenix were too low and
+  // were raised (see fbi-baselines.ts). Each open feed then reads violent
+  // ~0.51-0.61× over a FULL-YEAR window (not a volume/lag artifact), a genuine
+  // structural under-capture: Denver + Cambridge publish ZERO rape rows
+  // (confirmed), and all four under-report domestic-violence aggravated
+  // assault (Indianapolis carries rape but still under-counts agg assault).
+  // Same partial pattern as Dallas/Boston/DC — scale persons to the FBI total.
+  // Property is accurate-ish (~0.78-0.91) → stays 1.0.
+  "denver":        { persons: 1.95, property: 1.0, sourceType: "partial" },
+  "cambridge":     { persons: 1.65, property: 1.0, sourceType: "partial" },
+  "phoenix":       { persons: 1.79, property: 1.0, sourceType: "partial" },
+  "indianapolis":  { persons: 1.64, property: 1.0, sourceType: "partial" },
 };
 
 /// Per-category rate-calibration lookup (1.0 for NIBRS adapters not in the
@@ -511,6 +524,9 @@ const PART1_VIOLENT_HARD_EXCLUDE = [
   /abuse of (?:a |an )?(?:child|minor)/i, // "ABUSE OF A CHILD" = Part-2 (reverse of /child abuse/)
   /\banimal\b/i,             // "ANIMAL ABUSE/CRUELTY" = NIBRS Society, not Part-1 violent
   /sexual abuse/i,           // non-rape sex offense = Part-2 (genuine "RAPE" is counted separately)
+  /\bunfounded\b/i,          // Indianapolis "UNFOUNDED REPORT" = no crime occurred
+  /indecent exposure/i,      // Denver "INDECENT EXPOSURE" = Part-2 sex offense, not forcible rape
+  /sex offender/i,           // "SEX OFFENDER VIOLATION" = registry violation, Part-2 (not the offense)
 ];
 
 function isPart1Violent(desc: string | undefined): boolean {
