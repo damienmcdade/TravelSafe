@@ -65,11 +65,14 @@ import { CITY_POPULATION, POPULATION_VINTAGE } from "./population.js";
 // scale tuned for their over-counting violent bucket). Each category is now
 // scaled independently so both land near the city's FBI baseline.
 // sourceType: "cfs" = calls-for-service feed; "coarse" = NIBRS feed whose
-// assault bucket has no simple-vs-aggravated severity field, so its violent
-// rate can't be filtered to UCR Part-1 precisely and is instead calibrated to
-// the FBI baseline in aggregate (Honolulu, Milwaukee). Only "cfs" widens the
+// assault bucket has no simple-vs-aggravated severity field (Honolulu,
+// Milwaukee); "partial" = feed PUBLISHES only a subset of a UCR category, so
+// it structurally under-measures (Washington DC publishes only "assault with a
+// dangerous weapon", missing the non-weapon aggravated assaults the FBI counts).
+// In all three the violent rate can't be derived precisely from the feed and is
+// instead calibrated to the FBI baseline in aggregate. Only "cfs" widens the
 // divergence-guard threshold and shows the "calls-for-service" badge.
-interface CfsScale { persons: number; property: number; sourceType: "cfs" | "coarse"; }
+interface CfsScale { persons: number; property: number; sourceType: "cfs" | "coarse" | "partial"; }
 const CFS_CALIBRATION: Record<string, CfsScale> = {
   // Cleveland REMOVED in v95p14. The Cleveland adapter switched from
   // CAD_Police (Calls for Service, dispatch-keyword-matched) to
@@ -112,13 +115,23 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // aggregate (persons ≈ 1 / observed-over-count). Property is accurate → 1.0.
   "honolulu":      { persons: 0.56, property: 1.0, sourceType: "coarse" },
   "milwaukee":     { persons: 0.53, property: 1.0, sourceType: "coarse" },
+  // v99 — Washington DC publishes ONLY "ASSAULT W/DANGEROUS WEAPON" (weapon-
+  // involved) in its open Crime Incidents feed; the FBI counts ALL aggravated
+  // assaults (with OR without a weapon — DC files the rest as simple assault,
+  // not published). Documented limitation (FactCheck.org / J. Asher): DC's ADW
+  // ~932/yr captures only ~1/4 of the FBI aggravated-assault count, so the feed
+  // understates violent crime ~2× (homicide + robbery are captured fully; the
+  // gap is almost entirely the missing non-weapon aggravated assaults). No
+  // public DC source has the missing rows, so calibrate the violent aggregate
+  // to the FBI baseline (×2.1) and flag it. Property (~0.90×) is accurate → 1.0.
+  "washington-dc": { persons: 2.1, property: 1.0, sourceType: "partial" },
 };
 
 /// Per-category rate-calibration lookup (1.0 for NIBRS adapters not in the
 /// map). `isCfs` is true ONLY for true calls-for-service feeds — it widens the
 /// divergence-guard threshold and drives the "calls-for-service" badge.
 /// `sourceType` is "nibrs" when the slug isn't calibrated.
-function cfsScalesFor(slug: string): { persons: number; property: number; isCfs: boolean; sourceType: "cfs" | "coarse" | "nibrs" } {
+function cfsScalesFor(slug: string): { persons: number; property: number; isCfs: boolean; sourceType: "cfs" | "coarse" | "partial" | "nibrs" } {
   const c = CFS_CALIBRATION[slug];
   return { persons: c?.persons ?? 1, property: c?.property ?? 1, isCfs: c?.sourceType === "cfs", sourceType: c?.sourceType ?? "nibrs" };
 }
@@ -1083,6 +1096,8 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
         ? ` ${city.label} publishes calls-for-service rather than closed NIBRS reports; rates are scaled per category (violent ×${cfsScalePersons}, property ×${cfsScaleProperty}) to approximate NIBRS-equivalent volumes (CFS is structurally inflated because each crime spawns multiple dispatches and many dispatches are unfounded — and the violent dispatch bucket is far more inflated than the property one, hence the separate factors).`
         : sourceType === "coarse"
         ? ` ${city.label}'s feed reports assaults in a single bucket with no simple-vs-aggravated severity field, so the violent rate can't be filtered to UCR Part-1 aggravated assault precisely; it is calibrated to the city's FBI baseline in aggregate (violent ×${cfsScalePersons}) and should be read as approximate.`
+        : sourceType === "partial"
+        ? ` ${city.label}'s open feed publishes only weapon-involved aggravated assault, not the full FBI aggravated-assault count, so it structurally understates violent crime; the violent rate is calibrated up (×${cfsScalePersons}) to approximate the FBI total and should be read as approximate.`
         : ""),
     ...confidence,
     dataSourceType: isCfs ? "cfs" : "nibrs",
