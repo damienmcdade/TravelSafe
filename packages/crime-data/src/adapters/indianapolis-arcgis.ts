@@ -15,7 +15,13 @@ import { indianapolisPolygons } from "../data/indianapolis-neighborhoods.js";
 
 const BASE = "https://gis.indy.gov/server/rest/services/IMPD/IMPD_Public_Data/MapServer/1/query";
 const PAGE_SIZE = 2000;
-const PAGES = 30;
+// v99 — 30 → 55. IMPD's feed is ~106k rows/yr; 30 pages (60k) covered only
+// ~200 days, and IMPD's most-recent months are reporting-lagged (incidents
+// entered incrementally), which deflated the annualized violent rate to ~0.60×
+// FBI. 55 pages (110k ≈ a full year) dilutes the laggy tail with complete older
+// months so the rate reflects a representative window. Classification is already
+// correct (Simple Assault excluded, Aggravated Assault counted).
+const PAGES = 55;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 registerRowCache(() => { cache = null; });
