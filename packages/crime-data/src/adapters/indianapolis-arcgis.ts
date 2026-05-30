@@ -99,7 +99,7 @@ async function fetchPage(offset: number): Promise<IndyRow[]> {
   url.searchParams.set("where", "Latitude IS NOT NULL AND Latitude <> 0");
   url.searchParams.set("outFields", "CaseNum,sOccDate,CR_Desc,NIBRSClassDesc,NIBRSClassCodeDesc,Latitude,Longitude,Geo_Districts,Geo_Beats,Geo_Zones,sAddress");
   url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("orderByFields", "OBJECTID DESC");
+  url.searchParams.set("orderByFields", "sOccDate DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");

@@ -69,7 +69,7 @@ async function fetchPage(offset: number): Promise<AtlRow[]> {
   url.searchParams.set("where", "NhoodName IS NOT NULL AND NhoodName <> ''");
   url.searchParams.set("outFields", "IncidentNumber,ReportDate,OccurredFromDate,NIBRS_Offense,NhoodName,NPU,BEAT,Zone,Latitude,Longitude");
   url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("orderByFields", "OBJECTID DESC");
+  url.searchParams.set("orderByFields", "OccurredFromDate DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");

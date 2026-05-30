@@ -152,7 +152,7 @@ async function fetchPage(offset: number): Promise<CleFeature[]> {
   url.searchParams.set("outSR", "4326");
   // Same OBJECTID DESC sort rationale as the prior CAD layer — Esri
   // pagination on a non-unique date column under-counts.
-  url.searchParams.set("orderByFields", "OBJECTID DESC");
+  url.searchParams.set("orderByFields", "ReportedDate DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");

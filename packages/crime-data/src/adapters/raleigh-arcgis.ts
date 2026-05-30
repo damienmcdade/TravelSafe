@@ -57,7 +57,7 @@ async function fetchPage(offset: number): Promise<RduRow[]> {
   url.searchParams.set("where", "district IS NOT NULL AND district <> ''");
   url.searchParams.set("outFields", "case_number,reported_date,crime_category,crime_description,crime_type,district,latitude,longitude");
   url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("orderByFields", "OBJECTID DESC");
+  url.searchParams.set("orderByFields", "reported_date DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");

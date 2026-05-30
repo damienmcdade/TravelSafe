@@ -133,7 +133,7 @@ async function fetchPage(baseUrl: string, offset: number): Promise<SacRow[]> {
   url.searchParams.set("where", "Neighborhood_Association IS NOT NULL AND Neighborhood_Association <> ''");
   url.searchParams.set("outFields", "Record_ID,Occurrence_Date_PT,Offense_Category,Description,Police_District,Beat,Neighborhood_Association");
   url.searchParams.set("returnGeometry", "false");
-  url.searchParams.set("orderByFields", "OBJECTID DESC");
+  url.searchParams.set("orderByFields", "Occurrence_Date_PT DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
