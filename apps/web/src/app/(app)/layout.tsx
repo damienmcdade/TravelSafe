@@ -1,4 +1,10 @@
-"use client";
+// v99 — Server Component. The shell chrome (header, tab nav, footer, skip
+// link) is static and now renders on the server, shipping no JS for itself;
+// the interactive pieces below (CitySelector, TabNav, ThemeToggle,
+// AIAssistant, SavedAreasRail) remain their own client islands. The only
+// client-dependent bit — re-keying <main> per route for the fade animation —
+// lives in the <AnimatedMain> island. Pre-v99 the whole layout was
+// "use client" solely to read window.location.pathname for that key.
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { TabNav } from "@/components/TabNav";
@@ -7,6 +13,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { AIAssistant } from "@/components/AIAssistant";
 import { SavedAreasRail } from "@/components/SavedAreasRail";
 import { DataDisclaimer } from "@/components/DataDisclaimer";
+import { AnimatedMain } from "@/components/AnimatedMain";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
@@ -47,11 +54,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       >
         Skip to main content
       </a>
-      <main
-        id="main"
-        key={typeof window === "undefined" ? "ssr" : window.location.pathname}
-        className="max-w-5xl mx-auto px-4 py-6 animate-fade-in space-y-3"
-      >
+      <AnimatedMain>
         <SavedAreasRail />
         {children}
         {/* Single-mount DataDisclaimer for the entire (app) shell —
@@ -61,11 +64,11 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             is shown on every authenticated page exactly once, and a
             future copy change touches one file instead of seven. */}
         <DataDisclaimer prefix="How to read this:" />
-      </main>
+      </AnimatedMain>
       <footer className="mt-12 border-t border-sand-200 bg-white/60 backdrop-blur">
         <div className="max-w-5xl mx-auto px-4 py-6 flex flex-wrap items-center justify-between gap-3 text-xs text-slate2-500">
           <p>
-            CommunitySafe surfaces official city police-incident data and the ${FBI_DATA_LABEL} national rate.
+            CommunitySafe surfaces official city police-incident data and the {FBI_DATA_LABEL} national rate.
             Historical reporting only — not a substitute for emergency services.
           </p>
           <nav aria-label="Legal" className="flex gap-3 flex-wrap">

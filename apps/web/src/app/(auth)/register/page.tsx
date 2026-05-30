@@ -1,10 +1,16 @@
-"use client";
+import type { Metadata } from "next";
 import Link from "next/link";
 
-// Account creation has been removed from the public flow. The /register URL
-// stays mounted (existing links don't 404) but it now explains that the
-// application no longer accepts new account creation, and points users at
-// the anonymous community feed.
+// v99 — Server Component. This page is fully static (an explainer that account
+// creation has been removed), so it renders entirely on the server and ships
+// no JS. The /register URL stays mounted (existing links don't 404) and points
+// users at the anonymous community feed.
+export const metadata: Metadata = {
+  title: "No account needed — CommunitySafe",
+  description:
+    "CommunitySafe doesn't require sign-up. Every device gets an anonymous session automatically, powering posts, the Check-In timer, Live Share, and saved neighborhoods.",
+};
+
 export default function RegisterPage() {
   return (
     <main className="max-w-md mx-auto px-6 py-16 animate-rise-in">

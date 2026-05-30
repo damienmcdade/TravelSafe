@@ -1,4 +1,5 @@
-"use client";
+// v99 — Server Component. The page shell renders on the server; the
+// interactive TrustedContactsManager below is its own client island.
 import Link from "next/link";
 import { TrustedContactsManager } from "@/components/TrustedContactsManager";
 
