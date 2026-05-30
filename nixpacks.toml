@@ -21,7 +21,11 @@
 nixPkgs = ["nodejs_22", "npm-9_x", "openssl"]
 
 [phases.install]
-cmds = ["npm install --include=dev --include-workspace-root"]
+# v100 — `npm ci` (was `npm install`) for the Prisma 7 cutover: ci wipes
+# node_modules and installs strictly from the lock, which (a) guarantees the v7
+# prisma CLI replaces any stale v6 binary and (b) changes the command string so
+# the cached install layer is busted and the phase actually re-runs.
+cmds = ["npm ci --include=dev --include-workspace-root"]
 
 # v100 (Prisma 7 cutover) — the build phase is a cached Docker layer keyed on
 # the command STRING. The previous `npm run db:generate` indirection kept the
