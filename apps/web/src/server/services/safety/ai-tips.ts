@@ -65,10 +65,13 @@ export function getAITipsDebug() {
 const TRUSTED_SOURCES = [
   "FBI Crime Prevention",
   "FBI — Safety Resources",
+  "U.S. Department of Homeland Security (DHS) — Personal Safety & Situational Awareness",
+  "CISA — Active Shooter / Run-Hide-Fight",
   "U.S. Postal Inspection Service",
   "National Crime Prevention Council (NCPC)",
   "U.S. Department of Justice — Community Policing (COPS)",
   "U.S. Department of Justice — Office on Violence Against Women",
+  "RAINN — National Sexual Assault Resources",
   "Ready.gov",
   "National Highway Traffic Safety Administration (NHTSA)",
   "National Safety Council",
@@ -77,13 +80,44 @@ const TRUSTED_SOURCES = [
   "Federal Trade Commission — Consumer Advice",
 ].join("\n  - ");
 
+// Evidence-based self-defense doctrine, condensed from DHS personal-safety
+// guidance, CISA Run-Hide-Fight, and widely-taught de-escalation/avoidance
+// frameworks. Injected into the prompt so the model's self-defense tips
+// teach the actual hierarchy (avoid > de-escalate > escape > last-resort
+// proportional force) rather than generic "take a class" filler. Ordered
+// by priority — earlier rungs are always preferred over later ones.
+const SELF_DEFENSE_PRINCIPLES = `
+  1. AWARENESS — keep your attention on your surroundings, not your phone;
+     scan for exits and who is near you. Trusting an instinctive "something
+     is wrong" feeling and acting on it early prevents most incidents.
+  2. AVOIDANCE — distance and position are your best defense. Cross the
+     street, change cars on a train, walk toward lit and populated areas,
+     and leave a situation before it escalates. Avoiding a fight always
+     beats winning one.
+  3. DE-ESCALATION — if approached, use a firm, loud, simple command
+     ("Back off", "Leave me alone"), keep open space and a non-threatening
+     stance, and do not argue or insult. Calm, assertive body language
+     ends many confrontations.
+  4. ESCAPE — if it's about property, give it up; belongings are
+     replaceable. Getting away to safety and other people is the priority —
+     run, make noise, and head for a store, lit area, or crowd.
+  5. LAST-RESORT DEFENSE — physical force is only justified against
+     imminent harm, must be reasonable and proportional, and is a means to
+     create a gap so you can escape — never to "win" or punish. Then call
+     911 immediately.
+  6. REPORT — call 911 for anything in progress or just happened; use the
+     police non-emergency line otherwise; note what you safely can.`;
+
 const SYSTEM_PROMPT = `
 You generate hyper-local safety tips for a specific US neighborhood.
 
-Output: a JSON array of EXACTLY 10 distinct safety tips, no surrounding
+Output: a JSON array of EXACTLY 12 distinct safety tips, no surrounding
 prose, no markdown fences. Each tip:
 - title: <= 60 characters, action-oriented
-- body: 2-3 sentences, plain factual tone, no exclamation marks
+- body: 2-4 sentences, plain factual tone, no exclamation marks. Be
+  SPECIFIC and ACTIONABLE — name the concrete behavior, object, or step
+  (e.g. "park under a light and take the charger cable out of sight"),
+  not vague advice ("be careful", "stay alert", "take a class").
 - source: name of an OFFICIAL government, law-enforcement, or recognized
   non-profit safety organization. Use one of these unless a city-specific
   source is more appropriate:
@@ -91,31 +125,52 @@ prose, no markdown fences. Each tip:
 - sourceUrl: a real public URL on the source's website. Prefer the
   agency's safety / crime-prevention landing page (e.g.
   https://www.fbi.gov/how-we-can-help-you/safety-resources for FBI,
-  https://www.uspis.gov/news/scam-article/package-theft for USPS, etc.)
+  https://www.dhs.gov/see-something-say-something for DHS,
+  https://www.cisa.gov/resources-tools/resources/options-consideration-active-shooter-preparedness for CISA,
+  https://rainn.org/safety-prevention for RAINN,
+  https://www.uspis.gov/news/scam-article/package-theft for USPS).
   Never invent URLs.
 - group: prevention | self-defense | civic
 - addresses (optional): the specific offense from the listed top offenses
   this tip addresses, copied verbatim
 
+SELF-DEFENSE DOCTRINE — the self-defense tips must teach these principles,
+in this priority order (avoid/escape always beats fighting). Translate the
+relevant rungs into concrete, neighborhood-specific actions:
+${SELF_DEFENSE_PRINCIPLES}
+
 Hard rules:
-1. EACH tip must address one or more of the area's listed top offenses,
-   or the broader NIBRS category (Persons / Property / Society) the
-   neighborhood skews toward. Cite the offense by name in the body where
-   it's natural — never say "in your neighborhood" generically.
-2. NEVER make demographic claims (race, ethnicity, religion, age, gender,
+1. TAILOR TO THE DOMINANT CATEGORY. If the neighborhood skews PERSONS
+   (assault/robbery/threats), weight toward self-defense doctrine:
+   awareness, avoidance/positioning, de-escalation, escape, and the
+   non-emergency vs 911 distinction. If it skews PROPERTY (theft,
+   burglary, motor-vehicle theft, package theft), weight toward
+   prevention via target-hardening and CPTED (Crime Prevention Through
+   Environmental Design): lighting, locks, visibility/natural
+   surveillance, removing valuables from view, layered deterrents,
+   vehicle/package routines. If SOCIETY-heavy, weight situational
+   awareness + reporting. ALWAYS include the full self-defense ladder at
+   least once regardless of category.
+2. EACH tip must address one or more of the listed top offenses, or the
+   dominant NIBRS category — cite the offense by name in the body where
+   natural; never say "in your neighborhood" generically.
+3. NEVER make demographic claims (race, ethnicity, religion, age, gender,
    orientation). NEVER profile.
-3. NEVER encourage users to confront, follow, film, livestream, or
-   otherwise approach any individual. Direct to 911 for emergencies, and
-   to the city's police non-emergency line for non-emergencies.
-4. NEVER recommend vigilantism, citizen-arrest, weapons beyond what is
-   commonly legal, or actions a private person cannot lawfully take.
-5. Tips must be PRACTICAL for an individual resident — not advice for
+4. NEVER encourage users to confront, follow, film, livestream, or
+   approach any individual. The goal is always distance, de-escalation,
+   and escape — never engagement. Direct to 911 for emergencies and the
+   police non-emergency line otherwise.
+5. NEVER recommend vigilantism, citizen-arrest, pursuing a suspect, or
+   weapons/force beyond lawful, reasonable, proportional self-defense used
+   only to escape imminent harm.
+6. Tips must be PRACTICAL for an individual resident — not advice for
    police or city government to act.
-6. Mix the 10 tips across prevention (~7) / self-defense (~2) / civic
-   (~1) groups. Don't dump them all in one group.
-7. No two tips should overlap substantially. If two tips would cover the
-   same offense, address it from different angles (prevention vs reporting
-   vs aftermath).
+7. Group balance for the 12 tips: ~6 prevention, ~4 self-defense
+   (covering the doctrine ladder), ~2 civic/reporting. Don't dump them in
+   one group.
+8. No two tips should overlap substantially. If two would cover the same
+   offense, address it from different angles (prevention vs de-escalation
+   vs escape vs reporting vs aftermath).
 `.trim();
 
 export async function generateAITipsForArea(area: string): Promise<AITip[]> {

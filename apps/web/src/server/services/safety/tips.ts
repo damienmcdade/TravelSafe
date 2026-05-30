@@ -287,6 +287,62 @@ const SELF_DEFENSE_TIPS: SafetyTip[] = [
   },
 ];
 
+// v98 — state-neutral self-defense LAW principles shown to every non-CA
+// city (the 4 CA cities keep their detailed Penal-Code cards). These state
+// only what is true across U.S. jurisdictions and explicitly flag the ONE
+// dimension that varies most — duty-to-retreat vs stand-your-ground — and
+// send users to the authoritative NCSL state-by-state table rather than
+// asserting a specific statute we haven't verified for ~24 states. Framed
+// as general information; the response disclaimer reinforces "verify your
+// state's statute / consult an attorney."
+const GENERIC_LEGAL_TIPS: SafetyTip[] = [
+  {
+    id: "legal-when-justified",
+    title: "When self-defense is legally justified",
+    body:
+      "Across U.S. states, self-defense generally requires a reasonable belief that you face an imminent, unlawful threat of harm, and the force you use must be proportional to that threat. The justification ends the moment the threat ends — force used after an attacker has stopped or fled is no longer lawful self-defense. Verify the exact standard in your state's statute.",
+    source: "Cornell Legal Information Institute — Self-Defense",
+    sourceUrl: "https://www.law.cornell.edu/wex/self-defense",
+    group: "ca-legal",
+  },
+  {
+    id: "legal-deadly-force",
+    title: "Deadly force is the narrowest exception",
+    body:
+      "Nearly every state limits deadly force to situations where a reasonable person would believe it necessary to prevent imminent death or great bodily injury (and, in some states, specific felonies like a forcible home invasion). It is never lawful to use deadly force to protect property alone or to pursue or punish someone. When in doubt, the lawful and safer choice is to escape and call 911.",
+    source: "Cornell Legal Information Institute — Deadly Force",
+    sourceUrl: "https://www.law.cornell.edu/wex/deadly_force",
+    group: "ca-legal",
+  },
+  {
+    id: "legal-duty-to-retreat",
+    title: "Know your state: duty to retreat vs. stand your ground",
+    body:
+      "States differ on whether you must retreat before using force in public if you can do so safely. \"Duty to retreat\" states require it where safe; \"stand your ground\" states do not. This single difference can change whether the same act is lawful, so look up your own state before relying on either rule. Almost all states also recognize a \"castle doctrine\" giving stronger protection inside your own home.",
+    source: "National Conference of State Legislatures (NCSL)",
+    sourceUrl: "https://www.ncsl.org/civil-and-criminal-justice/self-defense-and-stand-your-ground",
+    group: "ca-legal",
+  },
+  {
+    id: "legal-less-lethal",
+    title: "Less-lethal tools are legal — but regulated by state",
+    body:
+      "Pepper spray is legal for self-defense in all 50 states, though states cap canister size and bar sale to minors or people with certain convictions. Stun guns, batons, and knives are allowed in many states but restricted or banned in others, and carry rules differ for firearms. Check your state's and city's specific limits before buying or carrying any defensive tool.",
+    source: "FindLaw — Self-Defense Weapons & State Law",
+    sourceUrl: "https://www.findlaw.com/criminal/criminal-law-basics/self-defense-law.html",
+    group: "ca-legal",
+  },
+  {
+    id: "legal-aftermath",
+    title: "After using force: report and get counsel",
+    body:
+      "If you ever use force, call 911 yourself, report what happened factually, and be prepared to explain why you believed you were in imminent danger — you may have to justify your actions even if they were lawful. Do not tamper with the scene, and consider speaking with a licensed attorney before giving a detailed statement. Reporting first also protects you if the other person calls first.",
+    source: "American Bar Association — Public Resources",
+    sourceUrl: "https://www.americanbar.org/groups/public_education/resources/",
+    group: "ca-legal",
+  },
+];
+
 const TIPS: SafetyTip[] = [...PREVENTION_TIPS, ...SELF_DEFENSE_TIPS];
 
 export interface MatchedTip extends SafetyTip { relevance: number }
@@ -413,12 +469,17 @@ export async function getSafetyTipsForArea(area: string): Promise<SafetyTipsResp
   const selfDefense = aiSelfDefense.length > 0
     ? [...aiSelfDefense, ...bucket("self-defense", 2)].slice(0, 4)
     : bucket("self-defense", 4);
-  const caLegal = CA_CITIES.has(citySlug) ? bucket("ca-legal", 6) : [];
+  // v98 — CA cities get the detailed Penal-Code cards; every other city now
+  // gets the state-neutral self-defense-law principles (previously empty).
+  const caLegal = CA_CITIES.has(citySlug)
+    ? bucket("ca-legal", 6)
+    : GENERIC_LEGAL_TIPS.map((t, i) => ({ ...t, relevance: 100 - i }));
 
   const sourceParts: string[] = [
     "official agencies (city police departments, FBI, U.S. Postal Inspection Service, Ready.gov)",
   ];
   if (CA_CITIES.has(citySlug)) sourceParts.push("California statute (Penal Code) and the California Attorney General");
+  else sourceParts.push("general U.S. self-defense law (Cornell LII, NCSL state-by-state, ABA)");
   if (aiPrevention.length > 0) sourceParts.push("AI-tailored prevention guidance grounded in this area's most-reported offenses");
 
   // Hard guarantee: every registered city now has an entry in NON_EMERGENCY,
