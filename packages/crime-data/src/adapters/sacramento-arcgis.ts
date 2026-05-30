@@ -83,6 +83,13 @@ const SAC_TRAILING_SUFFIXES = [
   /\s+Partnership\s*$/i,
   /\s+Alliance\s*$/i,
   /\s+Preservation\s*$/i,
+  // v99 — generic tails the specific patterns above miss. A trailing
+  // parenthetical acronym ("Oak Park Neighborhood Association (OPNA)")
+  // and a bare "Association" suffix ("Midtown Association"). The cleaner
+  // loops, so "(OPNA)" is stripped first, then "Neighborhood Association"
+  // collapses "Oak Park Neighborhood Association (OPNA)" → "Oak Park".
+  /\s+\([A-Za-z0-9.&'-]+\)\s*$/,
+  /\s+Association\s*$/i,
 ];
 // Manual overrides for edge cases the suffix-stripper can't cleanly
 // resolve. Empty-string => drop the entry from getDiscoveredAreas.
@@ -175,10 +182,25 @@ async function fetchSacramento(): Promise<Incident[]> {
     .map((r, i) => {
       // Neighborhood_Association is a semicolon-separated list of
       // overlapping neighborhood associations (a single address can
-      // sit inside 2-5 associations). Take the first — it's the
-      // primary association in the city's data dictionary.
-      const primaryArea = r.Neighborhood_Association!.split(";")[0].trim();
-      const cleaned = cleanSacLabel(primaryArea);
+      // sit inside 2-5 associations).
+      //
+      // v99 — DO NOT just take split(";")[0]. The city lists the
+      // citywide umbrella org "Preservation Sacramento" (and a handful
+      // of other non-place orgs) FIRST in the vast majority of rows, so
+      // taking element [0] then dropping citywide orgs sent ~75% of all
+      // incidents to "Unknown". Those Unknown rows vanish from
+      // getDiscoveredAreas AND from the citywide safety-score (which sums
+      // only over discovered areas) — which is why only ~10 neighborhoods
+      // surfaced and the score read 0.23× the FBI baseline, tripping the
+      // divergence guard to grade=N/A. Instead, clean EVERY association
+      // in the list and take the first that survives cleaning (citywide
+      // orgs clean to "" and are skipped), so each incident lands on its
+      // first real neighborhood. Rows whose only association is a
+      // citywide org stay "Unknown" (correctly unplaceable).
+      const cleaned = r.Neighborhood_Association!
+        .split(";")
+        .map((a) => cleanSacLabel(a.trim()))
+        .find((a) => a.length > 0) ?? "";
       return {
         id: `sac-${r.Record_ID ?? i}`,
         // Use the cleaned, user-friendly neighborhood label. Empty
