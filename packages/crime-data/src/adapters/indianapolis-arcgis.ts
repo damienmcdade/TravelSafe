@@ -4,6 +4,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT } from "../lib/http.js";
+import { indianapolisPolygons } from "../data/indianapolis-neighborhoods.js";
 
 // Indianapolis — IMPD Public Data MapServer layer 1 (Incidents_Public).
 // ArcGIS MapServer hosted at gis.indy.gov. Rows carry NIBRSClassDesc and
@@ -46,14 +47,51 @@ function classify(row: IndyRow): CrimeCategory {
 
 const INDY_CENTROID = { lat: 39.7684, lng: -86.1581 };
 
+// v98 — point-in-polygon geocoder over the 99 IMPD neighborhoods. The
+// feed carries lat/lng but only district/zone names; the audit confirmed
+// these polygons tile the city near-completely (0.2% miss), so geocoding
+// lifts Indianapolis from ~9 districts to ~95 named neighborhoods.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = indianapolisPolygons.map((p) => {
+  const rings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of rings) for (const [x, y] of ring) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+});
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function geocodeIndy(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
+}
+
 const PROVENANCE: DataProvenance = {
   source: "Indianapolis Metropolitan Police Department Public Incidents (gis.indy.gov ArcGIS MapServer)",
   datasetUrl: "https://impdtransparency.indy.gov/",
   recency: "Refreshed daily by IMPD",
-  granularity: "beat",  // Indy publishes by IMPD district/zone; neighborhood is via PIP overlay client-side
+  granularity: "neighborhood",  // v98 — geocoded to 99 IMPD neighborhoods via point-in-polygon
   disclaimer:
-    "Incidents are reported by the Indianapolis Metropolitan Police Department and grouped " +
-    "by IMPD district. Not live, not street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Indianapolis Metropolitan Police Department and geocoded " +
+    "to one of 99 IMPD neighborhoods (IMPD district for the rare point outside any polygon). " +
+    "Not live, not street-level. CommunitySafe does not track individuals.",
 };
 
 async function fetchPage(offset: number): Promise<IndyRow[]> {
@@ -87,7 +125,12 @@ async function fetchIndianapolis(): Promise<Incident[]> {
   return rows
     .filter((r) => r.sOccDate)
     .map((r, i) => {
-      const area = (r.Geo_Districts ?? "").trim() || (r.Geo_Zones ?? "").trim() || "Unknown";
+      const lat = typeof r.Latitude === "number" && r.Latitude !== 0 ? r.Latitude : undefined;
+      const lng = typeof r.Longitude === "number" && r.Longitude !== 0 ? r.Longitude : undefined;
+      // Neighborhood first (point-in-polygon); fall back to the IMPD
+      // district/zone only for the rare point outside every polygon.
+      const nbhd = (lat != null && lng != null) ? geocodeIndy(lng, lat) : null;
+      const area = nbhd ?? ((r.Geo_Districts ?? "").trim() || (r.Geo_Zones ?? "").trim() || "Unknown");
       return {
         id: `indy-${r.CaseNum ?? i}`,
         area,
@@ -96,8 +139,8 @@ async function fetchIndianapolis(): Promise<Incident[]> {
         ibrOffenseDescription: (r.NIBRSClassDesc ?? r.NIBRSClassCodeDesc ?? r.CR_Desc ?? "Unknown").trim(),
         beat: r.Geo_Beats ?? null,
         blockLabel: undefined,
-        lat: typeof r.Latitude === "number" && r.Latitude !== 0 ? r.Latitude : undefined,
-        lng: typeof r.Longitude === "number" && r.Longitude !== 0 ? r.Longitude : undefined,
+        lat,
+        lng,
       };
     });
 }

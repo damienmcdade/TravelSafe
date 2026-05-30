@@ -16,7 +16,13 @@ import { USER_AGENT } from "../lib/http.js";
 // the Neighborhood_Association column. Fetch BOTH year-specific
 // datasets (current + prior) in parallel and merge — same pattern
 // LA uses for k7nn-b2ep (current) + y8y3-fqfu (historical).
-const BASE_2026 = "https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento_Report_Data_2026/FeatureServer/0/query";
+// v98 — the 2026 dataset was published with SPACES in its service name
+// ("Sacramento Report Data 2026"), unlike every prior year's underscore
+// form. The old underscore URL 400'd ("Invalid URL"), so the adapter
+// silently served only stale 2025 data (the full-fleet audit flagged
+// Sacramento as 149d stale + grade N/A). URL-encode the spaces; the 2026
+// service is live with the same Neighborhood_Association schema (20k+ rows).
+const BASE_2026 = "https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento%20Report%20Data%202026/FeatureServer/0/query";
 const BASE_2025 = "https://services5.arcgis.com/54falWtcpty3V47Z/arcgis/rest/services/Sacramento_Report_Data_2025/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
 const PAGES = 30;  // ~60k incidents covers full Sacramento PD annual volume
