@@ -39,8 +39,16 @@ interface AtlRow {
 
 function classify(row: AtlRow): CrimeCategory {
   const desc = (row.NIBRS_Offense ?? "").toUpperCase();
-  if (/(ASSAULT|BATTERY|ROBBERY|HOMICIDE|MURDER|MANSLAUGHTER|RAPE|SEX|KIDNAP|STALK|THREAT|INTIMIDAT|DOMESTIC)/.test(desc)) return CrimeCategory.PERSONS;
-  if (/(BURGLAR|THEFT|LARC|STOLEN|VANDAL|DAMAGE|ARSON|FRAUD|FORGE|MOTOR VEHICLE|EMBEZ|COUNTERFEIT|SHOPLIFT)/.test(desc)) return CrimeCategory.PROPERTY;
+  // v98 — the data audit found Atlanta's grade suppressed to N/A by the
+  // divergence guard (adapter rate ~28% of FBI baseline). A contributing
+  // cause: standard NIBRS offense descriptions the regex missed were
+  // falling through to SOCIETY, undercounting the graded categories.
+  // Added: FONDLING (NIBRS sex offense → PERSONS); FALSE PRETENSES /
+  // SWINDLE / CONFIDENCE GAME + IMPERSONATION (NIBRS fraud → PROPERTY);
+  // PURSE-SNATCHING (larceny → PROPERTY); EXTORTION / BLACKMAIL
+  // (→ PROPERTY). ~12k Atlanta incidents re-bucketed to the correct group.
+  if (/(ASSAULT|BATTERY|ROBBERY|HOMICIDE|MURDER|MANSLAUGHTER|RAPE|SEX|FONDLING|KIDNAP|STALK|THREAT|INTIMIDAT|DOMESTIC)/.test(desc)) return CrimeCategory.PERSONS;
+  if (/(BURGLAR|THEFT|LARC|STOLEN|VANDAL|DAMAGE|ARSON|FRAUD|FALSE PRETENSE|SWINDLE|CONFIDENCE GAME|IMPERSONAT|FORGE|MOTOR VEHICLE|EMBEZ|COUNTERFEIT|SHOPLIFT|PURSE-SNATCH|EXTORTION|BLACKMAIL)/.test(desc)) return CrimeCategory.PROPERTY;
   return CrimeCategory.SOCIETY;
 }
 
