@@ -131,6 +131,15 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // public DC source has the missing rows, so calibrate the violent aggregate
   // to the FBI baseline (×2.1) and flag it. Property (~0.90×) is accurate → 1.0.
   "washington-dc": { persons: 2.1, property: 1.0, sourceType: "partial" },
+  // v99 — Boston's open feed publishes NO rape/sexual-assault offense at all
+  // (confirmed: 0 rape rows in 262k records, 2023-2026) — BPD suppresses it like
+  // Cambridge. So the feed structurally caps at ~0.61× FBI (rape is ~7% of
+  // violent and the FBI baseline includes it), and the recent-window slice reads
+  // 0.47×. Aggravated assault + robbery + murder ARE captured and classified
+  // correctly (simple assault excluded). Calibrate persons up (×1.4 → ~0.66×) to
+  // approximate the FBI total incl. the missing rape, and flag it. Property
+  // (1.43× after the tows/accidents exclude) is accurate-ish → 1.0.
+  "boston":        { persons: 1.4, property: 1.0, sourceType: "partial" },
 };
 
 /// Per-category rate-calibration lookup (1.0 for NIBRS adapters not in the
@@ -1103,7 +1112,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
         : sourceType === "coarse"
         ? ` ${city.label}'s feed reports assaults in a single bucket with no simple-vs-aggravated severity field, so the violent rate can't be filtered to UCR Part-1 aggravated assault precisely; it is calibrated to the city's FBI baseline in aggregate (violent ×${cfsScalePersons}) and should be read as approximate.`
         : sourceType === "partial"
-        ? ` ${city.label}'s open feed publishes only weapon-involved aggravated assault, not the full FBI aggravated-assault count, so it structurally understates violent crime; the violent rate is calibrated up (×${cfsScalePersons}) to approximate the FBI total and should be read as approximate.`
+        ? ` ${city.label}'s open feed omits part of the FBI violent-crime definition (e.g. non-weapon aggravated assault, or rape/sexual assault), so it structurally understates violent crime; the rate is calibrated up (×${cfsScalePersons}) to approximate the FBI total and should be read as approximate.`
         : ""),
     ...confidence,
     dataSourceType: isCfs ? "cfs" : "nibrs",
