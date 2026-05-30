@@ -362,20 +362,11 @@ export default function CrimeMap() {
   // can tell at a glance which areas have proper boundaries vs
   // centroid-only approximations. Circles scale by incident count
   // using the same maxCount denominator as polygon shading.
-  const matchedSlugs = useMemo(() => new Set(polygonSlugByName.values()), [polygonSlugByName]);
-  const orphanAreasWithData = useMemo(() => {
-    if (!areas || !citywide?.perArea) return [];
-    const statsBySlug = new Map(citywide.perArea.map((p) => [p.slug, p]));
-    const out: Array<{ slug: string; label: string; centroid: { lat: number; lng: number }; stats: AreaBreakdown }> = [];
-    for (const a of areas) {
-      if (matchedSlugs.has(a.slug)) continue; // already shown as polygon
-      const stats = statsBySlug.get(a.slug);
-      if (!stats || stats.incidentCount === 0) continue;
-      if (!Number.isFinite(a.centroid?.lat) || !Number.isFinite(a.centroid?.lng)) continue;
-      out.push({ slug: a.slug, label: a.label, centroid: a.centroid, stats });
-    }
-    return out;
-  }, [areas, citywide, matchedSlugs]);
+  // v98 — orphan centroid-circle fallback removed per product direction:
+  // the crime map renders ONLY the full neighborhood-polygon choropleth
+  // (block coloring). Areas that have data but no matching polygon are
+  // still reachable via the dropdown picker and flagged by the
+  // polygon-mismatch banner below — they are no longer drawn as circles.
 
   // v77 — detect "polygon file ↔ adapter areas" mismatch. Pre-rollout
   // audit caught Phoenix + Milwaukee using ZIP-code polygons (85003,
@@ -503,7 +494,6 @@ export default function CrimeMap() {
     for (const stats of polygonStats.values()) if (stats && stats.incidentCount > 0) n++;
     return n;
   }, [polygonStats]);
-  const totalCoverage = matchedPolyCount + orphanAreasWithData.length;
 
   // v84/v85 — outlier visual treatment. The percentile-rank in the
   // dispatcher buckets areas into riskLevel 1-5 (5 = top 10%);
@@ -623,13 +613,10 @@ export default function CrimeMap() {
             </button>
           </div>
         )}
-        {totalCoverage > 0 && (
+        {matchedPolyCount > 0 && (
           <div className="absolute bottom-3 left-3 z-[400] surface-muted px-2.5 py-1.5 text-[11px] text-slate2-700 shadow-sm flex items-center gap-1.5">
             <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-cove-500 inline-block" />
-            <span><strong className="text-slate2-900">{totalCoverage}</strong> neighborhoods</span>
-            {orphanAreasWithData.length > 0 && (
-              <span className="text-slate2-500">· {matchedPolyCount} boundary{matchedPolyCount === 1 ? "" : "ies"} + {orphanAreasWithData.length} approximate</span>
-            )}
+            <span><strong className="text-slate2-900">{matchedPolyCount}</strong> neighborhoods</span>
           </div>
         )}
         <MapContainer
@@ -649,48 +636,6 @@ export default function CrimeMap() {
               onEachFeature={onEachFeature}
             />
           )}
-          {/* v83 — orphan adapter areas (have data, no polygon match)
-              get a CircleMarker at the adapter's centroid. Radius
-              scales by count; color uses the same fuseColor blend so
-              the visual encoding matches the polygons. Dashed stroke
-              distinguishes "centroid-only approximation" from "real
-              polygon boundary". */}
-          {orphanAreasWithData.map((a) => {
-            const c = a.stats.incidentCount;
-            // Scale radius 6-22px logarithmically against maxCount so a
-            // single super-busy orphan doesn't dwarf a busy real poly.
-            const norm = Math.min(1, Math.log10(c + 1) / Math.log10(maxCount + 1));
-            const radius = 6 + norm * 16;
-            const dom = a.stats.dominantCategory;
-            const color = dom ? CATEGORY_COLOR[dom].hex : "#94a3b8";
-            // v84/v85 — outlier stroke matches polygon treatment so
-            // orphan circles read on the same percentile scale as
-            // real polygons. EXTREME tier (riskLevel=5 + count >=75%
-            // of city max) gets the darkest stroke + highest opacity.
-            const lvl = a.stats.riskLevel;
-            const valueShare = maxCount > 0 ? c / maxCount : 0;
-            const isExtreme = lvl === 5 && valueShare >= 0.75;
-            const isOutlier = lvl === 5 && !isExtreme;
-            const strokeColor = isExtreme ? EXTREME_STROKE : isOutlier ? OUTLIER_STROKE : color;
-            const strokeWeight = isExtreme ? 3.5 : isOutlier ? 3 : 2;
-            const fillOp = isExtreme ? 0.7 : isOutlier ? 0.6 : 0.45;
-            return (
-              <CircleMarker
-                key={`orphan-${a.slug}`}
-                center={[a.centroid.lat, a.centroid.lng]}
-                radius={radius}
-                pathOptions={{ color: strokeColor, fillColor: color, fillOpacity: fillOp, weight: strokeWeight, dashArray: "4 3" }}
-                eventHandlers={{ click: () => setArea({ slug: a.slug, label: a.label, jurisdiction: city.label }) }}
-              >
-                <Tooltip>
-                  <div className="text-xs">
-                    <div className="font-medium text-slate2-900">{a.label}</div>
-                    <div className="text-slate2-500">{c} incident{c === 1 ? "" : "s"} · approximate location</div>
-                  </div>
-                </Tooltip>
-              </CircleMarker>
-            );
-          })}
           {/* Per-incident drill-down dots only show inside the selected
               neighborhood. Range-validate lat/lng so a malformed upstream
               row can't plot a marker outside world bounds. */}
