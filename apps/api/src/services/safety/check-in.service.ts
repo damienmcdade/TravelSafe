@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 import { HttpError } from "../../middleware/error.js";
-import { CheckInStatus } from "@prisma/client";
+import { CheckInStatus } from "../../generated/prisma/client";
 import { getConfirmedContacts } from "../contacts.service.js";
 import { notifyContact, type DeliveryReceipt } from "../notifications/index.js";
 

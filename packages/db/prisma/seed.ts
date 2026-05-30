@@ -1,7 +1,10 @@
-import { PrismaClient, AreaKind, CrimeCategory, PostKind, PostStatus } from "@prisma/client";
+import { PrismaClient, AreaKind, CrimeCategory, PostKind, PostStatus } from "../src/generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL ?? "" }),
+});
 
 const SD_NEIGHBORHOODS = [
   { slug: "pacific-beach",  name: "Pacific Beach",   centroidLat: 32.7997, centroidLng: -117.2358 },

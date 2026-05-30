@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { CheckInStatus } from "@prisma/client";
+import { CheckInStatus } from "@/generated/prisma/client";
 import { prisma } from "@/server/lib/prisma";
 import { triggerExpiry } from "@/server/services/safety/check-in";
 import { requireCronSecret } from "@/server/lib/bearer-auth";

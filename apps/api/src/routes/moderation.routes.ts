@@ -1,7 +1,7 @@
 import { Router, type Request } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { ReviewActionKind, TrustLevel } from "@prisma/client";
+import { ReviewActionKind, TrustLevel } from "../generated/prisma/client";
 import { requireAuth } from "../middleware/auth.js";
 import { writeLimiter } from "../middleware/rate-limit.js";
 import { HttpError } from "../middleware/error.js";

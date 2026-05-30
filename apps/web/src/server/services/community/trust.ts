@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/server/lib/prisma";
-import { TrustLevel, PostStatus } from "@prisma/client";
+import { TrustLevel, PostStatus } from "@/generated/prisma/client";
 
 /// Trust thresholds. NEW → REGULAR → TRUSTED is fully automatic; the
 /// MODERATOR tier is granted manually (no auto-promotion path here so

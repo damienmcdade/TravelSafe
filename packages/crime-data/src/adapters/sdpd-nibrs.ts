@@ -1,6 +1,6 @@
 import { parse as parseCsv } from "csv-parse/sync";
 import { env } from "../env.js";
-import { CrimeCategory } from "@prisma/client";
+import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";

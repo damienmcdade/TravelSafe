@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { CrimeCategory, NotificationFrequency } from "@prisma/client";
+import { CrimeCategory, NotificationFrequency } from "@/generated/prisma/client";
 import { wrap } from "@/server/lib/http";
 import { requireSession } from "@/server/lib/auth";
 import { prisma } from "@/server/lib/prisma";

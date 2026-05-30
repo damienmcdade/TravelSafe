@@ -1,4 +1,4 @@
-import type { CrimeCategory } from "@prisma/client";
+import type { CrimeCategory } from "./crime-category.js";
 
 // Shared crime-data type contracts. Lives in @travelsafe/crime-data
 // so both apps/web (Vercel routes) and apps/api (Railway routes) can

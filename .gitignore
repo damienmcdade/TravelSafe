@@ -50,3 +50,9 @@ packages/db/prisma/dev.db*
 .turbo
 next-env.d.ts
 .env*.local
+
+# Prisma 7 — per-consumer generated clients (regenerated at build/install time
+# from packages/db/prisma/schema.prisma; see each app's build + postinstall).
+packages/db/src/generated/
+apps/api/src/generated/
+apps/web/src/generated/

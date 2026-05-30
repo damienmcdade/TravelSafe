@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { PostStatus, ReviewActionKind } from "@prisma/client";
+import { PostStatus, ReviewActionKind } from "@/generated/prisma/client";
 import { HttpError } from "../../lib/http";
 import { evaluateSuspension } from "./suspension";
 import { REPORT_AUTO_REVERT_THRESHOLD } from "./post-prevet";

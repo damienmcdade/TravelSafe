@@ -1,4 +1,7 @@
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient, Prisma } from "../generated/prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL ?? "" });
 
 declare global {
 
@@ -17,6 +20,7 @@ declare global {
 // defense in depth.
 function buildClient() {
   const base = new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === "production" ? ["error"] : ["warn", "error"],
   });
   // v96p2 — for AND-composable shapes (findFirst / findMany / count)

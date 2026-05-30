@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AreaKind } from "@prisma/client";
+import { AreaKind } from "@/generated/prisma/client";
 import { wrap } from "@/server/lib/http";
 import { prisma } from "@/server/lib/prisma";
 

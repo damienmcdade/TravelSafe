@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { ReviewActionKind } from "@prisma/client";
+import { ReviewActionKind } from "@/generated/prisma/client";
 import { wrap } from "@/server/lib/http";
 import { requireSession, requireModerator } from "@/server/lib/auth";
 import { env } from "@/server/lib/env";

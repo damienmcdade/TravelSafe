@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import { PostStatus } from "@prisma/client";
+import { PostStatus } from "@/generated/prisma/client";
 import { wrap, HttpError } from "@/server/lib/http";
 import { prisma } from "@/server/lib/prisma";
 import { crimeData } from "@/server/services/crime-data";

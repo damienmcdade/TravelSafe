@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { NotificationFrequency } from "@prisma/client";
+import { NotificationFrequency } from "@/generated/prisma/client";
 import { prisma } from "@/server/lib/prisma";
 import { requireCronSecret } from "@/server/lib/bearer-auth";
 import { sendToMany } from "@/server/services/push/webpush";

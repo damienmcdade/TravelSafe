@@ -1,4 +1,4 @@
-import type { CrimeCategory } from "@prisma/client";
+import type { CrimeCategory } from "../../generated/prisma/client";
 
 export interface DataProvenance {
   source: string;          // human-readable source name

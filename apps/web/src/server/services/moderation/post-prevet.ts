@@ -1,4 +1,4 @@
-import { PostFlagKind } from "@prisma/client";
+import { PostFlagKind } from "@/generated/prisma/client";
 import { containsProfanity } from "./profanity";
 
 // Pre-vetter — relaxed policy.

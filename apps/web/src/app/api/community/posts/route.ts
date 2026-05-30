@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import { PostStatus, PostKind } from "@prisma/client";
+import { PostStatus, PostKind } from "@/generated/prisma/client";
 import { wrap, HttpError } from "@/server/lib/http";
 import { optionalSession } from "@/server/lib/auth";
 import { prisma } from "@/server/lib/prisma";
