@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
     "CommunitySafe privacy practices — what's stored on your device, what's stored on our servers when you create a Safety account, what's transmitted to third parties, and how to control it.",
 };
 
-const LAST_UPDATED = "2026-05-27";
+const LAST_UPDATED = "2026-05-30";
 
 export default function PrivacyPage() {
   return (
@@ -16,6 +17,13 @@ export default function PrivacyPage() {
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Legal</p>
         <h1 className="mt-1 font-display text-3xl text-slate2-900">Privacy</h1>
         <p className="mt-2 text-xs text-slate2-500">Last updated: {LAST_UPDATED}</p>
+        <p className="mt-2 text-sm text-slate2-700 leading-relaxed">
+          CommunitySafe is operated by{" "}
+          <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">CyberWave Technologies LLC</a>{" "}
+          (cyberwaveglobal.com), a California limited liability company and the <strong>data controller</strong> for the purposes of the
+          GDPR, the CCPA/CPRA, and equivalent laws. Privacy questions and data-subject requests:{" "}
+          <a href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20privacy%20request" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a>.
+        </p>
       </header>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
@@ -160,9 +168,7 @@ export default function PrivacyPage() {
         <p>The fastest paths are in-app: <strong>Personal Safety → Your account &amp; data</strong> for export / erasure, and the <strong>Report</strong> button on any post for content concerns. For anything else — corrections, questions about this policy, or DSAR requests you can&apos;t fulfill via the in-app controls — email <a href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20privacy%20request" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a> with &quot;PRIVACY&quot; in the subject line, and we&apos;ll respond within 30 days. Bug reports and code-level questions can also be opened on the project&apos;s code repository at <a href="https://github.com/damienmcdade/TravelSafe/issues/new" target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">github.com/damienmcdade/TravelSafe/issues</a>.</p>
       </section>
 
-      <p className="text-xs text-slate2-500">
-        See also: <Link href="/terms" className="text-bay-700 hover:underline">Terms of use</Link>, <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>.
-      </p>
+      <LegalFooter />
     </main>
   );
 }

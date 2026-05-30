@@ -80,7 +80,22 @@ export default function AppLayout({ children }: { children: ReactNode }) {
             <Link href="/credits" className="text-bay-700 hover:underline">Photo credits</Link>
             <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link>
             <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>
+            <Link href="/accessibility" className="text-bay-700 hover:underline">Accessibility</Link>
+            <Link href="/dmca" className="text-bay-700 hover:underline">DMCA</Link>
           </nav>
+        </div>
+        {/* Legal-entity / operator disclosure. CommunitySafe is operated by
+            CyberWave Technologies LLC; surfaced on every authenticated page so the
+            operating entity, its site, and its contact email are always one
+            click away (ties the privacy / terms / DSAR contact paths to a
+            named legal entity). */}
+        <div className="max-w-5xl mx-auto px-4 pb-6 -mt-2 text-xs text-slate2-500">
+          <p>
+            © {new Date().getFullYear()} CyberWave Technologies LLC — operator of CommunitySafe. All rights reserved.{" "}
+            <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">cyberwaveglobal.com</a>
+            {" · "}
+            <a href="mailto:info@cyberwaveglobal.com" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a>
+          </p>
         </div>
       </footer>
       <AIAssistant />

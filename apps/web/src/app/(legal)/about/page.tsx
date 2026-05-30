@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "About",
@@ -99,6 +100,28 @@ export default function AboutPage() {
         </p>
       </section>
 
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed" id="operator">
+        <h2 className="font-display text-xl text-slate2-900">Who operates CommunitySafe</h2>
+        <p>
+          CommunitySafe is built and operated by{" "}
+          <a
+            href="https://cyberwaveglobal.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-bay-700 underline"
+          >
+            CyberWave Technologies LLC
+          </a>{" "}
+          (cyberwaveglobal.com), a California limited liability company — the
+          entity responsible for this site and the data controller for the
+          purposes of its{" "}
+          <Link href="/privacy" className="text-bay-700 underline">Privacy Policy</Link> and{" "}
+          <Link href="/terms" className="text-bay-700 underline">Terms of Use</Link>. Reach
+          us at{" "}
+          <a href="mailto:info@cyberwaveglobal.com" className="text-bay-700 underline">info@cyberwaveglobal.com</a>.
+        </p>
+      </section>
+
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed" id="contact">
         <h2 className="font-display text-xl text-slate2-900">Contact</h2>
         <p>
@@ -136,6 +159,8 @@ export default function AboutPage() {
           , we respond within 30 days.
         </p>
       </section>
+
+      <LegalFooter />
     </main>
   );
 }

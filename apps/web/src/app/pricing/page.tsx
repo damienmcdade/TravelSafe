@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -61,7 +62,7 @@ export default function PricingPage() {
             "Custom alert geo-fences",
             "Priority access to new city adapters",
           ]}
-          cta={{ label: "Join the waitlist", href: "mailto:hello@example.com?subject=CommunitySafe%20Pro%20waitlist" }}
+          cta={{ label: "Join the waitlist", href: "mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20Pro%20waitlist" }}
         />
       </section>
 
@@ -75,13 +76,7 @@ export default function PricingPage() {
         </ul>
       </section>
 
-      <footer className="text-center text-xs text-slate2-500">
-        <Link href="/privacy" className="text-bay-700 hover:underline">Privacy policy</Link>
-        {" · "}
-        <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>
-        {" · "}
-        <Link href="/now" className="text-bay-700 hover:underline">Back to app</Link>
-      </footer>
+      <LegalFooter />
     </main>
   );
 }

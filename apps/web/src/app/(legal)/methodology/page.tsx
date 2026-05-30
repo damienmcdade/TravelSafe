@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "Methodology",
@@ -226,10 +227,7 @@ export default function MethodologyPage() {
         </p>
       </section>
 
-      <p className="text-xs text-slate2-500">
-        See also: <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link> ·{" "}
-        <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>.
-      </p>
+      <LegalFooter />
     </main>
   );
 }

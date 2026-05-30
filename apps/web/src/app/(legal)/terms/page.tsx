@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "Terms",
@@ -7,7 +8,7 @@ export const metadata: Metadata = {
     "CommunitySafe terms of use — what the app is, what it isn't, acceptable use, AI assistant disclaimer, and how community posts are moderated.",
 };
 
-const LAST_UPDATED = "2026-05-26";
+const LAST_UPDATED = "2026-05-30";
 
 export default function TermsPage() {
   return (
@@ -21,6 +22,13 @@ export default function TermsPage() {
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What CommunitySafe is</h2>
         <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 37 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
+        <p>
+          CommunitySafe is operated by{" "}
+          <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">CyberWave Technologies LLC</a>{" "}
+          (cyberwaveglobal.com) (&ldquo;we&rdquo;, &ldquo;us&rdquo;). By using CommunitySafe you
+          agree to these Terms. Questions about these Terms:{" "}
+          <a href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20terms" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a>.
+        </p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
@@ -86,13 +94,23 @@ export default function TermsPage() {
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Limitation of liability &amp; indemnity</h2>
+        <p>To the maximum extent permitted by applicable law, CyberWave Technologies LLC and its operators, officers, and contributors will not be liable for any indirect, incidental, special, consequential, or punitive damages, or for any loss arising from your use of — or inability to use — CommunitySafe or any decision made in reliance on it. CommunitySafe is provided free of charge; to the extent any liability cannot be excluded, it is limited in the aggregate to USD $100.</p>
+        <p>You agree to indemnify and hold harmless CyberWave Technologies LLC from any claim arising out of your misuse of the app, your violation of these Terms, your use of the data for a prohibited purpose (including any housing, lending, insurance, or employment decision), or any content you submit to the community feed.</p>
+        <p>If any provision of these Terms is held unenforceable, the remaining provisions stay in effect. These Terms, together with the <Link href="/privacy" className="text-bay-700 hover:underline">Privacy Policy</Link>, are the entire agreement between you and CyberWave Technologies LLC regarding CommunitySafe.</p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Governing law &amp; contact</h2>
+        <p>CommunitySafe is operated by CyberWave Technologies LLC, a California limited liability company. These Terms are governed by the laws of the State of California, without regard to its conflict-of-laws rules, and you agree to the exclusive jurisdiction and venue of the state and federal courts located in California for any dispute that is not otherwise resolved. Questions about these Terms: <a href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20terms" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a> · <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">cyberwaveglobal.com</a>.</p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Changes</h2>
         <p>These terms may be updated as the app evolves. Material changes will be noted by the &quot;Last updated&quot; date at the top of this page.</p>
       </section>
 
-      <p className="text-xs text-slate2-500">
-        See also: <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link>, <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>.
-      </p>
+      <LegalFooter />
     </main>
   );
 }

@@ -23,7 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://communitysafe.app";
   const now = new Date();
   const tabs = ["/threats", "/map", "/watch", "/community", "/safety", "/safety-score", "/trends", "/route", "/coverage", "/cities"];
-  const legal = ["/privacy", "/terms", "/methodology"];
+  const legal = ["/privacy", "/terms", "/methodology", "/about", "/accessibility", "/dmca", "/credits"];
 
   // Per-city discover() in parallel, soft-fail per city so one broken
   // adapter doesn't drop every other city's neighborhood URLs.

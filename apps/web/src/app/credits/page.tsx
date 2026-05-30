@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PHOTOS } from "@/components/CityBackdrop";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
   title: "Photo Credits",
@@ -101,13 +102,7 @@ export default function CreditsPage() {
         attribution list from the same constant — no extra update is needed.
       </section>
 
-      <footer className="text-center text-xs text-slate2-500 pt-4">
-        <Link href="/privacy" className="text-bay-700 hover:underline">Privacy policy</Link>
-        {" · "}
-        <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>
-        {" · "}
-        <Link href="/now" className="text-bay-700 hover:underline">Back to app</Link>
-      </footer>
+      <LegalFooter />
     </main>
   );
 }
