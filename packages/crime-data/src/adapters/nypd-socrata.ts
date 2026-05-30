@@ -58,6 +58,23 @@ function mapToNibrs(row: SodaRow): CrimeCategory {
   return CrimeCategory.SOCIETY;
 }
 
+// v99 — NYPD severity-aware Part-1 descriptor. The feed carries law_cat_cd
+// (FELONY | MISDEMEANOR | VIOLATION), the exact signal for aggravated-vs-simple.
+// FBI UCR Part-1 aggravated assault = NYPD "FELONY ASSAULT" only; "ASSAULT 3 &
+// RELATED OFFENSES" is MISDEMEANOR simple assault (NOT Part-1) and is the single
+// largest NYC offense (~13.5k/window) — counting it inflated the violent rate to
+// ~1.65× FBI. Emit a canonical descriptor so the shared Part-1 filter scores it
+// right: felony assault → counted; misdemeanor/violation assault → "Simple
+// Assault" (dropped by /\bsimple\b/). Misdemeanor sex crimes (not the separate
+// "RAPE" offense) are likewise non-Part-1.
+function nyOffenseDesc(row: SodaRow): string {
+  const o = (row.ofns_desc ?? "").toUpperCase();
+  const felony = (row.law_cat_cd ?? "").toUpperCase() === "FELONY";
+  if (o.includes("ASSAULT")) return felony ? "Aggravated Assault" : "Simple Assault";
+  if (o.includes("SEX CRIME") && !felony) return "Simple Sex Offense";
+  return row.pd_desc?.trim() || row.ofns_desc?.trim() || "Unknown";
+}
+
 const PROVENANCE: DataProvenance = {
   source: "NYPD Complaint Data Current Year-To-Date (NYC Open Data)",
   datasetUrl: "https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243",
@@ -256,7 +273,7 @@ async function fetchNypd(): Promise<Incident[]> {
       area,
       occurredAt: d.toISOString(),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: r.pd_desc?.trim() || r.ofns_desc?.trim() || "Unknown",
+      ibrOffenseDescription: nyOffenseDesc(r),
       beat: null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,
