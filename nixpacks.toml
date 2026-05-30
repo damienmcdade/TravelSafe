@@ -37,8 +37,14 @@ cmds = ["npm ci --include=dev --include-workspace-root"]
 # string so the layer cache is busted and the phase actually re-runs.
 [phases.build]
 dependsOn = ["install"]
+# build:api now does `rm -rf src/generated/prisma && prisma generate && tsc` in
+# the apps/api cwd — generating the client IMMEDIATELY before tsc (same step,
+# same dir) guarantees tsc sees it and emits dist/generated/prisma. A separate
+# generate step here let the v7 build emit dist/{index,routes} but NOT
+# dist/generated/prisma, so the api crashed at runtime with ERR_MODULE_NOT_FOUND.
+# crime-data doesn't use the prisma client (local CrimeCategory enum), so it
+# needs no generate.
 cmds = [
-  "npx -y prisma@7.8.0 generate --schema=packages/db/prisma/schema.prisma",
   "npm run build --workspace packages/crime-data",
   "npm run build:api",
 ]

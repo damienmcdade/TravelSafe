@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
-import { CheckInStatus } from "../../generated/prisma/client";
+import { CheckInStatus } from "../../generated/prisma/client.js";
 import { env } from "../../env.js";
 import { triggerExpiry } from "./check-in.service.js";
 

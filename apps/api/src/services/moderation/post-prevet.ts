@@ -1,4 +1,4 @@
-import { PostFlagKind } from "../../generated/prisma/client";
+import { PostFlagKind } from "../../generated/prisma/client.js";
 import { containsProfanity } from "./profanity-filter.js";
 
 // Balanced defaults — confirmed with the user before implementation.

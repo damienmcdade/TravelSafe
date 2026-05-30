@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { PostStatus, ReactionKind } from "../generated/prisma/client";
+import { PostStatus, ReactionKind } from "../generated/prisma/client.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { writeLimiter } from "../middleware/rate-limit.js";
 import { preVetPost } from "../services/moderation/post-prevet.js";

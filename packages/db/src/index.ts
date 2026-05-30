@@ -2,7 +2,7 @@
 // db_client generator) and a driver adapter is mandatory: `new PrismaClient()`
 // without `adapter` throws in v7. The connection string moves from the schema's
 // datasource (no longer allowed) to the @prisma/adapter-pg adapter here.
-import { PrismaClient } from "./generated/prisma/client";
+import { PrismaClient } from "./generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL ?? "" });
@@ -23,4 +23,4 @@ if (process.env.NODE_ENV !== "production") {
   globalThis.__travelsafePrisma = prisma;
 }
 
-export * from "./generated/prisma/client";
+export * from "./generated/prisma/client.js";

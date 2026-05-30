@@ -25,18 +25,27 @@
 // crime-data is intentionally NOT a consumer — it only ever needed the
 // CrimeCategory enum, which is now a local const (packages/crime-data is
 // decoupled from Prisma entirely).
+// importFileExtension = "js" — the ESM consumers (db, api) are compiled by
+// plain tsc (moduleResolution Bundler, which does NOT rewrite import paths) and
+// run on node's native ESM loader, which REQUIRES file extensions on relative
+// imports. Without this the generated client's own internal imports
+// (`./internal/class`, `./enums`) are extensionless and crash at startup with
+// ERR_MODULE_NOT_FOUND. The "js" extension makes the generated code import
+// `./internal/class.js`, runnable directly after tsc.
 generator db_client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "esm"
-  runtime      = "nodejs"
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  runtime             = "nodejs"
+  importFileExtension = "js"
 }
 
 generator api_client {
-  provider     = "prisma-client"
-  output       = "../../../apps/api/src/generated/prisma"
-  moduleFormat = "esm"
-  runtime      = "nodejs"
+  provider            = "prisma-client"
+  output              = "../../../apps/api/src/generated/prisma"
+  moduleFormat        = "esm"
+  runtime             = "nodejs"
+  importFileExtension = "js"
 }
 
 generator web_client {

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
-import { PostStatus, AreaKind } from "../generated/prisma/client";
+import { PostStatus, AreaKind } from "../generated/prisma/client.js";
 import { optionalAuth } from "../middleware/auth.js";
 // v62 — workspace dispatcher (multi-city) instead of the SD-only
 // legacy adapter, so per-neighborhood feed works for every city.

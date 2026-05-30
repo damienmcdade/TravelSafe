@@ -1,4 +1,4 @@
-import { NotificationFrequency } from "../../generated/prisma/client";
+import { NotificationFrequency } from "../../generated/prisma/client.js";
 import { prisma } from "../../lib/prisma.js";
 import { sendToMany } from "./webpush.service.js";
 

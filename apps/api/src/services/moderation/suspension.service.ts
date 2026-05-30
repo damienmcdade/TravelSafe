@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
-import { SuspensionKind, PostStatus } from "../../generated/prisma/client";
+import { SuspensionKind, PostStatus } from "../../generated/prisma/client.js";
 
 // Balanced suspension ladder (confirmed with user):
 //   2 rejected within 7d   -> 24h posting timeout

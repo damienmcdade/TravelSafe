@@ -1,4 +1,4 @@
-import type { CrimeCategory } from "../../generated/prisma/client";
+import type { CrimeCategory } from "../../generated/prisma/client.js";
 
 export interface DataProvenance {
   source: string;          // human-readable source name
