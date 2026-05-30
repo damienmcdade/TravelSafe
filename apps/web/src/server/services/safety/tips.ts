@@ -87,9 +87,9 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   "norfolk":       { line: "757-441-5610", label: "Norfolk PD non-emergency", url: "https://www.norfolk.gov/356/Police" },
   "phoenix":       { line: "602-262-6151", label: "Phoenix PD Crime Stop (non-emergency)", url: "https://www.phoenix.gov/police" },
   "denver":        { line: "720-913-2000", label: "Denver PD non-emergency", url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
-  "atlanta":       { line: "404-614-6544", label: "APD non-emergency", url: "https://www.atlantapd.org/" },
+  "atlanta":       { line: "404-658-6666", label: "Atlanta E911 non-emergency", url: "https://www.atlantapd.org/" },
   "indianapolis":  { line: "317-327-3811", label: "IMPD non-emergency", url: "https://www.indy.gov/agency/indianapolis-metropolitan-police-department" },
-  "raleigh":       { line: "919-996-3335", label: "Raleigh PD non-emergency", url: "https://raleighnc.gov/police" },
+  "raleigh":       { line: "919-829-1911", label: "Raleigh PD non-emergency", url: "https://raleighnc.gov/police" },
   "honolulu":      { line: "808-529-3111", label: "HPD non-emergency", url: "https://www.honolulupd.org/" },
 };
 
