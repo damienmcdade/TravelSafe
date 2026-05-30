@@ -64,7 +64,12 @@ import { CITY_POPULATION, POPULATION_VINTAGE } from "./population.js";
 // read 0.54× FBI, Boise property 0.48×, both purely from the single 0.50/0.20
 // scale tuned for their over-counting violent bucket). Each category is now
 // scaled independently so both land near the city's FBI baseline.
-interface CfsScale { persons: number; property: number; }
+// sourceType: "cfs" = calls-for-service feed; "coarse" = NIBRS feed whose
+// assault bucket has no simple-vs-aggravated severity field, so its violent
+// rate can't be filtered to UCR Part-1 precisely and is instead calibrated to
+// the FBI baseline in aggregate (Honolulu, Milwaukee). Only "cfs" widens the
+// divergence-guard threshold and shows the "calls-for-service" badge.
+interface CfsScale { persons: number; property: number; sourceType: "cfs" | "coarse"; }
 const CFS_CALIBRATION: Record<string, CfsScale> = {
   // Cleveland REMOVED in v95p14. The Cleveland adapter switched from
   // CAD_Police (Calls for Service, dispatch-keyword-matched) to
@@ -79,11 +84,11 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // violent at ~558/100k (0.41× baseline, Grade B-ish) and
   // property at ~4282/100k (0.84× baseline). Plausible signal,
   // inside the divergence guard.
-  "new-orleans":   { persons: 0.80, property: 0.80 },
+  "new-orleans":   { persons: 0.80, property: 0.80, sourceType: "cfs" },
   // v99 — Las Vegas split. Raw violent ran ~2.9× FBI (LVMPD CFS coarse),
   // raw property ~1.1×; the single 0.50 scale put property at 0.54×. Persons
   // 0.34 (→~1.0×), property 0.93 (→~1.0×).
-  "las-vegas":     { persons: 0.34, property: 0.93 },
+  "las-vegas":     { persons: 0.34, property: 0.93, sourceType: "cfs" },
   // v68 followup — Boise 0.30 → 0.20. The grade-sanity worker flagged
   // PERSONS at 2.01× FBI city baseline even after the 0.30 scale —
   // BPD's "Violent Crimes" category label is too coarse for adapter-
@@ -96,15 +101,26 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // v99 — Boise split. BPD's coarse "Violent Crimes" CFS bucket ran ~8× FBI
   // raw; property ~2.9×. The single 0.20 scale left violent ~1.6× over and
   // property at 0.48×. Persons 0.12 (→~1.0×), property 0.34 (→~1.0×).
-  "boise":         { persons: 0.12, property: 0.34 },
+  "boise":         { persons: 0.12, property: 0.34, sourceType: "cfs" },
+  // v99 — COARSE-NIBRS over-counters (no severity field to split simple vs
+  // aggravated assault). Honolulu HPD publishes a single coarse "ASSAULT"
+  // type (Assault 1/2/3 combined, ~56% misdemeanor simple) with no statute /
+  // charge / severity column anywhere in the feed; Milwaukee WIBR exposes a
+  // single boolean AssaultOffense flag (13A+13B+13C) with only a weak
+  // WeaponUsed proxy. Neither violent rate can be filtered to UCR Part-1
+  // aggravated assault, so it's calibrated to the city's FBI baseline in
+  // aggregate (persons ≈ 1 / observed-over-count). Property is accurate → 1.0.
+  "honolulu":      { persons: 0.56, property: 1.0, sourceType: "coarse" },
+  "milwaukee":     { persons: 0.53, property: 1.0, sourceType: "coarse" },
 };
 
-/// Per-category CFS scale lookup (1.0 for NIBRS adapters not in the map).
-/// `isCfs` is the boolean the divergence/undercount guards use to widen
-/// their thresholds for structurally-off-baseline calls-for-service feeds.
-function cfsScalesFor(slug: string): { persons: number; property: number; isCfs: boolean } {
+/// Per-category rate-calibration lookup (1.0 for NIBRS adapters not in the
+/// map). `isCfs` is true ONLY for true calls-for-service feeds — it widens the
+/// divergence-guard threshold and drives the "calls-for-service" badge.
+/// `sourceType` is "nibrs" when the slug isn't calibrated.
+function cfsScalesFor(slug: string): { persons: number; property: number; isCfs: boolean; sourceType: "cfs" | "coarse" | "nibrs" } {
   const c = CFS_CALIBRATION[slug];
-  return { persons: c?.persons ?? 1, property: c?.property ?? 1, isCfs: !!c };
+  return { persons: c?.persons ?? 1, property: c?.property ?? 1, isCfs: c?.sourceType === "cfs", sourceType: c?.sourceType ?? "nibrs" };
 }
 // POPULATION_VINTAGE is re-exported so consumers can render the label
 // without reaching into the shared module independently.
@@ -898,7 +914,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   const pop = (popFraction >= FRESH_POP_FRACTION_THRESHOLD && freshPopSum > 0) ? Math.min(freshPopSum, cityPop) : cityPop;
   // CFS calibration — per-category (see CFS_CALIBRATION at the top of the file).
   // 1.0 for NIBRS adapters; per-category factors for CFS feeds.
-  const { persons: cfsScalePersons, property: cfsScaleProperty, isCfs } = cfsScalesFor(city.slug);
+  const { persons: cfsScalePersons, property: cfsScaleProperty, isCfs, sourceType } = cfsScalesFor(city.slug);
   const annualize = (count: number, scale: number) => {
     if (pop <= 0 || windowDays <= 0) return 0;
     return (count * (365 / windowDays) / pop) * 100_000 * scale;
@@ -1056,8 +1072,10 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
         : `The grade compares this rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
           `because no city-specific FBI baseline is on file for ${city.label} yet. `) +
       "Society / public-order offenses are excluded because the FBI does not publish a national rate." +
-      (isCfs
+      (sourceType === "cfs"
         ? ` ${city.label} publishes calls-for-service rather than closed NIBRS reports; rates are scaled per category (violent ×${cfsScalePersons}, property ×${cfsScaleProperty}) to approximate NIBRS-equivalent volumes (CFS is structurally inflated because each crime spawns multiple dispatches and many dispatches are unfounded — and the violent dispatch bucket is far more inflated than the property one, hence the separate factors).`
+        : sourceType === "coarse"
+        ? ` ${city.label}'s feed reports assaults in a single bucket with no simple-vs-aggravated severity field, so the violent rate can't be filtered to UCR Part-1 aggravated assault precisely; it is calibrated to the city's FBI baseline in aggregate (violent ×${cfsScalePersons}) and should be read as approximate.`
         : ""),
     ...confidence,
     dataSourceType: isCfs ? "cfs" : "nibrs",

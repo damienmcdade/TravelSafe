@@ -31,9 +31,18 @@ interface SodaRow {
 }
 
 const PERSONS_CATS = new Set([
-  "assault", "robbery", "homicide", "sex offense", "kidnapping",
-  "human trafficking", "offences against the family and children",
-  "weapons offense",
+  // v99 — over-count fix. Removed "offences against the family and children"
+  // (its members are restraining-order / stay-away-order violations and
+  // DV/hate-crime SECONDARY codes — not UCR Part-1 persons crimes; ~2,300
+  // rows/6mo were being counted as violent). Removed "sex offense" (SFPD's
+  // non-rape bucket: indecent exposure, obscene calls — not Part-1) and ADDED
+  // "rape" (SFPD files true forcible rape under its own category, which was
+  // missing here, so genuine Part-1 rape had been UNDER-counted). "assault"
+  // stays: the adapter prepends incident_subcategory so "Simple Assault — …"
+  // is already dropped by isPart1Violent's /\bsimple\b/ while "Aggravated
+  // Assault — …" is kept.
+  "assault", "rape", "robbery", "homicide", "kidnapping",
+  "human trafficking", "weapons offense",
 ]);
 const PROPERTY_CATS = new Set([
   "larceny theft", "burglary", "motor vehicle theft", "arson",

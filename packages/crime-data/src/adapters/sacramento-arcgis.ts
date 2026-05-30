@@ -50,7 +50,22 @@ const PROPERTY_KEYWORDS = [
   "VANDALISM", "DAMAGE", "ARSON", "FRAUD", "FORGERY", "EMBEZZLE", "SHOPLIFT",
 ];
 function classify(row: SacRow): CrimeCategory {
-  const t = `${row.Offense_Category ?? ""} ${row.Description ?? ""}`.toUpperCase();
+  const desc = (row.Description ?? "").trim().toUpperCase();
+  // v99 — over-count fix. Sacramento's Description leads with the California
+  // Penal Code. The coarse "ASSAULT" Offense_Category lumps simple + aggravated
+  // together (57% of it is simple), so keyword-only classification counted
+  // every assault as FBI Part-1 violent (rate ran 1.82× FBI). Route the SIMPLE
+  // penal codes to SOCIETY so they don't inflate the violent count:
+  //   240 simple assault · 241 assault on officer · 242 simple battery ·
+  //   243 battery variants (243(E)(1) simple DV battery, 243(B) officer, etc.)
+  //   EXCEPT 243(D) serious-bodily-injury battery and 243.4 sexual battery.
+  // AGGRAVATED codes stay PERSONS via the keyword pass: 245 ADW, 244 caustic,
+  // 244.5 taser, 246 firearm-at-dwelling, 273.5 corporal injury on spouse,
+  // 220 assault-with-intent, 664/187 attempted murder.
+  if (/^\s*24[012]\b/.test(desc) || /^\s*243(?!\(D\)|\.4)/.test(desc)) {
+    return CrimeCategory.SOCIETY;
+  }
+  const t = `${row.Offense_Category ?? ""} ${desc}`;
   for (const k of PERSONS_KEYWORDS) if (t.includes(k)) return CrimeCategory.PERSONS;
   for (const k of PROPERTY_KEYWORDS) if (t.includes(k)) return CrimeCategory.PROPERTY;
   return CrimeCategory.SOCIETY;
