@@ -93,7 +93,13 @@ function resolveNeighborhood(blockaddress: string | undefined): { label: string;
 // HPD types are short and stable. Map them to the 3-bucket NIBRS
 // taxonomy so the safety-score Part-1 filter can score them.
 const PERSONS_TYPES = new Set([
-  "ASSAULT", "ROBBERY", "HOMICIDE", "SEX CRIMES", "WEAPONS",
+  // v99 — "WEAPONS" removed: weapon-law violations are NIBRS Crimes Against
+  // Society, never UCR Part-1 violent. Bucketing them as PERSONS added ~212
+  // phantom violent counts, inflating Honolulu's PERSONS rate (was 1.94x FBI).
+  // (HPD's coarse single "ASSAULT" bucket — Assault 1/2/3 combined, dominated
+  // by misdemeanor Assault-3 — remains a known over-count the feed can't
+  // disambiguate without subtype data.)
+  "ASSAULT", "ROBBERY", "HOMICIDE", "SEX CRIMES",
 ]);
 const PROPERTY_TYPES = new Set([
   "THEFT/LARCENY", "VANDALISM", "MOTOR VEHICLE THEFT",

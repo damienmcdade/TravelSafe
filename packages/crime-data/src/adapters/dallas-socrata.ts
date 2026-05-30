@@ -44,6 +44,14 @@ interface DallasRow {
 }
 
 function mapToNibrs(row: DallasRow): CrimeCategory {
+  // v99 — Dallas's NIBRS feed tags ROBBERY with crimeagainst="PROPERTY",
+  // but FBI UCR Part-1 counts robbery as VIOLENT. Trusting the upstream
+  // tag routed ~771 robberies/180d into PROPERTY, simultaneously pushing
+  // the citywide violent rate to 0.38x FBI (robberies missing from PERSONS)
+  // and property to 1.41x (robberies added to PROPERTY). Force robbery into
+  // PERSONS so both rates line up with the FBI baseline.
+  const offense = (row.nibrs_crime || row.offincident || "").toUpperCase();
+  if (/\bROBBERY\b/.test(offense)) return CrimeCategory.PERSONS;
   const c = (row.nibrs_crimeagainst ?? "").trim().toUpperCase();
   if (c === "PERSON" || c === "PERSONS") return CrimeCategory.PERSONS;
   if (c === "PROPERTY") return CrimeCategory.PROPERTY;
