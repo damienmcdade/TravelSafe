@@ -62,9 +62,29 @@ const COMMUNITY_AREAS: Record<number, string> = {
 // place it there; anything ambiguous goes to SOCIETY.
 const PERSONS_TYPES = new Set([
   "ASSAULT", "BATTERY", "ROBBERY", "HOMICIDE", "CRIM SEXUAL ASSAULT", "CRIMINAL SEXUAL ASSAULT",
-  "SEX OFFENSE", "KIDNAPPING", "HUMAN TRAFFICKING", "OFFENSE INVOLVING CHILDREN",
+  "KIDNAPPING", "HUMAN TRAFFICKING",
   "INTIMIDATION", "STALKING",
+  // v99 — removed "SEX OFFENSE" (Chicago's non-rape bucket: criminal sexual
+  // ABUSE, public indecency — NOT UCR Part-1; true rape is the separate
+  // "CRIM SEXUAL ASSAULT" type, kept above) and "OFFENSE INVOLVING CHILDREN"
+  // (endangerment, abandonment — not Part-1). Both were being counted as
+  // violent, contributing to the ~1.85x over-count.
 ]);
+
+// v99 — Chicago's authoritative FBI/UCR code drives the Part-1 violent
+// determination, because the `description` modifier isn't reliable (empty or
+// abbreviated on many rows, leaking simple assault/battery into the violent
+// count). Map the violent codes to canonical descriptions the shared deny-list
+// scores correctly: 08A/08B simple → excluded by /\bsimple\b/; 04A/04B
+// aggravated → counted (04B aggravated DOMESTIC battery too, which the raw
+// "domestic" description had wrongly dropped); 02 = forcible rape; 03 robbery;
+// 01A/01B homicide.
+const FBI_PART1_VIOLENT_DESC: Record<string, string> = {
+  "01A": "Homicide", "01B": "Homicide",
+  "02": "Criminal Sexual Assault", "03": "Robbery",
+  "04A": "Aggravated Assault", "04B": "Aggravated Battery",
+  "08A": "Simple Assault", "08B": "Simple Battery",
+};
 const PROPERTY_TYPES = new Set([
   // ROBBERY intentionally NOT here — Chicago's own UCR taxonomy lists it
   // alongside the violent persons offenses and we honor that for the user-
@@ -115,7 +135,13 @@ async function fetchChicago(): Promise<{ rows: Incident[]; areaByNum: Map<number
       // v96p2 — Chicago `date` is wall-clock CT local time.
       occurredAt: cityLocalToUtcIso(r.date, "America/Chicago"),
       nibrsCategory: mapToNibrs(r),
-      ibrOffenseDescription: titleCaseOffense(r.description || r.primary_type),
+      // Prefer the fbi_code-canonical descriptor for assault/battery/robbery/
+      // homicide/CSA so the Part-1 violent filter is driven by the authoritative
+      // UCR code, not the unreliable free-text modifier. Falls back to the raw
+      // description for everything else (property, etc.).
+      ibrOffenseDescription: titleCaseOffense(
+        FBI_PART1_VIOLENT_DESC[(r.fbi_code ?? "").trim().toUpperCase()] || r.description || r.primary_type,
+      ),
       beat: r.beat ?? null,
       blockLabel: undefined,
       lat: !isNaN(lat) && lat !== 0 ? lat : undefined,
