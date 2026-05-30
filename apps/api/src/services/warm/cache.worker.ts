@@ -56,14 +56,22 @@ const HEAVY_CITIES = [
 const PER_CITY_DEADLINE_MS = 90_000;
 
 async function withDeadline<T>(p: Promise<T>, ms: number, label: string): Promise<T | "_deadline_"> {
+  // v98 — clear the deadline timer once the race settles. Previously the
+  // setTimeout was never cleared, so when `p` won the race the timer
+  // stayed armed for `ms`, holding its closure alive; across a warm
+  // cycle's many calls that's a steady drip of live timers. (Same leak
+  // shape that was removed from grade-sanity.worker.ts.)
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race<T | "_deadline_">([
       p,
-      new Promise<"_deadline_">((resolve) => setTimeout(() => resolve("_deadline_"), ms)),
+      new Promise<"_deadline_">((resolve) => { timer = setTimeout(() => resolve("_deadline_"), ms); }),
     ]);
   } catch (err) {
     console.warn(`[warm-worker] ${label} threw:`, (err as Error).message);
     return "_deadline_";
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
