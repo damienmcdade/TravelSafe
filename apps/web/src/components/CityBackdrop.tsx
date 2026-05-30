@@ -312,6 +312,62 @@ export const PHOTOS: Record<string, string[]> = {
     // Downtown Phoenix aerial looking northeast
     "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Downtown_Phoenix_Aerial_Looking_Northeast.jpg/1920px-Downtown_Phoenix_Aerial_Looking_Northeast.jpg",
   ],
+  // v99 — the 7 most-recently-added live cities had no backdrop entry, so
+  // PHOTOS[slug] ?? [] returned empty and rendered NO photo (Denver, etc.).
+  // All URLs below are Wikimedia Commons skyline/cityscape thumbs, curl-
+  // verified HTTP 200 + image/jpeg via the Commons imageinfo API.
+  "denver": [
+    // Denver skyline with the Rocky Mountains behind
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Denver%2C_Colorado_skyline_%28cropped%29.jpg/1920px-Denver%2C_Colorado_skyline_%28cropped%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Denver%2C_Colorado_skyline.jpg/1920px-Denver%2C_Colorado_skyline.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Denver%2C_Colorado_skyline_%28cropped_3x5%29.jpg/1920px-Denver%2C_Colorado_skyline_%28cropped_3x5%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/d/d8/Denver_Colorado_Skyline.jpg",
+  ],
+  "sacramento": [
+    // Sacramento downtown skyline (Tower Bridge / Capitol district)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Sacramento_Skyline_%28cropped%29.jpg/1920px-Sacramento_Skyline_%28cropped%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Sacramento%2C_California_skyline_in_2023.jpg/1920px-Sacramento%2C_California_skyline_in_2023.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Sacramento%2C_California_skyline_2026.jpg/1920px-Sacramento%2C_California_skyline_2026.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Sacramento%2C_California_skyline.jpg/1920px-Sacramento%2C_California_skyline.jpg",
+  ],
+  "atlanta": [
+    // Midtown Atlanta skyline over Piedmont Park's Lake Clara Meer
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Piedmont_Park%E2%80%99s_Lake_Clara_Meer_with_Midtown_Atlanta_skyline_%282024%29-104A8428.jpg/1920px-Piedmont_Park%E2%80%99s_Lake_Clara_Meer_with_Midtown_Atlanta_skyline_%282024%29-104A8428.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/6/6b/Atlanta%2C_Georgia_Skyline.jpg",
+    // Downtown Atlanta skyline from the Jackson Street Bridge
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Atlanta_skyline_from_Jackson_Street_Bridge_2020.jpg/1920px-Atlanta_skyline_from_Jackson_Street_Bridge_2020.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/6/68/Atlanta_Skyline_-_March_2019_%28cropped_2%29.jpg",
+  ],
+  "indianapolis": [
+    // Downtown Indianapolis skyline (Chris Bowman)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Indianapolis_skyline_-_2014_April_-_Chris_Bowman.jpg/1920px-Indianapolis_skyline_-_2014_April_-_Chris_Bowman.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/9/91/Indianapolis_skyline_at_night_-_Sarah_Stierch.jpg",
+    // Indianapolis skyline from White River State Park
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/White_River_State_Park_Indianapolis_Skyline_2020.jpg/1920px-White_River_State_Park_Indianapolis_Skyline_2020.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/Skyline_at_the_Indianapolis_Zoo_-_June_2022_-_Sarah_Stierch.jpg/1920px-Skyline_at_the_Indianapolis_Zoo_-_June_2022_-_Sarah_Stierch.jpg",
+  ],
+  "raleigh": [
+    // Downtown Raleigh skyline
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Raleigh%2C_North_Carolina_skyline_--_27_September_2014_%28panoramio.com%29.jpg/1920px-Raleigh%2C_North_Carolina_skyline_--_27_September_2014_%28panoramio.com%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/9/9c/Raleigh_skyline_along_S_Saunders_st.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/6/64/Partial_view_of_Raleigh%2C_North_Carolina%27s_growing_skyline_--_19_May_2012.jpg",
+    // Red Hat headquarters tower, downtown Raleigh
+    "https://upload.wikimedia.org/wikipedia/commons/f/fc/Red_Hat_headquarters_at_Raleigh%2C_North_Carolina%2C_US_--_9_November_2013.jpg",
+  ],
+  "tucson": [
+    // Tucson skyline against the desert mountains
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Tucson_skyline.JPG/1920px-Tucson_skyline.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Downtown_Tucson%2C_AZ_%28W._Pennington%29%2C_2007-04-02.jpg/1920px-Downtown_Tucson%2C_AZ_%28W._Pennington%29%2C_2007-04-02.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/6/68/Tucson_asr.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Downtown_Tucson%2C_Arizona_5_-_panoramio.jpg/1920px-Downtown_Tucson%2C_Arizona_5_-_panoramio.jpg",
+  ],
+  "honolulu": [
+    // Honolulu cityscape with Waikiki and Diamond Head
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Panorama_of_Honolulu-Waikiki-Diamond_Head_%2816773142068%29.jpg/1920px-Panorama_of_Honolulu-Waikiki-Diamond_Head_%2816773142068%29.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Honolulu_-_panoramio.jpg/1920px-Honolulu_-_panoramio.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/9/95/Waikiki_Diamond_Head_CC.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Waikiki_Beach.jpg/1920px-Waikiki_Beach.jpg",
+  ],
 };
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting
