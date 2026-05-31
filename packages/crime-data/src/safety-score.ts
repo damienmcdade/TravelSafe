@@ -720,6 +720,32 @@ function gradeFromCityFbiBaseline(
   return "E";                   // >60% above (or adapter is over-counting)
 }
 
+/// CITYWIDE grade — the city's OWN FBI-published rate vs the FBI NATIONAL
+/// rate, with violent weighted heavier than property (violent crime dominates
+/// how "safe" a city actually is). This is an ABSOLUTE, cross-city measure.
+///
+/// Why this replaced gradeFromCityFbiBaseline for the citywide grade (v102):
+/// that function compared the live feed to the city's OWN baseline, but the
+/// per-city CFS calibration is tuned so every healthy city's feed lands at
+/// ~1.0× its own baseline — so EVERY city collapsed to C (San Diego and
+/// Chicago, wildly different in absolute crime, both read "normal for me").
+/// That grade measured data-consistency, not safety. Anchoring to the
+/// national rate makes the grade discriminate: a low-crime city scores A,
+/// a high-crime city scores E. Thresholds tuned across the 38 tracked
+/// cities to a sensible spread (San Diego→A, Chicago→C, Detroit→E). The
+/// neighborhood grade still uses gradeFromCityDeltas (area vs its own city),
+/// which is the correct frame for within-city comparison.
+function gradeCitywideAbsolute(baseline: { violent: number; property: number }): SafetyScoreResponse["grade"] {
+  const vr = baseline.violent  / FBI_NATIONAL_PER_100K_2024.PERSONS;
+  const pr = baseline.property / FBI_NATIONAL_PER_100K_2024.PROPERTY;
+  const danger = vr * 0.7 + pr * 0.3;
+  if (danger <= 1.15) return "A"; // at/below the (violent-weighted) national rate
+  if (danger <= 1.50) return "B";
+  if (danger <= 2.20) return "C";
+  if (danger <= 3.05) return "D";
+  return "E";                     // multiples of the national rate
+}
+
 function headlineForArea(grade: SafetyScoreResponse["grade"], areaLabel: string, cityLabel: string): string {
   switch (grade) {
     case "A": return `${areaLabel} reports lower per-capita rates than ${cityLabel} citywide.`;
@@ -1115,8 +1141,13 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   const cityLabel = `${city.label} (citywide)`;
   let confidence = computeDataConfidence(windowDays, persons + property, pop, personsLocal100k + propertyLocal100k);
   const fbiBaseline = CITY_FBI_BASELINES[city.slug];
+  // v102 — citywide grade is now ABSOLUTE (city's FBI rate vs national,
+  // violent-weighted) so cities discriminate (San Diego A vs Detroit E),
+  // instead of the prior feed-vs-own-baseline check that landed ~C for every
+  // healthy city. See gradeCitywideAbsolute. (The old feed-vs-baseline
+  // divergence check still runs below for dataConfidence, independently.)
   const rawGrade = fbiBaseline
-    ? gradeFromCityFbiBaseline(rows, fbiBaseline)
+    ? gradeCitywideAbsolute(fbiBaseline)
     : gradeFromNationalDeltas(rows);
   let grade = gradeWithNullGuard(rawGrade, persons + property, confidence.dataConfidence);
   // Note: gradeWithUndercountGuard runs AFTER the divergence guard
@@ -1195,7 +1226,9 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // got upgraded to "low" too late to suppress the misleading A.
   grade = gradeWithUndercountGuard(grade, rows, fbiBaseline, confidence.dataConfidence, isCfs);
 
-  const headline = headlineForCity(grade, cityLabel, fbiBaseline ? "city-fbi" : "national");
+  // v102 — citywide grade is now national-anchored (absolute), so the
+  // headline frames it vs the national average, not the city's own rate.
+  const headline = headlineForCity(grade, cityLabel, "national");
 
   return {
     city: { slug: city.slug, label: city.label },

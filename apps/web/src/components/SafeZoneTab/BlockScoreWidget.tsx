@@ -150,6 +150,16 @@ export function BlockScoreWidget({ score, loading, unavailable, contextLabel }: 
 
       <BandLegend currentBand={score.band} />
 
+      {/* v102 — explain the new grading scheme to users. */}
+      <aside className="mt-4 rounded-xl border border-bay-200 bg-bay-50/60 px-4 py-3 text-xs text-slate2-700 leading-snug" role="note">
+        <strong className="text-slate2-900">How the letter grade works (updated):</strong> a <em>city&apos;s</em> grade
+        now reflects its crime rate compared to the <strong>U.S. national average</strong> (violent crime weighted more
+        heavily) — so a genuinely low-crime city earns an <strong>A</strong> and a high-crime city an <strong>E</strong>,
+        instead of every city landing at C. A <em>neighborhood&apos;s</em> grade still compares it to its own city, so you
+        can see which areas are quieter or busier than the local norm. The Safety Index dial above is always
+        neighborhood-vs-city.
+      </aside>
+
       <HowItsCalculated benchmark={score.benchmark} />
 
       <p className="mt-3 text-[11px] text-slate2-500 leading-snug">
