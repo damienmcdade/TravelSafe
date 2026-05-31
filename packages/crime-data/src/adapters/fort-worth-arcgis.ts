@@ -5,15 +5,18 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+import { fortWorthNeighborhoods, fortWorthDivisions } from "../data/fort-worth-neighborhoods.js";
 
 // Fort Worth, TX — FWPD "Crime Data" ArcGIS MapServer (City of Fort Worth GIS).
-// Incident-level rows with lat/lng that ALREADY carry an FWPD patrol Beat
-// (~102 beats, 97% populated), so we group by the feed's own `Beat` field and
-// derive each beat's centroid from its incidents' coordinates — no point-in-
-// polygon needed. Offenses are described in Texas Penal Code text, which we map
-// to FBI Part-1 violent/property via the penal-code section (the numeric
-// section is far more reliable than free-text keywords for the simple-vs-
-// aggravated-assault split). Refreshed continuously (newest rows current).
+// Incident-level rows with lat/lng. We geocode each incident by point-in-polygon
+// into one of 384 official Fort Worth NEIGHBORHOOD-association areas (real names
+// like "Fairmount", "Berkeley Place", "Ryan Place"); the registered associations
+// don't tile the whole city, so incidents outside every neighborhood fall back
+// to the named FWPD patrol DIVISION they sit in (North/South/East/West/Central/
+// Northwest) rather than a meaningless beat code. Offenses are Texas Penal Code
+// text, mapped to FBI Part-1 violent/property by the penal-code section (far more
+// reliable than free-text keywords for the simple-vs-aggravated-assault split).
+// Refreshed continuously (newest rows current).
 // Source: https://mapit.fortworthtexas.gov/ags/rest/services/CIVIC/Crime_Data/MapServer/0
 
 const BASE = "https://mapit.fortworthtexas.gov/ags/rest/services/CIVIC/Crime_Data/MapServer/0/query";
@@ -68,9 +71,47 @@ function classify(desc: string | undefined): CrimeCategory {
   return CrimeCategory.SOCIETY;
 }
 
-function beatLabel(beat: string | undefined): string {
-  const b = (beat ?? "").trim().toUpperCase();
-  return b ? `Beat ${b}` : "Unknown";
+// Point-in-polygon geocoder: 384 neighborhood-association polygons (primary) +
+// 6 FWPD division polygons (fallback that covers the whole city). bbox-prefiltered
+// ray casting with even-odd parity — same self-contained pattern as Long Beach /
+// Boston / Indianapolis.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+function buildIndex(polys: { name: string; geometry: { type: string; coordinates: unknown } }[]): PolyIndex[] {
+  return polys.map((p) => {
+    const rings: number[][][] = p.geometry.type === "Polygon"
+      ? (p.geometry.coordinates as number[][][])
+      : (p.geometry.coordinates as number[][][][]).flat();
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const ring of rings) for (const [x, y] of ring) {
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
+    return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+  });
+}
+const NBHD_INDEX: PolyIndex[] = buildIndex(fortWorthNeighborhoods);
+const DIV_INDEX: PolyIndex[] = buildIndex(fortWorthDivisions);
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function inPolys(lng: number, lat: number, index: PolyIndex[]): string | null {
+  for (const p of index) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
+}
+function geocodeFortWorth(lng: number, lat: number): string | null {
+  return inPolys(lng, lat, NBHD_INDEX) ?? inPolys(lng, lat, DIV_INDEX);
 }
 
 const PROVENANCE: DataProvenance = {
@@ -79,8 +120,9 @@ const PROVENANCE: DataProvenance = {
   recency: "Refreshed continuously by the Fort Worth Police Department",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Fort Worth Police Department and grouped to one of " +
-    "~102 FWPD patrol beats — not live, not street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Fort Worth Police Department and geocoded to one of " +
+    "384 official Fort Worth neighborhoods (FWPD patrol division for the areas registered " +
+    "associations don't cover) — not live, not street-level. CommunitySafe does not track individuals.",
 };
 
 async function fetchPage(offset: number, sinceIso: string): Promise<FwFeature[]> {
@@ -121,9 +163,10 @@ async function fetchFortWorth(): Promise<Incident[]> {
       const a = f.attributes;
       const lat = typeof a.Latitude === "number" && Math.abs(a.Latitude) > 1 ? a.Latitude : undefined;
       const lng = typeof a.Longitude === "number" && Math.abs(a.Longitude) > 1 ? a.Longitude : undefined;
+      const area = (lat != null && lng != null) ? (geocodeFortWorth(lng, lat) ?? "Unknown") : "Unknown";
       return {
         id: `fw-${a.Case_No_Offense ?? i}`,
-        area: beatLabel(a.Beat),
+        area,
         occurredAt: new Date(a.Reported_Date!).toISOString(),
         nibrsCategory: classify(a.Offense_Desc),
         ibrOffenseDescription: titleCaseOffense((a.Offense_Desc ?? "Unknown").replace(/^[A-Z]{2}\s+[\d.()A-Za-z]+\s*/, "").trim() || a.Offense_Desc || "Unknown"),

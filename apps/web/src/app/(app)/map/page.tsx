@@ -33,7 +33,7 @@ const SOURCES: Record<string, string> = {
   "dallas":        "Dallas Police Incidents (City of Dallas Open Data), geocoded to named neighborhood. Demographic columns are excluded at request time.",
   "charlotte":     "CMPD Incidents (City of Charlotte Open Data, ArcGIS MapServer), aggregated to CMPD patrol division.",
   "baltimore":     "Baltimore PD NIBRS Group A Crime Data (Open Baltimore, ArcGIS Feature Server), grouped to the city's 283 official neighborhoods. Victim-demographic columns are excluded at request time.",
-  "fort-worth":    "Fort Worth PD Crime Data (City of Fort Worth GIS, ArcGIS MapServer), grouped to FWPD patrol beats. Texas Penal Code offenses are mapped to FBI Part-1 categories.",
+  "fort-worth":    "Fort Worth PD Crime Data (City of Fort Worth GIS, ArcGIS MapServer), geocoded to 384 official Fort Worth neighborhoods (FWPD patrol division fallback). Texas Penal Code offenses are mapped to FBI Part-1 categories.",
   "minneapolis":   "Minneapolis Crime_Data (City of Minneapolis Open Data, ArcGIS Feature Server). NIBRS-classified per row by MPD, aggregated to one of 87 named neighborhoods.",
   "cleveland":     "Cleveland Division of Police Calls for Service (City of Cleveland Open Data, ArcGIS Feature Server). Administrative dispatches filtered at ingest. Includes non-NIBRS reports.",
   "milwaukee":     "Milwaukee Police WIBR Crime Data (data.milwaukee.gov, CKAN datastore). Per-incident boolean offense flags mapped to NIBRS PERSONS/PROPERTY; aggregated to ZIP-level neighborhood groupings.",

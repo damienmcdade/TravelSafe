@@ -68,7 +68,7 @@ export const CITIES: CityInfo[] = [
   // Fort Worth — FWPD Crime Data (City of Fort Worth GIS ArcGIS MapServer).
   // Incident-level rows grouped by FWPD patrol beat (~102 beats); Texas Penal
   // Code offenses mapped to FBI Part-1 by section. Replaced Phoenix.
-  { slug: "fort-worth",    label: "Fort Worth",    state: "TX", stateLabel: "Texas",          defaultArea: "fw-beat-b11",      centroid: { lat: 32.73, lng: -97.32 }, status: "live",        source: "FWPD Crime Data · City of Fort Worth GIS" },
+  { slug: "fort-worth",    label: "Fort Worth",    state: "TX", stateLabel: "Texas",          defaultArea: "fw-arlington-heights", centroid: { lat: 32.73, lng: -97.32 }, status: "live",        source: "FWPD Crime Data · City of Fort Worth GIS" },
   // v90 — 5 cities added to backend but missed in this client-side
   // wheel-picker list until v95p5 (audit caught it: cities visible in
   // the API but not in the picker UI).

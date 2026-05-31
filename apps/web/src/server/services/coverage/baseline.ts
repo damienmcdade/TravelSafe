@@ -42,7 +42,7 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "denver":           { neighborhoodCount:  77, source: "Denver Crime Offenses (Denver Open Data, ArcGIS Feature Server)" },
   "colorado-springs": { neighborhoodCount:  78, source: "Colorado Springs Police Department Crime Level Data (CSPD Open Data)" },
   "las-vegas":        { neighborhoodCount:  22, source: "Las Vegas Metropolitan Police Department Calls for Service (Opendata Las Vegas)" },
-  "fort-worth":       { neighborhoodCount: 102, source: "FWPD Crime Data · City of Fort Worth GIS" },
+  "fort-worth":       { neighborhoodCount: 297, source: "FWPD Crime Data · City of Fort Worth GIS" },
   "tucson":           { neighborhoodCount: 173, source: "Tucson Police Incidents — Last 45 Days (gis.tucsonaz.gov ArcGIS MapServer)" },
   // Midwest
   "chicago":          { neighborhoodCount:  77, source: "Chicago Crimes 2001-Present (City of Chicago Open Data)" },
