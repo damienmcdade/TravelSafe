@@ -54,6 +54,13 @@ export default function CityAwarenessPage() {
     { refreshIntervalMs: REFRESH_MS },
   );
 
+  // v99 — single shared SafeZone fetch for the page. SafetyIndex and
+  // LocalActivity previously each called useSafeZoneData({city, area:null})
+  // with identical inputs; the network is now deduped, but the hook still
+  // ran twice (double state + per-hook refresh timers + visibility
+  // listeners). Lift it here and pass the result to both.
+  const safeZone = useSafeZoneData({ city: { slug: city.slug, label: city.label }, area: null });
+
   function selectNeighborhood(slug: string, label: string) {
     setArea({ slug, label, jurisdiction: city.label });
     window.location.href = "/neighborhood";
@@ -92,7 +99,7 @@ export default function CityAwarenessPage() {
       <DataFreshnessBanner citySlug={city.slug} cityLabel={city.label} />
 
       {/* 1. Safety Index + 2. City Letter Score — stacked top of page. */}
-      <SafetyIndex city={{ slug: city.slug, label: city.label }} />
+      <SafetyIndex data={safeZone} cityLabel={city.label} />
       <CityScoreCard citySlug={city.slug} cityLabel={city.label} />
 
       {/* 3. Recent Upticks above Local Activity. */}
@@ -101,7 +108,7 @@ export default function CityAwarenessPage() {
       {/* 4. Local Activity (ThreatFeed) — scrollable, has its own
              in-card window picker driven by the shared useTimeWindow
              store. */}
-      <LocalActivity city={{ slug: city.slug, label: city.label }} />
+      <LocalActivity data={safeZone} cityLabel={city.label} />
 
       {/* 5. AI Summary card (renamed IncidentSummaryCard heading). */}
       <IncidentSummaryCard
@@ -140,35 +147,27 @@ export default function CityAwarenessPage() {
 /// Just the BlockScore — split out of the prior CitywideSafeZoneSection
 /// because the v9 layout interleaves CityScoreCard between Safety
 /// Index and Local Activity.
-function SafetyIndex({ city }: { city: { slug: string; label: string } }) {
-  const data = useSafeZoneData({
-    city: { slug: city.slug, label: city.label },
-    area: null,
-  });
+function SafetyIndex({ data, cityLabel }: { data: ReturnType<typeof useSafeZoneData>; cityLabel: string }) {
   return (
     <BlockScoreWidget
       score={data.blockScore}
       loading={data.loading}
       unavailable={!data.loading && !data.blockScore}
-      contextLabel={`${city.label} (citywide)`}
+      contextLabel={`${cityLabel} (citywide)`}
     />
   );
 }
 
-/// Just the ThreatFeed — same data hook as SafetyIndex; the SWR cache
-/// shares the underlying fetch so this isn't a duplicate request.
-function LocalActivity({ city }: { city: { slug: string; label: string } }) {
-  const data = useSafeZoneData({
-    city: { slug: city.slug, label: city.label },
-    area: null,
-  });
+/// Just the ThreatFeed — consumes the page's shared SafeZone data (lifted
+/// in v99 so the hook runs once for both this and SafetyIndex).
+function LocalActivity({ data, cityLabel }: { data: ReturnType<typeof useSafeZoneData>; cityLabel: string }) {
   // Source surfaces the actual adapter's dataset URL (e.g.,
   // data.sandiego.gov, data.dc.gov) — previously hardcoded to the
   // FBI CDE national-stats explorer, which never reflected the
   // city's real data source. Falls back to the FBI CDE only if the
   // adapter omits provenance (shouldn't happen for any live city).
   const source = data.source ?? {
-    label: `${city.label} official police open-data feed`,
+    label: `${cityLabel} official police open-data feed`,
     url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend",
   };
   return (
@@ -176,7 +175,7 @@ function LocalActivity({ city }: { city: { slug: string; label: string } }) {
       threats={data.threats}
       baseline={data.baseline}
       windowDays={data.windowDays}
-      contextLabel={`${city.label} citywide`}
+      contextLabel={`${cityLabel} citywide`}
       source={source}
       loading={data.loading}
     />
