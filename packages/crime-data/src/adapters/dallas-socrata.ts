@@ -150,7 +150,7 @@ async function fetchDallas(): Promise<Incident[]> {
       // toLowerCase()` only capitalized the FIRST char, so "SOUTH
       // CENTRAL" became "South central Dallas" with a stranded lower-
       // case "c". Per-word title-case fixes it: "South Central Dallas".
-      area = geocodeDallas(lng, lat) ?? (r.division ? `${titleCaseDivision(r.division)} Dallas` : "Unknown");
+      area = geocodeDallas(lng, lat) ?? "Unmapped"; // v102: was DPD-division fallback (not a neighborhood); collapse off-polygon incidents into Unmapped
     }
     return {
       id: `dal-${r.servnumid ?? r.incidentnum ?? i}`,

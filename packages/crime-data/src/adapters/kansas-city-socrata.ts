@@ -291,7 +291,7 @@ async function fetchKansasCity(): Promise<Incident[]> {
       // discarding ~28% of all incidents, which the citywide grader (it
       // sums only discovered areas) read as a ~0.72x under-count. Fall back
       // to the row's KCPD patrol division so the incident still counts.
-      area = geocodeKansasCity(lng, lat) ?? divisionLabel(r.area);
+      area = geocodeKansasCity(lng, lat) ?? "Unmapped"; // v102: was divisionLabel(r.area) — patrol-division codes are not neighborhoods (no polygon); collapse off-polygon incidents into one honest Unmapped bucket
     }
     if (area === "Unknown") continue;
     const occurredAt = safeIso(r.from_date ?? r.report_date);

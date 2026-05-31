@@ -136,7 +136,7 @@ async function fetchIndianapolis(): Promise<Incident[]> {
       // Neighborhood first (point-in-polygon); fall back to the IMPD
       // district/zone only for the rare point outside every polygon.
       const nbhd = (lat != null && lng != null) ? geocodeIndy(lng, lat) : null;
-      const area = nbhd ?? ((r.Geo_Districts ?? "").trim() || (r.Geo_Zones ?? "").trim() || "Unknown");
+      const area = nbhd ?? "Unmapped"; // v102: was Geo_Districts/Zones codes (not neighborhoods); collapse off-polygon incidents into Unmapped
       return {
         id: `indy-${r.CaseNum ?? i}`,
         area,
