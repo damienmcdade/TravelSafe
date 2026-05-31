@@ -79,6 +79,7 @@ export default function PersonalSafetyPage() {
           surfaces, so they shouldn't be buried below tips or the
           emergency dial. The emergency panel, safety tips, and
           registry/account follow below. */}
+      <SosPanel />
       <CheckInPanel />
       <LiveSharePanel />
 
@@ -412,6 +413,118 @@ function ContactPicker({
         </ul>
       )}
     </div>
+  );
+}
+
+interface SosResult {
+  shareUrl: string;
+  expiresAt: string;
+  mapUrl: string | null;
+  contactsNotified: number;
+  receipts: { contactLabel: string; channel: string; status: string }[];
+}
+
+// One-tap SOS / panic — the "alert the people who care about me, right now"
+// action. Two-tap confirm prevents accidental fires. Always points at 911 for
+// true emergencies; this is the trusted-contact layer, not a 911 dialer.
+function SosPanel() {
+  const { ready: signedIn } = useAnonymousAuth();
+  const { data: contactsData } = useApi<TrustedContact[]>(signedIn ? "/contacts" : null, [signedIn]);
+  const confirmed = useMemo(() => (contactsData ?? []).filter((c) => c.status === "CONFIRMED"), [contactsData]);
+  const [armed, setArmed] = useState(false); // second-tap confirm state
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<SosResult | null>(null);
+
+  // Auto-disarm the confirm state after 4s so a stray first tap doesn't linger.
+  useEffect(() => {
+    if (!armed) return;
+    const id = setTimeout(() => setArmed(false), 4000);
+    return () => clearTimeout(id);
+  }, [armed]);
+
+  async function fire() {
+    setBusy(true);
+    setError(null);
+    try {
+      let lat: number | undefined, lng: number | undefined;
+      try {
+        const pos = await requestLocation();
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } catch {
+        // best-effort — SOS still fires without a location pin.
+      }
+      const r = await api<SosResult>("/safety/sos", { method: "POST", body: JSON.stringify({ lat, lng }) });
+      setResult(r);
+      setArmed(false);
+    } catch (err) {
+      setError(`Could not send SOS — ${(err as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="surface p-6 border-2" style={{ borderColor: "#DC2626" }}>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-display text-xl text-slate2-900">🚨 Send SOS</h2>
+        <a href={`tel:${EMERGENCY_DIAL}`} className="text-xs font-medium text-coral-700 hover:underline">
+          True emergency? Call {EMERGENCY_DIAL}
+        </a>
+      </div>
+      <p className="mt-1 text-sm text-slate2-600">
+        One tap alerts <strong>every confirmed trusted contact</strong> right now with an urgent
+        message, a live-location link, and a map pin of where you are. This does <strong>not</strong> call
+        911 — use it to reach the people who care about you fast.
+      </p>
+
+      {!signedIn ? (
+        <p className="mt-3 text-sm text-slate2-500">Sign in to use SOS — it notifies your trusted contacts.</p>
+      ) : result ? (
+        <div className="mt-4 rounded-xl bg-sage-50 border border-sage-300 p-4" role="status" aria-live="assertive">
+          <p className="text-sm font-medium text-sage-800">
+            SOS sent — {result.contactsNotified} contact{result.contactsNotified === 1 ? "" : "s"} alerted.
+          </p>
+          <ul className="mt-2 text-xs text-slate2-600 space-y-0.5">
+            {result.receipts.map((r, i) => (
+              <li key={i}>
+                {r.contactLabel}: {r.channel} · {r.status === "sent" ? "✓ delivered" : `⚠ ${r.status}`}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-xs text-slate2-500">
+            Live link active until {new Date(result.expiresAt).toLocaleTimeString()}.{" "}
+            <a href={result.shareUrl} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">Open share page</a>.
+          </p>
+          <button onClick={() => setResult(null)} className="mt-3 text-xs text-slate2-600 hover:underline">
+            Done
+          </button>
+        </div>
+      ) : confirmed.length === 0 ? (
+        <p className="mt-3 text-sm text-amber2-700">
+          Add and confirm at least one trusted contact below before you can send an SOS.
+        </p>
+      ) : (
+        <div className="mt-4">
+          <button
+            onClick={() => (armed ? fire() : setArmed(true))}
+            disabled={busy}
+            className="w-full py-4 rounded-2xl text-white font-display text-lg tracking-wide disabled:opacity-60 transition-transform active:scale-[0.98]"
+            style={{ background: armed ? "#991B1B" : "#DC2626" }}
+            aria-live="polite"
+          >
+            {busy ? "Sending SOS…" : armed ? `Tap again to confirm — alerts ${confirmed.length} contact${confirmed.length === 1 ? "" : "s"}` : "Send SOS"}
+          </button>
+          {armed && !busy && (
+            <button onClick={() => setArmed(false)} className="mt-2 w-full text-xs text-slate2-500 hover:underline">
+              Cancel
+            </button>
+          )}
+          {error && <p className="mt-2 text-xs text-coral-700">{error}</p>}
+        </div>
+      )}
+    </section>
   );
 }
 
