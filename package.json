@@ -40,6 +40,10 @@
     "npm-run-all": "^4.1.5",
     "typescript": "^5.6.3"
   },
+  "_comment_optionalDependencies": "npm bug #4828: the lockfile only records the rollup native-binary node for the platform it was generated on (macOS arm64), so `npm ci` on the Linux CI runner can't install @rollup/rollup-linux-x64-gnu and vitest fails. Declaring it as a direct optionalDependency forces a proper lockfile node; the os/cpu fields make npm skip it on non-Linux hosts. Keep the version pinned to the resolved rollup version (rollup loads the native binary by exact-version match).",
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.60.4"
+  },
   "engines": {
     "node": "22.x"
   }
