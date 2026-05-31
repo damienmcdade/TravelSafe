@@ -62,7 +62,7 @@ export default function MapPage() {
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Crime Map · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl leading-tight text-slate2-900">
-          Where recent police reports are <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">concentrated in {city.label}</span>
+          Where recent police reports are <span className="bg-title-stripe bg-clip-text text-transparent break-words">concentrated in {city.label}</span>
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
           Each {city.label} neighborhood is shaded by the mix of recent incidents reported there. Colors blend together when more than one category is present, so a neighborhood with mostly property crime but some violent crime reads as a warmer orange. Type a neighborhood name above the map to zoom in and see the individual offenses inside it.

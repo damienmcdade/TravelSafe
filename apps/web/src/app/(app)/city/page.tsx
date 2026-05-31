@@ -70,7 +70,7 @@ export default function CityAwarenessPage() {
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">City Awareness</p>
           <h1 className="mt-1 font-display text-3xl sm:text-4xl leading-tight text-slate2-900">
-            What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">{city.label}</span>
+            What&apos;s happening in <span className="bg-title-stripe bg-clip-text text-transparent break-words">{city.label}</span>
           </h1>
           <p className="mt-2 text-slate2-700 max-w-2xl">
             Citywide signals only. Drill into a neighborhood from the hotspots panel below, or open Neighborhood Awareness.

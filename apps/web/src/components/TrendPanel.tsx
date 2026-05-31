@@ -15,6 +15,10 @@ import { snapToSupported, useTimeWindow, type WindowValue } from "@/lib/use-time
 /// trend timeline is the same UI from either entry point. /trends
 /// still exists as an URL alias / SEO landing point.
 
+// v99 — max dispatch rows rendered to the DOM at once (the feed can return
+// thousands; the rest are reachable via Download CSV).
+const DISPATCH_RENDER_CAP = 100;
+
 interface TrendBullet {
   kind: "trend" | "dispatch";
   at: string;
@@ -216,12 +220,22 @@ function TrendReport({ trend, accent, sectionHeadingLevel = 2, windowDays = 30 }
               </p>
             ) : (
               <ol className="mt-3 space-y-1.5">
-                {dispatchBullets.map((b, i) => (
+                {/* v99 — cap the rendered DOM. The trend API can return
+                    thousands of dispatch bullets; rendering them all (the
+                    list was uncapped) blows up reconciliation and layout for
+                    a list that's mostly off-screen. Show the most-recent 100;
+                    the full set is still one click away via Download CSV. */}
+                {dispatchBullets.slice(0, DISPATCH_RENDER_CAP).map((b, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate2-700">
                     <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-400"}`} />
                     <span>{b.text}</span>
                   </li>
                 ))}
+                {dispatchBullets.length > DISPATCH_RENDER_CAP && (
+                  <li className="text-xs text-slate2-500 pt-1">
+                    Showing the {DISPATCH_RENDER_CAP} most recent of {dispatchBullets.length.toLocaleString()} — use Download CSV for the full list.
+                  </li>
+                )}
               </ol>
             )}
             <p className="mt-4 text-xs text-slate2-500">

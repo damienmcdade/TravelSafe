@@ -200,7 +200,7 @@ export default function SafeRoutePage() {
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Safe Route · {city.label}</p>
         <h1 className="mt-1 font-display text-3xl sm:text-4xl leading-tight text-slate2-900">
-          Pick the <span className="bg-title-stripe bg-clip-text text-transparent bg-[length:200%_100%] animate-gradient-x break-words">statistically safer route</span> through {city.label}
+          Pick the <span className="bg-title-stripe bg-clip-text text-transparent break-words">statistically safer route</span> through {city.label}
         </h1>
         <p className="mt-2 text-slate2-700 max-w-2xl">
           Select a starting neighborhood and a destination neighborhood — both auto-fill from the same {city.label} neighborhoods CommunitySafe tracks elsewhere. We then pull up to three route alternatives from OpenStreetMap&apos;s routing engine and — where the engine supports it — generate an extra option that actively steers <em>around</em> the neighborhoods with the most recent reports. Each alternative is scored by the recent crime exposure of the neighborhoods it crosses (using the same official police feed that powers the Crime Map) and ranked safest first.

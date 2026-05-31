@@ -163,7 +163,7 @@ html.dark svg line[stroke="#e9eef3"]   { stroke: #2A3445; }
 }
 .section-title::after {
   content: "";
-  @apply absolute left-0 bottom-0 h-1 w-16 rounded-full bg-title-stripe bg-[length:200%_100%] animate-gradient-x;
+  @apply absolute left-0 bottom-0 h-1 w-16 rounded-full bg-title-stripe;
 }
 
 /* Page-hero H1 default: tighter leading + gradient spans treated as

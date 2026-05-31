@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PHOTOS } from "@/components/CityBackdrop";
+import { PHOTOS } from "@/lib/city-photos";
 import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {

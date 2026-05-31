@@ -24,6 +24,7 @@ process.on("unhandledRejection", (reason) => {
 
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import morgan from "morgan";
 import helmet from "helmet";
 import { env, corsOrigins } from "./env.js";
@@ -162,6 +163,26 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" },
   crossOriginEmbedderPolicy: false,
   referrerPolicy: { policy: "no-referrer" },
+}));
+
+// v99 — gzip/br compression. The freshness audit found every API response
+// transferred uncompressed; the citywide trend alone is ~760 KB raw, and
+// even after the bullets cap the full trend / citywide / mix payloads are
+// large. Compression shrinks them >80% on the wire — both for the
+// Vercel→Railway proxy hop (which must download the whole body before
+// responding to the user) and for any direct API consumer.
+//
+// SSE SAFETY: the /community/stream endpoint must NOT be buffered/
+// compressed. It sets `Content-Type: text/event-stream` and
+// `Cache-Control: no-transform` before its first write; compression
+// honors `no-transform` and the explicit content-type filter below skips
+// it too, so the live event stream is never held back.
+app.use(compression({
+  filter: (req, res) => {
+    const ct = String(res.getHeader("Content-Type") ?? "");
+    if (ct.includes("text/event-stream")) return false;
+    return compression.filter(req, res);
+  },
 }));
 
 // v96 — assign a request correlation ID FIRST so every downstream
