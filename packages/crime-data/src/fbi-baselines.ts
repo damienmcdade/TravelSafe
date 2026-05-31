@@ -29,7 +29,13 @@ export interface CityFbiBaseline {
 }
 
 const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
-  "baton-rouge": { violent: 1009, property: 5543, year: 2023, ori: "LA0170200" },
+  // v102 — 2025 full-year from data.brla.gov (BRPD's own feed, the one the
+  // app scores against): 3,091 violent + 10,711 property charges / 217,387
+  // pop = 1422 / 4927. BR is decoupled (no CFS scale), so the baseline must
+  // match the feed's charge-level basis for correct grading — using the
+  // older UCR-summary 1009 would mismatch the inflated feed. Cross-checked
+  // vs AH Datalytics RTCI snapshot (1433/4876).
+  "baton-rouge": { violent: 1422, property: 4927, year: 2025, ori: "LA0170200" },
   "boise": { violent: 286, property: 850, year: 2025, ori: "ID0010100" },
   "boston": { violent: 582, property: 1914, year: 2025, ori: "MA0130100" },
   "buffalo": { violent: 729, property: 3414, year: 2025, ori: "NY0140100" },
