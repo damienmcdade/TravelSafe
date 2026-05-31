@@ -36,6 +36,11 @@
       "import": "./dist/cities.js",
       "default": "./src/cities.ts"
     },
+    "./city-states": {
+      "types": "./dist/city-states.d.ts",
+      "import": "./dist/city-states.js",
+      "default": "./src/city-states.ts"
+    },
     "./errors": {
       "types": "./dist/errors.d.ts",
       "import": "./dist/errors.js",

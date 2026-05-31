@@ -1,5 +1,6 @@
 import "server-only";
 import { CITIES } from "../crime-data/cities";
+import { stateAbbrForCity } from "@travelsafe/crime-data/city-states";
 import { crimeData } from "../crime-data";
 import { baselineFor } from "./baseline";
 
@@ -206,5 +207,10 @@ const STATE_BY_SLUG: Record<string, string> = {
 };
 
 function extractState(_label: string, slug: string): string {
-  return STATE_BY_SLUG[slug] ?? "—";
+  // v99 — was a local STATE_BY_SLUG that drifted (it was missing 8 live
+  // cities → "—" on the dashboard). Source from the canonical CITY_STATES
+  // in the crime-data package, which a test asserts covers every city in
+  // the CITIES registry. The inline map above is retained only as a
+  // last-resort fallback for an unexpected slug.
+  return stateAbbrForCity(slug) !== "—" ? stateAbbrForCity(slug) : (STATE_BY_SLUG[slug] ?? "—");
 }

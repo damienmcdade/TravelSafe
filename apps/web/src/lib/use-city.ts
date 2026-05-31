@@ -87,6 +87,11 @@ export const CITIES: CityInfo[] = [
   // data.honolulu.gov feed lacks lat/lng, so per-neighborhood comes
   // from a one-time OSM Nominatim geocode of every blockaddress.
   { slug: "honolulu",      label: "Honolulu",      state: "HI", stateLabel: "Hawaii",         defaultArea: "honolulu",         centroid: { lat: 21.31, lng: -157.86 }, status: "live",        source: "HPD Crime Incidents · data.honolulu.gov (Socrata)" },
+  // v99 — Long Beach was added to the backend (38th city, 90 LBPD
+  // neighborhoods) but was missing from this client wheel, so users
+  // couldn't select it. Added here so the city + its neighborhoods are
+  // reachable in the selector.
+  { slug: "long-beach",    label: "Long Beach",    state: "CA", stateLabel: "California",     defaultArea: "lb-downtown",      centroid: { lat: 33.81, lng: -118.16 }, status: "live",        source: "LBPD NIBRS Incidents · CityofLB GIS (ArcGIS)" },
 ];
 
 /// All US states with at least one CommunitySafe city, sorted alphabetically.
