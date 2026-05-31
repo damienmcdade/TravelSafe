@@ -61,11 +61,13 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "san-francisco": { violent: 486, property: 2960, year: 2025, ori: "CA0380100" },
   "seattle": { violent: 700, property: 4446, year: 2025, ori: "WASPD0000" },
   "washington-dc": { violent: 748, property: 3081, year: 2025, ori: "DCMPD0000" },
-  // v90 — 5 new cities. FBI CDE 2024 values (2025 SRS not yet published).
-  "sacramento":   { violent: 755,  property: 2547, year: 2024, ori: "CA0340400" },
-  "atlanta":      { violent: 841,  property: 3748, year: 2024, ori: "GAAPD0000" },
-  "indianapolis": { violent: 878,  property: 3336, year: 2024, ori: "INIPD0000" },
-  "raleigh":      { violent: 489,  property: 2819, year: 2024, ori: "NC0920100" },
+  // v100 — adopted FBI CDE 2025 complete-year figures (declines consistent
+  // with the national 2024->2025 drop; each agency's 12 months are present
+  // and passed the plausibility guard). Prior 2024 values in comments.
+  "sacramento":   { violent: 720,  property: 2299, year: 2025, ori: "CA0340400" }, // was 755/2547 (2024)
+  "atlanta":      { violent: 732,  property: 3111, year: 2025, ori: "GAAPD0000" }, // was 841/3748 (2024)
+  "indianapolis": { violent: 769,  property: 2819, year: 2025, ori: "INIPD0000" }, // was 878/3336 (2024)
+  "raleigh":      { violent: 393,  property: 2300, year: 2025, ori: "NC0920100" }, // was 489/2819 (2024)
   // v100 — refined to FBI UCR 2024 city figures (violent 589.7 / property
   // 3,313.1 per 100k; verified against AZ MAP Dashboard + NeighborhoodScout).
   // The prior 533/3415 was a slightly-stale curated estimate; the CDE
@@ -75,11 +77,12 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   // rates. Honolulu is structurally lower-crime than mainland peer
   // cities and these baselines reflect that.
   "honolulu":     { violent: 305,  property: 2912, year: 2024, ori: "HI0010100" },
-  // v100 — Long Beach (LBPD ORI CA0194100). FBI UCR 2024: violent 3,030
-  // (murder 37 + rape ~200 + robbery ~989 + agg assault ~1,779) / property
-  // 15,581, over pop 450,917 → 672 / 3,456 per 100k. Do NOT confuse with
-  // CA0198200 (CSU Long Beach PD).
-  "long-beach":   { violent: 672,  property: 3456, year: 2024, ori: "CA0194100" },
+  // v100 — Long Beach (LBPD ORI CA0194100). Adopted FBI CDE 2025
+  // complete-year (621 / 2553); the property drop tracks the national
+  // 2024->2025 decline. Prior FBI UCR 2024 was 672 / 3,456 (violent 3,030
+  // over pop 450,917). Do NOT confuse the ORI with CA0198200 (CSU Long
+  // Beach PD).
+  "long-beach":   { violent: 621,  property: 2553, year: 2025, ori: "CA0194100" },
 };
 
 // Documented manual corrections applied OVER BASE_FBI_BASELINES. Each is a city
