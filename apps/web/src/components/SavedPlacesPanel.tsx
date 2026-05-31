@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api, useApi, useAnonymousAuth } from "@/lib/api-client";
 import { requestLocation, GeolocationError } from "@/lib/geolocation";
+import { ensurePushSubscription } from "@/lib/push";
 import { useCity } from "@/lib/use-city";
 
 interface SavedPlace {
@@ -32,6 +33,26 @@ export function SavedPlacesPanel() {
   const [addr, setAddr] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Push-permission state so we can prompt the user to actually enable
+  // notifications — without a subscription the proximity worker has nowhere to
+  // deliver. "granted" = subscribed & alerts can reach this device.
+  const [pushPerm, setPushPerm] = useState<"default" | "granted" | "denied" | "unsupported">("default");
+  const [pushBusy, setPushBusy] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof Notification === "undefined") { setPushPerm("unsupported"); return; }
+    setPushPerm(Notification.permission as "default" | "granted" | "denied");
+  }, []);
+  async function enablePush() {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      const r = await ensurePushSubscription();
+      setPushPerm(r.ok ? "granted" : (typeof Notification !== "undefined" ? (Notification.permission as "default" | "denied") : "unsupported"));
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   async function add(lat: number, lng: number) {
     const name = label.trim() || "My place";
@@ -85,6 +106,26 @@ export function SavedPlacesPanel() {
         <p className="mt-3 text-sm text-slate2-500">Sign in to save places and get proximity alerts.</p>
       ) : (
         <>
+          {/* Push-permission prompt — without a subscription the proximity
+              worker has nowhere to deliver, so close the loop here. */}
+          {pushPerm === "granted" ? (
+            <p className="mt-3 text-xs text-sage-700">🔔 Notifications are on — proximity alerts can reach this device.</p>
+          ) : pushPerm === "denied" ? (
+            <p className="mt-3 text-xs text-amber2-700">
+              Notifications are blocked in your browser. Re-enable them for this site in your browser settings to receive proximity alerts.
+            </p>
+          ) : pushPerm === "unsupported" ? (
+            <p className="mt-3 text-xs text-slate2-500">This browser doesn’t support push notifications, so alerts can’t be delivered here.</p>
+          ) : (
+            <button
+              onClick={enablePush}
+              disabled={pushBusy}
+              className="mt-3 text-sm px-3 py-1.5 rounded-lg bg-bay-500 text-white disabled:opacity-50"
+            >
+              {pushBusy ? "Enabling…" : "🔔 Enable alert notifications"}
+            </button>
+          )}
+
           {places.length > 0 && (
             <ul className="mt-4 space-y-2">
               {places.map((p) => <PlaceRow key={p.id} place={p} onToggle={() => toggleAlerts(p)} onRemove={() => remove(p)} />)}

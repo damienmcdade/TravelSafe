@@ -103,7 +103,9 @@ async function tick(): Promise<void> {
             ? `New incident reported within ${km} km of ${p.label}: ${top.ibrOffenseDescription}.`
             : `${fresh.length} new incidents reported within ${km} km of ${p.label}. Most recent: ${top.ibrOffenseDescription}.`,
           tag: `place-${p.id}`,
-          data: { placeId: p.id, kind: "proximity-alert" },
+          // `url` is read by the service worker's notificationclick handler to
+          // focus/open the app when the user taps the alert.
+          data: { placeId: p.id, kind: "proximity-alert", url: "/neighborhood" },
         }).catch(() => ({ sent: 0 }));
 
         if ((res?.sent ?? 0) > 0) {
