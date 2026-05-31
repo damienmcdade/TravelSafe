@@ -70,6 +70,13 @@ export interface SafeRouteResponse {
   mode: Mode;
   /// Routes sorted safest first.
   routes: RouteAlt[];
+  /// Which routing engine produced these routes. "ors" means
+  /// OpenRouteService is configured and one of the alternatives was
+  /// actively routed to AVOID the city's highest-report neighborhoods
+  /// (true avoid-routing); "osrm" means the keyless public-OSRM fallback,
+  /// where alternatives are the engine's defaults scored after the fact.
+  /// The UI uses this to only claim avoid-routing when it actually happened.
+  engine: "ors" | "osrm";
   source: { label: string; url: string };
   disclaimer: string;
 }
@@ -494,6 +501,7 @@ export async function getSafeRoute(
     city: { slug: city.slug, label: city.label },
     from, to, mode,
     routes: scored.slice(0, 3),
+    engine,
     source: {
       label: mode === "transit"
         ? `Routes via ${engineName} (driving — used as a transit-leg proxy)`
