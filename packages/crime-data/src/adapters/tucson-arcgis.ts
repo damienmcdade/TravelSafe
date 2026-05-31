@@ -165,11 +165,14 @@ async function fetchTucson(): Promise<Incident[]> {
     const lat = f.geometry?.y;
     out.push({
       id: `tuc-${r.INCI_ID ?? i}`,
-      // Prefer NHA_NAME (display name like "Eastside"); fall back to
-      // NEIGHBORHD code (e.g. "T206" — TPD operations zone). About
-      // half of layer-42 rows have an empty NHA_NAME so the zone-
-      // code fallback keeps those rows visible in the per-area split.
-      area: (r.NHA_NAME && r.NHA_NAME.trim()) || (r.NEIGHBORHD?.trim() ?? "Unknown"),
+      // Prefer NHA_NAME (a real neighborhood like "Eastside"). v102 — the
+      // ~half of rows with an empty NHA_NAME used to fall back to the raw
+      // NEIGHBORHD code (e.g. "T206" — a TPD operations zone, NOT a
+      // neighborhood). Those codes showed up as ~31 bogus "neighborhoods"
+      // that have no boundary polygon, fragmenting the crime map (82%
+      // coverage). Collapse them into a single honest "Unmapped" bucket so
+      // the per-area split + map only show real, mappable neighborhoods.
+      area: (r.NHA_NAME && r.NHA_NAME.trim()) || "Unmapped",
       occurredAt: new Date(ts).toISOString(),
       nibrsCategory: classify(r),
       ibrOffenseDescription: (r.OFFENSE ?? r.UCRSummaryDesc ?? r.STATUTDESC ?? "Unknown").trim(),
