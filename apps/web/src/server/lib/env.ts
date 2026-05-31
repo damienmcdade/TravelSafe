@@ -82,6 +82,14 @@ const Env = z.object({
   // which is fine for dev but rate-limited / best-effort for production.
   OPENROUTESERVICE_API_KEY: z.string().optional(),
 
+  // Redis (optional). When set, live community updates (SSE) fan out through
+  // Redis pub/sub so an event emitted on one serverless instance reaches SSE
+  // clients held open on a DIFFERENT instance. Unset → in-process EventEmitter
+  // only (correct for a single warm instance; can miss cross-instance events
+  // under Fluid Compute fan-out). Same Redis the Railway API uses — point both
+  // at the one instance. The client connects lazily and fails soft.
+  REDIS_URL: z.string().url().optional(),
+
   // Moderator allowlist (comma-separated emails)
   MODERATOR_EMAILS: z.string().default(""),
 

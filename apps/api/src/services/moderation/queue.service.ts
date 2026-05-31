@@ -3,7 +3,7 @@ import { PostStatus, ReviewActionKind } from "../../generated/prisma/client.js";
 import { HttpError } from "../../middleware/error.js";
 import { evaluateSuspension } from "./suspension.service.js";
 import { REPORT_AUTO_REVERT_THRESHOLD } from "./post-prevet.js";
-import { communityEvents } from "../community/events.js";
+import { publishCommunityEvent } from "../community/events.js";
 
 export async function listPendingPosts(limit = 50) {
   return prisma.post.findMany({
@@ -54,7 +54,7 @@ export async function reviewPost(reviewerId: string, postId: string, action: Rev
   }
   if (nextStatus === PostStatus.VERIFIED) {
     const area = await prisma.area.findUnique({ where: { id: post.areaId }, select: { slug: true } });
-    communityEvents.emit("event", {
+    publishCommunityEvent({
       type: "post.verified",
       postId: post.id,
       areaSlug: area?.slug ?? "",
@@ -82,7 +82,7 @@ export async function reportPost(reporterId: string, postId: string, reason?: st
         data: { postId, reviewerId: reporterId, kind: ReviewActionKind.REVERT_TO_PENDING, reason: `auto-reverted after ${reportCount} reports` },
       });
       const area = await prisma.area.findUnique({ where: { id: post.areaId }, select: { slug: true } });
-      communityEvents.emit("event", { type: "post.reverted", postId: post.id, areaSlug: area?.slug ?? "" });
+      publishCommunityEvent({ type: "post.reverted", postId: post.id, areaSlug: area?.slug ?? "" });
     }
   }
   return { ok: true, reportCount };

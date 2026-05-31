@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { communityEvents } from "@/server/services/community/events";
+import { communityEvents, ensureCommunitySubscriber } from "@/server/services/community/events";
 
 export const dynamic = "force-dynamic";
 // v64 — set explicit maxDuration. Without it the function inherits
@@ -11,6 +11,10 @@ export const maxDuration = 300;
 // In-process EventEmitter only sees events from the same instance; for
 // multi-instance scale, swap for Vercel Queues or Redis pub/sub.
 export async function GET(_req: NextRequest) {
+  // Start the per-instance Redis subscriber (idempotent; no-op without
+  // REDIS_URL) so events published on other instances re-emit to the local
+  // EventEmitter this stream listens on.
+  ensureCommunitySubscriber();
   const stream = new ReadableStream({
     start(controller) {
       const enc = new TextEncoder();

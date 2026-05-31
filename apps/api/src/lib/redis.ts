@@ -45,6 +45,25 @@ export function isRedisEnabled(): boolean {
   return !!env.REDIS_URL;
 }
 
+/// A dedicated connection for SUBSCRIBE. A client in subscriber mode can't run
+/// normal commands, so pub/sub needs its own socket separate from getRedis().
+/// Returns null when REDIS_URL is unset. Used by the community-events bus.
+export function getRedisSubscriber(): Redis | null {
+  if (!env.REDIS_URL) return null;
+  try {
+    const sub = new Redis(env.REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+    });
+    sub.on("error", (err) => console.warn("[redis] subscriber error:", err.message));
+    return sub;
+  } catch (err) {
+    console.warn("[redis] subscriber init failed:", (err as Error).message);
+    return null;
+  }
+}
+
 // v96 — wait helper for the boot-time race between the workers and the
 // Redis client. The client is lazyConnect=true with enableOfflineQueue=
 // false, which means any command issued during the brief "connecting"

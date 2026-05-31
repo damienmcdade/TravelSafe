@@ -164,11 +164,25 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // VERIFIED (4 aggregators): none too high — Denver/Phoenix were too low and
   // were raised (see fbi-baselines.ts). Each open feed then reads violent
   // ~0.51-0.61× over a FULL-YEAR window (not a volume/lag artifact), a genuine
-  // structural under-capture: Denver + Cambridge publish ZERO rape rows
-  // (confirmed), and all four under-report domestic-violence aggravated
-  // assault (Indianapolis carries rape but still under-counts agg assault).
-  // Same partial pattern as Dallas/Boston/DC — scale persons to the FBI total.
-  // Property is accurate-ish (~0.78-0.91) → stays 1.0.
+  // structural under-capture from rape redaction + domestic-violence agg
+  // assault under-reporting. Same partial pattern as Dallas/Boston/DC — scale
+  // persons to the FBI total. Property is accurate-ish (~0.78-0.91) → stays 1.0.
+  //
+  // Live re-verification 2026-05-30 (direct feed group-by, settles a prior
+  // audit doubt — the adapters carry RAPE/SEX keys *defensively*, but the
+  // feeds DON'T emit rape, so the keys are dormant and the redaction is real):
+  //   • Cambridge (data.cambridgema.gov xuad-73uj): 56 categories, 6,603
+  //     incidents/yr, ZERO rape/sex rows. Redaction CONFIRMED.
+  //   • Indianapolis (gis.indy.gov IMPD_Public_Data/1): ZERO rows matching
+  //     RAPE/SODOMY/FONDLING/SEXUAL-ASSAULT across NIBRSClassDesc AND CR_Desc;
+  //     only 803 generic "SEX" rows over the full ~688k-row history (≈ a small
+  //     fraction of FBI's 527 rapes/yr). Rape sub-category redaction CONFIRMED;
+  //     robbery (9,928) + agg-assault (32,062) present but DV-agg under-counted.
+  //   • Denver (token-gated FeatureServer, not live-probable here): adapter
+  //     carries a "sexual-assault" category but the public feed omits the rows;
+  //     FBI shows ~676 rapes/yr, so the absence is redaction, not a safe city.
+  //     NOTE: Denver needs DENVER_ARCGIS_TOKEN set in prod or the adapter
+  //     returns EMPTY — that env gap, not this scale, is the real Denver risk.
   "denver":        { persons: 1.95, property: 1.0, sourceType: "partial" },
   "cambridge":     { persons: 1.65, property: 1.0, sourceType: "partial" },
   "phoenix":       { persons: 1.79, property: 1.0, sourceType: "partial" },

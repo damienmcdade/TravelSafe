@@ -7,7 +7,7 @@ import { optionalSession } from "@/server/lib/auth";
 import { prisma } from "@/server/lib/prisma";
 import { preVetPost, POST_RATE_LIMIT_PER_DAY } from "@/server/services/moderation/post-prevet";
 import { isSuspended } from "@/server/services/moderation/suspension";
-import { communityEvents } from "@/server/services/community/events";
+import { publishCommunityEvent } from "@/server/services/community/events";
 
 const Body = z.object({
   areaSlug: z.string().min(1),
@@ -122,7 +122,7 @@ export const POST = wrap(async (req: NextRequest) => {
   });
 
   // Push the new post out to any SSE listeners so live feeds update.
-  communityEvents.emit("event", {
+  publishCommunityEvent({
     type: "post.verified",
     postId: post.id,
     areaSlug: input.areaSlug,

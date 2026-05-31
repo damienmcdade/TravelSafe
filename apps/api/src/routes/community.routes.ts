@@ -5,7 +5,7 @@ import { PostStatus, ReactionKind } from "../generated/prisma/client.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
 import { writeLimiter } from "../middleware/rate-limit.js";
 import { preVetPost } from "../services/moderation/post-prevet.js";
-import { communityEvents } from "../services/community/events.js";
+import { communityEvents, ensureCommunitySubscriber } from "../services/community/events.js";
 
 export const communityRouter = Router();
 
@@ -13,6 +13,9 @@ export const communityRouter = Router();
 // payload only carries the post id, area, and timestamps; the client must hit
 // /community/posts to render full content (which already filters to VERIFIED).
 communityRouter.get("/stream", (req, res) => {
+  // Start the per-instance Redis subscriber (idempotent; no-op without
+  // REDIS_URL) so events published on other instances reach this stream.
+  ensureCommunitySubscriber();
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache, no-transform");
   res.setHeader("Connection", "keep-alive");

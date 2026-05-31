@@ -4,7 +4,6 @@ import { requireAuth } from "../middleware/auth.js";
 import { writeLimiter } from "../middleware/rate-limit.js";
 import { armCheckIn, listActive, markSafe } from "../services/safety/check-in.service.js";
 import { createLiveShare, listLiveShares, revokeLiveShare } from "../services/safety/live-share.service.js";
-import { planSafeRoute } from "../services/safety/safe-route.service.js";
 
 export const safetyRouter = Router();
 
@@ -73,17 +72,9 @@ safetyRouter.get("/live-share", requireAuth, async (req, res, next) => {
 });
 
 // --- Safe route ------------------------------------------------------------
-
-const safeRouteBody = z.object({
-  from: z.object({ lat: z.number(), lng: z.number() }),
-  to:   z.object({ lat: z.number(), lng: z.number() }),
-});
-
-safetyRouter.post("/safe-route", requireAuth, writeLimiter, async (req, res, next) => {
-  try {
-    const { from, to } = safeRouteBody.parse(req.body);
-    res.json(await planSafeRoute(from, to));
-  } catch (err) {
-    next(err);
-  }
-});
+// Removed: the legacy POST /safety/safe-route stub (planSafeRoute) was a
+// straight-line, San-Diego-only, centroid-based placeholder. It is fully
+// superseded by the real routing engine in the web app
+// (apps/web/src/server/services/route/safe-route.ts → GET /api/route/safe),
+// which does OpenRouteService/OSRM polyline routing + per-neighborhood
+// exposure scoring across all supported cities. No client called this route.

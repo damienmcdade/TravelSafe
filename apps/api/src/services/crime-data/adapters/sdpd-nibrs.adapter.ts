@@ -10,8 +10,17 @@ import { findArea } from "../neighborhoods.js";
 //   crime_against (Person|Property|Society), neighborhood, beat, block_addr.
 //
 // This adapter caches the latest year in-memory for 6 hours to avoid pounding
-// the CSV endpoint. TODO: switch to a scheduled refresh + on-disk cache for
-// production scale.
+// the CSV endpoint.
+//
+// NOTE (production scale — the old "TODO: scheduled refresh + on-disk cache"
+// is resolved by architecture, not by this file): the LIVE San Diego path is
+// the shared package adapter @travelsafe/crime-data/adapters/sdpd-nibrs, which
+// the Railway warm-worker (services/warm/cache.worker.ts) refreshes every 4
+// minutes — inside its 5-min cache TTL — and backs with Redis, so the upstream
+// CSV is pulled on a schedule and the cache stays hot 24/7 across both web and
+// Railway. This apps/api copy is a legacy fallback that the warm-worker does
+// not drive; its 6-hour in-memory cache is sufficient for that role, and an
+// on-disk cache would be redundant with the Redis-backed warm path.
 
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 let cache: { fetchedAt: number; year: number; rows: Incident[] } | null = null;
