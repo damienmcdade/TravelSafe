@@ -2,6 +2,7 @@ import "server-only";
 import { crimeData } from "../crime-data";
 import { cityFromLatLng, cityForArea } from "../crime-data/cities";
 import type { KnownArea } from "../crime-data/neighborhoods";
+import { env } from "../../lib/env";
 
 /// Dynamic Safe-Route Navigation.
 ///
@@ -25,8 +26,19 @@ import type { KnownArea } from "../crime-data/neighborhoods";
 /// per-city OpenTripPlanner instances or a paid API.
 
 const OSRM_BASE = "https://router.project-osrm.org/route/v1";
+// OpenRouteService — the PRODUCTION routing engine (keyed, reliable, proper
+// foot profile). Used when OPENROUTESERVICE_API_KEY is set; OSRM demo is the
+// keyless fallback. Its killer feature for Safe Route is avoid_polygons, which
+// lets us route AROUND the hottest neighborhoods rather than just scoring the
+// engine's defaults.
+const ORS_BASE = "https://api.openrouteservice.org/v2/directions";
 const SAMPLE_COUNT = 30;
 const NEAREST_CAP_KM = 3;
+// Up to this many of the hottest neighborhoods become avoid-zones for the ORS
+// "safe" route. ORS rejects requests whose avoid area is too large, so we cap
+// the count and keep each box small (~250 m).
+const MAX_AVOID_ZONES = 5;
+const AVOID_BOX_KM = 0.25;
 
 export type Mode = "walking" | "driving" | "transit";
 
@@ -158,7 +170,100 @@ async function osrmRoute(
   }));
 }
 
+type RawRoute = { coordinates: Array<[number, number]>; duration: number; distance: number };
+
+/// OpenRouteService directions. Returns one route (optionally avoiding the
+/// supplied polygons); pass `alternatives` to request ORS's own alternative
+/// routes in a single call. Throws on any non-OK response so the caller can
+/// fall back (e.g. ORS refuses to route when avoid-zones block the only path).
+async function orsRoute(
+  profile: "foot-walking" | "driving-car",
+  from: { lat: number; lng: number },
+  to: { lat: number; lng: number },
+  avoidPolygons?: GeoJSON.MultiPolygon,
+  alternatives = false,
+): Promise<RawRoute[]> {
+  const key = env.OPENROUTESERVICE_API_KEY;
+  if (!key) throw new Error("ORS key not configured");
+  const body: Record<string, unknown> = {
+    coordinates: [[from.lng, from.lat], [to.lng, to.lat]],
+  };
+  const options: Record<string, unknown> = {};
+  if (avoidPolygons && avoidPolygons.coordinates.length > 0) options.avoid_polygons = avoidPolygons;
+  if (Object.keys(options).length > 0) body.options = options;
+  // ORS alternative_routes is only honored on a non-avoid request and only for
+  // some profiles; ask for a small fan-out when requested.
+  if (alternatives) body.alternative_routes = { target_count: 3, share_factor: 0.6, weight_factor: 1.6 };
+  const res = await fetch(`${ORS_BASE}/${profile}/geojson`, {
+    method: "POST",
+    headers: {
+      Authorization: key,
+      "Content-Type": "application/json",
+      Accept: "application/geo+json",
+      "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) throw new Error(`ORS ${res.status}`);
+  const fc = await res.json() as {
+    features?: Array<{ geometry: { coordinates: Array<[number, number]> }; properties: { summary?: { distance?: number; duration?: number } } }>;
+  };
+  return (fc.features ?? []).map((f) => ({
+    coordinates: f.geometry.coordinates,
+    distance: f.properties.summary?.distance ?? 0,
+    duration: f.properties.summary?.duration ?? 0,
+  }));
+}
+
 interface AreaIntensity { area: KnownArea; intensity: number }
+
+/// Build a MultiPolygon of small avoid-boxes around the city's hottest
+/// neighborhoods (intensity > 2× the city mean), capped at MAX_AVOID_ZONES.
+/// Feeding this to ORS as avoid_polygons makes the route actively steer around
+/// the worst clusters — the genuine "safe route", not just a scored default.
+/// Returns null when nothing is hot enough to be worth avoiding.
+function buildAvoidPolygons(intensity: AreaIntensity[]): GeoJSON.MultiPolygon | null {
+  if (intensity.length === 0) return null;
+  const mean = intensity.reduce((s, i) => s + i.intensity, 0) / intensity.length;
+  if (mean <= 0) return null;
+  const hot = intensity
+    .filter((i) => i.intensity > mean * 2 && i.area.centroid)
+    .sort((a, b) => b.intensity - a.intensity)
+    .slice(0, MAX_AVOID_ZONES);
+  if (hot.length === 0) return null;
+  const dLat = AVOID_BOX_KM / 111;
+  const polys: number[][][][] = hot.map(({ area }) => {
+    const { lat, lng } = area.centroid;
+    const dLng = AVOID_BOX_KM / (111 * Math.max(0.1, Math.cos((lat * Math.PI) / 180)));
+    // GeoJSON ring: [lng,lat] CCW, closed.
+    return [[
+      [lng - dLng, lat - dLat],
+      [lng + dLng, lat - dLat],
+      [lng + dLng, lat + dLat],
+      [lng - dLng, lat + dLat],
+      [lng - dLng, lat - dLat],
+    ]];
+  });
+  return { type: "MultiPolygon", coordinates: polys };
+}
+
+/// Drop near-identical routes (the avoid route can come back equal to the
+/// direct one when nothing blocks the path, and ORS alternatives can overlap).
+/// Signature = rounded distance + a few sampled coordinates.
+function dedupeRoutes(routes: RawRoute[]): RawRoute[] {
+  const seen = new Set<string>();
+  const out: RawRoute[] = [];
+  for (const r of routes) {
+    if (r.coordinates.length === 0) continue;
+    const mid = r.coordinates[Math.floor(r.coordinates.length / 2)] ?? [0, 0];
+    const sig = `${Math.round(r.distance / 25)}|${mid[0].toFixed(3)},${mid[1].toFixed(3)}`;
+    if (seen.has(sig)) continue;
+    seen.add(sig);
+    out.push(r);
+  }
+  return out;
+}
 
 // v64 — daytime / nighttime crime-curve weighting. Renamed from the
 // prior "now/tonight" UI which was confusing: "now" / "tonight" sound
@@ -273,21 +378,45 @@ export async function getSafeRoute(
 
   const intensity = await loadCityIntensity(city.slug, timeOfTravel);
 
-  // OSRM doesn't support transit. For mode=transit, score the driving
-  // alternative and mark it clearly in the UI / source labels.
-  const profile = mode === "walking" ? "foot" : "driving";
+  // Routing engine. When an OpenRouteService key is configured we use it (the
+  // production path): the DIRECT route(s) plus a route that AVOIDS the city's
+  // hottest neighborhoods — the latter is the genuine "safe route", not just a
+  // scored default. Without a key we fall back to the public OSRM demo. Neither
+  // supports transit, so transit reuses the driving profile (flagged in the UI).
+  let raw: RawRoute[] = [];
+  let engine: "ors" | "osrm" = "osrm";
 
-  let raw = await osrmRoute(profile, from, to).catch(() => [] as Awaited<ReturnType<typeof osrmRoute>>);
-  // If OSRM only returned a single route, manufacture two more by routing
-  // through perpendicular waypoints — gives the user something to compare.
-  if (raw.length < 2) {
-    const w1 = perpendicularWaypoint(from, to, +1.5);
-    const w2 = perpendicularWaypoint(from, to, -1.5);
-    const more = await Promise.all([
-      osrmRoute(profile, from, to, w1).catch(() => []),
-      osrmRoute(profile, from, to, w2).catch(() => []),
+  if (env.OPENROUTESERVICE_API_KEY) {
+    const orsProfile = mode === "walking" ? "foot-walking" : "driving-car";
+    const avoid = buildAvoidPolygons(intensity);
+    const [directWithAlts, safer] = await Promise.all([
+      orsRoute(orsProfile, from, to, undefined, true).catch(() => [] as RawRoute[]),
+      avoid ? orsRoute(orsProfile, from, to, avoid).catch(() => [] as RawRoute[]) : Promise.resolve([] as RawRoute[]),
     ]);
-    raw = [...raw, ...more.flatMap((m) => m.slice(0, 1))];
+    // alternative_routes is profile-dependent — if that variant failed, retry
+    // the plain direct route so we never lose the fastest option.
+    const direct = directWithAlts.length > 0
+      ? directWithAlts
+      : await orsRoute(orsProfile, from, to).catch(() => [] as RawRoute[]);
+    raw = dedupeRoutes([...direct, ...safer]);
+    if (raw.length > 0) engine = "ors";
+  }
+
+  if (raw.length === 0) {
+    // OSRM public-demo fallback (keyless). Manufacture perpendicular-waypoint
+    // alternatives when OSRM returns a single route so there's something to rank.
+    const profile = mode === "walking" ? "foot" : "driving";
+    raw = await osrmRoute(profile, from, to).catch(() => [] as RawRoute[]);
+    if (raw.length < 2) {
+      const w1 = perpendicularWaypoint(from, to, +1.5);
+      const w2 = perpendicularWaypoint(from, to, -1.5);
+      const more = await Promise.all([
+        osrmRoute(profile, from, to, w1).catch(() => []),
+        osrmRoute(profile, from, to, w2).catch(() => []),
+      ]);
+      raw = [...raw, ...more.flatMap((m) => m.slice(0, 1))];
+    }
+    engine = "osrm";
   }
 
   const scored: RouteAlt[] = raw.map((r) => {
@@ -359,19 +488,24 @@ export async function getSafeRoute(
     });
   }
 
+  const engineName = engine === "ors" ? "OpenRouteService" : "project-OSRM";
+  const engineUrl = engine === "ors" ? "https://openrouteservice.org/" : "https://project-osrm.org/";
   return {
     city: { slug: city.slug, label: city.label },
     from, to, mode,
     routes: scored.slice(0, 3),
     source: {
       label: mode === "transit"
-        ? "Routes via project-OSRM (driving — used as a transit-leg proxy)"
-        : `Routes via project-OSRM ${mode} profile; exposure score from ${city.label} police feed`,
-      url: "https://project-osrm.org/",
+        ? `Routes via ${engineName} (driving — used as a transit-leg proxy)`
+        : `Routes via ${engineName} ${mode} profile; exposure score from ${city.label} police feed`,
+      url: engineUrl,
     },
     disclaimer:
-      "Routes come from the OpenStreetMap-based OSRM routing engine. The " +
-      "exposure score is the sum of recent incident counts in the neighborhoods " +
+      `Routes come from the OpenStreetMap-based ${engineName} routing engine. ` +
+      (engine === "ors"
+        ? "One option is routed to actively avoid the neighborhoods with the most recent reports. "
+        : "") +
+      "The exposure score is the sum of recent incident counts in the neighborhoods " +
       "each route crosses, normalized per 100,000 meters of route length, using " +
       "the same official police feed that powers the Crime Map. Lower is less " +
       "historical exposure — it is NOT a prediction of safety, just a comparison " +

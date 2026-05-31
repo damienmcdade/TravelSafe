@@ -74,6 +74,14 @@ const Env = z.object({
   // a direct call (currently 0-record from Vercel).
   BOSTON_PROXY_URL: z.string().url().optional(),
 
+  // OpenRouteService — production routing engine for Safe Route (foot-walking /
+  // driving-car profiles + avoid_polygons so routes actively steer AROUND the
+  // hottest neighborhoods, not just score OSRM's defaults). Free key (2,000
+  // req/day, 40/min) at https://openrouteservice.org/dev/#/signup. When unset,
+  // Safe Route falls back to the public OSRM demo (router.project-osrm.org),
+  // which is fine for dev but rate-limited / best-effort for production.
+  OPENROUTESERVICE_API_KEY: z.string().optional(),
+
   // Moderator allowlist (comma-separated emails)
   MODERATOR_EMAILS: z.string().default(""),
 
