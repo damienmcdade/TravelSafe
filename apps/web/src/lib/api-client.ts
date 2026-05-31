@@ -76,7 +76,32 @@ export function useAnonymousAuth(): { ready: boolean } {
   return { ready };
 }
 
+// v99 — in-flight GET dedup. The SWR localStorage cache only helps across
+// mounts/reloads; on a single page-paint several components request the
+// same path concurrently (e.g. /city fires /safezone/trend 3× and
+// /official-alerts 3×), and on a cold cache every one missed and fired its
+// own browser→Vercel→Railway round-trip. Collapsing concurrent identical
+// GETs onto one promise removes those redundant hops. Keyed by path; the
+// entry clears as soon as the request settles, so SWR/refresh still control
+// when the next real fetch happens. The shared request intentionally drops
+// any single caller's AbortSignal (one component unmounting must not cancel
+// the fetch the others are awaiting); useApi's version guard already
+// discards stale results, so correctness is unaffected.
+const inflightGets = new Map<string, Promise<unknown>>();
+
 export async function api<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method ?? "GET").toUpperCase();
+  if (method !== "GET") return rawApi<T>(path, init);
+  const existing = inflightGets.get(path);
+  if (existing) return existing as Promise<T>;
+  const p = rawApi<T>(path, { ...init, signal: undefined }).finally(() => {
+    inflightGets.delete(path);
+  });
+  inflightGets.set(path, p);
+  return p as Promise<T>;
+}
+
+async function rawApi<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
     ...(init.headers ?? {}),
@@ -253,14 +278,22 @@ export function useApi<T = unknown>(
     return () => window.clearInterval(id);
   }, [path, opts.refreshIntervalMs, reload]);
 
-  // Refresh whenever the user brings the tab back into focus.
+  // Refresh whenever the user brings the tab back into focus — but only
+  // if the cached response has actually gone stale. v99: previously this
+  // unconditionally re-fired every hook on every tab return, so flipping
+  // away and back re-pulled the whole page (including the heavy trend
+  // payloads) even if the data was seconds old. Gate on the SWR window so
+  // a quick tab-switch is free.
   useEffect(() => {
     function onVisible() {
-      if (typeof document !== "undefined" && !document.hidden) void reload();
+      if (typeof document === "undefined" || document.hidden || !path) return;
+      // No SWR persistence (swrMs<=0) → keep the old always-refresh behavior.
+      if (swrMs > 0 && swrRead<T>(path, swrMs) != null) return; // still fresh
+      void reload();
     }
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [reload]);
+  }, [reload, path, swrMs]);
 
   return { data, error, loading, reload };
 }

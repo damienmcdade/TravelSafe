@@ -122,12 +122,17 @@ function timeOfDayAnalysis(incidents: Array<{ occurredAt: string }>, tz: string)
 /// when the user hasn't drilled into a specific neighborhood. Same
 /// response shape as getTrendForArea so the page renders both with one
 /// component.
-export async function getCitywideTrend(citySlug: string, opts?: { windowDays?: number }): Promise<TrendResponse> {
+export async function getCitywideTrend(citySlug: string, opts?: { windowDays?: number; bulletLimit?: number }): Promise<TrendResponse> {
   const wd = opts?.windowDays ?? 30;
-  return dedupe(`trend:${citySlug}:${wd}`, () => computeCitywideTrend(citySlug, opts));
+  // v99 — bulletLimit lets a caller that only needs freshness/timeOfDay/
+  // summary (e.g. the DataFreshnessBanner) skip the heavy dispatch list.
+  // The full citywide trend can serialize ~5000 bullets / ~760 KB, so a
+  // bullets=0 fetch is ~60x smaller. Keyed into the dedupe id so the
+  // trimmed and full variants don't collide.
+  return dedupe(`trend:${citySlug}:${wd}:${opts?.bulletLimit ?? "all"}`, () => computeCitywideTrend(citySlug, opts));
 }
 
-async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: number }): Promise<TrendResponse> {
+async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: number; bulletLimit?: number }): Promise<TrendResponse> {
   const { cityBySlug } = await import("./cities.js");
   const city = cityBySlug(citySlug) ?? cityForArea("");
   const areas = await city.discover().catch(() => []);
@@ -251,8 +256,11 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
   // case = 6000, so 5000 covers nearly every realistic window without
   // unbounded payload growth. The client cap on ThreatFeed is the UI
   // budget; this server cap exists only as a payload safety net.
+  // v99 — bulletLimit (when provided) trims the dispatch list further;
+  // bullets=0 yields none, for callers that only read freshness/summary.
+  const bulletCap = Math.max(0, Math.min(DISPATCH_CAP, opts?.bulletLimit ?? DISPATCH_CAP));
   const sortedWindow = [...inWindow].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, DISPATCH_CAP).map((i) => ({
+  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, bulletCap).map((i) => ({
     kind: "dispatch",
     at: i.occurredAt,
     // v96p2-followup — run the raw upstream label through
@@ -298,7 +306,7 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
   };
 }
 
-export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?: { windowDays?: number }): Promise<TrendResponse> {
+export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?: { windowDays?: number; bulletLimit?: number }): Promise<TrendResponse> {
   const city = cityForArea(areaSlug);
   const now = Date.now();
   const windowDays = Math.max(1, Math.min(180, opts?.windowDays ?? 30));
@@ -393,8 +401,10 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
   // v95p18 — cap raised 200 → 5000. Per user directive that every
   // event in the selected interval must be present. Per-area windows
   // are smaller than citywide so 5000 covers any realistic interval.
+  // v99 — bulletLimit (when provided) trims further; bullets=0 yields none.
+  const bulletCap = Math.max(0, Math.min(DISPATCH_CAP, opts?.bulletLimit ?? DISPATCH_CAP));
   const sortedWindow = [...inWindow].sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
-  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, DISPATCH_CAP).map((i) => ({
+  const dispatchBullets: TrendBullet[] = sortedWindow.slice(0, bulletCap).map((i) => ({
     kind: "dispatch",
     at: i.occurredAt,
     text: `${ymd(i.occurredAt)} — ${displayOffenseLabel(i.ibrOffenseDescription)}${i.blockLabel ? ` near ${i.blockLabel}` : ""}.`,

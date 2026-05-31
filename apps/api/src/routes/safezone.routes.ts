@@ -118,16 +118,19 @@ const TrendQuery = z.object({
   area:  z.string().min(1).max(120).optional(),
   label: z.string().min(1).max(120).optional(),
   days:  z.coerce.number().int().min(1).max(180).optional(),
+  // v99 — bullets caps the dispatch list; bullets=0 skips the ~760 KB
+  // payload for callers that only need freshness/summary.
+  bullets: z.coerce.number().int().min(0).max(5000).optional(),
 }).refine((q) => Boolean(q.city) !== Boolean(q.area), {
   message: "Pass exactly one of `city` or `area`.",
 });
 
 safezoneRouter.get("/trend", async (req, res, next) => {
   try {
-    const { city, area, label, days } = TrendQuery.parse(req.query);
+    const { city, area, label, days, bullets } = TrendQuery.parse(req.query);
     res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
-    if (city) return res.json(await getCitywideTrend(city, { windowDays: days }));
-    return res.json(await getTrendForArea(area!, label ?? area!, { windowDays: days }));
+    if (city) return res.json(await getCitywideTrend(city, { windowDays: days, bulletLimit: bullets }));
+    return res.json(await getTrendForArea(area!, label ?? area!, { windowDays: days, bulletLimit: bullets }));
   } catch (err) {
     next(err);
   }

@@ -75,6 +75,10 @@ crimeDataRouter.get("/citywide", optionalAuth, async (req, res, next) => {
         retryAfterSeconds: 60,
       });
     }
+    // v99 — this endpoint was the one crime-data GET with NO Cache-Control,
+    // so the CDN/edge hit origin on every load (~0.8s each, even warm).
+    // Match the trend/mix/upticks routes so repeat loads are absorbed.
+    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
     res.json(result);
   } catch (err) {
     // v96 — same city_not_supported handling as the safety-score route.

@@ -94,8 +94,14 @@ export function TabNav() {
   const { city } = useCity();
   const { area } = useArea(city.slug);
 
+  // v99 — solid bg (no backdrop-blur) below. This sticky nav sits directly
+  // under the also-sticky, also-blurred app header; stacking two
+  // backdrop-blur layers forced the browser to re-sample/blur the moving
+  // content twice per scroll frame (a known mobile-WebView scroll-stutter
+  // source). The header keeps its frosted look; this bar is opaque, which
+  // removes the second blur pass.
   return (
-    <nav className="border-b border-sand-200 bg-white/80 backdrop-blur sticky top-0 z-20" aria-label="Primary">
+    <nav className="border-b border-sand-200 bg-white/95 sticky top-0 z-20" aria-label="Primary">
       <div className="relative">
         <ul className="max-w-5xl mx-auto flex items-stretch gap-1 px-4 py-1 overflow-x-auto scroll-smooth [scrollbar-width:none] [-ms-overflow-style:none]">
           {PRIMARY.map((t) => {

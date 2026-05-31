@@ -18,6 +18,10 @@ const Query = z.object({
   area:  z.string().min(1).max(120).optional(),
   label: z.string().min(1).max(120).optional(),
   days:  z.coerce.number().int().min(1).max(180).optional(),
+  // v99 — cap the dispatch-bullet list. Callers that only need the
+  // freshness/summary (DataFreshnessBanner) pass bullets=0 to skip the
+  // ~760 KB list. Omitted = full list (back-compat).
+  bullets: z.coerce.number().int().min(0).max(5000).optional(),
 }).refine((q) => Boolean(q.city) !== Boolean(q.area), {
   message: "Pass exactly one of `city` or `area`.",
 });
@@ -36,7 +40,7 @@ export const GET = wrap(async (req: NextRequest) => {
   const proxied = await tryProxy(req, "/safezone/trend");
   if (proxied) return proxied.response;
 
-  const { city, area, label, days } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
-  if (city) return NextResponse.json(await getCitywideTrend(city, { windowDays: days }), { headers: CACHE_HEADERS });
-  return NextResponse.json(await getTrendForArea(area!, label ?? area!, { windowDays: days }), { headers: CACHE_HEADERS });
+  const { city, area, label, days, bullets } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
+  if (city) return NextResponse.json(await getCitywideTrend(city, { windowDays: days, bulletLimit: bullets }), { headers: CACHE_HEADERS });
+  return NextResponse.json(await getTrendForArea(area!, label ?? area!, { windowDays: days, bulletLimit: bullets }), { headers: CACHE_HEADERS });
 });

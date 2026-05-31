@@ -38,10 +38,12 @@ export function DataFreshnessBanner({
   citySlug?: string;
   cityLabel?: string;
 }) {
+  // bullets=0 — this banner only reads `freshness`, so skip the (up to
+  // ~760 KB) dispatch-bullet list the trend endpoint would otherwise ship.
   const query = areaSlug
-    ? `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel ?? areaSlug)}`
+    ? `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel ?? areaSlug)}&bullets=0`
     : citySlug
-      ? `/safezone/trend?city=${encodeURIComponent(citySlug)}`
+      ? `/safezone/trend?city=${encodeURIComponent(citySlug)}&bullets=0`
       : null;
 
   const { data } = useApi<TrendResp>(query, [areaSlug ?? citySlug ?? ""]);
