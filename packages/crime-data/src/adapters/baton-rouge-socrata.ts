@@ -4,6 +4,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 
 // Baton Rouge — Baton Rouge Police Crime Incidents.
 // Socrata dataset pbin-pcm7 on data.brla.gov. Updated daily.
@@ -57,10 +58,12 @@ const PROVENANCE: DataProvenance = {
     "or display the suspect / victim demographic columns that other LA datasets sometimes carry.",
 };
 
+// v99 — route the naive-local upstream timestamp through
+// cityLocalToUtcIso so the hour-of-day histogram buckets by the
+// city's real local clock instead of the UTC runtime (was shifting
+// every incident by the source-city offset). See lib/city-time.ts.
 function safeIso(raw: string | null | undefined): string {
-  if (!raw) return new Date(0).toISOString();
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
+  return cityLocalToUtcIso(raw, "America/Chicago");
 }
 
 async function fetchBr(): Promise<Incident[]> {

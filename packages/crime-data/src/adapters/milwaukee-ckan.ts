@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
@@ -121,8 +122,11 @@ function classifyRow(r: RawRow): { category: CrimeCategory; description: string 
 
 function parseDateMaybe(raw: string | undefined): Date | null {
   if (!raw) return null;
-  const d = new Date(raw.replace(" ", "T") + "Z");
-  return Number.isNaN(d.getTime()) ? null : d;
+  // v99 — was `new Date(raw.replace(" ","T") + "Z")`, which asserted
+  // Milwaukee local wall-clock IS UTC and shifted every incident ~5-6h.
+  // cityLocalToUtcIso converts the Central wall-clock to the true instant.
+  const d = new Date(cityLocalToUtcIso(raw, "America/Chicago"));
+  return d.getTime() <= 0 ? null : d;
 }
 
 interface DatastoreResp { success?: boolean; result?: { records?: RawRow[]; total?: number } }

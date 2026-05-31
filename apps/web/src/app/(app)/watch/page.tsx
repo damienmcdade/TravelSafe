@@ -172,19 +172,21 @@ export default function NeighborhoodWatchPage() {
           )}
           {watch && !watchLoading && (
             <>
+              {/* v99 — AI Summary self-fetches /ai/area-brief, which proxies
+                  to the Railway API where the LLM keys live. The inline server
+                  build (getWatchForArea → generateAreaBrief) runs on Vercel
+                  with no LLM keys configured, so it returned null and the AI
+                  card vanished for every neighborhood — while the *city* AI
+                  summary worked because it already goes through the proxied
+                  /ai/incident-summary. Sourcing the neighborhood brief the
+                  same proxied way restores parity. */}
+              <AreaBriefPanel areaSlug={selectedArea.slug} />
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {watch.cards.map((c) => {
-                  // AI brief cards render through the canonical
-                  // AreaBriefPanel styling so the "In plain English"
-                  // section looks the same here and on /now (single
-                  // source of truth post-redundancy-audit).
-                  if (c.group === "ai") {
-                    return (
-                      <li key={c.id} className="md:col-span-2">
-                        <AreaBriefPanel body={c.body} sourceUrl={c.sourceUrl} />
-                      </li>
-                    );
-                  }
+                  // AI cards are rendered by the dedicated self-fetch panel
+                  // above; skip any server-prerendered "ai" card (always
+                  // empty on Vercel) so we don't double up.
+                  if (c.group === "ai") return null;
                   const tag = GROUP_TAG[c.group] ?? DEFAULT_TAG;
                   return (
                     <li key={c.id}>

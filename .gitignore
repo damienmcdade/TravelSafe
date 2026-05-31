@@ -56,3 +56,4 @@ next-env.d.ts
 packages/db/src/generated/
 apps/api/src/generated/
 apps/web/src/generated/
+.env*

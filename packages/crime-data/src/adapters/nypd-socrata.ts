@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
@@ -263,7 +264,9 @@ async function fetchNypd(): Promise<Incident[]> {
     const datePart = (r.cmplnt_fr_dt ?? "").slice(0, 10); // YYYY-MM-DD
     if (!datePart) continue;
     const timePart = r.cmplnt_fr_tm ?? "00:00:00";
-    const d = new Date(`${datePart}T${timePart}`);
+    // v99 — cmplnt_fr_dt + cmplnt_fr_tm form a naive ET wall-clock; route
+    // the merged string through cityLocalToUtcIso for the true instant.
+    const d = new Date(cityLocalToUtcIso(`${datePart}T${timePart}`, "America/New_York"));
     if (Number.isNaN(d.getTime()) || d.getTime() <= 0) continue;
     const lat = Number(r.latitude);
     const lon = Number(r.longitude);

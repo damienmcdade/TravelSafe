@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
@@ -82,11 +83,15 @@ const PROVENANCE: DataProvenance = {
 /// Parse a date string, returning null when invalid. See kansas-city
 /// adapter for the rationale — epoch-fallback rows pollute the citywide
 /// aggregator and collapse windowDays.
+// v99 — route the naive-local upstream timestamp through
+// cityLocalToUtcIso so the hour-of-day histogram buckets by the
+// city's real local clock instead of the UTC runtime. Preserve the
+// original drop-the-row contract for unparseable input (the helper
+// returns the epoch-0 ISO, which we map back to null).
 function safeIso(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime()) || d.getTime() <= 0) return null;
-  return d.toISOString();
+  const iso = cityLocalToUtcIso(raw, "America/New_York");
+  return +new Date(iso) <= 0 ? null : iso;
 }
 
 async function fetchCin(): Promise<Incident[]> {

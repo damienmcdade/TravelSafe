@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { cityLocalToUtcIso, CITY_TIMEZONES } from "@travelsafe/crime-data/lib/city-time";
+import { CITIES } from "@travelsafe/crime-data/cities";
 
 // v96p2 — pure-logic tests for the city-local → UTC helper. No
 // network, no DB. The classifier maps every supported city to an
@@ -70,18 +71,16 @@ describe("cityLocalToUtcIso", () => {
 });
 
 describe("CITY_TIMEZONES", () => {
-  it("covers all 37 supported cities", () => {
-    const slugs = [
-      "san-diego", "los-angeles", "san-francisco", "oakland", "sacramento",
-      "seattle", "las-vegas", "phoenix", "tucson", "denver", "colorado-springs",
-      "boise", "chicago", "minneapolis", "saint-paul", "milwaukee", "kansas-city",
-      "new-orleans", "baton-rouge", "dallas", "nashville", "new-york", "boston",
-      "cambridge", "philadelphia", "pittsburgh", "buffalo", "detroit", "cleveland",
-      "cincinnati", "indianapolis", "washington-dc", "atlanta", "charlotte",
-      "raleigh", "norfolk", "honolulu",
-    ];
-    for (const slug of slugs) {
-      expect(CITY_TIMEZONES[slug], `missing tz for ${slug}`).toBeTruthy();
+  // v99 — derive the expected set from the canonical CITIES registry
+  // instead of a hand-maintained literal. The old hardcoded list went
+  // stale (it still listed phoenix & nashville after their feeds froze
+  // and they were swapped out, and it never gained long-beach), so it
+  // asserted the wrong thing. Sourcing from CITIES means every city the
+  // app actually supports MUST have a timezone, and the test can't drift
+  // from the registry again.
+  it("covers every supported city in the CITIES registry", () => {
+    for (const city of CITIES) {
+      expect(CITY_TIMEZONES[city.slug], `missing tz for ${city.slug}`).toBeTruthy();
     }
   });
 });

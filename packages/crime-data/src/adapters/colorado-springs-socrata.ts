@@ -4,6 +4,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { coSpPolygons } from "../data/colorado-springs-neighborhoods.js";
 
 // Colorado Springs PD — "Crime Level Data" on policedata.coloradosprings.gov.
@@ -111,10 +112,12 @@ const PROVENANCE: DataProvenance = {
     "individuals.",
 };
 
+// v99 — route the naive-local upstream timestamp through
+// cityLocalToUtcIso so the hour-of-day histogram buckets by the
+// city's real local clock instead of the UTC runtime (was shifting
+// every incident by the source-city offset). See lib/city-time.ts.
 function safeIso(raw: string | null | undefined): string {
-  if (!raw) return new Date(0).toISOString();
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
+  return cityLocalToUtcIso(raw, "America/Denver");
 }
 
 async function fetchCoSp(): Promise<Incident[]> {

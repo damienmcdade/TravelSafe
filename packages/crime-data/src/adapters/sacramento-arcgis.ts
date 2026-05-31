@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
@@ -32,7 +33,10 @@ registerRowCache(() => { cache = null; });
 
 interface SacRow {
   Record_ID?: string;
-  Occurrence_Date_PT?: number;
+  // v99 — the live feed returns this as a STRING in "MM/DD/YYYY HH:MM"
+  // Pacific wall-clock form, not the ms-since-epoch number the old code
+  // assumed. Typed correctly so cityLocalToUtcIso receives the string.
+  Occurrence_Date_PT?: string;
   Offense_Category?: string;
   Description?: string;
   Police_District?: string;
@@ -223,15 +227,13 @@ async function fetchSacramento(): Promise<Incident[]> {
         // org) — we mark the row as Unknown so it doesn't appear as
         // an unrecognizable area.
         area: cleaned || "Unknown",
-        // Occurrence_Date_PT arrives as ArcGIS ms-since-epoch. ArcGIS
-        // Online normalizes datetimes to UTC at storage time, so the
-        // raw ms value should already be a true UTC instant despite
-        // the "_PT" suffix (which names the dataset author's intent,
-        // not the wire format). Leaving as-is pending end-to-end
-        // verification against a known incident; if that check shows
-        // the ms is actually PT-wall-clock, we'd plumb a numeric path
-        // through cityLocalToUtcIso.
-        occurredAt: new Date(r.Occurrence_Date_PT!).toISOString(),
+        // v99 — end-to-end check (2026-05-31) confirmed Occurrence_Date_PT
+        // is NOT epoch-ms: the live feed returns it as a string in
+        // "MM/DD/YYYY HH:MM" Pacific WALL-CLOCK form (e.g. "12/31/2025 23:38").
+        // Bare new Date() read that as UTC on the Railway/Vercel runtime,
+        // shifting every incident ~8h. Route through cityLocalToUtcIso
+        // (which now normalizes the US slash format) for the true instant.
+        occurredAt: cityLocalToUtcIso(r.Occurrence_Date_PT, "America/Los_Angeles"),
         nibrsCategory: classify(r),
         ibrOffenseDescription: (r.Description ?? r.Offense_Category ?? "Unknown").trim(),
         beat: r.Beat ?? r.Police_District ?? null,

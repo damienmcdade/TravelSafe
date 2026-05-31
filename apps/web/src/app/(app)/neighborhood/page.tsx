@@ -225,7 +225,7 @@ function NeighborhoodView() {
           <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} />
+            <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} citySlug={city.slug} />
             <NewsPanel areaSlug={area.slug} />
           </div>
 

@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
@@ -205,7 +206,9 @@ async function fetchLasVegas(): Promise<Incident[]> {
     out.push({
       id: `lv-${r.Event_Number ?? out.length}`,
       area,
-      occurredAt: r.Event_Date ? new Date(r.Event_Date.replace(" ", "T")).toISOString() : new Date(0).toISOString(),
+      // v99 — Event_Date is a naive Pacific wall-clock string ("2026-05-17 23:58:55");
+      // route through cityLocalToUtcIso so the hour bucket is correct on a UTC runtime.
+      occurredAt: cityLocalToUtcIso(r.Event_Date, "America/Los_Angeles"),
       nibrsCategory: cat,
       ibrOffenseDescription: desc,
       beat: r.Beat ?? (r.WARD ? `Ward ${r.WARD}` : null),

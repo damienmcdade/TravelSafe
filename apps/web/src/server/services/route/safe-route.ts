@@ -2,6 +2,7 @@ import "server-only";
 import { crimeData } from "../crime-data";
 import { cityFromLatLng, cityForArea } from "../crime-data/cities";
 import type { KnownArea } from "../crime-data/neighborhoods";
+import { cityLocalHour, CITY_TIMEZONES, DATE_ONLY_CITY_SLUGS } from "@travelsafe/crime-data/lib/city-time";
 import { env } from "../../lib/env";
 
 /// Dynamic Safe-Route Navigation.
@@ -303,6 +304,12 @@ async function loadCityIntensity(citySlug: string, timeOfTravel?: Date): Promise
   const isDaytimeTravel = travelHour != null && isDaytimeHour(travelHour);
   const isNightTravel = travelHour != null && isNightHour(travelHour);
   const activeCutoff = Date.now() - ACTIVE_INCIDENT_WINDOW_MS;
+  // v99 — bucket incident hours by the CITY's local clock, not the UTC
+  // runtime (getHours() on Railway/Vercel mislabeled every incident's
+  // day/night by the city offset). Date-only feeds carry no real hour,
+  // so skip the time-of-day weighting for them entirely.
+  const tz = CITY_TIMEZONES[citySlug] ?? "UTC";
+  const cityIsDateOnly = DATE_ONLY_CITY_SLUGS.has(citySlug);
   // Pull each area's recent incident count in parallel — the adapter caches
   // the city-wide pull so all 100 areas share one upstream fetch.
   const intensities = await Promise.all(
@@ -313,13 +320,16 @@ async function loadCityIntensity(citySlug: string, timeOfTravel?: Date): Promise
         let weight = 1;
         const incTime = +new Date(inc.occurredAt);
         if (Number.isFinite(incTime)) {
-          const incHour = new Date(incTime).getHours();
           // Time-of-day curve weighting. Travel time selects which
           // curve to boost: daytime travel boosts daytime-occurring
           // incidents (commercial-corridor pattern), nighttime travel
           // boosts nighttime-occurring incidents (residential spike).
-          if (isDaytimeTravel && isDaytimeHour(incHour)) weight *= DAYTIME_INCIDENT_WEIGHT;
-          else if (isNightTravel && isNightHour(incHour)) weight *= NIGHT_INCIDENT_WEIGHT;
+          // Skipped for date-only feeds (no reliable hour-of-day).
+          if (!cityIsDateOnly) {
+            const incHour = cityLocalHour(inc.occurredAt, tz);
+            if (isDaytimeTravel && isDaytimeHour(incHour)) weight *= DAYTIME_INCIDENT_WEIGHT;
+            else if (isNightTravel && isNightHour(incHour)) weight *= NIGHT_INCIDENT_WEIGHT;
+          }
           // Active-incident avoidance: anything in the last 24h
           // gets a 2× boost regardless of travel time. Catches the
           // "shooting on this block tonight" pattern.

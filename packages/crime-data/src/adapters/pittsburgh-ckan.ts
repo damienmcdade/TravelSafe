@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
@@ -82,8 +83,9 @@ const PROVENANCE: DataProvenance = {
 function safeIso(date: string | undefined, time: string | undefined): string {
   if (!date) return new Date(0).toISOString();
   const isoDateTime = time ? `${date}T${time}:00` : `${date}T00:00:00`;
-  const d = new Date(isoDateTime);
-  return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
+  // v99 — merged ReportedDate+ReportedTime is a naive Eastern wall-clock;
+  // route through cityLocalToUtcIso so the hour bucket is correct.
+  return cityLocalToUtcIso(isoDateTime, "America/New_York");
 }
 
 async function fetchPittsburgh(): Promise<Incident[]> {

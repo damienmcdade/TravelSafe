@@ -3,6 +3,7 @@ import { cityForArea } from "./cities.js";
 import { dedupe } from "./lib/inflight.js";
 import { displayOffenseLabel } from "./lib/offense-display-label.js";
 import { MS_PER_DAY as DAY } from "./lib/time-constants.js";
+import { cityLocalHour, CITY_TIMEZONES, DATE_ONLY_CITY_SLUGS } from "./lib/city-time.js";
 
 // v96p2 — hoisted; used by both citywide and per-area dispatch
 // bullet construction. Per the v95p18 directive every event in the
@@ -86,14 +87,20 @@ interface TimeOfDayBuckets { late_night: number; morning: number; afternoon: num
 /// Returns null when the window is empty (no signal to report). When
 /// there's data, returns the four bucket counts plus the dominant
 /// period and what percentage of the window fell into it.
-function timeOfDayAnalysis(incidents: Array<{ occurredAt: string }>):
+///
+/// v99 — buckets by the CITY's local clock (`tz`) via cityLocalHour
+/// instead of `new Date().getHours()`, which read the UTC runtime clock
+/// on Railway/Vercel and pushed every "dominant period" off by the
+/// city's offset. Callers pass null for `tz` (or skip the call) for
+/// date-only feeds, where there is no real time-of-day to analyze.
+function timeOfDayAnalysis(incidents: Array<{ occurredAt: string }>, tz: string):
   { buckets: TimeOfDayBuckets; dominantPeriod: TimePeriod; dominantPct: number } | null {
   if (incidents.length === 0) return null;
   const buckets: TimeOfDayBuckets = { late_night: 0, morning: 0, afternoon: 0, evening: 0 };
   for (const i of incidents) {
     const t = new Date(i.occurredAt);
     if (Number.isNaN(t.getTime())) continue;
-    buckets[periodFromHour(t.getHours())] += 1;
+    buckets[periodFromHour(cityLocalHour(i.occurredAt, tz))] += 1;
   }
   const total = buckets.late_night + buckets.morning + buckets.afternoon + buckets.evening;
   if (total === 0) return null;
@@ -212,8 +219,12 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
   }
 
   // Citywide time-of-day pattern — same threshold as the per-area path
-  // (30% concentration required to be "meaningful").
-  const tod = timeOfDayAnalysis(inWindow);
+  // (30% concentration required to be "meaningful"). v99 — suppressed
+  // entirely for date-only feeds (the hour carries no real signal) and
+  // bucketed by the city's local clock otherwise.
+  const tod = DATE_ONLY_CITY_SLUGS.has(city.slug)
+    ? null
+    : timeOfDayAnalysis(inWindow, CITY_TIMEZONES[city.slug] ?? "UTC");
   if (tod && tod.dominantPct >= 30) {
     trendBullets.push({
       kind: "trend",
@@ -350,8 +361,11 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
 
   // Time-of-day pattern across the full 30-day window. Surface only when
   // a meaningful dominant period exists (>= 30% concentration) so we don't
-  // emit a generic "25% in each quarter" non-insight.
-  const tod = timeOfDayAnalysis(inWindow);
+  // emit a generic "25% in each quarter" non-insight. v99 — suppressed for
+  // date-only feeds and bucketed by the city's local clock otherwise.
+  const tod = DATE_ONLY_CITY_SLUGS.has(city.slug)
+    ? null
+    : timeOfDayAnalysis(inWindow, CITY_TIMEZONES[city.slug] ?? "UTC");
   if (tod && tod.dominantPct >= 30) {
     trendBullets.push({
       kind: "trend",

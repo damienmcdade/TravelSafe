@@ -46,6 +46,7 @@ const CITY_TZ: Record<string, string> = {
   "indianapolis": "America/Indiana/Indianapolis",
   "tucson": "America/Phoenix",
   "honolulu": "Pacific/Honolulu",
+  "long-beach": "America/Los_Angeles",
 };
 // Mirror cityForArea's slug-prefix scheme without pulling the server-only
 // crime-data package into this client component.
@@ -65,16 +66,38 @@ const SLUG_PREFIXES: Array<[string, string]> = [
   ["tuc-", "tucson"],
 ];
 
-function tzForAreaSlug(areaSlug: string): string {
-  const direct = CITY_TZ[areaSlug];
-  if (direct) return direct;
+/// Resolve an area slug to its city slug — either the slug IS a city
+/// slug (citywide view) or it carries one of the known prefixes.
+function citySlugForArea(areaSlug: string): string | null {
+  if (CITY_TZ[areaSlug]) return areaSlug;
   for (const [prefix, citySlug] of SLUG_PREFIXES) {
-    if (areaSlug.startsWith(prefix)) return CITY_TZ[citySlug] ?? "UTC";
+    if (areaSlug.startsWith(prefix)) return citySlug;
   }
+  return null;
+}
+
+function tzForAreaSlug(areaSlug: string): string {
+  const citySlug = citySlugForArea(areaSlug);
   // Default fallback — UTC is still wrong for any US city but at least
   // it's predictable (and matches the pre-fix behavior on Vercel).
-  return "UTC";
+  return (citySlug && CITY_TZ[citySlug]) || "UTC";
 }
+
+// v99 — cities whose police feed publishes incident DATES only (no
+// time-of-day, or a date stored at local midnight). For these the
+// hour-of-day histogram is fabricated — every incident collapses into
+// one bucket — so we replace the chart with an honest note instead of
+// a misleading spike. Mirrors DATE_ONLY_CITY_SLUGS in
+// packages/crime-data/src/lib/city-time.ts (kept in sync by hand to
+// avoid pulling the server-only crime-data package into this client
+// component). Verified 2026-05-31 by sampling each live feed.
+const DATE_ONLY_CITIES = new Set<string>([
+  "san-diego",
+  "charlotte",
+  "indianapolis",
+  "dallas",
+  "norfolk",
+]);
 
 const _hourFormatterCache = new Map<string, Intl.DateTimeFormat>();
 function hourInTz(d: Date, tz: string): number {
@@ -113,21 +136,32 @@ const HOURS = Array.from({ length: 24 }, (_, h) => h);
 export function TimeOfDayCard({
   areaSlug,
   areaLabel,
+  citySlug,
 }: {
   areaSlug: string;
   areaLabel: string;
+  /// Authoritative city slug from the page (which knows the selected
+  /// city). Preferred over parsing it back out of the area slug —
+  /// San Diego's neighborhood slugs are unprefixed (e.g. "pacific-beach")
+  /// and the server defaults unprefixed slugs to San Diego, which the
+  /// client's best-effort prefix table can't reconstruct. Falls back to
+  /// slug-parsing when omitted.
+  citySlug?: string;
 }) {
   const { data, loading, error } = useApi<TrendResp>(
     `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel)}`,
     [areaSlug],
   );
 
+  // Resolve the city: explicit prop first, slug-parse fallback second.
+  const cityKey = citySlug || citySlugForArea(areaSlug) || undefined;
+  const tz = (cityKey && CITY_TZ[cityKey]) || tzForAreaSlug(areaSlug);
+
   const { buckets, oldestAt, newestAt } = useMemo(() => {
     const out = new Array(24).fill(0) as number[];
     let oldest: number | null = null;
     let newest: number | null = null;
     if (!data) return { buckets: out, oldestAt: null, newestAt: null };
-    const tz = tzForAreaSlug(areaSlug);
     for (const b of data.bullets) {
       if (b.kind !== "dispatch") continue;
       const t = new Date(b.at);
@@ -139,7 +173,7 @@ export function TimeOfDayCard({
       if (newest === null || tMs > newest) newest = tMs;
     }
     return { buckets: out, oldestAt: oldest, newestAt: newest };
-  }, [data, areaSlug]);
+  }, [data, tz]);
 
   const total = buckets.reduce((s, n) => s + n, 0);
   const max = Math.max(1, ...buckets);
@@ -171,6 +205,27 @@ export function TimeOfDayCard({
     </section>
   );
   if (!data) return null;
+
+  // v99 — date-only feeds carry no real time-of-day, so an hourly
+  // histogram would be fabricated (every incident parses to local
+  // midnight and collapses into a single bucket). Be honest instead of
+  // drawing a misleading spike. The day-level data (and every other
+  // card on the page) is still accurate — only the *hour* is unknown.
+  if (cityKey && DATE_ONLY_CITIES.has(cityKey)) {
+    return (
+      <section className="surface p-5">
+        <header>
+          <h3 className="font-display text-lg text-slate2-900">When incidents happen</h3>
+          <p className="text-xs text-slate2-500 mt-0.5">
+            {areaLabel}&apos;s police feed records incidents by <strong>date only</strong> — it
+            doesn&apos;t publish a time of day — so an hour-by-hour pattern isn&apos;t available
+            for this area. The other cards on this page (what gets reported, recent incidents,
+            day-level trends) are unaffected; only the exact hour is missing from the source data.
+          </p>
+        </header>
+      </section>
+    );
+  }
   if (total === 0) {
     // v95p44 — surface the zero-data state explicitly instead of
     // returning null. Hiding the card on zero results created a sync

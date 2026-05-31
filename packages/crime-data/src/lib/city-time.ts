@@ -53,11 +53,28 @@ function tzOffsetMinutes(d: Date, timeZone: string): number {
   return (asUtcMs - d.getTime()) / 60_000;
 }
 
+/// Normalize a US slash-style date ("MM/DD/YYYY" or "M/D/YYYY",
+/// optionally followed by " HH:MM[:SS]") into ISO "YYYY-MM-DDTHH:MM:SS".
+/// Several ArcGIS string-date feeds (e.g. Sacramento's `Occurrence_Date_PT`
+/// = "12/31/2025 23:38") publish this format. `new Date()` happens to
+/// parse it, but `cityLocalToUtcIso`'s `+ "Z"` trick does NOT (an invalid
+/// ISO string yields NaN → epoch-0), so we canonicalize here first.
+/// Returns the input unchanged when it doesn't match the slash pattern.
+function normalizeSlashDate(s: string): string {
+  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (!m) return s;
+  const [, mm, dd, yyyy, hh, mi, ss] = m;
+  const p2 = (v: string) => v.padStart(2, "0");
+  const time = hh ? `T${p2(hh)}:${mi}:${ss ?? "00"}` : "T00:00:00";
+  return `${yyyy}-${p2(mm)}-${p2(dd)}${time}`;
+}
+
 export function cityLocalToUtcIso(localStr: string | undefined | null, timeZone: string): string {
   if (!localStr) return ZERO_ISO;
-  // Normalize the input: collapse "YYYY-MM-DD HH:MM:SS" to ISO form
-  // and strip a stray `+00` / `Z` suffix that some feeds DO emit.
-  const cleaned = String(localStr).trim().replace(" ", "T");
+  // Normalize the input: accept US slash dates, collapse
+  // "YYYY-MM-DD HH:MM:SS" to ISO form, and strip a stray `+00` / `Z`
+  // suffix that some feeds DO emit.
+  const cleaned = normalizeSlashDate(String(localStr).trim()).replace(" ", "T");
   // If the string already has a TZ marker (Z, +HH, -HH, +HH:MM), trust
   // it and just normalize to a Date roundtrip.
   if (/[zZ]$|[+-]\d{2}(:\d{2})?$/.test(cleaned)) {
@@ -115,4 +132,46 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "raleigh": "America/New_York",
   "norfolk": "America/New_York",
   "honolulu": "Pacific/Honolulu",
+  "long-beach": "America/Los_Angeles",
 };
+
+const _hourFmtCache = new Map<string, Intl.DateTimeFormat>();
+
+/// Hour-of-day (0-23) of a UTC instant as read on the wall clock of
+/// `timeZone`. Server-side mirror of the client TimeOfDayCard's
+/// `hourInTz` — used so the trend-feed's time-of-day analysis buckets
+/// by the *city's* local clock instead of the runtime's (which on
+/// Railway/Vercel is UTC, shifting every "peak hour" by the offset).
+export function cityLocalHour(iso: string, timeZone: string): number {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 0;
+  let fmt = _hourFmtCache.get(timeZone);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false });
+    _hourFmtCache.set(timeZone, fmt);
+  }
+  const raw = Number(fmt.format(d));
+  if (!Number.isFinite(raw)) return 0;
+  return raw === 24 ? 0 : raw;
+}
+
+/// Cities whose upstream police feed publishes incident DATES with no
+/// time-of-day component (date-only, or a date stored at local midnight).
+/// For these the hour-of-day histogram is fabricated — every incident
+/// collapses into a single bucket — so the "When incidents happen" card
+/// and the trend-feed time-of-day insight suppress themselves and say so
+/// instead of showing a misleading spike. Verified 2026-05-31 by sampling
+/// each live feed:
+///   - san-diego  : SDPD NIBRS `occured_on` = "2024-07-27" (date-only)
+///   - charlotte  : CMPD `DATE_INCIDENT_BEGAN` = epoch at local midnight
+///   - indianapolis: IMPD `sOccDate` = "2026-05-30" (date-only string)
+///   - dallas     : DPD `date1` = "2026-05-30 00:00:00" (always midnight)
+///   - norfolk    : `date_occu` always midnight (a real hour lives in the
+///                  separate `hour_occu` field but isn't currently merged)
+export const DATE_ONLY_CITY_SLUGS: ReadonlySet<string> = new Set([
+  "san-diego",
+  "charlotte",
+  "indianapolis",
+  "dallas",
+  "norfolk",
+]);

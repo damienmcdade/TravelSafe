@@ -1,5 +1,6 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { bucketByBands, deriveBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
@@ -129,11 +130,15 @@ const PROVENANCE: DataProvenance = {
     "CommunitySafe does not request demographic columns.",
 };
 
+// v99 — route the naive-local upstream timestamp through
+// cityLocalToUtcIso so the hour-of-day histogram buckets by the
+// city's real local clock instead of the UTC runtime. Preserve the
+// original drop-the-row contract for unparseable input (the helper
+// returns the epoch-0 ISO, which we map back to null).
 function safeIso(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const d = new Date(raw);
-  if (Number.isNaN(d.getTime()) || d.getTime() <= 0) return null;
-  return d.toISOString();
+  const iso = cityLocalToUtcIso(raw, "Pacific/Honolulu");
+  return +new Date(iso) <= 0 ? null : iso;
 }
 
 function buildIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRows"> {

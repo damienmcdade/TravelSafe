@@ -404,9 +404,25 @@ export function nearestCityByCentroid(point: { lat: number; lng: number }): { ci
   return best;
 }
 
+// v99 — San Diego is the default city (CITIES[0]) and uses name-derived,
+// UNPREFIXED slugs. A handful of real SD neighborhood names begin with
+// another city's routing prefix, so the greedy startsWith() checks below
+// misrouted them to the wrong adapter — e.g. "La Jolla"/"La Playa" matched
+// "la-" (Los Angeles) and "Oak Park" matched "oak-" (Oakland), producing
+// 500s ("Unknown area slug … not found in Los Angeles adapter") and
+// wrong-city safety scores. These slugs are unambiguously San Diego's, so
+// pin them before prefix matching. Keep in sync if SD adds a neighborhood
+// whose slug collides with a prefix in the table below.
+const SAN_DIEGO_SLUG_OVERRIDES: ReadonlySet<string> = new Set([
+  "la-jolla",
+  "la-playa",
+  "oak-park",
+]);
+
 /// Route an area slug to its city. Slugs are prefixed by adapter
 /// (la-*, sf-*, chi-*); bare slugs default to San Diego.
 export function cityForArea(slug: string): CityEntry {
+  if (SAN_DIEGO_SLUG_OVERRIDES.has(slug)) return CITIES[0];
   if (slug.startsWith("la-")  || slug === "los-angeles")   return CITIES[1];
   if (slug.startsWith("sf-")  || slug === "san-francisco") return CITIES[2];
   if (slug.startsWith("chi-") || slug === "chicago")       return CITIES[3];
