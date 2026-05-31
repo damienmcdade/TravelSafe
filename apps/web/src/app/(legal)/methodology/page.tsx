@@ -29,12 +29,12 @@ export default function MethodologyPage() {
         <ol className="list-decimal pl-5 space-y-2">
           <li>
             <strong className="text-slate2-900">City open-data portals.</strong> Each of CommunitySafe&apos;s
-            37 supported cities publishes police-incident records through an official open-data feed
+            38 supported cities publishes police-incident records through an official open-data feed
             (SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD, NYPD Complaint Data,
             Seattle SPD, Boston BPD, DC MPD, Philadelphia PPD, Colorado Springs, Detroit, Oakland, Cincinnati,
-            New Orleans, Baton Rouge, Cambridge, Dallas, Charlotte, Nashville, Minneapolis, Cleveland,
-            Milwaukee, Las Vegas, Boise, Buffalo, Norfolk, Kansas City, Saint Paul, Pittsburgh, Phoenix,
-            Denver, Sacramento, Atlanta, Indianapolis, Raleigh, Tucson, Honolulu).
+            New Orleans, Baton Rouge, Cambridge, Dallas, Charlotte, Baltimore, Minneapolis, Cleveland,
+            Milwaukee, Las Vegas, Boise, Buffalo, Norfolk, Kansas City, Saint Paul, Pittsburgh, Fort Worth,
+            Denver, Sacramento, Atlanta, Indianapolis, Raleigh, Tucson, Honolulu, Long Beach).
             We pull the raw records via the same public API the city itself documents.
           </li>
           <li>

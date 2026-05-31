@@ -42,7 +42,7 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "denver":           { neighborhoodCount:  77, source: "Denver Crime Offenses (Denver Open Data, ArcGIS Feature Server)" },
   "colorado-springs": { neighborhoodCount:  78, source: "Colorado Springs Police Department Crime Level Data (CSPD Open Data)" },
   "las-vegas":        { neighborhoodCount:  22, source: "Las Vegas Metropolitan Police Department Calls for Service (Opendata Las Vegas)" },
-  "phoenix":          { neighborhoodCount:  14, source: "Phoenix Police Crime Statistics · phoenixopendata.com" },
+  "fort-worth":       { neighborhoodCount: 102, source: "FWPD Crime Data · City of Fort Worth GIS" },
   "tucson":           { neighborhoodCount: 173, source: "Tucson Police Incidents — Last 45 Days (gis.tucsonaz.gov ArcGIS MapServer)" },
   // Midwest
   "chicago":          { neighborhoodCount:  77, source: "Chicago Crimes 2001-Present (City of Chicago Open Data)" },
@@ -56,7 +56,7 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "detroit":          { neighborhoodCount: 208, source: "Detroit Police RMS Crime Incidents · data.detroitmi.gov" },
   // Texas / South
   "dallas":           { neighborhoodCount:  27, source: "Dallas Police Incidents (City of Dallas Open Data)" },
-  "nashville":        { neighborhoodCount:   9, source: "Metro Nashville Police Department Incidents (NashvilleOpenData)" },
+  "baltimore":        { neighborhoodCount: 283, source: "BPD NIBRS Group A Crime Data · data.baltimorecity.gov" },
   "atlanta":          { neighborhoodCount:  25, source: "Atlanta Police Department Crime Incidents (Atlanta PD Open Data)" },
   "charlotte":        { neighborhoodCount:  13, source: "Charlotte-Mecklenburg Police Department Crime Incidents (charlottenc.gov ArcGIS)" },
   "raleigh":          { neighborhoodCount:   6, source: "Raleigh Police Department NIBRS Incidents (Raleigh Open Data, ArcGIS)" },

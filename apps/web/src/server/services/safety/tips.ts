@@ -24,13 +24,13 @@ export type CitySlug =
   | "chicago" | "seattle" | "new-york" | "colorado-springs" | "detroit"
   | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
-  | "charlotte" | "nashville" | "minneapolis" | "cleveland"
+  | "charlotte" | "baltimore" | "minneapolis" | "cleveland"
   | "milwaukee" | "las-vegas" | "boise" | "buffalo" | "tucson"
   | "kansas-city" | "saint-paul" | "pittsburgh"
   // v98c — these 8 were absent from the union, so Record<CitySlug,…>
   // lookups (CITY_RESOURCES, NON_EMERGENCY) silently missed them and the
   // safety tab 500'd for these cities.
-  | "norfolk" | "phoenix" | "denver" | "atlanta" | "indianapolis" | "raleigh" | "honolulu"
+  | "norfolk" | "fort-worth" | "denver" | "atlanta" | "indianapolis" | "raleigh" | "honolulu"
   | "long-beach";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
@@ -72,7 +72,7 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   "cambridge":     { line: "617-349-3300", label: "Cambridge PD non-emergency", url: "https://www.cambridgema.gov/Departments/CambridgePolice" },
   "dallas":        { line: "214-744-4444", label: "DPD non-emergency",    url: "https://www.dallaspolice.net/" },
   "charlotte":     { line: "704-336-7600", label: "CMPD non-emergency",   url: "https://charlottenc.gov/CMPD" },
-  "nashville":     { line: "615-862-8600", label: "MNPD non-emergency",   url: "https://www.nashville.gov/departments/police" },
+  "baltimore":     { line: "443-263-2220", label: "Baltimore PD non-emergency (311 in-city)", url: "https://www.baltimorepolice.org/" },
   "minneapolis":   { line: "612-348-2345", label: "MPD non-emergency",    url: "https://www.minneapolismn.gov/police/" },
   "cleveland":     { line: "216-621-1234", label: "CDP non-emergency",    url: "https://www.clevelandpolice.org/" },
   "milwaukee":     { line: "414-933-4444", label: "MPD non-emergency",     url: "https://city.milwaukee.gov/police" },
@@ -86,7 +86,7 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   // v98c — the 8 cities that previously fell back to SDPD's number.
   "sacramento":    { line: "916-808-5471", label: "Sacramento PD non-emergency", url: "https://www.cityofsacramento.gov/police" },
   "norfolk":       { line: "757-441-5610", label: "Norfolk PD non-emergency", url: "https://www.norfolk.gov/356/Police" },
-  "phoenix":       { line: "602-262-6151", label: "Phoenix PD Crime Stop (non-emergency)", url: "https://www.phoenix.gov/police" },
+  "fort-worth":    { line: "817-392-4222", label: "Fort Worth PD non-emergency", url: "https://police.fortworthtexas.gov/" },
   "denver":        { line: "720-913-2000", label: "Denver PD non-emergency", url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
   "atlanta":       { line: "404-658-6666", label: "Atlanta E911 non-emergency", url: "https://www.atlantapd.org/" },
   "indianapolis":  { line: "317-327-3811", label: "IMPD non-emergency", url: "https://www.indy.gov/agency/indianapolis-metropolitan-police-department" },
@@ -120,7 +120,7 @@ export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; progr
   "cambridge":     { name: "Cambridge Police Department",    url: "https://www.cambridgema.gov/Departments/CambridgePolice", programName: "Cambridge Police Department", programUrl: "https://www.cambridgema.gov/Departments/CambridgePolice" },
   "dallas":        { name: "Dallas Police Department",       url: "https://www.dallaspolice.net/",           programName: "Dallas Police Department",       programUrl: "https://www.dallaspolice.net/" },
   "charlotte":     { name: "Charlotte-Mecklenburg Police",   url: "https://charlottenc.gov/CMPD",            programName: "CMPD Crime Prevention",          programUrl: "https://charlottenc.gov/CMPD/Pages/CommunityRelations/CrimePrevention.aspx" },
-  "nashville":     { name: "Metro Nashville Police Department", url: "https://www.nashville.gov/departments/police", programName: "Metro Nashville Police Department", programUrl: "https://www.nashville.gov/departments/police" },
+  "baltimore":     { name: "House of Ruth Maryland (24-hr domestic violence hotline 410-889-7884)", url: "https://hruth.org/", programName: "Baltimore Police Department", programUrl: "https://www.baltimorepolice.org/" },
   "minneapolis":   { name: "Minneapolis Police Department",  url: "https://www.minneapolismn.gov/police/", programName: "Minneapolis Police Department", programUrl: "https://www.minneapolismn.gov/resident-services/public-safety/police-public-safety/" },
   "cleveland":     { name: "Cleveland Division of Police",   url: "https://www.clevelandpolice.org/", programName: "CDP Community Policing", programUrl: "https://www.clevelandpolice.org/about/community" },
   "milwaukee":     { name: "Milwaukee Police Department", url: "https://city.milwaukee.gov/police", programName: "MPD Community Engagement", programUrl: "https://city.milwaukee.gov/police/Community" },
@@ -135,7 +135,7 @@ export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; progr
   // their cities. Main department sites (stable); programUrl points to the
   // same site to avoid linking a guessed sub-page.
   "norfolk":       { name: "Norfolk Police Department", url: "https://www.norfolk.gov/356/Police", programName: "Norfolk Police Department", programUrl: "https://www.norfolk.gov/356/Police" },
-  "phoenix":       { name: "Phoenix Police Department", url: "https://www.phoenix.gov/police", programName: "Phoenix Police Department", programUrl: "https://www.phoenix.gov/police" },
+  "fort-worth":    { name: "SafeHaven of Tarrant County (24/7 hotline 1-877-701-7233)", url: "https://www.safehaventc.org/", programName: "Fort Worth Police Department", programUrl: "https://police.fortworthtexas.gov/" },
   "denver":        { name: "Denver Police Department", url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department", programName: "Denver Police Department", programUrl: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
   "sacramento":    { name: "Sacramento Police Department", url: "https://www.cityofsacramento.gov/police", programName: "Sacramento Police Department", programUrl: "https://www.cityofsacramento.gov/police" },
   "atlanta":       { name: "Atlanta Police Department", url: "https://www.atlantapd.org/", programName: "APD Crime Prevention", programUrl: "https://www.atlantapd.org/i-want-to/crime-prevention" },
@@ -369,9 +369,9 @@ const CITY_STATE: Record<string, string> = {
   "colorado-springs": "CO", "denver": "CO", "detroit": "MI", "washington-dc": "DC",
   "boston": "MA", "cambridge": "MA", "philadelphia": "PA", "pittsburgh": "PA",
   "cincinnati": "OH", "cleveland": "OH", "new-orleans": "LA", "baton-rouge": "LA",
-  "dallas": "TX", "charlotte": "NC", "raleigh": "NC", "nashville": "TN",
+  "dallas": "TX", "charlotte": "NC", "raleigh": "NC", "baltimore": "MD",
   "minneapolis": "MN", "saint-paul": "MN", "milwaukee": "WI", "las-vegas": "NV",
-  "boise": "ID", "norfolk": "VA", "kansas-city": "MO", "phoenix": "AZ", "tucson": "AZ",
+  "boise": "ID", "norfolk": "VA", "kansas-city": "MO", "fort-worth": "TX", "tucson": "AZ",
   "atlanta": "GA", "indianapolis": "IN", "honolulu": "HI", "long-beach": "CA",
 };
 

@@ -160,9 +160,23 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // rape) / DC (weapon-only). Scale persons ×1.82 to recover the FBI aggregate;
   // property is genuinely high (Dallas auto theft) and accurate → stays 1.0.
   "dallas":        { persons: 1.82, property: 1.0, sourceType: "partial" },
-  // v100 — Denver / Cambridge / Phoenix / Indianapolis cluster. FBI baselines
-  // VERIFIED (4 aggregators): none too high — Denver/Phoenix were too low and
-  // were raised (see fbi-baselines.ts). Each open feed then reads violent
+  // v101 — Fort Worth (added to replace Phoenix). Same structural under-capture
+  // as Dallas (same state / penal-code feed): (1) rape / sexual assault is fully
+  // REDACTED from the public feed — live probe found 0 rows under PC 22.011 /
+  // 22.021 vs an FBI ~589/yr; (2) aggravated assault is under-coded — most
+  // family-violence assaults are filed as PC 22.01 "Assault Causes Bodily Injury
+  // Family" (a Class-A misdemeanor we correctly exclude from Part-1) rather than
+  // PC 22.02, so the feed captures only ~44% of FBI agg assault. Net: the feed
+  // reads violent ~0.40× FBI (184 vs 458/100k) and property ~0.76× (2061 vs
+  // 2700) over a 259-day window — without calibration Fort Worth false-grades A.
+  // Scale persons ×2.49 and property ×1.31 to recover the FBI baseline (→ grade
+  // C, matching its own baseline) + the partial-feed disclaimer.
+  "fort-worth":    { persons: 2.49, property: 1.31, sourceType: "partial" },
+  // v100 — Denver / Cambridge / Indianapolis cluster. (Phoenix was removed in
+  // v101 — its upstream feed froze at 2025-12-24 and no replacement exists;
+  // Baltimore + Fort Worth replaced Phoenix + Nashville.) FBI baselines
+  // VERIFIED (4 aggregators): none too high — Denver was too low and was
+  // raised (see fbi-baselines.ts). Each open feed then reads violent
   // ~0.51-0.61× over a FULL-YEAR window (not a volume/lag artifact), a genuine
   // structural under-capture from rape redaction + domestic-violence agg
   // assault under-reporting. Same partial pattern as Dallas/Boston/DC — scale
@@ -185,7 +199,6 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   //     returns EMPTY — that env gap, not this scale, is the real Denver risk.
   "denver":        { persons: 1.95, property: 1.0, sourceType: "partial" },
   "cambridge":     { persons: 1.65, property: 1.0, sourceType: "partial" },
-  "phoenix":       { persons: 1.79, property: 1.0, sourceType: "partial" },
   "indianapolis":  { persons: 1.64, property: 1.0, sourceType: "partial" },
 };
 
@@ -316,6 +329,7 @@ export interface SafetyScoreResponse {
 // and we catch those via /\bsimple\b/i.
 const PART1_VIOLENT_EXCLUDE = [
   /\bsimple\b/i,            // SDPD "SIMPLE ASSAULT", LAPD "...Simple..."
+  /\bcommon assault\b/i,    // Baltimore's term for simple/2nd-degree assault — NOT Part-1 aggravated
   /misdemeanor/i,
   /\bintimidation\b/i,
   // v68 — also catch the present-tense / non-noun forms. Las Vegas

@@ -195,14 +195,14 @@ const STATE_BY_SLUG: Record<string, string> = {
   "new-orleans": "LA", "baton-rouge": "LA",
   "dallas": "TX",
   "charlotte": "NC",
-  "nashville": "TN",
+  "baltimore": "MD",
   "minneapolis": "MN", "saint-paul": "MN",
   "milwaukee": "WI",
   "las-vegas": "NV",
   "boise": "ID",
   "tucson": "AZ",
   "kansas-city": "MO",
-  "phoenix": "AZ",
+  "fort-worth": "TX",
 };
 
 function extractState(_label: string, slug: string): string {

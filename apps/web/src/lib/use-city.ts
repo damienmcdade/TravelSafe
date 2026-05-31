@@ -51,7 +51,7 @@ export const CITIES: CityInfo[] = [
   { slug: "cambridge",     label: "Cambridge",     state: "MA", stateLabel: "Massachusetts",  defaultArea: "cam-cambridgeport", centroid: { lat: 42.375, lng: -71.105 }, status: "live",        source: "CPD Crime Reports · data.cambridgema.gov" },
   { slug: "dallas",        label: "Dallas",        state: "TX", stateLabel: "Texas",          defaultArea: "dal-downtown",     centroid: { lat: 32.78, lng: -96.80 }, status: "live",        source: "DPD Police Incidents · www.dallasopendata.com" },
   { slug: "charlotte",     label: "Charlotte",     state: "NC", stateLabel: "North Carolina", defaultArea: "clt-central",      centroid: { lat: 35.23, lng: -80.84 }, status: "live",        source: "CMPD Incidents · gis.charlottenc.gov (ArcGIS)" },
-  { slug: "nashville",     label: "Nashville",     state: "TN", stateLabel: "Tennessee",      defaultArea: "nas-central-nashville", centroid: { lat: 36.16, lng: -86.78 }, status: "live",        source: "MNPD Incidents · NashvilleOpenData (ArcGIS)" },
+  { slug: "baltimore",     label: "Baltimore",     state: "MD", stateLabel: "Maryland",       defaultArea: "balt-downtown",    centroid: { lat: 39.29, lng: -76.61 }, status: "live",        source: "BPD NIBRS Group A Crime Data · data.baltimorecity.gov" },
   { slug: "minneapolis",   label: "Minneapolis",   state: "MN", stateLabel: "Minnesota",      defaultArea: "mpls-downtown-west",  centroid: { lat: 44.98, lng: -93.27 }, status: "live",        source: "MPD Crime_Data · opendata.minneapolismn.gov (ArcGIS)" },
   { slug: "cleveland",     label: "Cleveland",     state: "OH", stateLabel: "Ohio",           defaultArea: "cle-downtown",        centroid: { lat: 41.50, lng: -81.69 }, status: "live",        source: "CDP Calls for Service · opendata.clevelandohio.gov (ArcGIS)" },
   { slug: "milwaukee",         label: "Milwaukee",         state: "WI", stateLabel: "Wisconsin",  defaultArea: "milwaukee",          centroid: { lat: 43.0389, lng: -87.9065 }, status: "live",        source: "Milwaukee Police WIBR Crime Data · data.milwaukee.gov" },
@@ -65,10 +65,10 @@ export const CITIES: CityInfo[] = [
   { slug: "washington-dc", label: "Washington",    state: "DC", stateLabel: "District of Columbia", defaultArea: "dc-downtown", centroid: { lat: 38.91, lng: -77.04 }, status: "live",        source: "DC MPD Crime Incidents (last 30 days) · opendata.dc.gov" },
   { slug: "colorado-springs", label: "Colorado Springs", state: "CO", stateLabel: "Colorado",     defaultArea: "cosp-gold-hill", centroid: { lat: 38.835, lng: -104.825 }, status: "live", source: "CSPD Crime Level Data · Colorado Springs Open Data (Socrata)" },
   { slug: "detroit",       label: "Detroit",       state: "MI", stateLabel: "Michigan",       defaultArea: "det-downtown",   centroid: { lat: 42.33,  lng: -83.05  }, status: "live",        source: "Detroit RMS Crime Incidents · Detroit Open Data (ArcGIS)" },
-  // Phoenix — 30th city. Adapter pulls the newest 50k incidents from
-  // phoenixopendata.com's CKAN datastore (5 paginated requests in
-  // parallel) and groups by ZIP with friendly Urban Village labels.
-  { slug: "phoenix",       label: "Phoenix",       state: "AZ", stateLabel: "Arizona",        defaultArea: "phoenix",          centroid: { lat: 33.45, lng: -112.07 }, status: "live",        source: "Phoenix Police Crime Statistics · phoenixopendata.com" },
+  // Fort Worth — FWPD Crime Data (City of Fort Worth GIS ArcGIS MapServer).
+  // Incident-level rows grouped by FWPD patrol beat (~102 beats); Texas Penal
+  // Code offenses mapped to FBI Part-1 by section. Replaced Phoenix.
+  { slug: "fort-worth",    label: "Fort Worth",    state: "TX", stateLabel: "Texas",          defaultArea: "fw-beat-b11",      centroid: { lat: 32.73, lng: -97.32 }, status: "live",        source: "FWPD Crime Data · City of Fort Worth GIS" },
   // v90 — 5 cities added to backend but missed in this client-side
   // wheel-picker list until v95p5 (audit caught it: cities visible in
   // the API but not in the picker UI).

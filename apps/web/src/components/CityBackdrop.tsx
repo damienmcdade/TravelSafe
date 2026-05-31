@@ -194,15 +194,13 @@ export const PHOTOS: Record<string, string[]> = {
     // SouthPark aerial — south Charlotte district
     "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Southpark_aerial_Charlotte_NC.jpg/1920px-Southpark_aerial_Charlotte_NC.jpg",
   ],
-  "nashville": [
-    // Nashville skyline at dusk
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Nashville%2C_TN_skyline.jpg/1920px-Nashville%2C_TN_skyline.jpg",
-    // Broadway and Bridgestone Arena
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Nashville_Visitor_Center_and_Bridgestone_Arena%2C_Broadway_and_5th_Avenue%2C_Nashville%2C_TN_%2854384487819%29.jpg/1920px-Nashville_Visitor_Center_and_Bridgestone_Arena%2C_Broadway_and_5th_Avenue%2C_Nashville%2C_TN_%2854384487819%29.jpg",
-    // Tennessee State Capitol
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Tennessee_State_Capitol_2022f.jpg/1920px-Tennessee_State_Capitol_2022f.jpg",
-    // The Parthenon — full-scale replica in Centennial Park
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Parthenon.at.Nashville.Tenenssee.01.jpg/1920px-Parthenon.at.Nashville.Tenenssee.01.jpg",
+  "baltimore": [
+    // Inner Harbor
+    "https://upload.wikimedia.org/wikipedia/commons/3/35/Baltimore_Inner_Harbor.jpg",
+    // Skyline of Baltimore
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Skyline_of_Baltimore.jpg/1920px-Skyline_of_Baltimore.jpg",
+    // Washington Monument, Mount Vernon
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Washington_Monument_Baltimore.jpg/1920px-Washington_Monument_Baltimore.jpg",
   ],
   "minneapolis": [
     // Skyline looking south
@@ -302,15 +300,13 @@ export const PHOTOS: Record<string, string[]> = {
     // Acrisure Stadium and downtown skyline
     "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Pittsburgh_-_Acrisure_Stadium_and_Skyline_%2853910936115%29.jpg/1920px-Pittsburgh_-_Acrisure_Stadium_and_Skyline_%2853910936115%29.jpg",
   ],
-  "phoenix": [
-    // Phoenix skyline (Arizona USA)
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Phoenix_skyline_Arizona_USA.jpg/1920px-Phoenix_skyline_Arizona_USA.jpg",
-    // Downtown Phoenix skyline lights
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Downtown_Phoenix_Skyline_Lights.jpg/1920px-Downtown_Phoenix_Skyline_Lights.jpg",
-    // Phoenix skyline from South Mountain at night
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Phoenix_Skyline_from_South_Mountain_at_Night.2010.jpg/1920px-Phoenix_Skyline_from_South_Mountain_at_Night.2010.jpg",
-    // Downtown Phoenix aerial looking northeast
-    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b9/Downtown_Phoenix_Aerial_Looking_Northeast.jpg/1920px-Downtown_Phoenix_Aerial_Looking_Northeast.jpg",
+  "fort-worth": [
+    // Downtown Fort Worth
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Downtown_Fort_Worth.jpg/1920px-Downtown_Fort_Worth.jpg",
+    // Sundance Square
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Sundance_Square.jpg/1920px-Sundance_Square.jpg",
+    // Fort Worth Stockyards
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Fort_Worth_Stockyards.jpg/1920px-Fort_Worth_Stockyards.jpg",
   ],
   // v99 — the 7 most-recently-added live cities had no backdrop entry, so
   // PHOTOS[slug] ?? [] returned empty and rendered NO photo (Denver, etc.).

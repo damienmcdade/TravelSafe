@@ -24,7 +24,7 @@ import { batonRougeAdapter, getDiscoveredAreasBatonRouge } from "./adapters/bato
 import { cambridgeAdapter, getDiscoveredAreasCambridge } from "./adapters/cambridge-socrata.js";
 import { dallasAdapter, getDiscoveredAreasDallas } from "./adapters/dallas-socrata.js";
 import { charlotteAdapter, getDiscoveredAreasCharlotte } from "./adapters/charlotte-arcgis.js";
-import { nashvilleAdapter, getDiscoveredAreasNashville } from "./adapters/nashville-arcgis.js";
+import { baltimoreAdapter, getDiscoveredAreasBaltimore } from "./adapters/baltimore-arcgis.js";
 import { minneapolisAdapter, getDiscoveredAreasMinneapolis } from "./adapters/minneapolis-arcgis.js";
 import { clevelandAdapter, getDiscoveredAreasCleveland } from "./adapters/cleveland-arcgis.js";
 import { milwaukeeAdapter, getDiscoveredAreasMilwaukee } from "./adapters/milwaukee-ckan.js";
@@ -35,7 +35,7 @@ import { norfolkAdapter, getDiscoveredAreasNorfolk } from "./adapters/norfolk-so
 import { kansasCityAdapter, getDiscoveredAreasKansasCity } from "./adapters/kansas-city-socrata.js";
 import { saintPaulAdapter, getDiscoveredAreasSaintPaul } from "./adapters/saint-paul-arcgis.js";
 import { pittsburghAdapter, getDiscoveredAreasPittsburgh } from "./adapters/pittsburgh-ckan.js";
-import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-socrata.js";
+import { fortWorthAdapter, getDiscoveredAreasFortWorth } from "./adapters/fort-worth-arcgis.js";
 import { sacramentoAdapter, getDiscoveredAreasSacramento } from "./adapters/sacramento-arcgis.js";
 import { atlantaAdapter, getDiscoveredAreasAtlanta } from "./adapters/atlanta-arcgis.js";
 import { indianapolisAdapter, getDiscoveredAreasIndianapolis } from "./adapters/indianapolis-arcgis.js";
@@ -190,11 +190,15 @@ export const CITIES: CityEntry[] = [
     discover: getDiscoveredAreasCharlotte,
   },
   {
-    slug: "nashville",
-    label: "Nashville",
-    bbox: { south: 35.97, west: -87.05, north: 36.41, east: -86.51 },
-    adapter: nashvilleAdapter,
-    discover: getDiscoveredAreasNashville,
+    // Baltimore, MD — BPD "NIBRS Group A Crime Data" ArcGIS FeatureServer.
+    // Incident-level rows that carry an official Baltimore Neighborhood name
+    // (283 of them) plus lat/lng; grouped by the feed's own neighborhood field
+    // with centroids derived from incident coordinates. Replaced Nashville.
+    slug: "baltimore",
+    label: "Baltimore",
+    bbox: { south: 39.197, west: -76.711, north: 39.372, east: -76.529 },
+    adapter: baltimoreAdapter,
+    discover: getDiscoveredAreasBaltimore,
   },
   {
     slug: "minneapolis",
@@ -274,15 +278,16 @@ export const CITIES: CityEntry[] = [
     discover: getDiscoveredAreasPittsburgh,
   },
   {
-    // Phoenix — 30th live city. Adapter pulls phoenixopendata.com's
-    // CKAN datastore (newest 50k incidents in 5 parallel pages), groups
-    // by ZIP, attaches Phoenix Urban Village labels where the ZIP maps
-    // to one cleanly.
-    slug: "phoenix",
-    label: "Phoenix",
-    bbox: { south: 33.29, west: -112.32, north: 33.72, east: -111.93 },
-    adapter: phoenixAdapter,
-    discover: getDiscoveredAreasPhoenix,
+    // Fort Worth, TX — FWPD "Crime Data" ArcGIS MapServer. Incident-level rows
+    // with lat/lng that carry an FWPD patrol Beat (~102 beats); grouped by the
+    // feed's own Beat field with centroids from incident coordinates. Offenses
+    // are Texas Penal Code text mapped to FBI Part-1 by PC section. Replaced
+    // Phoenix (upstream feed froze 2025-12-24).
+    slug: "fort-worth",
+    label: "Fort Worth",
+    bbox: { south: 32.55, west: -97.54, north: 32.96, east: -97.03 },
+    adapter: fortWorthAdapter,
+    discover: getDiscoveredAreasFortWorth,
   },
   {
     // v70 — Denver re-enabled. Upstream auth gate that blocked us in
@@ -419,7 +424,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("cam-")  || slug === "cambridge")    return CITIES[15];
   if (slug.startsWith("dal-")  || slug === "dallas")       return CITIES[16];
   if (slug.startsWith("clt-")  || slug === "charlotte")    return CITIES[17];
-  if (slug.startsWith("nas-")  || slug === "nashville")    return CITIES[18];
+  if (slug.startsWith("balt-") || slug === "baltimore")    return CITIES[18];
   if (slug.startsWith("mpls-") || slug === "minneapolis")  return CITIES[19];
   if (slug.startsWith("cle-")  || slug === "cleveland")    return CITIES[20];
   if (slug.startsWith("mke-")  || slug === "milwaukee")    return CITIES[21];
@@ -430,7 +435,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("kc-")   || slug === "kansas-city")  return CITIES[26];
   if (slug.startsWith("sp-")   || slug === "saint-paul")   return CITIES[27];
   if (slug.startsWith("pgh-")  || slug === "pittsburgh")   return CITIES[28];
-  if (slug.startsWith("phx-")  || slug === "phoenix")      return CITIES[29];
+  if (slug.startsWith("fw-")   || slug === "fort-worth")   return CITIES[29];
   if (slug.startsWith("den-")  || slug === "denver")       return CITIES[30];
   if (slug.startsWith("sac-")  || slug === "sacramento")   return CITIES[31];
   if (slug.startsWith("atl-")  || slug === "atlanta")      return CITIES[32];

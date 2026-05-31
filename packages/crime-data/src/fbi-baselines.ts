@@ -48,13 +48,13 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "los-angeles": { violent: 669, property: 2251, year: 2025, ori: "CA0194200" },
   "milwaukee": { violent: 1145, property: 2401, year: 2025, ori: "WIMPD0000" },
   "minneapolis": { violent: 1003, property: 4509, year: 2025, ori: "MN0271100" },
-  "nashville": { violent: 955, property: 3862, year: 2025, ori: "TN0190100" },
+  "baltimore": { violent: 1617, property: 4206, year: 2024, ori: "MD0240100" },
   "new-orleans": { violent: 1361, property: 5090, year: 2023, ori: "LANPD0000" },
   "new-york": { violent: 658, property: 2288, year: 2025, ori: "NY0303000" },
   "norfolk": { violent: 397, property: 3176, year: 2025, ori: "VA1170000" },
   "oakland": { violent: 1475, property: 5255, year: 2025, ori: "CA0010900" },
   "philadelphia": { violent: 825, property: 4349, year: 2025, ori: "PAPEP0000" },
-  "phoenix": { violent: 695, property: 2043, year: 2025, ori: "AZ0072300" },
+  "fort-worth": { violent: 458, property: 2700, year: 2024, ori: "TX2200200" },
   "pittsburgh": { violent: 470, property: 2364, year: 2025, ori: "PAPPD0000" },
   "saint-paul": { violent: 490, property: 2824, year: 2025, ori: "MN0620900" },
   "san-diego": { violent: 373, property: 1551, year: 2025, ori: "CA0371100" },
@@ -101,11 +101,9 @@ const MANUAL_BASELINE_OVERRIDES: Record<string, Partial<Pick<CityFbiBaseline, "v
   "dallas": { violent: 658, property: 3352 },
   // v100 — Denver + Phoenix base rates ran LOW vs FBI 2024 (NeighborhoodScout +
   // AreaVibes agree). Denver: violent 985 (7,170; agg assault 5,151 + rape 676),
-  // property 4,740. Phoenix: violent 790 (~13,300; agg assault 9,068 + rape
-  // 1,069), property 2,325. Both feeds then read ~0.55-0.6× — a genuine
-  // redaction under-capture, calibrated separately.
+  // property 4,740. Denver's feed then reads ~0.55-0.6× — a genuine redaction
+  // under-capture, calibrated separately.
   "denver": { violent: 985, property: 4740 },
-  "phoenix": { violent: 790, property: 2325 },
   // CDE base is the older year; SF crime rose in 2024 (~560 / ~3400).
   "san-francisco": { violent: 560, property: 3400 },
   // KCMO is high-crime. FBI 2024 (4 aggregators): violent 1,547/100k (8,698

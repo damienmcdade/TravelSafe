@@ -44,7 +44,7 @@ export const CITY_POPULATION: Record<string, number> = {
   "cambridge":       118_488,
   "dallas":        1_302_868,
   "charlotte":       897_720,
-  "nashville":       687_788,
+  "baltimore":       565_239,
   "minneapolis":     421_874,
   "cleveland":       362_656,
   "milwaukee":       561_385,
@@ -55,7 +55,7 @@ export const CITY_POPULATION: Record<string, number> = {
   "kansas-city":     510_704,
   "saint-paul":      303_820,
   "pittsburgh":      303_255,
-  "phoenix":       1_650_070,
+  "fort-worth":    1_008_106,
   // v90 — 5 new cities (US Census Vintage 2024 estimates).
   "sacramento":      528_706,
   "atlanta":         505_268,
