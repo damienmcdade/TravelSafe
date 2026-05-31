@@ -6,6 +6,7 @@ import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
+import { DataFreshnessBanner } from "@/components/DataFreshnessBanner";
 
 interface Area { slug: string; label: string; jurisdiction: string }
 interface WatchCard {
@@ -163,6 +164,9 @@ export default function NeighborhoodWatchPage() {
               </span>
             )}
           </header>
+
+          {/* v99 — honest city-feed recency line (upstream cadence vs freeze). */}
+          <DataFreshnessBanner citySlug={city.slug} cityLabel={city.label} />
 
           {watchLoading && <CardGridSkeleton />}
           {watchErr && !watchLoading && (

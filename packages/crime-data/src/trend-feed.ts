@@ -4,6 +4,7 @@ import { dedupe } from "./lib/inflight.js";
 import { displayOffenseLabel } from "./lib/offense-display-label.js";
 import { MS_PER_DAY as DAY } from "./lib/time-constants.js";
 import { cityLocalHour, CITY_TIMEZONES, DATE_ONLY_CITY_SLUGS } from "./lib/city-time.js";
+import { classifyFreshness, type Freshness } from "./lib/freshness.js";
 
 // v96p2 — hoisted; used by both citywide and per-area dispatch
 // bullet construction. Per the v95p18 directive every event in the
@@ -44,6 +45,12 @@ export interface TrendResponse {
   /// Total recorded incidents in the window for this area.
   totalIncidents: number;
   bullets: TrendBullet[];
+  /// v99 — honest data-recency signal for the city. Drives the
+  /// "Latest data: <date>" banner so users understand whether a lack of
+  /// recent incidents is the upstream feed's normal cadence (LAPD
+  /// bi-weekly, NYPD quarterly) or a genuine freeze (Philadelphia,
+  /// Kansas City). Derived from the freshest incident in the window.
+  freshness: Freshness;
   /// Hour-of-day distribution across the 30-day window. Four buckets
   /// (late_night = 12am-6am, morning = 6am-12pm, afternoon = 12pm-6pm,
   /// evening = 6pm-12am) plus the dominant period name + concentration
@@ -263,12 +270,19 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
     ? await crimeData.getAreaStats(areas[0].slug).catch(() => null)
     : null;
 
+  // v99 — freshest incident across the city drives the recency banner.
+  // maxT is the newest valid occurredAt (<= now) found above, 0 if none.
+  const freshness = classifyFreshness(
+    city.slug, city.label, maxT > 0 ? new Date(maxT).toISOString() : null, now,
+  );
+
   return {
     city: { slug: city.slug, label: city.label },
     area: { slug: city.slug, label: `${city.label} (citywide)` },
     windowStart: cutoff.toISOString(),
     totalIncidents: inWindow.length,
     bullets: [...trendBullets, ...dispatchBullets],
+    freshness,
     timeOfDay: tod,
     source: {
       label: sample?.provenance.source ?? `${city.label} police open-data feed`,
@@ -310,15 +324,14 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
   // Boston, NY, Cambridge, KC). Anchoring on max(occurredAt) makes
   // the trend always reflect the freshest available data slice,
   // regardless of upstream publishing lag.
-  let anchorMs = now;
-  if (validRows.length > 0) {
-    let maxT = 0;
-    for (const r of validRows) {
-      const t = +new Date(r.occurredAt);
-      if (t > maxT && t <= now) maxT = t;
-    }
-    if (maxT > 0) anchorMs = maxT;
+  // v99 — hoisted out of the if so the freshest row also feeds the
+  // data-recency banner (classifyFreshness below), not just the window anchor.
+  let freshestMs = 0;
+  for (const r of validRows) {
+    const t = +new Date(r.occurredAt);
+    if (t > freshestMs && t <= now) freshestMs = t;
   }
+  const anchorMs = freshestMs > 0 ? freshestMs : now;
   const cutoff = new Date(anchorMs - windowDays * DAY);
   const inWindow = validRows.filter((i) => new Date(i.occurredAt) >= cutoff);
   inWindow.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
@@ -391,12 +404,20 @@ export async function getTrendForArea(areaSlug: string, areaLabel: string, opts?
   // Get the adapter's source URL for citation.
   const sample = await crimeData.getAreaStats(areaSlug).catch(() => null);
 
+  // v99 — recency reflects the CITY's feed cadence (freshestMs is the
+  // newest valid row in this area's pull, which for the freeze case
+  // tracks the whole feed). Classified against the city's cadence.
+  const freshness = classifyFreshness(
+    city.slug, city.label, freshestMs > 0 ? new Date(freshestMs).toISOString() : null, now,
+  );
+
   return {
     city: { slug: city.slug, label: city.label },
     area: { slug: areaSlug, label: areaLabel },
     windowStart: cutoff.toISOString(),
     totalIncidents: inWindow.length,
     bullets: [...trendBullets, ...dispatchBullets],
+    freshness,
     timeOfDay: tod,
     source: {
       label: sample?.provenance.source ?? `${city.label} police open-data feed`,

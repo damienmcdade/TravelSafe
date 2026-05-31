@@ -79,7 +79,11 @@ function nyOffenseDesc(row: SodaRow): string {
 const PROVENANCE: DataProvenance = {
   source: "NYPD Complaint Data Current Year-To-Date (NYC Open Data)",
   datasetUrl: "https://data.cityofnewyork.us/Public-Safety/NYPD-Complaint-Data-Current-Year-To-Date-/5uac-w243",
-  recency: "Refreshed weekly by NYPD; current calendar year only",
+  // v99 — NYC Open Data publishes 5uac-w243 QUARTERLY, not weekly (the
+  // freshness audit found the newest row ~1 quarter behind, which is the
+  // dataset's normal cadence, not a freeze). Label it accurately so a
+  // freshness check doesn't false-alarm on the expected quarterly lag.
+  recency: "Refreshed quarterly by NYPD (current year-to-date; newest data ~1 quarter behind)",
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the New York City Police Department and " +

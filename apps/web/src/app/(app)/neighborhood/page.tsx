@@ -14,6 +14,7 @@ import { TimeOfDayCard } from "@/components/TimeOfDayCard";
 import { NewsPanel } from "@/components/NewsPanel";
 import { CrimeMixCard } from "@/components/CrimeMixCard";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
+import { DataFreshnessBanner } from "@/components/DataFreshnessBanner";
 import { AmberAlertsBanner } from "@/components/AmberAlertsBanner";
 import { TrendPanel } from "@/components/TrendPanel";
 import {
@@ -220,6 +221,10 @@ function NeighborhoodView() {
 
       {area && (
         <>
+          {/* v99 — honest city-feed recency line so a lack of recent
+              incidents reads as upstream cadence/freeze, not an app bug. */}
+          <DataFreshnessBanner citySlug={city.slug} cityLabel={city.label} />
+
           <AreaSafeZoneSection city={{ slug: city.slug, label: city.label }} area={area} />
 
           <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />

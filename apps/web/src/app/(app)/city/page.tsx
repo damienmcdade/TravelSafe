@@ -6,6 +6,7 @@ import { useDocumentTitle } from "@/lib/use-document-title";
 import { DataProvenanceBanner, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { IncidentSummaryCard } from "@/components/IncidentSummaryCard";
+import { DataFreshnessBanner } from "@/components/DataFreshnessBanner";
 import { HotspotCard } from "@/components/HotspotCard";
 import { NewsPanel } from "@/components/NewsPanel";
 import { OfficialAlertsPanel } from "@/components/OfficialAlertsPanel";
@@ -84,6 +85,11 @@ export default function CityAwarenessPage() {
           stale cached data — try again in ~10 seconds. ({citywideErr.message})
         </div>
       )}
+
+      {/* v99 — honest data-recency line: states the freshest available
+          date and flags genuinely frozen upstream feeds, so "no recent
+          crimes" never reads as an app bug. */}
+      <DataFreshnessBanner citySlug={city.slug} cityLabel={city.label} />
 
       {/* 1. Safety Index + 2. City Letter Score — stacked top of page. */}
       <SafetyIndex city={{ slug: city.slug, label: city.label }} />

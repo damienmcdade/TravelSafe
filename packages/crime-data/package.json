@@ -96,6 +96,11 @@
       "import": "./dist/lib/city-time.js",
       "default": "./src/lib/city-time.ts"
     },
+    "./lib/freshness": {
+      "types": "./dist/lib/freshness.d.ts",
+      "import": "./dist/lib/freshness.js",
+      "default": "./src/lib/freshness.ts"
+    },
     "./adapters/*": {
       "types": "./dist/adapters/*.d.ts",
       "import": "./dist/adapters/*.js",
