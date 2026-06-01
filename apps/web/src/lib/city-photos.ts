@@ -416,4 +416,14 @@ export const PHOTOS: Record<string, string[]> = {
     // Ben Hill Griffin Stadium ("The Swamp") — UF landmark
     "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Ben_Hill_Griffin_Stadium_-_Florida_Gators.jpg/1920px-Ben_Hill_Griffin_Stadium_-_Florida_Gators.jpg",
   ],
+  "tampa": [
+    // Tampa skyline across Hillsborough Bay from Ballast Point Park (2024)
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Tampa_Skyline_from_Ballast_Point_Park_April_2024.jpg/1920px-Tampa_Skyline_from_Ballast_Point_Park_April_2024.jpg",
+    // Downtown Tampa skyline along the Hillsborough River
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Downtown_Tampa%2C_Florida.jpg/1920px-Downtown_Tampa%2C_Florida.jpg",
+    // Tampa Riverwalk along the Hillsborough River downtown
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Tampa_Riverwalk_02.jpg/1920px-Tampa_Riverwalk_02.jpg",
+    // Historic TECO Line streetcar in Ybor City
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Streetcar_-_Ybor_City_-_Tampa%2C_Florida%2C_2012.jpg/1920px-Streetcar_-_Ybor_City_-_Tampa%2C_Florida%2C_2012.jpg",
+  ],
 };
