@@ -90,3 +90,8 @@ export function evictColdRowCaches(keepHot: number): number {
 export function registeredRowCacheCount(): number {
   return entries.size;
 }
+
+// Re-exported here so apps/api can pull all process-memory-guard telemetry
+// (cache eviction + heavy-compose concurrency) from one subpath for the
+// /health payload. The limiter itself lives in lib/compute-limit.ts.
+export { computeLimitStats } from "./lib/compute-limit.js";

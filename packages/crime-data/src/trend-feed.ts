@@ -1,6 +1,7 @@
 import { crimeData } from "./dispatcher.js";
 import { cityForArea } from "./cities.js";
 import { dedupe } from "./lib/inflight.js";
+import { withComputeLimit } from "./lib/compute-limit.js";
 import { displayOffenseLabel } from "./lib/offense-display-label.js";
 import { MS_PER_DAY as DAY } from "./lib/time-constants.js";
 import { cityLocalHour, CITY_TIMEZONES, DATE_ONLY_CITY_SLUGS } from "./lib/city-time.js";
@@ -129,7 +130,7 @@ export async function getCitywideTrend(citySlug: string, opts?: { windowDays?: n
   // The full citywide trend can serialize ~5000 bullets / ~760 KB, so a
   // bullets=0 fetch is ~60x smaller. Keyed into the dedupe id so the
   // trimmed and full variants don't collide.
-  return dedupe(`trend:${citySlug}:${wd}:${opts?.bulletLimit ?? "all"}`, () => computeCitywideTrend(citySlug, opts));
+  return dedupe(`trend:${citySlug}:${wd}:${opts?.bulletLimit ?? "all"}`, () => withComputeLimit(() => computeCitywideTrend(citySlug, opts)));
 }
 
 async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: number; bulletLimit?: number }): Promise<TrendResponse> {

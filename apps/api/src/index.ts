@@ -58,7 +58,7 @@ import { startDigestWorker } from "./services/push/digest.worker.js";
 // was the heap-spike OOM source, and once made read-only it only ever
 // reported NO_WARM_DATA — dead weight either way.
 import { startAuditRetentionWorker } from "./services/audit/retention.worker.js";
-import { evictAllRowCaches, evictColdRowCaches, registeredRowCacheCount } from "@travelsafe/crime-data/cache-registry";
+import { evictAllRowCaches, evictColdRowCaches, registeredRowCacheCount, computeLimitStats } from "@travelsafe/crime-data/cache-registry";
 import { Agent, setGlobalDispatcher } from "undici";
 import { globalLimiter } from "./middleware/rate-limit.js";
 import { csrfGuard } from "./middleware/csrf.js";
@@ -291,6 +291,10 @@ const healthHandler = (_req: import("express").Request, res: import("express").R
       evictions: evictCount,
       lastEvictAt,
     },
+    // v103 — heavy-compose concurrency gate (bounds peak heap from concurrent
+    // cold city composes; see crime-data/lib/compute-limit.ts). `queued` > 0
+    // under load means the gate is shedding burst pressure as designed.
+    compute: computeLimitStats(),
   });
 };
 app.get("/health", healthHandler);

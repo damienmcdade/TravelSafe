@@ -18,7 +18,7 @@ interface ReportedPost {
 // This page is now a read-only activity log of recently reported posts so
 // moderators with MODERATOR_EMAILS access can spot abuse patterns.
 export default function ModerationActivityPage() {
-  const { data, reload } = useApi<ReportedPost[]>("/moderation/queue");
+  const { data, error, reload } = useApi<ReportedPost[]>("/moderation/queue");
 
   async function takeDown(id: string) {
     if (!confirm("Take this post down? It will no longer appear in any feed.")) return;
@@ -37,7 +37,15 @@ export default function ModerationActivityPage() {
           CommunitySafe posts publish automatically after the profanity and threat checks pass. This page lists recently reported posts so a moderator can take them down if needed. Set <code>MODERATOR_EMAILS</code> in the API environment to grant access.
         </p>
       </header>
-      {(data ?? []).length === 0 && <p className="text-slate2-500 text-sm">No reported or pending posts.</p>}
+      {error ? (
+        <p className="surface-muted p-4 text-sm text-amber-700" role="alert">
+          {/^http_4/.test(error.message)
+            ? "This account doesn’t have moderator access. Set MODERATOR_EMAILS in the API environment to grant it."
+            : `Couldn’t load the moderation queue (${error.message}).`}
+        </p>
+      ) : (data ?? []).length === 0 ? (
+        <p className="text-slate2-500 text-sm">No reported or pending posts.</p>
+      ) : null}
       {(data ?? []).map((p) => (
         <article key={p.id} className="surface p-5">
           <header className="flex justify-between items-center text-xs text-slate2-500">

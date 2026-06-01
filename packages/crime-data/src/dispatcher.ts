@@ -1,6 +1,7 @@
 import { env } from "./env.js";
 import type { AreaRiskAlert, AreaStats, CrimeDataAdapter, Incident } from "./types.js";
 import { dedupe } from "./lib/inflight.js";
+import { withComputeLimit } from "./lib/compute-limit.js";
 import { touchRowCache } from "./cache-registry.js";
 import { displayOffenseLabel } from "./lib/offense-display-label.js";
 import { MS_PER_DAY } from "./lib/time-constants.js";
@@ -149,7 +150,7 @@ export const crimeData = {
     }>;
   }> {
     // v95 — dedupe concurrent same-city composes. See lib/inflight.ts.
-    return dedupe(`citywide:${citySlug}:${opts.offense ?? ""}:${opts.windowDays ?? ""}`, () => this._getCitywide(citySlug, opts));
+    return dedupe(`citywide:${citySlug}:${opts.offense ?? ""}:${opts.windowDays ?? ""}`, () => withComputeLimit(() => this._getCitywide(citySlug, opts)));
   },
 
   async _getCitywide(citySlug: string = "san-diego", opts: { offense?: string; windowDays?: number } = {}) {
@@ -308,7 +309,7 @@ export const crimeData = {
   /// city slug as a neighborhood" anti-pattern that returned null when
   /// the slug wasn't a real area.
   async getCitywideAreaStats(citySlug: string = "san-diego"): Promise<AreaStats | null> {
-    return dedupe(`citywide-area-stats:${citySlug}`, () => this._getCitywideAreaStats(citySlug));
+    return dedupe(`citywide-area-stats:${citySlug}`, () => withComputeLimit(() => this._getCitywideAreaStats(citySlug)));
   },
 
   async _getCitywideAreaStats(citySlug: string = "san-diego"): Promise<AreaStats | null> {

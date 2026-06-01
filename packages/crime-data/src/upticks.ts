@@ -1,6 +1,7 @@
 import { crimeData } from "./dispatcher.js";
 import { cityBySlug, CITIES } from "./cities.js";
 import { dedupe } from "./lib/inflight.js";
+import { withComputeLimit } from "./lib/compute-limit.js";
 import { MS_PER_DAY as DAY } from "./lib/time-constants.js";
 
 /// Recent uptick detector — flags neighborhoods whose 7-day report count
@@ -32,7 +33,7 @@ export interface UpticksResponse {
 }
 
 export async function getCitywideUpticks(citySlug: string): Promise<UpticksResponse> {
-  return dedupe(`upticks:${citySlug}`, () => computeCitywideUpticks(citySlug));
+  return dedupe(`upticks:${citySlug}`, () => withComputeLimit(() => computeCitywideUpticks(citySlug)));
 }
 
 async function computeCitywideUpticks(citySlug: string): Promise<UpticksResponse> {

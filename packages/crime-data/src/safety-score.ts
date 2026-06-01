@@ -5,6 +5,7 @@ import { HttpError } from "./errors.js";
 import { knownNeighborhoodPopulation } from "./neighborhood-population.js";
 import { CITY_FBI_BASELINES } from "./fbi-baselines.js";
 import { dedupe } from "./lib/inflight.js";
+import { withComputeLimit } from "./lib/compute-limit.js";
 
 /// Safety Score — compares the user's selected area against the FBI's most
 /// recent national rates per 100,000 residents. Returns the raw local and
@@ -862,7 +863,7 @@ function roundWindowDays(raw: number): number {
 /// city total rather than an even-split per-area approximation, so the
 /// comparison reflects the city's actual reported rate.
 export async function getCitywideSafetyScore(citySlug: string): Promise<SafetyScoreResponse> {
-  return dedupe(`safety-score:${citySlug}`, () => computeCitywideSafetyScore(citySlug));
+  return dedupe(`safety-score:${citySlug}`, () => withComputeLimit(() => computeCitywideSafetyScore(citySlug)));
 }
 
 async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScoreResponse> {

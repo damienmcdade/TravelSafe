@@ -347,10 +347,11 @@ export const CITIES: CityEntry[] = [
     discover: getDiscoveredAreasTucson,
   },
   {
-    // Honolulu — 37th city. Citywide-MVP: HPD's open-data feed
-    // publishes blockaddress + offense type but no lat/lng or
-    // neighborhood. Every incident lands in one citywide bucket
-    // until per-neighborhood geocoding lands.
+    // Honolulu — 37th city. HPD's open-data feed publishes a redacted
+    // block-address + offense type but no neighborhood field; each incident
+    // is geocoded offline to one of ~119 named Honolulu neighborhoods
+    // (Waikiki, Kalihi, Ala Moana…) via the honolulu-socrata adapter's
+    // blockaddress→neighborhood cache (data/honolulu-blockaddress-neighborhood.json).
     slug: "honolulu",
     label: "Honolulu",
     bbox: { south: 21.245, west: -158.290, north: 21.711, east: -157.648 },
