@@ -211,7 +211,10 @@ function areaForZip(zip: string | null | undefined): string {
   const z = (zip ?? "").trim();
   const village = ZIP_TO_VILLAGE[z];
   if (village) return village;
-  if (/^85\d{3}$/.test(z)) return z;
+  // v105 — ZIPs with no Phoenix urban-village mapping are suburban/fringe
+  // (Mesa 852xx, Tempe 85281, etc.) or small absorbed villages. A bare ZIP
+  // like "85201" reads as an unrecognizable "neighborhood", so fold them into
+  // the honest "Unmapped" bucket — only the 13 real villages surface as areas.
   return UNMAPPED;
 }
 
