@@ -37,6 +37,8 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   // vs AH Datalytics RTCI snapshot (1433/4876).
   "baton-rouge": { violent: 1422, property: 4927, year: 2025, ori: "LA0170200" },
   "boise": { violent: 286, property: 850, year: 2025, ori: "ID0010100" },
+  "austin": { violent: 499, property: 3156, year: 2023, ori: "TX2270100" },
+  "phoenix": { violent: 785, property: 2325, year: 2023, ori: "AZ0072300" },
   "boston": { violent: 582, property: 1914, year: 2025, ori: "MA0130100" },
   "buffalo": { violent: 729, property: 3414, year: 2025, ori: "NY0140100" },
   "cambridge": { violent: 436, property: 2601, year: 2025, ori: "MA0091100" },

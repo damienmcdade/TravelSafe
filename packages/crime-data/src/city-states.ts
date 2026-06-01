@@ -48,6 +48,8 @@ export const CITY_STATES: Record<string, UsState> = {
   "las-vegas":         { abbr: "NV", label: "Nevada" },
   "boise":             { abbr: "ID", label: "Idaho" },
   "tucson":            { abbr: "AZ", label: "Arizona" },
+  "austin":            { abbr: "TX", label: "Texas" },
+  "phoenix":           { abbr: "AZ", label: "Arizona" },
   "kansas-city":       { abbr: "MO", label: "Missouri" },
   "atlanta":           { abbr: "GA", label: "Georgia" },
   "indianapolis":      { abbr: "IN", label: "Indiana" },

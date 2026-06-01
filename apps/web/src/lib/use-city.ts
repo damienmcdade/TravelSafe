@@ -92,6 +92,8 @@ export const CITIES: CityInfo[] = [
   // couldn't select it. Added here so the city + its neighborhoods are
   // reachable in the selector.
   { slug: "long-beach",    label: "Long Beach",    state: "CA", stateLabel: "California",     defaultArea: "lb-downtown",      centroid: { lat: 33.81, lng: -118.16 }, status: "live",        source: "LBPD NIBRS Incidents · CityofLB GIS (ArcGIS)" },
+  { slug: "austin",        label: "Austin",        state: "TX", stateLabel: "Texas",          defaultArea: "atx-david",        centroid: { lat: 30.2672, lng: -97.7431 }, status: "live", source: "APD Crime Reports · data.austintexas.gov" },
+  { slug: "phoenix",       label: "Phoenix",       state: "AZ", stateLabel: "Arizona",        defaultArea: "phx-85015",        centroid: { lat: 33.4484, lng: -112.0740 }, status: "live", source: "Phoenix PD Crime Data · phoenixopendata.com (through Dec 2025)" },
 ];
 
 /// All US states with at least one CommunitySafe city, sorted alphabetically.

@@ -45,6 +45,8 @@ const CITY_TZ: Record<string, string> = {
   "raleigh": "America/New_York",
   "indianapolis": "America/Indiana/Indianapolis",
   "tucson": "America/Phoenix",
+  "austin": "America/Chicago",
+  "phoenix": "America/Phoenix",
   "honolulu": "Pacific/Honolulu",
   "long-beach": "America/Los_Angeles",
 };
@@ -63,7 +65,7 @@ const SLUG_PREFIXES: Array<[string, string]> = [
   ["dal-", "dallas"], ["char-", "charlotte"], ["atl-", "atlanta"],
   ["denv-", "denver"], ["bat-", "baton-rouge"], ["cam-", "cambridge"],
   ["hon-", "honolulu"], ["ral-", "raleigh"], ["indy-", "indianapolis"],
-  ["tuc-", "tucson"],
+  ["tuc-", "tucson"], ["atx-", "austin"], ["phx-", "phoenix"],
 ];
 
 /// Resolve an area slug to its city slug — either the slug IS a city

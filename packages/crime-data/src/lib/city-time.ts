@@ -104,6 +104,8 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "las-vegas": "America/Los_Angeles",
   "fort-worth": "America/Chicago",
   "tucson": "America/Phoenix",
+  "austin": "America/Chicago",
+  "phoenix": "America/Phoenix",
   "denver": "America/Denver",
   "colorado-springs": "America/Denver",
   "boise": "America/Boise",

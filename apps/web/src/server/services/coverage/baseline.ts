@@ -44,6 +44,8 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "las-vegas":        { neighborhoodCount:  22, source: "Las Vegas Metropolitan Police Department Calls for Service (Opendata Las Vegas)" },
   "fort-worth":       { neighborhoodCount: 297, source: "FWPD Crime Data · City of Fort Worth GIS" },
   "tucson":           { neighborhoodCount: 173, source: "Tucson Police Incidents — Last 45 Days (gis.tucsonaz.gov ArcGIS MapServer)" },
+  "austin":           { neighborhoodCount:  10, source: "APD Crime Reports (City of Austin Open Data, Socrata) — APD sectors" },
+  "phoenix":          { neighborhoodCount:  79, source: "Phoenix PD Crime Data (phoenixopendata.com, CKAN) — ZIP-level, through Dec 2025" },
   // Midwest
   "chicago":          { neighborhoodCount:  77, source: "Chicago Crimes 2001-Present (City of Chicago Open Data)" },
   "minneapolis":      { neighborhoodCount:  86, source: "Minneapolis Crime_Data (City of Minneapolis, ArcGIS Feature Server)" },

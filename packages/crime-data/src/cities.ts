@@ -43,6 +43,8 @@ import { raleighAdapter, getDiscoveredAreasRaleigh } from "./adapters/raleigh-ar
 import { tucsonAdapter, getDiscoveredAreasTucson } from "./adapters/tucson-arcgis.js";
 import { honoluluAdapter, getDiscoveredAreasHonolulu } from "./adapters/honolulu-socrata.js";
 import { longBeachAdapter, getDiscoveredAreasLongBeach } from "./adapters/long-beach-arcgis.js";
+import { austinAdapter, getDiscoveredAreasAustin } from "./adapters/austin-socrata.js";
+import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ckan.js";
 
 // City registry.
 //
@@ -368,6 +370,27 @@ export const CITIES: CityEntry[] = [
     adapter: longBeachAdapter,
     discover: getDiscoveredAreasLongBeach,
   },
+  {
+    // Austin, TX — 39th city. APD "Crime Reports" Socrata feed (data.austin
+    // texas.gov, 2.6M rows). No public lat/lng, so incidents bucket by APD
+    // sector (≈neighborhood grain); a handful of junk sector codes → "Unmapped".
+    slug: "austin",
+    label: "Austin",
+    bbox: { south: 30.10, west: -97.94, north: 30.52, east: -97.56 },
+    adapter: austinAdapter,
+    discover: getDiscoveredAreasAustin,
+  },
+  {
+    // Phoenix, AZ — 40th city. Re-added per request. The only official feed is
+    // an annual ARCHIVAL snapshot (phoenixopendata CKAN) frozen at 2025-12-31,
+    // ZIP-level only (no lat/lng, ~13% missing-ZIP → "Unmapped"). The adapter
+    // provenance surfaces "data through Dec 2025" so the UI is honest about it.
+    slug: "phoenix",
+    label: "Phoenix",
+    bbox: { south: 33.29, west: -112.32, north: 33.92, east: -111.93 },
+    adapter: phoenixAdapter,
+    discover: getDiscoveredAreasPhoenix,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -461,6 +484,8 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("tuc-")  || slug === "tucson")       return CITIES[35];
   if (slug.startsWith("hnl-")  || slug === "honolulu")     return CITIES[36];
   if (slug.startsWith("lb-")   || slug === "long-beach")   return CITIES[37];
+  if (slug.startsWith("atx-")  || slug === "austin")       return CITIES[38];
+  if (slug.startsWith("phx-")  || slug === "phoenix")      return CITIES[39];
   return CITIES[0];
 }
 

@@ -34,6 +34,7 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "washington-dc":     { slug: "washington-dc",     label: "Washington",        state: "DC", centroid: { lat: 38.90, lng: -77.04 } },
   "fort-worth":        { slug: "fort-worth",        label: "Fort Worth",        state: "TX", centroid: { lat: 32.73, lng: -97.32 } },
   "austin":            { slug: "austin",            label: "Austin",            state: "TX", centroid: { lat: 30.27, lng: -97.74 } },
+  "phoenix":           { slug: "phoenix",           label: "Phoenix",           state: "AZ", centroid: { lat: 33.4484, lng: -112.0740 } },
   "atlanta":           { slug: "atlanta",           label: "Atlanta",           state: "GA", centroid: { lat: 33.75, lng: -84.39 } },
   "minneapolis":       { slug: "minneapolis",       label: "Minneapolis",       state: "MN", centroid: { lat: 44.98, lng: -93.27 } },
   "kansas-city":       { slug: "kansas-city",       label: "Kansas City",       state: "MO", centroid: { lat: 39.10, lng: -94.58 } },

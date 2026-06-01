@@ -32,6 +32,8 @@ export const CITY_POPULATION: Record<string, number> = {
   "seattle":         755_078,
   "new-york":      8_258_035,
   "colorado-springs": 488_664,
+  "austin":          961_855,  // 2020 US Census
+  "phoenix":       1_608_139,  // 2020 US Census
   "denver":          716_577,  // v70 — US Census Bureau Vintage 2024 estimate
   "detroit":         633_218,
   "washington-dc":   678_972,
