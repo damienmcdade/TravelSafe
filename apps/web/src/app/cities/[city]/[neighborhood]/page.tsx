@@ -117,7 +117,7 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
         <h1 className="mt-1 font-display text-3xl text-slate2-900">{area.label}, {city.label}</h1>
         <p className="mt-2 text-sm text-slate2-700 max-w-2xl">
           Recent police-feed safety data for {area.label} in {city.label}, compared to the
-          ${FBI_DATA_LABEL} national average. Sourced directly from the {city.label} police open-data feed.
+          {FBI_DATA_LABEL} national average. Sourced directly from the {city.label} police open-data feed.
         </p>
       </header>
 

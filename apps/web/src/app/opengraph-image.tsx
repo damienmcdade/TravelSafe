@@ -59,7 +59,7 @@ export default function RootOgImage() {
               lineHeight: 1.3,
             }}
           >
-            Drawn from official police open-data feeds and the ${FBI_DATA_LABEL} national average.
+            Drawn from official police open-data feeds and the {FBI_DATA_LABEL} national average.
           </div>
         </div>
         <div
