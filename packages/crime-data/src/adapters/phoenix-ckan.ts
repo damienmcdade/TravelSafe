@@ -16,12 +16,29 @@ import { USER_AGENT } from "../lib/http.js";
 //     on 2025-12-31. There is no rolling refresh; it updates roughly once a
 //     year. So our "recency" is honestly "data through Dec 2025".
 //   * Geography is ZIP-ONLY. There is no lat/lng, no neighborhood, no beat.
-//     We bucket by the `ZIP` column → area label = the bare ZIP string
-//     (e.g. "85021"), which the apps/web/public/geo/phoenix.geojson ZCTA
-//     polygons match on `properties.name`.
+//     The raw `ZIP` column is therefore the only locator. To make areas read
+//     as recognizable places instead of bare 5-digit codes, we map each
+//     Phoenix ZIP to its CITY OF PHOENIX URBAN VILLAGE — one of the 15
+//     official planning villages (Maryvale, Camelback East, Central City,
+//     Deer Valley, …). The mapping (ZIP_TO_VILLAGE below) was built by
+//     overlaying the 78 ZCTA polygons in apps/web/public/geo against the
+//     authoritative City of Phoenix "Villages" GIS layer
+//     (maps.phoenix.gov/pub/rest/services/Public/Villages/MapServer/0,
+//     NAME field) and assigning each ZIP to the village containing its ZCTA
+//     centroid (plus two boundary ZIPs whose area is majority-Phoenix).
+//     apps/web/public/geo/phoenix.geojson now carries those village polygons
+//     (properties.name = village), so the Crime Map matches on village name.
+//   * Not every ZCTA falls inside the City of Phoenix. The annual feed
+//     includes a metro-wide spread of ZIPs; suburban ZIPs (Mesa/Scottsdale/
+//     Glendale/Chandler/Tempe/Peoria/etc.) have no Phoenix village, and two
+//     small fully-absorbed villages (Encanto, Laveen) have no ZIP whose
+//     centroid lands inside them. A ZIP with no village mapping keeps its
+//     bare ZIP string as its label (honest, never faked into a village).
 //   * ~13% of 2025 rows carry a NULL / blank / literal-"NULL" / non-Phoenix
 //     ZIP. Those are folded into a single honest "Unmapped" bucket rather
-//     than dropped (so citywide totals stay complete) or faked.
+//     than dropped (so citywide totals stay complete) or faked. With the
+//     village mapping, ~96% of rows that DO carry a Phoenix ZIP land in a
+//     named village; the rest keep their ZIP label.
 // Every one of these limits is surfaced verbatim in PROVENANCE below and is
 // the reason the city-meta/use-city wiring must show a "data through Dec
 // 2025" banner. Do NOT present this as live/street-level data.
@@ -118,17 +135,102 @@ function parsePhoenixDate(raw: string | null | undefined): string | null {
   return +new Date(iso) <= 0 ? null : iso;
 }
 
-// ZIP → area label. A real Phoenix-metro 85xxx ZIP becomes its own bucket
-// (the bare ZIP string, matching the ZCTA geojson's properties.name); NULL,
-// blank, the literal string "NULL", and any non-85xxx ZIP (e.g. the stray
-// 86504 on the Navajo Nation) fold into the single "Unmapped" bucket.
+// ZIP → City of Phoenix Urban Village. Built by overlaying the ZCTA polygons
+// in apps/web/public/geo against the official Phoenix "Villages" GIS layer and
+// assigning each ZIP to the village containing its ZCTA centroid; 85310 and
+// 85086 are boundary ZIPs whose area is majority-Phoenix (Deer Valley / North
+// Gateway). ZIPs absent here are either suburban (not in any Phoenix village)
+// or in a small absorbed village (Encanto, Laveen) and keep their bare ZIP.
+const ZIP_TO_VILLAGE: Record<string, string> = {
+  "85003": "Central City",      "85004": "Central City",
+  "85006": "Central City",      "85007": "Central City",
+  "85034": "Central City",
+  "85008": "Camelback East",    "85014": "Camelback East",
+  "85016": "Camelback East",    "85018": "Camelback East",
+  "85012": "Alhambra",          "85013": "Alhambra",
+  "85015": "Alhambra",          "85017": "Alhambra",
+  "85019": "Alhambra",
+  "85020": "North Mountain",    "85021": "North Mountain",
+  "85022": "North Mountain",    "85029": "North Mountain",
+  "85051": "North Mountain",
+  "85023": "Deer Valley",       "85027": "Deer Valley",
+  "85053": "Deer Valley",       "85310": "Deer Valley",
+  "85024": "Paradise Valley",   "85028": "Paradise Valley",
+  "85032": "Paradise Valley",   "85254": "Paradise Valley",
+  "85031": "Maryvale",          "85033": "Maryvale",
+  "85035": "Maryvale",          "85037": "Maryvale",
+  "85009": "Estrella",          "85043": "Estrella",
+  "85353": "Estrella",
+  "85040": "South Mountain",    "85041": "South Mountain",
+  "85042": "South Mountain",
+  "85044": "Ahwatukee Foothills", "85045": "Ahwatukee Foothills",
+  "85048": "Ahwatukee Foothills",
+  "85050": "Desert View",       "85054": "Desert View",
+  "85085": "Desert View",
+  "85083": "North Gateway",     "85086": "North Gateway",
+  "85087": "Rio Vista",
+};
+
+// Village → centroid (area-weighted center of the official village polygon),
+// used to seed the area picker's "nearest" lookup. Phoenix carries no
+// per-incident coordinates, so this is purely for the picker, not the map
+// (the map draws the boundary from phoenix.geojson keyed on village name).
+const VILLAGE_CENTROID: Record<string, { lat: number; lng: number }> = {
+  "Central City": { lat: 33.4418, lng: -112.0496 },
+  "Camelback East": { lat: 33.5017, lng: -112.0035 },
+  "Alhambra": { lat: 33.5245, lng: -112.1093 },
+  "North Mountain": { lat: 33.5909, lng: -112.0989 },
+  "Deer Valley": { lat: 33.6845, lng: -112.1208 },
+  "Paradise Valley": { lat: 33.618, lng: -111.9963 },
+  "Maryvale": { lat: 33.489, lng: -112.2151 },
+  "Estrella": { lat: 33.4259, lng: -112.1975 },
+  "South Mountain": { lat: 33.3815, lng: -112.0536 },
+  "Ahwatukee Foothills": { lat: 33.3209, lng: -112.039 },
+  "Desert View": { lat: 33.7295, lng: -112.0015 },
+  "North Gateway": { lat: 33.7835, lng: -112.1498 },
+  "Rio Vista": { lat: 33.8886, lng: -112.1879 },
+};
+
+const PHOENIX_CENTROID = { lat: 33.4484, lng: -112.0740 };
+
+// slug fragment for a village label: lowercased, non-alnum → single hyphen.
+// "Camelback East" → "camelback-east", "Ahwatukee Foothills" → "ahwatukee-foothills".
+function villageSlug(label: string): string {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// ZIP → area label. A Phoenix ZIP that maps to an urban village becomes that
+// village name; a real 85xxx ZIP with no village mapping (suburban / absorbed
+// village) keeps its bare ZIP string; NULL / blank / literal "NULL" / any
+// non-85xxx ZIP (e.g. the stray 86504 on the Navajo Nation) folds into the
+// single "Unmapped" bucket.
 function areaForZip(zip: string | null | undefined): string {
   const z = (zip ?? "").trim();
+  const village = ZIP_TO_VILLAGE[z];
+  if (village) return village;
   if (/^85\d{3}$/.test(z)) return z;
   return UNMAPPED;
 }
 
-const PHOENIX_CENTROID = { lat: 33.4484, lng: -112.0740 };
+// Resolve an area label back to its centroid + slug. Village labels use the
+// village slug ("phx-maryvale") and the village centroid; bare-ZIP labels keep
+// the "phx-<zip>" slug and the city centroid (we have no ZCTA centroid here).
+function slugForArea(label: string): string {
+  if (VILLAGE_CENTROID[label]) return `phx-${villageSlug(label)}`;
+  return `phx-${label}`;
+}
+function centroidForArea(label: string): { lat: number; lng: number } {
+  return VILLAGE_CENTROID[label] ?? PHOENIX_CENTROID;
+}
+
+// Reverse lookup so an incoming slug resolves to a stored area label. Built
+// once from ZIP_TO_VILLAGE so "phx-camelback-east" → "Camelback East".
+const SLUG_TO_VILLAGE: Record<string, string> = Object.fromEntries(
+  Array.from(new Set(Object.values(ZIP_TO_VILLAGE))).map((v) => [villageSlug(v), v]),
+);
 
 const PROVENANCE: DataProvenance = {
   source: "Phoenix PD Crime Data · phoenixopendata.com (CKAN, annual snapshot)",
@@ -142,9 +244,11 @@ const PROVENANCE: DataProvenance = {
   disclaimer:
     "Incidents are reported by the Phoenix Police Department and published as an " +
     "annual archival snapshot that ends Dec 31 2025 — this is NOT live, NOT " +
-    "street-level data. The feed has no coordinates or neighborhoods, so " +
-    "incidents are bucketed by ZIP code; the ~13% of records with a missing or " +
-    "out-of-area ZIP are grouped as \"Unmapped\". CommunitySafe does not track individuals.",
+    "street-level data. The feed has no coordinates or neighborhoods, only ZIP " +
+    "codes, which we map to the City of Phoenix urban villages (Maryvale, " +
+    "Camelback East, Central City, …); suburban ZIPs with no Phoenix village " +
+    "keep their ZIP label and the ~13% of records with a missing or out-of-area " +
+    "ZIP are grouped as \"Unmapped\". CommunitySafe does not track individuals.",
 };
 
 interface DatastoreResp {
@@ -220,11 +324,12 @@ export async function getRowsPhoenix(): Promise<Incident[]> {
   return inFlight;
 }
 
-// Phoenix has no per-incident coordinates, so the centroid for every ZIP
-// area is the ZCTA polygon center we don't carry here — we report the city
-// centroid for each discovered area. The Crime Map renders the actual
-// boundary from phoenix.geojson keyed on the ZIP label, so the discovered
-// centroid only seeds the area picker's "nearest" lookup.
+// Discovered areas are urban villages (and any unmapped Phoenix ZIPs that
+// carry incidents). Village areas get the village slug + village-polygon
+// centroid; bare-ZIP areas get "phx-<zip>" + the city centroid (we have no
+// ZCTA centroid here). The Crime Map renders the village boundary from
+// phoenix.geojson keyed on the village name, so the centroid only seeds the
+// area picker's "nearest" lookup.
 export async function getDiscoveredAreasPhoenix(): Promise<KnownArea[]> {
   const rows = await getRowsPhoenix();
   const counts = new Map<string, number>();
@@ -234,19 +339,21 @@ export async function getDiscoveredAreasPhoenix(): Promise<KnownArea[]> {
   }
   return Array.from(counts.entries())
     .sort((a, b) => b[1] - a[1])
-    .map(([zip]) => ({
-      slug: `phx-${zip}`,
-      label: zip,
+    .map(([label]) => ({
+      slug: slugForArea(label),
+      label,
       jurisdiction: "Phoenix",
-      centroid: PHOENIX_CENTROID,
+      centroid: centroidForArea(label),
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-// Resolve a Phoenix area slug ("phx-85021") or a bare ZIP ("85021") back to
-// the stored area label (the bare ZIP string).
+// Resolve a Phoenix area slug back to the stored area label. Accepts a village
+// slug ("phx-maryvale" / "maryvale" → "Maryvale"), a ZIP slug ("phx-85021" →
+// "85021"), or a bare ZIP ("85021"). Returns null for anything unrecognized.
 function labelForPhxSlug(slug: string): string | null {
-  const want = slug.toLowerCase().startsWith("phx-") ? slug.slice(4) : slug;
+  const want = slug.toLowerCase().startsWith("phx-") ? slug.slice(4) : slug.toLowerCase();
+  if (SLUG_TO_VILLAGE[want]) return SLUG_TO_VILLAGE[want];
   return /^85\d{3}$/.test(want) ? want : null;
 }
 
@@ -259,9 +366,11 @@ export const phoenixAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    // Self-calibrating quintile bands over Phoenix's own per-ZIP
-    // distribution; degrades to these static thresholds for a thin set.
-    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [150, 400, 800, 1500]);
+    // Self-calibrating quintile bands over Phoenix's own per-area
+    // distribution (now village-level); degrades to these static thresholds
+    // for a thin set. Village buckets are larger than single ZIPs, so the
+    // static fallbacks are scaled up accordingly.
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [400, 1200, 2500, 4500]);
     return {
       area: label,
       crimeRate: null,

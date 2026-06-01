@@ -38,6 +38,7 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "jacksonville":      { slug: "jacksonville",      label: "Jacksonville",      state: "FL", centroid: { lat: 30.33, lng: -81.66 } },
   "virginia-beach":    { slug: "virginia-beach",    label: "Virginia Beach",    state: "VA", centroid: { lat: 36.85, lng: -76.04 } },
   "gainesville":       { slug: "gainesville",       label: "Gainesville",       state: "FL", centroid: { lat: 29.65, lng: -82.32 } },
+  "tampa":             { slug: "tampa",             label: "Tampa",             state: "FL", centroid: { lat: 27.95, lng: -82.46 } },
   "atlanta":           { slug: "atlanta",           label: "Atlanta",           state: "GA", centroid: { lat: 33.75, lng: -84.39 } },
   "minneapolis":       { slug: "minneapolis",       label: "Minneapolis",       state: "MN", centroid: { lat: 44.98, lng: -93.27 } },
   "kansas-city":       { slug: "kansas-city",       label: "Kansas City",       state: "MO", centroid: { lat: 39.10, lng: -94.58 } },

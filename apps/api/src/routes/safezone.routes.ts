@@ -109,6 +109,12 @@ safezoneRouter.get("/safety-score", async (req, res, next) => {
         message: `No adapter configured for city "${err.message.slice("city_not_supported:".length).trim()}". Pass a known city slug.`,
       });
     }
+    // v104 — an unknown ?area= slug threw out of getSafetyScore and surfaced as
+    // a 500; return a clean 404 instead (the audit caught this — bogus area
+    // slugs are client error, not server error).
+    if (err instanceof Error && err.message.startsWith("Unknown area slug")) {
+      return res.status(404).json({ error: "area_not_found", message: err.message });
+    }
     next(err);
   }
 });

@@ -18,12 +18,13 @@ import { gainesvillePolygons } from "../data/gainesville-neighborhoods.js";
 // longitude.
 //
 // The feed has NO neighborhood/area field, so we point-in-polygon each
-// incident's lat/lng into one of the 12 official GPD patrol zones
-// (City of Gainesville "GPDZones_101518_Dissolved" open-data layer,
-// labeled by phonetic call-sign: Alpha … November) — the same in-repo
-// polygon set that powers apps/web/public/geo/gainesville.geojson.
-// Points outside every zone or with no coordinates fall into "Unmapped"
-// so they still count citywide (mirrors the Kansas City fallback).
+// incident's lat/lng into one of 114 real, recognizable Gainesville
+// neighborhoods (City of Gainesville planning department "GNV Neighborhoods"
+// open-data layer — Duckpond, Pleasant Street, Sugarfoot, Porters,
+// University Park, Highland Court Manor, Stephen Foster, …) — the same
+// in-repo polygon set that powers apps/web/public/geo/gainesville.geojson.
+// Points outside every neighborhood or with no coordinates fall into
+// "Unmapped" so they still count citywide (mirrors the Kansas City fallback).
 // Source: https://data.cityofgainesville.org/resource/gvua-xt9q.json
 
 const BASE = "https://data.cityofgainesville.org/resource/gvua-xt9q.json";
@@ -93,7 +94,7 @@ function classify(narrative: string): CrimeCategory | null {
   return null;
 }
 
-// ---- Point-in-polygon over the 12 GPD patrol zones ----------------------
+// ---- Point-in-polygon over the named Gainesville neighborhoods ----------
 // bbox-prefiltered ray casting — same self-contained pattern as the
 // Long Beach / Kansas City / Boston adapters.
 interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
@@ -132,12 +133,13 @@ const PROVENANCE: DataProvenance = {
   source: "Gainesville Police Department Crime Responses (City of Gainesville Open Data, Socrata)",
   datasetUrl: "https://data.cityofgainesville.org/Public-Safety/Crime-Responses/gvua-xt9q",
   recency: "Refreshed routinely by the Gainesville Police Department (recent ~12-month window)",
-  granularity: "beat",
+  granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the Gainesville Police Department and geocoded to one of " +
-    "12 official GPD patrol zones (Alpha through November) — not live, not street-level. " +
-    "Coordinates are block-fuzzed by GPD; points outside every zone are bucketed as " +
-    "\"Unmapped\" but still count citywide. CommunitySafe does not track individuals.",
+    "Gainesville's named neighborhoods (City planning department \"GNV Neighborhoods\" layer) " +
+    "— not live, not street-level. Coordinates are block-fuzzed by GPD; points outside every " +
+    "neighborhood are bucketed as \"Unmapped\" but still count citywide. " +
+    "CommunitySafe does not track individuals.",
 };
 
 async function fetchGainesville(): Promise<Incident[]> {
@@ -234,9 +236,10 @@ export const gainesvilleAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    // Self-calibrating quintile bands over Gainesville's own per-zone
-    // distribution; degrades to the hand-tuned thresholds for 12 zones.
-    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [400, 900, 1600, 2800]);
+    // Self-calibrating quintile bands over Gainesville's own per-neighborhood
+    // distribution (114 neighborhoods → quintiles always apply); degrades to
+    // these neighborhood-scale thresholds only for a thin/flat distribution.
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [40, 120, 300, 700]);
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
   async getIncidents(area, opts) {

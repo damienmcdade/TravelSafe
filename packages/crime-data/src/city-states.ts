@@ -53,6 +53,7 @@ export const CITY_STATES: Record<string, UsState> = {
   "jacksonville":      { abbr: "FL", label: "Florida" },
   "virginia-beach":    { abbr: "VA", label: "Virginia" },
   "gainesville":       { abbr: "FL", label: "Florida" },
+  "tampa":             { abbr: "FL", label: "Florida" },
   "kansas-city":       { abbr: "MO", label: "Missouri" },
   "atlanta":           { abbr: "GA", label: "Georgia" },
   "indianapolis":      { abbr: "IN", label: "Indiana" },

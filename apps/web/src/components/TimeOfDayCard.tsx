@@ -50,6 +50,7 @@ const CITY_TZ: Record<string, string> = {
   "jacksonville": "America/New_York",
   "virginia-beach": "America/New_York",
   "gainesville": "America/New_York",
+  "tampa": "America/New_York",
   "honolulu": "Pacific/Honolulu",
   "long-beach": "America/Los_Angeles",
 };
@@ -69,7 +70,7 @@ const SLUG_PREFIXES: Array<[string, string]> = [
   ["denv-", "denver"], ["bat-", "baton-rouge"], ["cam-", "cambridge"],
   ["hon-", "honolulu"], ["ral-", "raleigh"], ["indy-", "indianapolis"],
   ["tuc-", "tucson"], ["atx-", "austin"], ["phx-", "phoenix"],
-  ["jax-", "jacksonville"], ["vb-", "virginia-beach"], ["gnv-", "gainesville"],
+  ["jax-", "jacksonville"], ["vb-", "virginia-beach"], ["gnv-", "gainesville"], ["tpa-", "tampa"],
 ];
 
 /// Resolve an area slug to its city slug — either the slug IS a city
@@ -103,6 +104,7 @@ const DATE_ONLY_CITIES = new Set<string>([
   "indianapolis",
   "dallas",
   "norfolk",
+  "tampa",
 ]);
 
 const _hourFormatterCache = new Map<string, Intl.DateTimeFormat>();

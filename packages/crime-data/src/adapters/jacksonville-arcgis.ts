@@ -5,17 +5,22 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+import { jacksonvillePolygons } from "../data/jacksonville-neighborhoods.js";
 
 // Jacksonville, FL — Jacksonville Sheriff's Office (JSO) "NIBRS Incidents"
 // ArcGIS FeatureServer (keyless, hosted on the City of Jacksonville org).
-// Incident-level NIBRS rows with point geometry that carry the incident's
-// `ZipCode`, so we group by ZIP CODE — the companion ZIP CODES polygon layer
-// (apps/web/public/geo/jacksonville.geojson) is keyed on the bare zip string,
-// matching each area label. The feed is JSO's live transparency set (refreshed
-// daily; newest rows current through today). `IncidentDateTime` is an absolute
-// epoch-ms instant, so `new Date(ms).toISOString()` is the correct conversion
-// (no city-local-wall-clock reinterpretation needed — Jacksonville is ET).
+// Incident-level NIBRS rows carry point geometry, so we geocode each incident
+// to one of 208 named Jacksonville/Duval neighborhoods (Riverside, Springfield,
+// San Marco, Avondale, Mandarin, Arlington, Murray Hill, Ortega, …) via
+// point-in-polygon — the companion polygon layer
+// (apps/web/public/geo/jacksonville.geojson) is keyed on the same neighborhood
+// names. Points outside every polygon → "Unmapped" (still counted citywide).
+// The feed is JSO's live transparency set (refreshed daily; newest rows current
+// through today). `IncidentDateTime` is an absolute epoch-ms instant, so
+// `new Date(ms).toISOString()` is the correct conversion (no city-local
+// wall-clock reinterpretation needed — Jacksonville is ET).
 // Source: https://services3.arcgis.com/7C7xW0yv6W8spzhp/arcgis/rest/services/Public_Transparency_Data_View_10_03_2025/FeatureServer/0
+// Neighborhoods: https://services8.arcgis.com/fz31a0BYuiNi04Ez/arcgis/rest/services/Neighborhoods_Jacksonville/FeatureServer/1
 
 const BASE = "https://services3.arcgis.com/7C7xW0yv6W8spzhp/arcgis/rest/services/Public_Transparency_Data_View_10_03_2025/FeatureServer/0/query";
 const PAGE_SIZE = 2000; // = server maxRecordCount
@@ -25,10 +30,9 @@ const PAGE_SIZE = 2000; // = server maxRecordCount
 const PAGES = 40;
 const WINDOW_DAYS = 400;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-// Discovery min-count: drops malformed/fringe zips (e.g. "3211", "322257",
-// out-of-county "34746") that carry a handful of mis-keyed rows. Every real
-// Jacksonville zip clears this by a wide margin, and every emitted zip has a
-// matching boundary polygon.
+// Discovery min-count: keeps the browsable catalog to neighborhoods with a
+// real incident base. Every emitted neighborhood has a matching boundary
+// polygon (its name is taken straight from the polygon layer via PIP).
 const MIN_AREA_INCIDENTS = 10;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 registerRowCache(() => { cache = null; }, "jacksonville-arcgis");
@@ -39,7 +43,6 @@ interface JsoFeature {
     IncidentDateTime?: number; // epoch ms (absolute instant)
     nibrsDescription?: string; // offense, e.g. "AGGRAVATED ASSAULT", "THEFT"
     nibrsCode?: string;        // NIBRS code, e.g. "13A", "23X", "35X"
-    ZipCode?: string;          // 5-digit zip string
   };
   geometry?: { x: number; y: number };
 }
@@ -66,11 +69,39 @@ function classify(code: string | undefined, description: string | undefined): Cr
   return CrimeCategory.SOCIETY;
 }
 
-// Bucket a row's raw ZipCode into an area label. Blank / null / "0" → "Unmapped".
-function zipArea(zip: string | undefined): string {
-  const z = (zip ?? "").trim();
-  if (!z || z === "0") return "Unmapped";
-  return z;
+// Point-in-polygon geocoder over the 208 named Jacksonville neighborhoods.
+// bbox-prefiltered ray casting — same self-contained pattern as the
+// Long Beach / Indianapolis / Boston / Philadelphia adapters.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = jacksonvillePolygons.map((p) => {
+  const rings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of rings) for (const [x, y] of ring) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+});
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function geocodeJacksonville(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
 }
 
 const PROVENANCE: DataProvenance = {
@@ -79,9 +110,9 @@ const PROVENANCE: DataProvenance = {
   recency: "Refreshed daily by the Jacksonville Sheriff's Office (rolling history)",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Jacksonville Sheriff's Office and grouped to the " +
-    "incident's ZIP code (\"Unmapped\" for the rare row without one) — not live, not " +
-    "street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Jacksonville Sheriff's Office and geocoded to one of " +
+    "208 named Jacksonville neighborhoods (\"Unmapped\" for the rare point outside every " +
+    "polygon) — not live, not street-level. CommunitySafe does not track individuals.",
 };
 
 async function fetchPage(offset: number, sinceIso: string): Promise<JsoFeature[]> {
@@ -89,7 +120,7 @@ async function fetchPage(offset: number, sinceIso: string): Promise<JsoFeature[]
   // Hosted FeatureServer date predicate uses the SQL DATE literal form
   // (verified against the live service; raw-epoch predicates are rejected).
   url.searchParams.set("where", `IncidentDateTime >= DATE '${sinceIso}'`);
-  url.searchParams.set("outFields", "OBJECTID,IncidentDateTime,nibrsDescription,nibrsCode,ZipCode");
+  url.searchParams.set("outFields", "OBJECTID,IncidentDateTime,nibrsDescription,nibrsCode");
   url.searchParams.set("returnGeometry", "true");
   url.searchParams.set("outSR", "4326");
   url.searchParams.set("orderByFields", "IncidentDateTime DESC");
@@ -126,9 +157,10 @@ async function fetchJacksonville(): Promise<Incident[]> {
       const a = f.attributes;
       const lng = f.geometry && f.geometry.x !== 0 ? f.geometry.x : undefined;
       const lat = f.geometry && f.geometry.y !== 0 ? f.geometry.y : undefined;
+      const nbhd = (lat != null && lng != null) ? geocodeJacksonville(lng, lat) : null;
       return {
         id: `jax-${a.OBJECTID ?? i}`,
-        area: zipArea(a.ZipCode),
+        area: nbhd ?? "Unmapped",
         occurredAt: new Date(a.IncidentDateTime!).toISOString(),
         nibrsCategory: classify(a.nibrsCode, a.nibrsDescription),
         ibrOffenseDescription: titleCaseOffense(a.nibrsDescription ?? "Unknown"),
@@ -153,11 +185,11 @@ export async function getRowsJacksonville(): Promise<Incident[]> {
   }
 }
 
-// Area label is the bare zip string; slug = "jax-<zip>" (unique prefix). The
-// boundary geojson sets properties.name to the same bare zip so the Crime Map's
-// normName() compare lines up.
-function slugify(zip: string): string {
-  return `jax-${zip.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+// Area label is the neighborhood name; slug = "jax-<name>" (unique prefix). The
+// boundary geojson sets properties.name to the same neighborhood name so the
+// Crime Map's normName() compare lines up.
+function slugify(name: string): string {
+  return `jax-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
 }
 
 export async function getDiscoveredAreasJacksonville(): Promise<KnownArea[]> {
@@ -172,9 +204,9 @@ export async function getDiscoveredAreasJacksonville(): Promise<KnownArea[]> {
   }
   return Array.from(agg.entries())
     .filter(([, e]) => e.count >= MIN_AREA_INCIDENTS)
-    .map(([zip, e]) => ({
-      slug: slugify(zip),
-      label: zip,
+    .map(([name, e]) => ({
+      slug: slugify(name),
+      label: name,
       jurisdiction: "Jacksonville",
       centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
     }))

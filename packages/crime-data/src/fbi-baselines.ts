@@ -42,6 +42,7 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "jacksonville": { violent: 761, property: 2486, year: 2023, ori: "FL0160000" },
   "virginia-beach": { violent: 116, property: 1699, year: 2023, ori: "VA1210000" },
   "gainesville": { violent: 739, property: 2876, year: 2023, ori: "FL0010100" },
+  "tampa": { violent: 460, property: 1666, year: 2023, ori: "FL0290200" },
   "boston": { violent: 582, property: 1914, year: 2025, ori: "MA0130100" },
   "buffalo": { violent: 729, property: 3414, year: 2025, ori: "NY0140100" },
   "cambridge": { violent: 436, property: 2601, year: 2025, ori: "MA0091100" },

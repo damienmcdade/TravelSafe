@@ -11,15 +11,21 @@ import { titleCaseOffense } from "../lib/titlecase-offense.js";
 // (Socrata dataset fdj4-gpfu, ~2.6M rows, refreshed routinely).
 //
 // Shape notes (verified 2026-05-31 against the live feed):
-//  - There is NO per-row lat/lng on this dataset. APD publishes only a
-//    coarse `census_block_group` plus a `sector` / `district` /
-//    `council_district` set of administrative areas. We bucket by APD
-//    SECTOR — the cleanest ≈neighborhood grain Austin exposes — mapping
-//    the 2-letter sector code to the APD sector NAME (the NATO-phonetic
-//    name carried by the BOUNDARIES_apd_districts boundary layer). The
-//    same name string is emitted as the area label AND as the
-//    properties.name of apps/web/public/geo/austin.geojson so the Crime
-//    Map's normName() polygon→area join is 1:1.
+//  - There is NO per-row lat/lng on this dataset (re-verified 2026-06-01:
+//    the only geographic columns are `census_block_group`, `sector`,
+//    `district`, `council_district` — Austin strips coordinates, so TRUE
+//    per-incident neighborhood assignment is impossible). We bucket by APD
+//    SECTOR — the cleanest ≈neighborhood grain Austin exposes.
+//  - APD names its 10 sectors only by NATO-phonetic call signs (Adam,
+//    Baker, …) with NO published descriptive/region name. Those codes are
+//    unrecognizable to users, so we RELABEL each sector with a geographic
+//    description ("North", "Central / Downtown", "Southeast", …) DERIVED
+//    from the actual position of that sector's polygon centroid relative
+//    to the Austin city center (30.2672, -97.7431). The original phonetic
+//    is preserved in a "(Sector X)" suffix for cross-reference with APD.
+//    The friendly label is emitted as the area label AND written verbatim
+//    as the properties.name of apps/web/public/geo/austin.geojson so the
+//    Crime Map's normName() polygon→area join stays 1:1.
 //  - The occurrence timestamp is split across `occ_date` (ISO date at
 //    local-midnight, e.g. "2026-05-23T00:00:00.000") and `occ_time`
 //    (an HHMM string, e.g. "2055"). We recombine them into an Austin
@@ -84,22 +90,37 @@ interface AustinRow {
   location_type?: string;
 }
 
-// APD 2-letter sector code → boundary-layer SECTOR_NAME (title-cased).
-// These are the only sector codes that map to a published polygon in
-// BOUNDARIES_apd_districts/austin.geojson; every other value the feed
-// carries ("88", "UT", "CHAR", "BAKR", "GRGE", blank, …) is a typo,
-// a non-APD area, or a coarse placeholder and folds into "Unmapped".
+// APD 2-letter sector code → user-recognizable geographic label.
+//
+// The region descriptor is DERIVED from the sector polygon's centroid
+// position vs the Austin city center (30.2672, -97.7431), computed from
+// apps/web/public/geo/austin.geojson (see SECTOR_CENTROIDS below):
+//   Adam    (30.422,-97.786) far N, slightly W   → "North"
+//   Baker   (30.331,-97.773) N of center          → "North Central"
+//   Edward  (30.382,-97.672) far N + E            → "Northeast"
+//   Ida     (30.328,-97.704) N + E (inside Edward) → "Northeast Central"
+//   Charlie (30.299,-97.643) E of center          → "East"
+//   George  (30.272,-97.749) dead center          → "Central / Downtown"
+//   David   (30.226,-97.836) SW of center         → "Southwest"
+//   Frank   (30.174,-97.783) far S, slightly W    → "South"
+//   Henry   (30.204,-97.674) SE of center         → "Southeast"
+//   Apt     (30.194,-97.666) SE, at ABIA airport  → "Airport / Southeast"
+// The phonetic call sign is kept in the "(Sector X)" suffix so the label
+// still cross-references APD's own dispatch geography. These are the only
+// codes that map to a published polygon; every other feed value ("88",
+// "UT", "CHAR", "BAKR", "GRGE", blank, …) is a typo / non-APD area /
+// coarse placeholder and folds into "Unmapped".
 const SECTOR_NAMES: Record<string, string> = {
-  AD: "Adam",
-  BA: "Baker",
-  CH: "Charlie",
-  DA: "David",
-  ED: "Edward",
-  FR: "Frank",
-  GE: "George",
-  HE: "Henry",
-  ID: "Ida",
-  AP: "Apt",
+  AD: "North (Sector Adam)",
+  BA: "North Central (Sector Baker)",
+  CH: "East (Sector Charlie)",
+  DA: "Southwest (Sector David)",
+  ED: "Northeast (Sector Edward)",
+  FR: "South (Sector Frank)",
+  GE: "Central / Downtown (Sector George)",
+  HE: "Southeast (Sector Henry)",
+  ID: "Northeast Central (Sector Ida)",
+  AP: "Airport / Southeast (Sector Apt)",
 };
 
 function sectorToArea(code: string | undefined): string {
@@ -171,16 +192,16 @@ const PROVENANCE: DataProvenance = {
 // dataset carries no lat/lng, so this is the honest sector center rather
 // than a single citywide placeholder.
 const SECTOR_CENTROIDS: Record<string, { lat: number; lng: number }> = {
-  Adam: { lat: 30.4221, lng: -97.7864 },
-  Baker: { lat: 30.3311, lng: -97.7729 },
-  Charlie: { lat: 30.2993, lng: -97.6432 },
-  David: { lat: 30.2260, lng: -97.8364 },
-  Edward: { lat: 30.3819, lng: -97.6722 },
-  Frank: { lat: 30.1740, lng: -97.7828 },
-  George: { lat: 30.2723, lng: -97.7491 },
-  Henry: { lat: 30.2042, lng: -97.6742 },
-  Ida: { lat: 30.3284, lng: -97.7038 },
-  Apt: { lat: 30.1937, lng: -97.6663 },
+  "North (Sector Adam)": { lat: 30.4221, lng: -97.7864 },
+  "North Central (Sector Baker)": { lat: 30.3311, lng: -97.7729 },
+  "East (Sector Charlie)": { lat: 30.2993, lng: -97.6432 },
+  "Southwest (Sector David)": { lat: 30.2260, lng: -97.8364 },
+  "Northeast (Sector Edward)": { lat: 30.3819, lng: -97.6722 },
+  "South (Sector Frank)": { lat: 30.1740, lng: -97.7828 },
+  "Central / Downtown (Sector George)": { lat: 30.2723, lng: -97.7491 },
+  "Southeast (Sector Henry)": { lat: 30.2042, lng: -97.6742 },
+  "Northeast Central (Sector Ida)": { lat: 30.3284, lng: -97.7038 },
+  "Airport / Southeast (Sector Apt)": { lat: 30.1937, lng: -97.6663 },
 };
 const AUSTIN_CENTROID = { lat: 30.2672, lng: -97.7431 };
 

@@ -48,6 +48,7 @@ import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ck
 import { jacksonvilleAdapter, getDiscoveredAreasJacksonville } from "./adapters/jacksonville-arcgis.js";
 import { virginiaBeachAdapter, getDiscoveredAreasVirginiaBeach } from "./adapters/virginia-beach-arcgis.js";
 import { gainesvilleAdapter, getDiscoveredAreasGainesville } from "./adapters/gainesville-socrata.js";
+import { tampaAdapter, getDiscoveredAreasTampa } from "./adapters/tampa-arcgis.js";
 
 // City registry.
 //
@@ -422,6 +423,17 @@ export const CITIES: CityEntry[] = [
     adapter: gainesvilleAdapter,
     discover: getDiscoveredAreasGainesville,
   },
+  {
+    // Tampa, FL — 44th city. TPD "crimes_public_365days" ArcGIS FeatureServer:
+    // incident-level Group-A index offenses (points) + a pre-joined civic-
+    // association neighborhood name (117 areas, 100% bind to a polygon).
+    // Index-crime only (no society/drug offenses); date-only (no offense time).
+    slug: "tampa",
+    label: "Tampa",
+    bbox: { south: 27.81, west: -82.62, north: 28.17, east: -82.27 },
+    adapter: tampaAdapter,
+    discover: getDiscoveredAreasTampa,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -520,6 +532,7 @@ export function cityForArea(slug: string): CityEntry {
   if (slug.startsWith("jax-")  || slug === "jacksonville") return CITIES[40];
   if (slug.startsWith("vb-")   || slug === "virginia-beach") return CITIES[41];
   if (slug.startsWith("gnv-")  || slug === "gainesville")  return CITIES[42];
+  if (slug.startsWith("tpa-")  || slug === "tampa")        return CITIES[43];
   return CITIES[0];
 }
 

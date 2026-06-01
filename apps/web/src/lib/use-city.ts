@@ -92,11 +92,12 @@ export const CITIES: CityInfo[] = [
   // couldn't select it. Added here so the city + its neighborhoods are
   // reachable in the selector.
   { slug: "long-beach",    label: "Long Beach",    state: "CA", stateLabel: "California",     defaultArea: "lb-downtown",      centroid: { lat: 33.81, lng: -118.16 }, status: "live",        source: "LBPD NIBRS Incidents · CityofLB GIS (ArcGIS)" },
-  { slug: "austin",        label: "Austin",        state: "TX", stateLabel: "Texas",          defaultArea: "atx-david",        centroid: { lat: 30.2672, lng: -97.7431 }, status: "live", source: "APD Crime Reports · data.austintexas.gov" },
-  { slug: "phoenix",       label: "Phoenix",       state: "AZ", stateLabel: "Arizona",        defaultArea: "phx-85015",        centroid: { lat: 33.4484, lng: -112.0740 }, status: "live", source: "Phoenix PD Crime Data · phoenixopendata.com (through Dec 2025)" },
-  { slug: "jacksonville",  label: "Jacksonville",  state: "FL", stateLabel: "Florida",        defaultArea: "jax-32202",        centroid: { lat: 30.3322, lng: -81.6557 }, status: "live", source: "JSO NIBRS Incidents · Jacksonville Sheriff's Office (ArcGIS)" },
+  { slug: "austin",        label: "Austin",        state: "TX", stateLabel: "Texas",          defaultArea: "atx-southwest-sector-david", centroid: { lat: 30.2672, lng: -97.7431 }, status: "live", source: "APD Crime Reports · data.austintexas.gov" },
+  { slug: "phoenix",       label: "Phoenix",       state: "AZ", stateLabel: "Arizona",        defaultArea: "phx-maryvale",     centroid: { lat: 33.4484, lng: -112.0740 }, status: "live", source: "Phoenix PD Crime Data · phoenixopendata.com (through Dec 2025)" },
+  { slug: "jacksonville",  label: "Jacksonville",  state: "FL", stateLabel: "Florida",        defaultArea: "jax-downtown-jacksonville", centroid: { lat: 30.3322, lng: -81.6557 }, status: "live", source: "JSO NIBRS Incidents · Jacksonville Sheriff's Office (ArcGIS)" },
   { slug: "virginia-beach", label: "Virginia Beach", state: "VA", stateLabel: "Virginia",     defaultArea: "vb-aragona-village", centroid: { lat: 36.8529, lng: -76.0339 }, status: "live", source: "VBPD Police Incident Reports · data-vbgov.opendata.arcgis.com" },
-  { slug: "gainesville",   label: "Gainesville",   state: "FL", stateLabel: "Florida",        defaultArea: "gnv-gpd-zone-mike", centroid: { lat: 29.6516, lng: -82.3248 }, status: "live", source: "GPD Crime Responses · data.cityofgainesville.org (Socrata)" },
+  { slug: "gainesville",   label: "Gainesville",   state: "FL", stateLabel: "Florida",        defaultArea: "gnv-duval",        centroid: { lat: 29.6516, lng: -82.3248 }, status: "live", source: "GPD Crime Responses · data.cityofgainesville.org (Socrata)" },
+  { slug: "tampa",         label: "Tampa",         state: "FL", stateLabel: "Florida",        defaultArea: "tpa-old-seminole-heights", centroid: { lat: 27.9506, lng: -82.4572 }, status: "live", source: "TPD Crimes (last 365 days) · City of Tampa GIS (ArcGIS)" },
 ];
 
 /// All US states with at least one CommunitySafe city, sorted alphabetically.

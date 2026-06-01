@@ -109,6 +109,7 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "jacksonville": "America/New_York",
   "virginia-beach": "America/New_York",
   "gainesville": "America/New_York",
+  "tampa": "America/New_York",
   "denver": "America/Denver",
   "colorado-springs": "America/Denver",
   "boise": "America/Boise",
@@ -179,4 +180,5 @@ export const DATE_ONLY_CITY_SLUGS: ReadonlySet<string> = new Set([
   "indianapolis",
   "dallas",
   "norfolk",
+  "tampa",
 ]);
