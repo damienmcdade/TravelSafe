@@ -21,7 +21,7 @@ export default function TermsPage() {
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What CommunitySafe is</h2>
-        <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 37 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
+        <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 38 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
         <p>
           CommunitySafe is operated by{" "}
           <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">CyberWave Technologies LLC</a>{" "}
@@ -81,6 +81,7 @@ export default function TermsPage() {
         <h2 className="font-display text-xl text-slate2-900">Community posts &amp; moderation</h2>
         <p>Posts you submit through the CommunitySafe tab are public by design and persist after you close the app. An automated pre-vetter blocks posts containing profanity or slurs, threats of violence, addresses below the block level, vehicle plates, phone numbers, named individuals, or descriptions that profile people by appearance. Posts that survive vetting may still be reported by other users and reviewed.</p>
         <p>Repeated rejected posts, repeated upheld reports against you, or any abuse of the moderation system itself can result in a temporary suspension or, for severe / repeated violations, a permanent ban from posting. You agree your posts are factual to the best of your knowledge and that you have the right to share them. Edits to your own posts are recorded in an append-only history so the moderation context is preserved.</p>
+        <p>By submitting a post, comment, or photo you grant CyberWave Technologies LLC a worldwide, non-exclusive, royalty-free license to host, store, reproduce, display, and distribute that content within and in connection with the Service. You retain ownership of your content. This license ends when you delete the content or your account, except for copies retained in backups or already shared by others.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">

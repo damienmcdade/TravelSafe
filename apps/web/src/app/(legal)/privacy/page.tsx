@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           <li>No demographic data — race, ethnicity, religion, age, gender, sexual orientation are not stored, displayed, or analyzed anywhere in the app.</li>
           <li>No individual identification from public data — police-incident data is aggregated to neighborhood-level only; names, addresses below the block level, plates, and photos are never surfaced.</li>
           <li>No persistent background tracking. Geolocation is requested only when you tap &quot;Use my location&quot; OR when you arm a Check-In timer / Live Share link (both opt-in). The mobile shells (iOS / Android) declare permissions for background-location, contacts, and camera so that <em>if</em> you opt into Check-In, Live Share, Trusted Contact import, or photo attachment, the OS allows it — none of these run without an explicit user action.</li>
-          <li>No data sales. The site shows Google AdSense ads to fund hosting; see the <strong>Advertising</strong> section below for what AdSense receives, what it doesn&apos;t, and how to opt out of personalised ads.</li>
+          <li>No data sales. We do not currently show ads. If advertising is ever enabled, it will be Google AdSense and disclosed here; see the <strong>Advertising</strong> section below for what AdSense would receive, what it wouldn&apos;t, and how to opt out of personalised ads.</li>
           <li>Browsing the map / safety scores / community feed does NOT require an account. Account-required features are explicitly labeled (Personal Safety, CommunitySafe posts).</li>
         </ul>
       </section>
@@ -47,6 +47,8 @@ export default function PrivacyPage() {
           <li><code className="text-xs">travelsafe.swr.v1.*</code> — cached API responses for snappy navigation (15-min TTL).</li>
           <li><code className="text-xs">travelsafe.safety.disclaimer.ack</code> — flag that you&apos;ve dismissed the Personal Safety disclaimer.</li>
           <li><code className="text-xs">travelsafe.assistant.*</code> — your AI Assistant conversation history. Kept locally so you can review past answers; the prompts themselves are transmitted to our AI provider — see <strong>AI Assistant</strong> below.</li>
+          <li><code className="text-xs">cs.age.v1</code> — stores that you confirmed you&apos;re 13 or older.</li>
+          <li><code className="text-xs">cs.consent.v1</code> — stores your cookie-consent choice.</li>
         </ul>
         <p>To clear everything: open your browser settings and delete site data for this domain, or open DevTools → Application → Local Storage → clear.</p>
       </section>
@@ -56,6 +58,7 @@ export default function PrivacyPage() {
         <p>The Personal Safety and CommunitySafe features require an account. When you register we store, in our database:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Your email address and a one-way <strong>hashed</strong> password (bcrypt — the plaintext is never written to disk and never transmitted to anyone). Optional display name.</li>
+          <li>If you enable two-factor authentication, an encrypted TOTP secret we use to verify your codes.</li>
           <li>For each Trusted Contact you add: their email and/or phone number, the relationship label you chose, and your confirmation that you have their permission to contact them.</li>
           <li>For each Check-In timer you arm: the scheduled expiry, your optional note, and the last latitude/longitude you shared to that timer.</li>
           <li>For each Live Share link you generate: the cancel token, the recipient channel (email/SMS), and the expiry.</li>
@@ -63,27 +66,38 @@ export default function PrivacyPage() {
           <li>Your CommunitySafe post bodies, comments, and reports — and an append-only edit log if you revise a post.</li>
           <li>Moderation records: post flags, suspensions, and any blocks/mutes you set.</li>
         </ul>
-        <p>You can export or delete your account directly from inside the app: go to <strong>Personal Safety → Your account &amp; data</strong>. Export downloads a single JSON file with every record we hold about you. Delete is irreversible — it wipes your account, posts, comments, check-in timers, trusted contacts, push subscriptions, and live-share links in one transaction. If you can&apos;t access your account, use the contact path in <strong>Contact</strong> below and we&apos;ll process the request within 30 days. Local browser data is not part of the server-side account and can be cleared at any time from your browser settings.</p>
+        <p>You can export or delete your account directly from inside the app: go to <strong>Personal Safety → Your account &amp; data</strong>. Export downloads a single JSON file with every record we hold about you. Deleting your account immediately disables it and signs you out everywhere, and your profile is obfuscated at once. Your account and associated records — posts, comments, check-in timers, trusted contacts, push subscriptions, and live-share links — are then permanently purged within 30 days, after which nothing is recoverable. If you can&apos;t access your account, use the contact path in <strong>Contact</strong> below and we&apos;ll process the request within 30 days. Local browser data is not part of the server-side account and can be cleared at any time from your browser settings.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What we receive when you use the app (without an account)</h2>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Standard server logs from our hosting provider (IP address, user-agent, request path, timestamp). Retained per the provider&apos;s default retention.</li>
+          <li>Standard server logs from our hosting provider (IP address, user-agent, request path, timestamp). Retained up to 30 days; see <strong>Data retention</strong> below.</li>
           <li>Anonymous rate-limiting state: a short-lived in-memory counter keyed by IP+endpoint to throttle abuse. Not persisted.</li>
         </ul>
-        <p>We do not sell, license, or share user-account data with third parties for advertising or marketing. CommunitySafe accounts, contacts, check-in timers, and posts are never transmitted to ad networks. AdSense&apos;s collection is limited to what the browser sends directly to Google when an ad slot loads (described in the <strong>Advertising</strong> section below).</p>
+        <p>We do not sell, license, or share user-account data with third parties for advertising or marketing. CommunitySafe accounts, contacts, check-in timers, and posts are never transmitted to ad networks. If advertising is ever enabled, AdSense&apos;s collection is limited to what the browser sends directly to Google when an ad slot loads (described in the <strong>Advertising</strong> section below).</p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Data retention</h2>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Account data (profile, posts, comments, contacts, timers, push subscriptions, live-share links) is kept until you delete it.</li>
+          <li>Security-audit logs are retained for 90 days.</li>
+          <li>Deleted accounts and their associated records are permanently purged within 30 days.</li>
+          <li>Server / access logs are retained up to 30 days.</li>
+          <li>AI prompts are not retained by us — only by the AI sub-processor that handled the request, under its own retention terms.</li>
+        </ul>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Advertising</h2>
-        <p>CommunitySafe displays ads served by <strong>Google AdSense</strong> (publisher <code className="text-xs">ca-pub-8731629548430880</code>) to cover hosting costs. AdSense is a Google product; its data practices are governed by{" "}
+        <p>We do not currently show ads. If advertising is ever enabled, it will be served by <strong>Google AdSense</strong> to cover hosting costs, and this section describes what that would involve. AdSense is a Google product; its data practices are governed by{" "}
           <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">Google&apos;s ad-policy disclosures</a>.</p>
-        <p>What CommunitySafe sends to AdSense:</p>
+        <p>What CommunitySafe would send to AdSense:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Nothing from our backend. Account records, contacts, timers, posts, and the personal-safety surfaces are not transmitted to AdSense.</li>
         </ul>
-        <p>What your browser sends to Google when an ad slot loads (we do not control these):</p>
+        <p>If advertising is enabled, what your browser would send to Google when an ad slot loads (we do not control these):</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>The URL of the page you&apos;re viewing (so the ad context can be matched).</li>
           <li>Your IP address, user-agent, language, and screen size.</li>
@@ -108,17 +122,20 @@ export default function PrivacyPage() {
           <li>If this changes in the future, this page will surface a working &quot;Do Not Sell or Share&quot; control before any such sale or share occurs.</li>
         </ul>
         <p>California residents can also exercise the right to limit the use of sensitive personal information; CommunitySafe does not process the categories California enumerates as sensitive (precise location is treated as personal — see Geolocation in the section above — and is only retained for the duration of an active Check-In or Live Share session you arm yourself).</p>
+        <p><strong>Notice at collection.</strong> We collect the categories of personal information listed above — account and security information, community posts, and optional push subscriptions and trusted-contact details — solely to operate the service, and for no other purpose. We do not sell or share any of it.</p>
+        <p><strong>Authorized agent.</strong> You may use an authorized agent to submit a privacy request; we may require proof of authorization.</p>
+        <p><strong>Non-discrimination.</strong> We will not deny you service, charge you a different price, or provide a different quality of service for exercising your privacy rights.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">AI Assistant</h2>
-        <p>The optional AI Assistant runs your prompts through a third-party large language model (currently Google Gemini via Google AI Studio, or another configured provider). What this means:</p>
+        <p>The optional AI Assistant runs your prompts through a third-party large language model. When you use an AI feature, your prompt is sent to one of our AI sub-processors — currently Groq (Llama models), Google (Gemini), or Anthropic (Claude, via the Vercel AI Gateway), selected automatically by availability. Each processes your prompt under its own privacy and retention terms; all are US-based. We do not retain your prompts ourselves. What this means:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>The text of your prompt — including any free text you type and the recent conversation turns — is transmitted to the AI provider over HTTPS and processed by their model.</li>
           <li>The assistant does NOT have access to your account data, your check-in timers, your contacts, or your location. It can call internal CommunitySafe tools that return aggregated city / neighborhood data (the same data the rest of the app shows).</li>
           <li>Outputs are generated by a probabilistic model and can be inaccurate. Verify any numeric claim against the source URL the assistant cites.</li>
           <li>We rate-limit the assistant to 10 requests per minute per IP to manage cost.</li>
-          <li>The provider&apos;s own data-retention policy applies to prompts in transit and at rest on their side. Review your chosen provider&apos;s privacy terms.</li>
+          <li>The selected sub-processor&apos;s own data-retention policy applies to prompts in transit and at rest on their side. We do not retain your prompts ourselves; review the privacy terms of Groq, Google, and Anthropic for how each handles them.</li>
         </ul>
         <p>If you prefer not to use AI, simply don&apos;t open the Assistant tab — nothing else in the app sends data to the AI provider.</p>
       </section>
@@ -129,14 +146,15 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Wikimedia Commons</strong> (<code className="text-xs">upload.wikimedia.org</code>) — source images for the city backdrops. Routed through our image optimizer in most cases so your IP isn&apos;t exposed.</li>
           <li><strong>CartoDB</strong> (<code className="text-xs">basemaps.cartocdn.com</code>) — basemap tiles for the crime map and safe-route view. Your IP is exposed to CartoDB for each tile request.</li>
-          <li><strong>Google AI Studio / Gemini</strong> — only when you use the AI Assistant (above). Prompts are sent server-side; your IP is not directly exposed to the provider, but the contents of your prompt are.</li>
+          <li><strong>AI sub-processors (Groq, Google Gemini, or Anthropic via the Vercel AI Gateway)</strong> — only when you use the AI Assistant (above). Prompts are sent server-side; your IP is not directly exposed to the provider, but the contents of your prompt are.</li>
         </ul>
         <p>Map routing (OpenStreetMap&apos;s OSRM) and all police open-data feeds are called from our server, not from your browser, so those services don&apos;t see your IP.</p>
+        <p><strong>Error monitoring:</strong> Sentry — when an error occurs on our production servers, Sentry receives your account ID and the request path to help us debug. It does not receive your email or IP address.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Public data sources we display</h2>
-        <p>CommunitySafe surfaces police-incident data that the cities themselves publish through their official open-data portals (SDPD, LAPD, SFPD, Chicago CPD, NYPD, Phoenix PPD, and 24 others). We do not augment, predict, or editorialize that data. The FBI national-rate comparison comes from the FBI Crime Data Explorer 2025 release at <a href="https://cde.ucr.cjis.gov/LATEST/webapp/" target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">cde.ucr.cjis.gov</a>.</p>
+        <p>CommunitySafe surfaces police-incident data that the cities themselves publish through their official open-data portals (SDPD, LAPD, SFPD, Chicago PD, NYPD, Detroit PD, and dozens of others). We do not augment, predict, or editorialize that data. The FBI national-rate comparison comes from the FBI Crime Data Explorer 2025 release at <a href="https://cde.ucr.cjis.gov/LATEST/webapp/" target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">cde.ucr.cjis.gov</a>.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
@@ -145,7 +163,7 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Access</strong> — request a copy of the personal data we hold about you.</li>
           <li><strong>Rectification</strong> — correct any inaccurate data.</li>
-          <li><strong>Erasure</strong> — delete your account and the associated records listed under &quot;When you create a CommunitySafe account&quot; above. The fastest path is the <strong>Delete my account</strong> button in Personal Safety; it runs immediately and is irreversible. Replies left by other users on your deleted posts are removed along with the parent post, since the conversation is unintelligible without it.</li>
+          <li><strong>Erasure</strong> — delete your account and the associated records listed under &quot;When you create a CommunitySafe account&quot; above. The fastest path is the <strong>Delete my account</strong> button in Personal Safety; it immediately disables your account, signs you out everywhere, and obfuscates your profile, then permanently purges your account and its records within 30 days, after which nothing is recoverable. Replies left by other users on your deleted posts are removed along with the parent post, since the conversation is unintelligible without it.</li>
           <li><strong>Portability</strong> — request a machine-readable export.</li>
           <li><strong>Withdraw consent</strong> — disable Push, delete Trusted Contacts, or cancel pending Check-Ins from within the app at any time.</li>
         </ul>

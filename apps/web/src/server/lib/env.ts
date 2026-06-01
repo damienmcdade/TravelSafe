@@ -33,7 +33,7 @@ const Env = z.object({
   // Web Push
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),
-  VAPID_SUBJECT: z.string().default("mailto:ops@travelsafe.example"),
+  VAPID_SUBJECT: z.string().default("mailto:info@cyberwaveglobal.com"),
 
   // Trusted-contact notifications
   TRUSTED_CONTACT_CHANNEL: z.enum(["email", "sms", "both"]).default("email"),
@@ -41,7 +41,7 @@ const Env = z.object({
   TWILIO_ACCOUNT_SID: z.string().optional(),
   TWILIO_AUTH_TOKEN: z.string().optional(),
   TWILIO_FROM_NUMBER: z.string().optional(),
-  NOTIFY_EMAIL_FROM: z.string().default("alerts@travelsafe.example"),
+  NOTIFY_EMAIL_FROM: z.string().default("alerts@cyberwaveglobal.com"),
   SMTP_URL: z.string().optional(),
 
   // Check-in cron (Vercel Cron runs every minute by default)

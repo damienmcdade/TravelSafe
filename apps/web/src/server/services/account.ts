@@ -1,4 +1,5 @@
 import "server-only";
+import { del } from "@vercel/blob";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/http";
 
@@ -69,6 +70,14 @@ export async function deleteAccount(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
   if (!user) throw new HttpError(404, "user_not_found");
 
+  // GDPR/CCPA erasure must also remove uploaded photos from public Blob
+  // storage — deleting the Post row alone would leave the image live at its
+  // public URL forever. Collect the URLs before the rows are gone.
+  const imaged = await prisma.post.findMany({
+    where: { authorId: userId, imageUrl: { not: null } },
+    select: { imageUrl: true },
+  });
+
   // Single transaction so a partial-failure can't leave a stranded user.
   // Order: tables with RESTRICT FKs back to User must be cleared
   // BEFORE we touch User; tables with Cascade clean themselves up.
@@ -111,6 +120,14 @@ export async function deleteAccount(userId: string) {
     // SuspensionEvent, PushSubscription, CheckInTimer, LiveShareLink.
     await tx.user.delete({ where: { id: userId } });
   }, { timeout: 30_000 });
+
+  // Best-effort blob cleanup AFTER the rows are committed. A failed delete
+  // here (missing token, object already gone) must not fail the deletion the
+  // user already confirmed.
+  const urls = imaged.map((p) => p.imageUrl).filter((u): u is string => !!u);
+  if (urls.length > 0) {
+    try { await del(urls); } catch { /* best-effort — rows are already gone */ }
+  }
 
   return { ok: true, deletedAt: new Date().toISOString() };
 }
