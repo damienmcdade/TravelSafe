@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useApi } from "@/lib/api-client";
+import { api, useApi } from "@/lib/api-client";
 import { useCity } from "@/lib/use-city";
 import { useArea, type AreaSelection } from "@/lib/use-area";
 import { SafeZoneAreaPicker } from "@/components/SafeZoneAreaPicker";
@@ -18,6 +18,12 @@ import { snapToSupported, useTimeWindow, type WindowValue } from "@/lib/use-time
 // v99 — max dispatch rows rendered to the DOM at once (the feed can return
 // thousands; the rest are reachable via Download CSV).
 const DISPATCH_RENDER_CAP = 100;
+// v104 — cap the bullets pulled for DISPLAY. The uncapped citywide trend
+// serialized ~4.5k bullets / ~740KB and was re-fetched on EVERY city / area /
+// neighborhood switch — the dominant cost of a slow transition. We render only
+// DISPATCH_RENDER_CAP and summarize the rest, so 150 comfortably covers the
+// view; the "Download CSV" action fetches the complete set on demand.
+const TREND_DISPLAY_BULLETS = 150;
 
 interface TrendBullet {
   kind: "trend" | "dispatch";
@@ -71,7 +77,7 @@ export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) 
   const HeadingTag = headingLevel === 3 ? "h3" : "h2";
   const headingClass = headingLevel === 3 ? "font-display text-xl text-slate2-900" : "font-display text-2xl text-slate2-900";
 
-  const windowSuffix = `&days=${windowDays}`;
+  const windowSuffix = `&days=${windowDays}&bullets=${TREND_DISPLAY_BULLETS}`;
   const path = area
     ? `/safezone/trend?area=${encodeURIComponent(area.slug)}&label=${encodeURIComponent(area.label)}${windowSuffix}`
     : `/safezone/trend?city=${encodeURIComponent(city.slug)}${windowSuffix}`;
@@ -106,10 +112,10 @@ export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) 
       {trend && !loading && (
         <>
           <div className={compareMode ? "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start" : "space-y-4"}>
-            <TrendReport trend={trend} sectionHeadingLevel={headingLevel} windowDays={windowDays} />
+            <TrendReport trend={trend} csvPath={path} sectionHeadingLevel={headingLevel} windowDays={windowDays} />
             {compareMode && (
               compareTrend
-                ? <TrendReport trend={compareTrend} accent="compare" sectionHeadingLevel={headingLevel} windowDays={windowDays} />
+                ? <TrendReport trend={compareTrend} csvPath={comparePath ?? path} accent="compare" sectionHeadingLevel={headingLevel} windowDays={windowDays} />
                 : compareLoading
                   ? <TrendSkeleton />
                   : (
@@ -142,7 +148,7 @@ export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) 
 /// Stateless TrendReport — renders the WoW shift bullets, time-of-day
 /// chart, and recent dispatches list for a single TrendResponse.
 /// Reused for both the primary view and the compare panel.
-function TrendReport({ trend, accent, sectionHeadingLevel = 2, windowDays = 30 }: { trend: TrendResp; accent?: "compare"; sectionHeadingLevel?: 2 | 3; windowDays?: number }) {
+function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDays = 30 }: { trend: TrendResp; csvPath: string; accent?: "compare"; sectionHeadingLevel?: 2 | 3; windowDays?: number }) {
   // When the parent panel is at h2, our subsections (Week-over-week
   // shift / Recent dispatches / When reports happen) are h3. When
   // the panel is at h3 (mounted under another h2), we bump our
@@ -203,7 +209,7 @@ function TrendReport({ trend, accent, sectionHeadingLevel = 2, windowDays = 30 }
             {dispatchBullets.length > 0 && (
               <div className="mt-2 flex justify-end">
                 <button
-                  onClick={() => downloadDispatchCsv(trend, dispatchBullets)}
+                  onClick={() => downloadDispatchCsv(csvPath, trend, dispatchBullets)}
                   className="text-xs text-bay-700 hover:underline"
                   aria-label="Download dispatches as CSV"
                 >
@@ -233,7 +239,7 @@ function TrendReport({ trend, accent, sectionHeadingLevel = 2, windowDays = 30 }
                 ))}
                 {dispatchBullets.length > DISPATCH_RENDER_CAP && (
                   <li className="text-xs text-slate2-500 pt-1">
-                    Showing the {DISPATCH_RENDER_CAP} most recent of {dispatchBullets.length.toLocaleString()} — use Download CSV for the full list.
+                    Showing the {DISPATCH_RENDER_CAP} most recent — use Download CSV for the complete list.
                   </li>
                 )}
               </ol>
@@ -342,8 +348,17 @@ function csvEscape(v: string): string {
 /// as a CSV file. The bullets carry timestamp, category, and the
 /// human-readable text — the latter already includes the offense
 /// description and block label.
-function downloadDispatchCsv(trend: TrendResp, dispatches: TrendBullet[]) {
+async function downloadDispatchCsv(csvPath: string, trend: TrendResp, loaded: TrendBullet[]) {
   if (typeof window === "undefined") return;
+  // The panel only loads ~150 bullets for display; pull the COMPLETE dispatch
+  // list on demand here (bump the bullets cap to the server max). Fall back to
+  // whatever's already loaded if the fetch fails.
+  let dispatches = loaded;
+  try {
+    const full = await api<TrendResp>(csvPath.replace(/([?&]bullets=)\d+/, "$15000"));
+    const complete = full.bullets.filter((b) => b.kind === "dispatch");
+    if (complete.length) dispatches = complete;
+  } catch { /* offline / slow — use the already-loaded subset */ }
   const header = ["timestamp", "category", "description"];
   const rows = dispatches.map((b) => [
     new Date(b.at).toISOString(),

@@ -324,9 +324,14 @@ export function useSafeZoneData(selection: SafeZoneSelection): SafeZoneDataState
   const scorePath = areaForApi
     ? `/safezone/safety-score?${areaForApi}`
     : `/safezone/safety-score?${cityForApi}`;
+  // bullets=500 — the dispatch feed renders the most-recent slice, not the
+  // full ~4.5k-bullet citywide history (which serialized ~740KB and was
+  // re-fetched on every city/area switch). 500 keeps a deep feed at ~1/9th
+  // the payload, the dominant cost of a slow transition.
+  const trendBullets = 500;
   const trendPath = areaForApi
-    ? `/safezone/trend?${areaForApi}&days=${trendDays}`
-    : `/safezone/trend?${cityForApi}&days=${trendDays}`;
+    ? `/safezone/trend?${areaForApi}&days=${trendDays}&bullets=${trendBullets}`
+    : `/safezone/trend?${cityForApi}&days=${trendDays}&bullets=${trendBullets}`;
   // Citywide: hit the new ?city= mode on /crime-data/insights. Previously
   // we passed `jurisdiction=<citySlug>` which the route treated as an
   // area slug and returned zero incidents → the trend graph went silently

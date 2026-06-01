@@ -149,7 +149,9 @@ export function TimeOfDayCard({
   citySlug?: string;
 }) {
   const { data, loading, error } = useApi<TrendResp>(
-    `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel)}`,
+    // bullets=0 — this card only needs the timeOfDay histogram, not the ~740KB
+    // dispatch list. Skipping it keeps neighborhood switches snappy.
+    `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel)}&bullets=0`,
     [areaSlug],
   );
 
