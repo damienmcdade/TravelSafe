@@ -3,7 +3,7 @@ import { wrap } from "@/server/lib/http";
 import { getNwsAlerts, type OfficialAlert } from "@/server/services/official-alerts/nws";
 import { getUsgsEarthquakes } from "@/server/services/official-alerts/usgs";
 import { getAmberAlerts } from "@/server/services/official-alerts/amber";
-import { getChpIncidents } from "@/server/services/official-alerts/chp";
+import { getStateTraffic, trafficAgencyForState } from "@/server/services/official-alerts/state-traffic";
 import { OFFICIAL_ALERTS_CITY_META } from "@/server/services/official-alerts/city-meta";
 
 export const dynamic = "force-dynamic";
@@ -22,18 +22,23 @@ export const GET = wrap(async (req: Request) => {
 
   // v95p19 — AMBER alerts join NWS + USGS. AMBER is filtered by the
   // user's state (not city) because abductions move across cities.
-  const [nws, usgs, amber, chp] = await Promise.all([
+  // Road conditions: each state routes to its own highway-patrol / DOT feed
+  // (California → CHP, and a per-state ArcGIS registry for the rest). Returns
+  // [] for states without a free public feed. roadAgency names the source even
+  // when there are zero active incidents, so the card can show a populated
+  // "no active incidents" state rather than going blank.
+  const roadAgency = trafficAgencyForState(city?.state ?? null);
+  const [nws, usgs, amber, traffic] = await Promise.all([
     getNwsAlerts(city?.state ?? null, city?.label ?? null),
     getUsgsEarthquakes(city?.centroid ?? null),
     getAmberAlerts(city?.state ?? null),
-    // CHP is California-only; the adapter no-ops for non-CA cities.
-    getChpIncidents(city?.state ?? null, city?.centroid ?? null),
+    getStateTraffic(city?.state ?? null, city?.centroid ?? null),
   ]);
 
   // Newest first. AMBER alerts are issued with severity "Extreme" by
   // default; we boost them to the top of the list (regardless of the
   // chronological sort) so they are not buried under routine weather.
-  const merged: OfficialAlert[] = [...nws, ...usgs, ...amber, ...chp].sort(
+  const merged: OfficialAlert[] = [...nws, ...usgs, ...amber, ...traffic].sort(
     (a, b) => +new Date(b.effective) - +new Date(a.effective),
   );
   const amberFirst: OfficialAlert[] = merged.sort((a, b) => {
@@ -50,17 +55,21 @@ export const GET = wrap(async (req: Request) => {
   if (amber.length > 0) sourceLabels.push("AMBER Alerts");
   if (nws.length > 0) sourceLabels.push("National Weather Service");
   if (usgs.length > 0) sourceLabels.push("USGS Earthquakes");
-  if (chp.length > 0) sourceLabels.push("CHP Traffic");
+  if (traffic.length > 0 && roadAgency) sourceLabels.push(roadAgency);
   if (sourceLabels.length === 0) sourceLabels.push("National Weather Service", "USGS Earthquakes", "AMBER Alerts");
 
   return NextResponse.json({
     sources: sourceLabels,
     alerts,
+    // null when the city's state has no free public traffic feed yet — the
+    // panel shows an honest "not available" note instead of a blank card.
+    roadAgency,
     disclaimer:
       "Aggregated from the National Weather Service (active weather alerts), " +
       "USGS Earthquakes (M2.5+ within 300km, past 72h), active AMBER Alerts " +
-      "(Child Abduction Emergencies) for the user's state, and California " +
-      "Highway Patrol traffic incidents (collisions and road closures near " +
-      "the city, California only). Independent of CommunitySafe community posts.",
+      "(Child Abduction Emergencies) for the user's state, and the state's " +
+      "highway-patrol / DOT traffic feed (collisions, closures, and road " +
+      "conditions near the city, where a public feed is available). " +
+      "Independent of CommunitySafe community posts.",
   });
 });

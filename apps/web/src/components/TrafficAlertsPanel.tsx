@@ -13,7 +13,7 @@ interface OfficialAlert {
   expires: string | null;
   url: string;
 }
-interface Resp { sources: string[]; alerts: OfficialAlert[]; disclaimer: string }
+interface Resp { sources: string[]; alerts: OfficialAlert[]; roadAgency: string | null; disclaimer: string }
 
 const SEVERITY_CLASS: Record<OfficialAlert["severity"], string> = {
   Extreme:  "bg-dusk-500/15 text-dusk-700",
@@ -23,44 +23,69 @@ const SEVERITY_CLASS: Record<OfficialAlert["severity"], string> = {
   Unknown:  "bg-sand-100 text-slate2-700",
 };
 
-/// CHP traffic surface — collisions and road closures near the user's
-/// city, sourced from the California Highway Patrol CAD feed via the
-/// shared /official-alerts route. Like the AMBER banner this renders
-/// NOTHING when there are no active CHP incidents (the common case, and
-/// the entire case for the 28 non-California cities), so it never adds
-/// an empty card. Styled calm — traffic is awareness, not emergency —
-/// to stay on the right side of the project's anti-fear posture.
+/// Road conditions surface. Each city routes to its own state highway-patrol /
+/// DOT feed (California → CHP, and a per-state ArcGIS registry for the rest,
+/// see server/services/official-alerts/state-traffic.ts). `roadAgency` from the
+/// API names the source even when there are zero active incidents, so the card
+/// shows a calm populated "no active incidents" state instead of going blank.
+/// For states without a free public feed we show one honest line rather than
+/// hide the feature. Styled calm — traffic is awareness, not emergency — to
+/// stay on the right side of the project's anti-fear posture.
 export function TrafficAlertsPanel() {
   const { city } = useCity();
   const { data } = useApi<Resp>(`/official-alerts?city=${encodeURIComponent(city.slug)}`, [city.slug]);
-  const incidents = (data?.alerts ?? []).filter((a) => a.source === "CHP Traffic");
-  if (incidents.length === 0) return null;
+
+  // Wait for the first response so we don't flash the wrong state.
+  if (!data) return null;
+
+  const agency = data.roadAgency ?? null;
+  const incidents = (data.alerts ?? []).filter((a) => a.category === "traffic");
 
   return (
     <section className="surface p-5" data-testid="traffic-alerts-panel">
       <header className="flex items-baseline justify-between gap-3 flex-wrap">
         <h2 className="font-display text-lg text-slate2-900">Road conditions</h2>
-        <span className="text-xs text-slate2-500">California Highway Patrol</span>
+        {agency && <span className="text-xs text-slate2-500">{agency}</span>}
       </header>
-      <p className="mt-1 text-xs text-slate2-500">
-        Active CHP collisions and road closures near {city.label}. From the official
-        CHP computer-aided-dispatch feed — independent of CommunitySafe community posts.
-      </p>
-      <ul className="mt-4 space-y-3">
-        {incidents.map((a) => (
-          <li key={a.id} className="surface-muted p-3">
-            <div className="flex items-center justify-between gap-3">
-              <a href={a.url} target="_blank" rel="noreferrer" className="text-slate2-900 text-sm font-medium hover:underline">
-                {a.headline}
-              </a>
-              <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${SEVERITY_CLASS[a.severity]}`}>{a.severity}</span>
-            </div>
-            <div className="text-xs text-slate2-500 mt-1">
-              reported {new Date(a.effective).toLocaleString()}
-            </div>
-          </li>
-        ))}
-      </ul>
+
+      {agency ? (
+        <>
+          <p className="mt-1 text-xs text-slate2-500">
+            Active collisions, closures, and road conditions near {city.label}, from the official
+            {" "}{agency} traffic feed — independent of CommunitySafe community posts.
+          </p>
+          {incidents.length === 0 ? (
+            <p className="mt-4 surface-muted p-3 text-sm text-sage-700">
+              No active road incidents reported by {agency} near {city.label} right now.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {incidents.map((a) => (
+                <li key={a.id} className="surface-muted p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <a href={a.url} target="_blank" rel="noreferrer" className="text-slate2-900 text-sm font-medium hover:underline">
+                      {a.headline}
+                    </a>
+                    <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${SEVERITY_CLASS[a.severity]}`}>{a.severity}</span>
+                  </div>
+                  {a.description && a.description !== a.headline && (
+                    <p className="text-xs text-slate2-600 mt-1">{a.description}</p>
+                  )}
+                  <div className="text-xs text-slate2-500 mt-1">
+                    reported {new Date(a.effective).toLocaleString()}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      ) : (
+        <p className="mt-1 text-xs text-slate2-500">
+          {city.label}&apos;s state highway patrol doesn&apos;t publish a free public road-conditions feed yet,
+          so live traffic incidents aren&apos;t available here. Weather, earthquake, and AMBER alerts for
+          {" "}{city.label} still appear in the official-alerts surfaces above.
+        </p>
+      )}
     </section>
   );
 }
