@@ -265,11 +265,21 @@ const BOOT_TIME = new Date().toISOString();
 // only reported ok:true. Exposing heap used / heap total lets an
 // external uptime monitor watch the trajectory and page ops before
 // the next OOM rather than after.
-const healthHandler = (_req: import("express").Request, res: import("express").Response) => {
+const healthHandler = (req: import("express").Request, res: import("express").Response) => {
+  // fix(audit pentest-health-1 + pentest-brand-health-leak): the unauthenticated
+  // probe used to expose internal heap/cache/compute telemetry + the legacy
+  // brand to anyone. Keep the public probe minimal (Railway's healthcheck only
+  // needs a 200); expose the detailed ops telemetry only to a caller holding the
+  // operator secret so monitors that want heap trajectory can still get it.
+  const authed = !!env.CRON_SECRET && req.header("authorization") === `Bearer ${env.CRON_SECRET}`;
+  if (!authed) {
+    res.json({ ok: true, service: "communitysafe-api", time: new Date().toISOString() });
+    return;
+  }
   const mem = process.memoryUsage();
   res.json({
     ok: true,
-    service: "travelsafe-api",
+    service: "communitysafe-api",
     // v100 — prismaMajor lets us confirm which client generation is actually
     // running in production (the Prisma 7 cutover). 7 = adapter-pg + generated
     // ./src/generated/prisma client; 6 = legacy @prisma/client.

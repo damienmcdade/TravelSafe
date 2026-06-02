@@ -23,7 +23,9 @@ export const GET = wrap(async (req: NextRequest) => {
   return NextResponse.json(data, {
     headers: {
       "Cache-Control": "no-store",
-      "Content-Disposition": `attachment; filename="travelsafe-account-${session.uid}.json"`,
+      // fix(audit legal-export-filename-brand-1): user-facing download should
+      // carry the public brand, not the legacy repo name.
+      "Content-Disposition": `attachment; filename="communitysafe-account-${session.uid}.json"`,
     },
   });
 });

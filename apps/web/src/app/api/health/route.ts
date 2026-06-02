@@ -28,7 +28,9 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: httpStatus === 200,
-      service: "travelsafe-web",
+      // fix(audit pentest-brand-health-leak): operator-facing identifiers should
+      // match the public brand (CommunitySafe), not the legacy repo name.
+      service: "communitysafe-web",
       // Vercel injects VERCEL_GIT_COMMIT_SHA at build time so monitors
       // can correlate a failing health check back to a specific commit.
       // Falls back to null in local / non-Vercel environments.
