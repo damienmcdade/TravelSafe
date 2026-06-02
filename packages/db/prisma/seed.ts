@@ -2,8 +2,15 @@ import { PrismaClient, AreaKind, CrimeCategory, PostKind, PostStatus } from "../
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
+// fix(audit db-ssl-1): force verify-full whenever ANY sslmode is present (the
+// old regex no-op'd on sslmode=disable / no sslmode).
+function pinSslVerifyFull(url: string): string {
+  if (!url) return url;
+  return /sslmode=/i.test(url) ? url.replace(/sslmode=[^&\s]*/i, "sslmode=verify-full") : url;
+}
+
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: (process.env.DATABASE_URL ?? "").replace(/sslmode=(?:require|prefer|verify-ca)/i, "sslmode=verify-full") }),
+  adapter: new PrismaPg({ connectionString: pinSslVerifyFull(process.env.DATABASE_URL ?? "") }),
 });
 
 const SD_NEIGHBORHOODS = [

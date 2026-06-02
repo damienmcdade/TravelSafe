@@ -1,7 +1,15 @@
 import { PrismaClient, Prisma } from "../generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const adapter = new PrismaPg({ connectionString: (process.env.DATABASE_URL ?? "").replace(/sslmode=(?:require|prefer|verify-ca)/i, "sslmode=verify-full") });
+// fix(audit db-ssl-1): force verify-full whenever ANY sslmode is present (the
+// old regex no-op'd on sslmode=disable / no sslmode, failing the SSL guarantee
+// open). A DSN with no sslmode is left as-is for local/no-SSL dev.
+function pinSslVerifyFull(url: string): string {
+  if (!url) return url;
+  return /sslmode=/i.test(url) ? url.replace(/sslmode=[^&\s]*/i, "sslmode=verify-full") : url;
+}
+
+const adapter = new PrismaPg({ connectionString: pinSslVerifyFull(process.env.DATABASE_URL ?? "") });
 
 declare global {
 
