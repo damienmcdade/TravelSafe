@@ -83,7 +83,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function me(userId: string) {
-  return prisma.user.findUniqueOrThrow({
+  const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       id: true,
@@ -92,6 +92,20 @@ export async function me(userId: string) {
       suspendedUntil: true,
       permanentlyBanned: true,
       alertPreference: true,
+      deletedAt: true,
     },
   });
+  // v106 — return a clean 401 instead of a raw findUniqueOrThrow 500 when the
+  // account is gone (hard delete) or soft-deleted (row present, deletedAt set).
+  // Covers the brief per-instance session-revocation cache window so a
+  // just-deleted user neither 500s nor sees their own profile back.
+  if (!user || user.deletedAt) throw new HttpError(401, "session_revoked");
+  return {
+    id: user.id,
+    email: user.email,
+    displayName: user.displayName,
+    suspendedUntil: user.suspendedUntil,
+    permanentlyBanned: user.permanentlyBanned,
+    alertPreference: user.alertPreference,
+  };
 }
