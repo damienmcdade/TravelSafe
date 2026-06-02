@@ -29,6 +29,9 @@ export function TrustedContactsManager({ embedded = false }: Props) {
   const [label, setLabel] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  // fix(audit loc-consent-bypass-1): explicit permission attestation before a
+  // contact (who will receive safety/SOS notifications) can be added.
+  const [permission, setPermission] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -42,13 +45,17 @@ export function TrustedContactsManager({ embedded = false }: Props) {
       setError("Add an email or a phone — at least one is required.");
       return;
     }
+    if (!permission) {
+      setError("Please confirm you have this person's permission to add them.");
+      return;
+    }
     setBusy(true);
     try {
       await api("/contacts", {
         method: "POST",
-        body: JSON.stringify({ label, email: email || null, phone: phone || null }),
+        body: JSON.stringify({ label, email: email || null, phone: phone || null, permissionAcknowledged: permission }),
       });
-      setLabel(""); setEmail(""); setPhone("");
+      setLabel(""); setEmail(""); setPhone(""); setPermission(false);
       await reload();
     } catch (err) {
       setError((err as Error).message);
@@ -148,8 +155,22 @@ export function TrustedContactsManager({ embedded = false }: Props) {
             className="w-full px-3 py-2 surface text-sm"
           />
         </div>
+        <label className="sm:col-span-3 flex items-start gap-2 text-xs text-slate2-600">
+          <input
+            id="tc-permission"
+            type="checkbox"
+            disabled={atLimit || busy}
+            checked={permission}
+            onChange={(e) => setPermission(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            I confirm this person has agreed to be my trusted contact and to receive
+            check-in, Live Share, and SOS notifications from me.
+          </span>
+        </label>
         <button
-          type="submit" disabled={atLimit || busy}
+          type="submit" disabled={atLimit || busy || !permission}
           className="sm:col-span-3 btn-secondary text-sm disabled:opacity-50"
         >
           {busy ? "Sending…" : atLimit ? "Limit reached (5)" : "Add contact (send confirmation)"}

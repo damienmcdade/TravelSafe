@@ -57,6 +57,8 @@ export async function getNwsAlerts(state: string | null, cityLabel: string | nul
         Accept: "application/geo+json",
         "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
       },
+      // fix(audit alerts-no-fetch-timeout-2): bound the upstream call; fall back to cache.
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return hit?.alerts ?? [];
     const json = (await res.json()) as { features?: NwsFeature[] };

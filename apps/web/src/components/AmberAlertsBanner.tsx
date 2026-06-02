@@ -32,7 +32,14 @@ interface Resp { sources: string[]; alerts: OfficialAlert[]; disclaimer: string 
 /// in the header re-runs the fetch.
 export function AmberAlertsBanner() {
   const { city } = useCity();
-  const { data } = useApi<Resp>(`/official-alerts?city=${encodeURIComponent(city.slug)}`, [city.slug]);
+  // fix(audit alerts-amber-latency-1): poll every 90s (vs the default 15-min
+  // refresh) and don't serve a stale-cached banner, so a child-abduction alert
+  // surfaces promptly. Pairs with the 60s server cache TTL on the AMBER feed.
+  const { data } = useApi<Resp>(
+    `/official-alerts?city=${encodeURIComponent(city.slug)}`,
+    [city.slug],
+    { refreshIntervalMs: 90_000, staleWhileRevalidateMs: false },
+  );
   const ambers = (data?.alerts ?? []).filter((a) => a.source === "AMBER Alert");
   if (ambers.length === 0) return null;
 

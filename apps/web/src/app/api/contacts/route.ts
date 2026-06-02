@@ -8,6 +8,13 @@ const NewContact = z.object({
   label: z.string().min(1).max(40),
   email: z.string().email().optional().nullable(),
   phone: z.string().min(7).max(20).optional().nullable(),
+  // fix(audit loc-consent-bypass-1): the Vercel route (the one the client calls)
+  // did not require the adder to attest they have the contact's permission, while
+  // the unused Express route did. A trusted contact receives safety/SOS
+  // notifications, so explicit acknowledgement is required server-side.
+  permissionAcknowledged: z
+    .boolean()
+    .refine((v) => v === true, "You must confirm you have this person's permission to add them."),
 });
 
 export const GET = wrap(async (req: NextRequest) => {

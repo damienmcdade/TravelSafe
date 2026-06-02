@@ -13,7 +13,11 @@
 
 import type { OfficialAlert } from "./nws";
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+// fix(audit alerts-amber-latency-1): AMBER alerts are child-abduction
+// emergencies where minutes matter; a 5-minute server cache plus a slow client
+// poll could delay surfacing by 15-20 min. Drop to 60s (NWS's own active-alert
+// feed updates roughly that often and the per-state key keeps request volume low).
+const CACHE_TTL_MS = 60 * 1000;
 const cache = new Map<string, { fetchedAt: number; alerts: OfficialAlert[] }>();
 
 interface NwsFeature {
@@ -49,6 +53,9 @@ export async function getAmberAlerts(state: string | null): Promise<OfficialAler
         Accept: "application/geo+json",
         "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
       },
+      // fix(audit alerts-no-fetch-timeout-2): bound the upstream call so a hung
+      // NWS connection can't pin a serverless invocation; fall back to cache.
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return hit?.alerts ?? [];
     const json = (await res.json()) as { features?: NwsFeature[] };
