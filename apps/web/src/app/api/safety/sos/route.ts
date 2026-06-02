@@ -3,10 +3,11 @@ import { z } from "zod";
 import { wrap } from "@/server/lib/http";
 import { requireSession } from "@/server/lib/auth";
 import { triggerSos } from "@/server/services/safety/sos";
+import { latitude, longitude } from "@/server/lib/coords";
 
 const Body = z.object({
-  lat: z.number().optional(),
-  lng: z.number().optional(),
+  lat: latitude.optional(),
+  lng: longitude.optional(),
   message: z.string().max(200).optional(),
   durationMinutes: z.number().int().min(5).max(240).optional(),
 });

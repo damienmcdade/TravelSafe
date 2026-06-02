@@ -4,6 +4,7 @@ import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import { lookupLocation } from "@/server/services/geo/lookup";
 import { nearestArea } from "@/server/services/crime-data/neighborhoods";
+import { parseCoordPair } from "@/server/lib/coords";
 
 export const dynamic = "force-dynamic";
 
@@ -28,11 +29,13 @@ export const GET = wrap(async (req: NextRequest) => {
   const latStr = sp.get("lat");
   const lngStr = sp.get("lng");
   if (latStr != null && lngStr != null) {
-    const lat = Number(latStr);
-    const lng = Number(lngStr);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-      throw new HttpError(400, "invalid_coordinates", "lat and lng must be valid numbers");
+    // fix(audit loc-coords-2): range-validate, not just finite-check, so an
+    // out-of-range pair can't snap to a bogus nearest area.
+    const pair = parseCoordPair(latStr, lngStr);
+    if (!pair) {
+      throw new HttpError(400, "invalid_coordinates", "lat must be -90..90 and lng -180..180");
     }
+    const { lat, lng } = pair;
     const area = nearestArea({ lat, lng });
     if (!area) return NextResponse.json({ error: "no_match" }, { status: 404 });
     return NextResponse.json({
