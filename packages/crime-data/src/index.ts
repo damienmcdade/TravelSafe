@@ -38,6 +38,12 @@ export {
 export type { CityFbiBaseline } from "./fbi-baselines.js";
 export { CITY_FBI_BASELINES } from "./fbi-baselines.js";
 
+// fix(audit legal-accuracy-1): expose the FBI national benchmark so the
+// canonical methodology page renders the SAME numbers the scoring engine
+// uses, instead of a hand-typed copy that drifted (page said 364/1,896 while
+// the engine compared against 328/1,548).
+export { FBI_NATIONAL_PER_100K_2025, FBI_NATIONAL_SOURCE } from "./safety-score.js";
+
 // Cities + neighborhoods registry.
 export type { CityEntry } from "./cities.js";
 export {

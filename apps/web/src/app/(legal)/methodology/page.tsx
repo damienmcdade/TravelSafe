@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { FBI_NATIONAL_PER_100K_2025 } from "@travelsafe/crime-data";
+import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
@@ -37,8 +39,9 @@ export default function MethodologyPage() {
             We pull the raw records via the same public API the city itself documents.
           </li>
           <li>
-            <strong className="text-slate2-900">FBI Crime Data Explorer 2025.</strong> The benchmark we
-            compare per-100,000 rates against — Violent (Persons): 364, Property: 1,896.
+            <strong className="text-slate2-900">{FBI_DATA_LABEL}.</strong> The benchmark we
+            compare per-100,000 rates against — Violent (Persons): {FBI_NATIONAL_PER_100K_2025.PERSONS.toLocaleString()},
+            Property: {FBI_NATIONAL_PER_100K_2025.PROPERTY.toLocaleString()}.
             Source:{" "}
             <a
               href="https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend"

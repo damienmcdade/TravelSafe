@@ -55,11 +55,16 @@ export async function createLiveShare(
   if (contactRaw) {
     const c = classifyContact(contactRaw);
     const url = buildShareUrl(token);
+    // fix(audit safety-liveshare-no-location-3): the recipient page does NOT
+    // stream live coordinates yet (it confirms an active session), so the
+    // notification must not promise "live location". Copy matches the honest
+    // share-page wording until coordinate streaming ships.
     const msg =
-      `CommunitySafe: your contact is sharing their live location with you ` +
-      `until ${expiresAt.toLocaleString()}. ` +
-      `Open ${url} — the link stops working at expiry, or sooner if revoked.`;
-    const subject = "CommunitySafe — your contact is sharing their location";
+      `CommunitySafe: your contact has started a Live Share safety session with you, ` +
+      `active until ${expiresAt.toLocaleString()}. ` +
+      `Open ${url} to view the session — the link stops working at expiry, or sooner if revoked. ` +
+      `In an emergency, contact local authorities directly.`;
+    const subject = "CommunitySafe — your contact started a Live Share session";
     if (c.kind === "email") {
       const r = await sendEmail(c.value, subject, msg);
       delivery = { kind: "email", sent: r.ok, reason: r.reason };

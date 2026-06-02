@@ -53,7 +53,10 @@ export async function triggerSos(
     `A CommunitySafe contact just triggered an SOS and asked to alert you right now.\n\n` +
     (note ? `Their message: "${note}"\n\n` : "") +
     (mapUrl ? `Location when they sent it: ${mapUrl}\n` : "") +
-    `Live location link (active until ${share.expiresAt.toLocaleString()}): ${share.shareUrl}\n\n` +
+    // fix(audit safety-liveshare-no-location-3): the SOS map pin above is a real
+    // one-time location; the share link is a Live Share *session* link (it does
+    // not continuously stream coordinates yet), so don't label it "live location".
+    `Live Share session link (active until ${share.expiresAt.toLocaleString()}): ${share.shareUrl}\n\n` +
     `If you can't reach them and believe they are in danger, call 911.\n` +
     `This is an automated message sent at their request.`;
 
