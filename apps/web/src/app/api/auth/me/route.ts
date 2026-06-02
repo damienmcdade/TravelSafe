@@ -4,6 +4,6 @@ import { requireSession } from "@/server/lib/auth";
 import { me } from "@/server/services/auth";
 
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   return NextResponse.json(await me(session.uid));
 });

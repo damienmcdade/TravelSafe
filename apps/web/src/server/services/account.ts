@@ -2,6 +2,7 @@ import "server-only";
 import { del } from "@vercel/blob";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/http";
+import { invalidateSessionRevocation } from "../lib/auth";
 
 // GDPR / CCPA fulfilment for CommunitySafe accounts. Two operations:
 //
@@ -120,6 +121,10 @@ export async function deleteAccount(userId: string) {
     // SuspensionEvent, PushSubscription, CheckInTimer, LiveShareLink.
     await tx.user.delete({ where: { id: userId } });
   }, { timeout: 30_000 });
+
+  // v106 — drop cached revocation state so the just-deleted account's token is
+  // rejected on its very next request (not after the 60s TTL).
+  invalidateSessionRevocation(userId);
 
   // Best-effort blob cleanup AFTER the rows are committed. A failed delete
   // here (missing token, object already gone) must not fail the deletion the

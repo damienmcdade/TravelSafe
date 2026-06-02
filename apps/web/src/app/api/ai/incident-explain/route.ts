@@ -22,7 +22,7 @@ export const maxDuration = 15;
 // When unset, fall through to the in-process LRU implementation that
 // shipped before the Railway migration.
 export const GET = wrap(async (req: NextRequest) => {
-  requireSession(req);
+  await requireSession(req);
   const { desc } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
 
   if (env.API_BASE_URL) {

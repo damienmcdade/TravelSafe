@@ -17,7 +17,7 @@ export const maxDuration = 30;
 // sessions qualify; the per-IP middleware cap (5/min on /api/ai/*)
 // still applies on top.
 export const GET = wrap(async (req: NextRequest) => {
-  requireSession(req);
+  await requireSession(req);
 
   // v38: prefer Railway when API_BASE_URL is set so the brief cache
   // survives Vercel cold starts (Redis-backed on Railway). Local

@@ -12,7 +12,7 @@ const Body = z.object({
 });
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const result = await triggerSos(session.uid, Body.parse(await req.json().catch(() => ({}))));
   return NextResponse.json(result, { status: 201 });
 });

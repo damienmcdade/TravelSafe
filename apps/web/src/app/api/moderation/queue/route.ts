@@ -6,7 +6,7 @@ import { listPendingPosts } from "@/server/services/moderation/queue";
 
 export const dynamic = "force-dynamic";
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   requireModerator(session, env.MODERATOR_EMAILS);
   return NextResponse.json(await listPendingPosts());
 });

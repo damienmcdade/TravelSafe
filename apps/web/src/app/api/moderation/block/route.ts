@@ -5,7 +5,7 @@ import { requireSession } from "@/server/lib/auth";
 import { prisma } from "@/server/lib/prisma";
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { userId } = z.object({ userId: z.string() }).parse(await req.json());
   if (userId === session.uid) throw new HttpError(400, "cannot_block_self");
   await prisma.userBlock.upsert({

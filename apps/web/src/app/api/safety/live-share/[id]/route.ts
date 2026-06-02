@@ -4,7 +4,7 @@ import { requireSession } from "@/server/lib/auth";
 import { revokeLiveShare } from "@/server/services/safety/live-share";
 
 export const DELETE = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { id } = await params;
   return NextResponse.json(await revokeLiveShare(session.uid, id));
 });

@@ -12,7 +12,7 @@ export const runtime = "nodejs";
 // single JSON document. Forces a download via Content-Disposition so
 // browsers save the file rather than rendering it inline.
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const data = await exportAccount(session.uid);
   writeSecurityAudit({
     event: "account.export",

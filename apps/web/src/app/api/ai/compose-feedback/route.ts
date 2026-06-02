@@ -21,7 +21,7 @@ export const maxDuration = 30;
 // streaming Response (not NextResponse) and can't go through wrap().
 export async function POST(req: NextRequest) {
   try {
-    requireSession(req);
+    await requireSession(req);
   } catch (err) {
     return errorResponse(err);
   }

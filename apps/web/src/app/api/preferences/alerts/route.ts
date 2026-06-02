@@ -13,13 +13,13 @@ const Body = z.object({
 });
 
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const pref = await prisma.alertPreference.findUnique({ where: { userId: session.uid } });
   return NextResponse.json(pref ?? { categories: [], pushMinRiskLevel: 3, notificationFrequency: "DIGEST_DAILY", notificationDailyCap: 3 });
 });
 
 export const PUT = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const data = Body.parse(await req.json());
   const pref = await prisma.alertPreference.upsert({
     where: { userId: session.uid },

@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma";
+import { invalidateSessionRevocation } from "../../lib/auth";
 import { SuspensionKind, PostStatus } from "@/generated/prisma/client";
 
 // Balanced suspension ladder (confirmed with user):
@@ -43,6 +44,9 @@ export async function evaluateSuspension(userId: string) {
           until,
         },
       });
+      // v106 — a permanent ban must take effect on the next request, not after
+      // the session-revocation cache TTL.
+      if (rule.kind === SuspensionKind.PERMANENT) invalidateSessionRevocation(userId);
       return { applied: true, rule: rule.label };
     }
   }

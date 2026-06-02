@@ -5,6 +5,6 @@ import { listActive } from "@/server/services/safety/check-in";
 
 export const dynamic = "force-dynamic";
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   return NextResponse.json(await listActive(session.uid));
 });

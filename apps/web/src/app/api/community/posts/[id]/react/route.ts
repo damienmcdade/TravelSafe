@@ -6,7 +6,7 @@ import { requireSession } from "@/server/lib/auth";
 import { prisma } from "@/server/lib/prisma";
 
 export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { id } = await params;
   const kind = z.nativeEnum(ReactionKind).parse((await req.json())?.kind);
   await prisma.postReaction.upsert({

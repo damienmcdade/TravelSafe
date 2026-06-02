@@ -9,9 +9,17 @@ import { preVetPost } from "@/server/services/moderation/post-prevet";
 const Body = z.object({ body: z.string().min(2).max(500) });
 
 export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { id } = await params;
   const { body } = Body.parse(await req.json());
+  // v106 (security audit) — verify the parent post exists AND is VERIFIED
+  // before attaching a comment. Previously a comment could be created against a
+  // PENDING / removed / hidden post (the FK only guarantees the row exists, not
+  // that it's publicly visible), letting users comment on non-visible content.
+  const post = await prisma.post.findUnique({ where: { id }, select: { status: true } });
+  if (!post || post.status !== PostStatus.VERIFIED) {
+    return NextResponse.json({ error: "post_not_found" }, { status: 404 });
+  }
   const vet = preVetPost(body);
   if (vet.block) return NextResponse.json({ error: "comment_rejected", guidance: vet.inlineGuidance }, { status: 422 });
   const comment = await prisma.postComment.create({

@@ -13,7 +13,7 @@ const Body = z.object({
 });
 
 export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   requireModerator(session, env.MODERATOR_EMAILS);
   const { id } = await params;
   const body = Body.parse(await req.json());

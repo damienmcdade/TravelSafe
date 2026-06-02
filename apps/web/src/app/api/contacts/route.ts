@@ -11,12 +11,12 @@ const NewContact = z.object({
 });
 
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   return NextResponse.json(await listContacts(session.uid));
 });
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const input = NewContact.parse(await req.json());
   return NextResponse.json(await addContact(session.uid, input), { status: 201 });
 });

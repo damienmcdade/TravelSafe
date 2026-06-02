@@ -77,7 +77,7 @@ export const GET = wrap(async (req: NextRequest) => {
 });
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = optionalSession(req);
+  const session = await optionalSession(req);
   let authorId: string;
   if (session) {
     if (await isSuspended(session.uid)) throw new HttpError(403, "user_suspended");

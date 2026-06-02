@@ -23,7 +23,7 @@ const Body = z.object({
 // user's own email and the literal string "DELETE" as a confirmation
 // gate.
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { confirmEmail } = Body.parse(await req.json());
   if (confirmEmail.toLowerCase() !== session.email.toLowerCase()) {
     return NextResponse.json(

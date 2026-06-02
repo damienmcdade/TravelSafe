@@ -12,12 +12,12 @@ const CreateBody = z.object({
 });
 
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   return NextResponse.json({ places: await listSavedPlaces(session.uid) });
 });
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const place = await createSavedPlace(session.uid, CreateBody.parse(await req.json()));
   return NextResponse.json(place, { status: 201 });
 });

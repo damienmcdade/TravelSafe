@@ -20,11 +20,11 @@ const Body = z.object({
 export const dynamic = "force-dynamic";
 
 export const GET = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   return NextResponse.json(await listLiveShares(session.uid));
 });
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   return NextResponse.json(await createLiveShare(session.uid, Body.parse(await req.json())), { status: 201 });
 });

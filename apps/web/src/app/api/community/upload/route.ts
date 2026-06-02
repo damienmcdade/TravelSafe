@@ -14,7 +14,7 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export const POST = wrap(async (req: NextRequest) => {
-  requireSession(req);
+  await requireSession(req);
   if (!env.BLOB_READ_WRITE_TOKEN) {
     return NextResponse.json(
       { error: "uploads_not_configured", message: "Photo uploads are not enabled on this deployment." },

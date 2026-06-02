@@ -11,13 +11,13 @@ const PatchBody = z.object({
 });
 
 export const PATCH = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { id } = await params;
   return NextResponse.json(await updateSavedPlace(session.uid, id, PatchBody.parse(await req.json())));
 });
 
 export const DELETE = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { id } = await params;
   return NextResponse.json(await deleteSavedPlace(session.uid, id));
 });

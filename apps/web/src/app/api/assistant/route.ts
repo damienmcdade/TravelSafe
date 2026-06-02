@@ -21,7 +21,7 @@ export const maxDuration = 60;
 // the per-IP middleware cap (10/min) still applies on top.
 export async function POST(req: NextRequest): Promise<Response> {
   try {
-    requireSession(req);
+    await requireSession(req);
     const { messages } = Body.parse(await req.json());
     const r = await streamAssistant(messages);
     if (!r.configured) {

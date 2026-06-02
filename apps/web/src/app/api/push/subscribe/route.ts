@@ -42,18 +42,30 @@ const SubBody = z.object({
 });
 
 export const POST = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const sub = SubBody.parse(await req.json());
+  // v106 (security audit) — the upsert previously set `userId: session.uid` in
+  // BOTH create and update, so any authenticated caller who submitted an
+  // endpoint that already existed reassigned it to themselves (mass-assignment
+  // on the unique key). Reject a cross-account endpoint and never reassign
+  // ownership on update; the browser mints a fresh endpoint on re-subscribe.
+  const existing = await prisma.pushSubscription.findUnique({
+    where: { endpoint: sub.endpoint },
+    select: { userId: true },
+  });
+  if (existing && existing.userId !== session.uid) {
+    return NextResponse.json({ ok: false, error: "endpoint_in_use" }, { status: 409 });
+  }
   await prisma.pushSubscription.upsert({
     where: { endpoint: sub.endpoint },
     create: { userId: session.uid, endpoint: sub.endpoint, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
-    update: { userId: session.uid, p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+    update: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
   });
   return NextResponse.json({ ok: true });
 });
 
 export const DELETE = wrap(async (req: NextRequest) => {
-  const session = requireSession(req);
+  const session = await requireSession(req);
   const { endpoint } = z.object({ endpoint: z.string().url() }).parse(await req.json());
   await prisma.pushSubscription.deleteMany({ where: { endpoint, userId: session.uid } });
   return NextResponse.json({ ok: true });
