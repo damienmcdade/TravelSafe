@@ -56,7 +56,13 @@ export interface CoverageResponse {
 /// their cold-pulls (200k-row Socrata / 146k-row ArcGIS scans) and
 /// degrading to "warming-up" on the public dashboard. 55s leaves
 /// 5s of headroom under Vercel's 60s function budget.
-const PER_CITY_TIMEOUT_MS = 55_000;
+// v106 — was 55_000, which (× the slowest cold adapter, e.g. Atlanta ~45s)
+// pushed the all-44-city coverage aggregate to ~59s against the route's 60s
+// ceiling — one hiccup from a 504 that breaks the cache refresh. A coverage
+// HEALTH check shouldn't block on a slow cold load: cap at 10s and let the
+// LKG → static-baseline fallbacks below supply the count (health stays "live"
+// off the baseline). Brings the cold aggregate from ~59s toward ~10s.
+const PER_CITY_TIMEOUT_MS = 10_000;
 
 /// Module-level last-known-good cache. Survives across requests on
 /// a warm Lambda; on cold start the map is empty. Used as a fallback

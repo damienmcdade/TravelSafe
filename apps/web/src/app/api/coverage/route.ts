@@ -3,7 +3,10 @@ import { wrap } from "@/server/lib/http";
 import { getCoverage } from "@/server/services/coverage/status";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// v106 — 60 → 120. The all-city coverage aggregate sat at ~59s cold (right at
+// the old ceiling → 504 risk). Per-city timeout is now 10s so this rarely
+// matters, but the headroom removes the failure mode entirely.
+export const maxDuration = 120;
 
 // v95p45 — bumped from s-maxage=300 to 1800 (30 min) so the warmed
 // dashboard stays hot across page refreshes during a typical browsing
