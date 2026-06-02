@@ -43,6 +43,16 @@ const HEAVY_CITIES = [
   "los-angeles",  // two-dataset merge
   "new-york",     // dense per-area fan-out
   "chicago",      // bounded by 180d in a8bb33c but still wide
+  // v106 — Atlanta (246 areas, ~60k-row ArcGIS paginated load ~45s cold) was
+  // on the light path, so its 5-min cache lapsed faster than the late light
+  // batch could re-warm it → the next user hit a 45s cold load that lost the
+  // race against SCORE_TIMEOUT_MS (45s) and 503'd ("warming up"). The grade
+  // QA sweep caught this: 15 Atlanta areas + citywide 502/503'd cold, all 200
+  // once warm. Promote to the heavy bucket so it warms first each cycle. The
+  // v96p2 OOM that trimmed this list is obsolete — LRU cold-cache eviction +
+  // the compute gate + the raised heap ceiling (heap ~120MB vs 1700MB
+  // high-water) leave ample headroom for one more warm resident.
+  "atlanta",      // 246 areas, slow ArcGIS cold load
 ];
 
 // v96 — per-city deadline. Without this, a single hung adapter (one

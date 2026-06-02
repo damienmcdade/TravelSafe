@@ -1491,7 +1491,16 @@ export async function getSafetyScore(areaSlug: string, areaLabel: string): Promi
   //      curated entry AND no polygon is available.
   const curatedPop = knownNeighborhoodPopulation(city.slug, areaSlug);
   if (curatedPop) {
-    popDenominator = curatedPop.population;
+    // v106 — density floor for near-empty curated areas. A few curated entries
+    // are non-residential by nature (parks/civic/industrial: pgh-chateau=5,
+    // dc-national-mall=17, sf-golden-gate-park=58, nola-desire-dev=30
+    // residents), so dividing real incident counts by them yielded absurd
+    // per-capita rates (pgh-chateau 1,399,624/100k = 1094× baseline). Floor the
+    // denominator at 10% of the city's per-neighborhood average (peerSharePop):
+    // only areas below ~10% of the average — i.e. effectively non-residential —
+    // are affected; they still grade high (D/E) on incident density, but the
+    // displayed rate is no longer nonsensical. Mirrors the Tier-2/3 floor.
+    popDenominator = Math.max(curatedPop.population, Math.round(peerSharePop * 0.10));
     const localPersonsRate = popDenominator > 0 ? (persons * 365 / Math.max(1, windowDays) / popDenominator) * 100_000 * cfsScalePersonsArea : 0;
     const localPropertyRate = popDenominator > 0 ? (property * 365 / Math.max(1, windowDays) / popDenominator) * 100_000 * cfsScalePropertyArea : 0;
     personsScale = cityPersons100k > 0 ? localPersonsRate / cityPersons100k : 0;
