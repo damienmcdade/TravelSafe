@@ -42,13 +42,27 @@ async function computeCitywideUpticks(citySlug: string): Promise<UpticksResponse
   const city = cityBySlug(citySlug);
   if (!city) throw new Error(`city_not_supported: ${citySlug}`);
   const now = Date.now();
-  const recentCutoff = new Date(now - 7 * DAY);
-  const priorCutoff = new Date(now - 14 * DAY);
 
   const areas = await city.discover().catch(() => []);
   const incidentsPerArea = await Promise.all(
     areas.map((a) => crimeData.getIncidents(a.slug, { limit: 5000 }).catch(() => [])),
   );
+
+  // fix(audit cd-upticks-now-anchor): anchor the recent/prior windows on the
+  // freshest published incident, not wall-clock `now`. City feeds lag 7–30 days,
+  // so a `now - 7d` "recent" window sat entirely after the newest record and the
+  // uptick detector found nothing for almost every city (the Awareness tile never
+  // fired). Mirror the trend-feed / safety-score data-latest anchor.
+  let maxT = 0;
+  for (const arr of incidentsPerArea) {
+    for (const inc of arr) {
+      const t = +new Date(inc.occurredAt);
+      if (Number.isFinite(t) && t <= now && t > maxT) maxT = t;
+    }
+  }
+  const anchorMs = maxT > 0 ? maxT : now;
+  const recentCutoff = new Date(anchorMs - 7 * DAY);
+  const priorCutoff = new Date(anchorMs - 14 * DAY);
 
   const entries: UptickEntry[] = [];
   for (let i = 0; i < areas.length; i++) {

@@ -198,8 +198,13 @@ async function computeCitywideTrend(citySlug: string, opts?: { windowDays?: numb
   }
   inWindow.sort((x, y) => +new Date(y.occurredAt) - +new Date(x.occurredAt));
 
-  const recentWeek = new Date(now - 7 * DAY);
-  const priorWeek = new Date(now - 14 * DAY);
+  // fix(audit cd-trend-wow-now-anchor): anchor the week-over-week sub-buckets on
+  // the freshest available row (anchorMs), not wall-clock `now`. City feeds lag
+  // 7–30 days, so `now - 7d` fell entirely AFTER the newest published incident
+  // and every lagged-feed city bucketed nothing → WoW always read 0. The
+  // in-window cutoff above already uses anchorMs; the sub-buckets must too.
+  const recentWeek = new Date(anchorMs - 7 * DAY);
+  const priorWeek = new Date(anchorMs - 14 * DAY);
   const bucketed = {
     recent: { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 },
     prior:  { PERSONS: 0, PROPERTY: 0, SOCIETY: 0 },
