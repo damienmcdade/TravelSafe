@@ -51,6 +51,14 @@ const WINDOW_MS = 60_000;
 // are PUBLIC routes that hammer upstream police APIs. Now in LIMITS.
 const LIMITS: Array<{ prefix: string; cap: number }> = [
   { prefix: "/api/auth/anonymous", cap: 5 },   // unbounded User row creation
+  // v106 (security audit) — login/register were SKIPPED on the theory they had
+  // "their own per-IP authLimiter", but that limiter lives only on the Express
+  // API; the Vercel web deployment serves these Next routes with NO throttle,
+  // leaving password brute-force / credential-stuffing / account-creation spam
+  // unbounded. Longest-prefix match means these only cap login/register — the
+  // high-frequency /api/auth/me session check and /anonymous stay as-is.
+  { prefix: "/api/auth/login",     cap: 10 },  // brute-force / credential-stuffing guard
+  { prefix: "/api/auth/register",  cap: 6 },   // account-creation spam guard
   // v47 bump 5 → 40. The original cap of 5/min was set before the
   // Redis cache landed on Railway (v16, v38). Now ~90% of /api/ai/
   // calls are cache hits with no LLM cost — the cap was throttling
@@ -89,7 +97,10 @@ const LIMITS: Array<{ prefix: string; cap: number }> = [
 //
 // SKIP_PREFIXES = [
 //   "/api/cron/",       // CRON_SECRET-gated
-//   "/api/auth/",       // already has its own per-IP authLimiter
+//   "/api/auth/me",     // session-check; high-frequency, low-risk (read-only)
+//   // NOTE: /api/auth/login + /register + /anonymous ARE rate-limited above —
+//   // the old "has its own per-IP authLimiter" claim was Express-only and did
+//   // not cover this Vercel web surface (v106 security audit).
 //   "/api/account/",    // authenticated, already per-user
 //   "/api/diag/",       // CRON_SECRET-gated diagnostics
 //   "/api/preferences/",// authenticated
