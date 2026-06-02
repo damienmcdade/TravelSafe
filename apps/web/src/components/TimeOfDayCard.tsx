@@ -157,9 +157,13 @@ export function TimeOfDayCard({
   citySlug?: string;
 }) {
   const { data, loading, error } = useApi<TrendResp>(
-    // bullets=0 — this card only needs the timeOfDay histogram, not the ~740KB
-    // dispatch list. Skipping it keeps neighborhood switches snappy.
-    `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel)}&bullets=0`,
+    // fix(audit ui-tod-1): the 24-hour histogram is built from per-dispatch
+    // timestamps, but the card previously requested bullets=0 — so data.bullets
+    // was always empty and every neighborhood showed a flat/"no incidents" card.
+    // Request a bounded dispatch list. The ~760 KB concern is the CITYWIDE feed
+    // (~5000 bullets); a single neighborhood's window is far smaller, so this
+    // stays light while giving the histogram real data to bucket.
+    `/safezone/trend?area=${encodeURIComponent(areaSlug)}&label=${encodeURIComponent(areaLabel)}&bullets=1000`,
     [areaSlug],
   );
 
