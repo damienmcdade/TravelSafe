@@ -649,6 +649,15 @@ function CheckInPanel() {
               label="Notify if I don't check in:"
             />
           </div>
+          {/* fix(audit safety-checkin-zero-contacts-6): arming a check-in with no
+              confirmed contacts notifies NOBODY when it expires — a dangerous
+              silent failure for a safety feature. The API allows it (personal
+              reminder), but the consequence must be unmissable before arming. */}
+          {contacts.filter((c) => c.status === "CONFIRMED").length === 0 && (
+            <p className="sm:col-span-3 surface bg-amber2-50 border border-amber2-200 p-3 text-xs text-amber2-700" role="alert">
+              ⚠ You have no confirmed trusted contacts, so if this timer expires <strong>no one will be notified</strong>. Add and confirm a contact below to be alerted on your behalf — until then this is only a personal reminder.
+            </p>
+          )}
           <button
             onClick={arm}
             disabled={busy || (!sendToAll && selectedIds.size === 0 && contacts.some((c) => c.status === "CONFIRMED"))}

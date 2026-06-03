@@ -218,16 +218,23 @@ function PostCard({ post }: { post: PostListItem }) {
   // be reacting AND reporting simultaneously.
   const [busy, setBusy] = useState<"HELPFUL" | "CONFIRMED" | "CONCERNED" | "REPORT" | null>(null);
   const [confirmed, setConfirmed] = useState<"HELPFUL" | "CONFIRMED" | "CONCERNED" | "REPORT" | null>(null);
+  // fix(audit ui-community-react-report-no-catch): react/report had try/finally
+  // with NO catch, so a failed API call silently reset the button to idle and the
+  // user couldn't tell their reaction/report didn't land. Surface the failure.
+  const [error, setError] = useState<string | null>(null);
 
   async function report() {
     if (busy) return;
     setBusy("REPORT");
+    setError(null);
     try {
       await api(`/moderation/posts/${post.id}/report`, { method: "POST", body: JSON.stringify({}) });
       // The button itself flips to "Reported ✓" via setConfirmed below
       // — no need for a native alert(), which steals focus on iOS and
       // shows the bare hostname as a confidence-killing last impression.
       setConfirmed("REPORT");
+    } catch (err) {
+      setError(`Couldn't submit your report — ${(err as Error).message}. Try again.`);
     } finally {
       setBusy(null);
     }
@@ -235,9 +242,12 @@ function PostCard({ post }: { post: PostListItem }) {
   async function react(kind: "HELPFUL" | "CONFIRMED" | "CONCERNED") {
     if (busy) return;
     setBusy(kind);
+    setError(null);
     try {
       await api(`/community/posts/${post.id}/react`, { method: "POST", body: JSON.stringify({ kind }) });
       setConfirmed(kind);
+    } catch (err) {
+      setError(`Couldn't save your reaction — ${(err as Error).message}. Try again.`);
     } finally {
       setBusy(null);
     }
@@ -282,6 +292,7 @@ function PostCard({ post }: { post: PostListItem }) {
           {busy === "REPORT" ? "Reporting…" : confirmed === "REPORT" ? "Reported ✓" : "Report this post"}
         </button>
       </footer>
+      {error && <p role="alert" className="mt-2 text-xs text-dusk-700">{error}</p>}
     </article>
   );
 }
