@@ -241,11 +241,28 @@ export async function getDiscoveredAreasDC(): Promise<KnownArea[]> {
     .filter(([, e]) => e.count >= 3)
     .map(([name, e]) => ({
       slug: `dc-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
+      label: prettifyDCLabel(name),
       jurisdiction: "Washington",
       centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// fix(audit coverage-dc-label-formatting): MPD composite labels render the
+// segment after a '/' in lowercase ('Logan Circle/shaw', 'U St/pleasant',
+// 'Sw/waterfront') and a couple of acronyms mis-cased ('Gwu'). Capitalize the
+// letter after each '/' and uppercase known acronyms. This is CASE-ONLY — it
+// changes no letters — so slugs (slugify lowercases) and normName map-matching
+// (case-insensitive) are unaffected, keeping saved areas + curated populations
+// stable. (Word EXPANSIONS like Sw->Southwest / St->Street would change slugs and
+// need the official MPD field values; left as-is.)
+const DC_ACRONYMS = new Set(["GWU", "SW", "NW", "NE", "SE"]);
+function prettifyDCLabel(s: string): string {
+  const cased = s.replace(/\/\s*([a-z])/g, (_, c: string) => "/" + c.toUpperCase());
+  return cased
+    .split(/(\s|\/)/)
+    .map((tok) => (DC_ACRONYMS.has(tok.toUpperCase()) ? tok.toUpperCase() : tok))
+    .join("");
 }
 
 function labelForDCSlug(slug: string, rows: Incident[]): string | null {
@@ -253,7 +270,7 @@ function labelForDCSlug(slug: string, rows: Incident[]): string | null {
   const want = s.startsWith("dc-") ? s.slice(3) : s;
   for (const r of rows) {
     const candidate = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (candidate === want) return r.area;
+    if (candidate === want) return prettifyDCLabel(r.area);
   }
   return null;
 }
