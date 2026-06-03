@@ -52,8 +52,24 @@ const PROVENANCE: DataProvenance = {
     "CommunitySafe does not track individuals.",
 };
 
+// fix(audit coverage-seattle-titlecase-1): SPD prints ALL-CAPS neighborhood
+// names with '/' separators and directional/acronym tokens. The old titleCase
+// only capitalized after whitespace, so '/'-joined and acronym names rendered
+// as 'Brighton/dunlap', 'Slu/cascade', 'Fauntleroy Sw'. Now split on whitespace
+// AND '/', preserve the delimiters, and uppercase known acronyms.
+//   SLU = South Lake Union; SW/NW/NE/SE = Seattle directional quadrants.
+const SEATTLE_ACRONYMS = new Set(["SW", "NW", "NE", "SE", "SLU"]);
 function titleCase(s: string): string {
-  return s.toLowerCase().split(/\s+/).map((w) => w ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+  return s
+    .toLowerCase()
+    .split(/(\s|\/)/) // keep the delimiters so '/' and spaces are preserved
+    .map((tok) => {
+      if (tok === "" || tok === " " || tok === "/") return tok;
+      const up = tok.toUpperCase();
+      if (SEATTLE_ACRONYMS.has(up)) return up;
+      return tok[0].toUpperCase() + tok.slice(1);
+    })
+    .join("");
 }
 
 async function fetchSeattle(): Promise<Incident[]> {
