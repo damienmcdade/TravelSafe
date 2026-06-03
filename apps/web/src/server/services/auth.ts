@@ -1,8 +1,73 @@
+import crypto from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { signSession, signMfaPendingToken, verifyMfaPendingToken } from "../lib/jwt";
 import { env } from "../lib/env";
 import { HttpError } from "../lib/http";
+
+// fix(audit pentest-authn-6): password reset. requestPasswordReset emails a
+// single-use, 1-hour link; resetPassword consumes it. The token is random;
+// only its SHA-256 hash is stored, so a DB leak can't be used to reset accounts.
+function hashResetToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  const normEmail = normalizeEmail(email);
+  const user = await prisma.user.findUnique({
+    where: { email: normEmail },
+    select: { id: true, email: true, deletedAt: true },
+  });
+  // No account enumeration: behave identically whether or not the email exists.
+  if (!user || user.deletedAt) return;
+  const token = crypto.randomBytes(32).toString("base64url");
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordResetTokenHash: hashResetToken(token),
+      passwordResetExpiry: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+    },
+  });
+  const base = (env.LIVE_SHARE_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const url = `${base}/reset-password?token=${token}`;
+  const { sendEmail } = await import("./notifications/email");
+  await sendEmail(
+    user.email,
+    "CommunitySafe — reset your password",
+    `Someone requested a password reset for your CommunitySafe account.\n\n` +
+      `Reset it here (valid for 1 hour, single use): ${url}\n\n` +
+      `If you didn't request this, ignore this email — your password is unchanged.`,
+  );
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<void> {
+  if (!token || newPassword.length < 12) {
+    throw new HttpError(400, "password_too_short", "Password must be at least 12 characters.");
+  }
+  const user = await prisma.user.findFirst({
+    where: { passwordResetTokenHash: hashResetToken(token) },
+    select: { id: true, passwordResetExpiry: true },
+  });
+  if (!user || !user.passwordResetExpiry || user.passwordResetExpiry < new Date()) {
+    throw new HttpError(400, "invalid_or_expired_token", "This reset link is invalid or has expired.");
+  }
+  const passwordHash = await bcrypt.hash(newPassword, env.BCRYPT_ROUNDS);
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash,
+      tokenVersion: { increment: 1 }, // revoke every existing session
+      passwordResetTokenHash: null,
+      passwordResetExpiry: null,
+      // Resetting the password also clears any brute-force lockout (so the lockout
+      // can't be weaponized into account-DoS — pentest-authn-6).
+      failedAttempts: 0,
+      lockedUntil: null,
+    },
+  });
+  const { invalidateSessionRevocation } = await import("../lib/auth");
+  invalidateSessionRevocation(user.id);
+}
 
 // Postgres treats `User.email @unique` as case-sensitive by default,
 // so `bob@x.com` and `Bob@x.com` would both be insertable as

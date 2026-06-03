@@ -118,6 +118,12 @@ model User {
   mfaEnabled        Boolean   @default(false)
   mfaSecret         String?
 
+  // fix(audit pentest-authn-6): password-reset flow. We store the SHA-256 HASH
+  // of the emailed reset token (never the raw token) plus its expiry, so a DB
+  // leak can't be used to reset accounts. Cleared on use or expiry.
+  passwordResetTokenHash String?
+  passwordResetExpiry    DateTime?
+
   // Trusted-contributor system. Derived from verified-post count + low
   // rejection rate, and promotable by a moderator. The badge surfaces
   // next to the author name in community feeds so readers can weigh

@@ -104,6 +104,9 @@ export default function LoginPage() {
           <button type="submit" disabled={busy} className="btn-primary w-full disabled:opacity-50">
             {busy ? "Signing in…" : "Sign in"}
           </button>
+          <p className="text-sm text-slate2-500">
+            <Link className="underline hover:text-bay-700 transition-colors" href="/forgot-password">Forgot your password?</Link>
+          </p>
         </form>
       )}
       <p className="mt-4 text-sm text-slate2-500">

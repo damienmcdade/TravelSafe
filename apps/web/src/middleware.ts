@@ -99,6 +99,10 @@ const LIMITS: Array<{ prefix: string; cap: number }> = [
   // high-frequency /api/auth/me session check and /anonymous stay as-is.
   { prefix: "/api/auth/login",     cap: 10 },  // brute-force / credential-stuffing guard
   { prefix: "/api/auth/register",  cap: 6 },   // account-creation spam guard
+  // fix(audit pentest-authn-6): cap forgot-password (reset-email spam) and
+  // reset-password (single-use-token brute-force).
+  { prefix: "/api/auth/forgot-password", cap: 5 },
+  { prefix: "/api/auth/reset-password",  cap: 10 },
   // v47 bump 5 → 40. The original cap of 5/min was set before the
   // Redis cache landed on Railway (v16, v38). Now ~90% of /api/ai/
   // calls are cache hits with no LLM cost — the cap was throttling
