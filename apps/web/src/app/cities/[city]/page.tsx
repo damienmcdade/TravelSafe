@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CITIES, cityBySlug } from "@/server/services/crime-data/cities";
+import { cityBySlug } from "@/server/services/crime-data/cities";
 import { getCitywideSafetyScore } from "@/server/services/watch/safety-score";
 import { CityCompare } from "@/components/CityCompare";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
@@ -10,20 +10,17 @@ interface Props {
   params: Promise<{ city: string }>;
 }
 
-// v63 hotfix — excluded slow-cold-cache cities from static generation.
-// Cleveland's bounded-concurrency adapter fetch (added in v63 after the
-// 30-parallel rate-limit fix) takes ~5min cold, which blows Vercel's
-// 60s static-generation timeout — three retries all failed and the
-// whole production build errored on /cities/cleveland. These cities
-// render on-demand via ISR (revalidate=300, in line with the API
-// route Cache-Control) so the first user pays the cold-fetch wait
-// but every subsequent hit serves from edge cache.
-const DYNAMIC_ONLY_CITIES = new Set(["cleveland"]);
-export function generateStaticParams() {
-  return CITIES.filter((c) => !DYNAMIC_ONLY_CITIES.has(c.slug))
-    .map((c) => ({ city: c.slug }));
-}
-
+// fix(deploy build logs): no generateStaticParams — city pages are rendered
+// on-demand (first request) and cached via `revalidate` (ISR) below, NOT
+// pre-rendered at build. Build-time static generation forced every city's
+// adapter to fetch live police feeds (multi-MB) during `next build`, which
+// (a) timed out cities (lapd/sf/chicago/seattle/vb …) and (b) blew Next's
+// 2 MB Data-Cache per-entry limit — the recurring "Failed to set fetch cache
+// URL … TimeoutError" + "QUOTA_EXCEEDED_ERR: 22" build-log spam. Earlier the
+// build also excluded Cleveland for the same reason (its cold fetch is ~5min);
+// on-demand rendering makes that special-case unnecessary. SEO is preserved
+// (crawlers get fully server-rendered HTML); the first visitor per city per
+// 5-min window pays the cold render, every subsequent hit serves from edge cache.
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { city: slug } = await params;
   const city = cityBySlug(slug);
@@ -45,15 +42,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // 5 min matches the underlying adapter cache TTL so users see fresh
 // data the moment it lands without waiting an hour.
 export const revalidate = 300;
-
-// fix(deploy build logs): crime-data adapters return large datasets (citywide
-// pulls are multi-MB). During static generation Next tried to persist each
-// adapter fetch into its Data Cache (2 MB per-entry limit), producing build-log
-// spam: "Failed to set fetch cache URL … TimeoutError" + "QUOTA_EXCEEDED_ERR: 22".
-// The adapters already keep their own 5-minute in-memory cache, so Next's fetch
-// cache is redundant here. Opt the segment out; page freshness still governed by
-// `revalidate` (ISR) above.
-export const fetchCache = "force-no-store";
 
 export default async function CityLandingPage({ params }: Props) {
   const { city: slug } = await params;
