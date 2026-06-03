@@ -121,18 +121,37 @@ export async function getRowsAtlanta(): Promise<Incident[]> {
 }
 
 function buildAtlantaAreas(rows: Incident[]): KnownArea[] {
-  const counts = new Map<string, number>();
+  // fix(audit coverage-atlanta-centroid-1): compute each area's centroid from
+  // its incidents' real coords instead of stamping every area with the single
+  // city centroid (which collapsed all neighborhoods onto one point and broke
+  // nearest-area geolocation snapping). Mirrors the per-area-centroid approach
+  // used for Indianapolis/Raleigh/Tucson. Incidents whose coords fell back to
+  // ATLANTA_CENTROID (missing/0 in the feed) are excluded from the average so
+  // they can't drag every area toward downtown.
+  const agg = new Map<string, { count: number; latSum: number; lngSum: number; coordN: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
-    counts.set(r.area, (counts.get(r.area) ?? 0) + 1);
+    const a = agg.get(r.area) ?? { count: 0, latSum: 0, lngSum: 0, coordN: 0 };
+    a.count += 1;
+    if (
+      typeof r.lat === "number" && typeof r.lng === "number" &&
+      !(r.lat === ATLANTA_CENTROID.lat && r.lng === ATLANTA_CENTROID.lng)
+    ) {
+      a.latSum += r.lat;
+      a.lngSum += r.lng;
+      a.coordN += 1;
+    }
+    agg.set(r.area, a);
   }
-  return Array.from(counts.entries())
-    .filter(([, n]) => n >= 1)
-    .map(([name]) => ({
+  return Array.from(agg.entries())
+    .filter(([, a]) => a.count >= 1)
+    .map(([name, a]) => ({
       slug: `atl-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
       label: name,
       jurisdiction: "Atlanta",
-      centroid: ATLANTA_CENTROID,
+      centroid: a.coordN > 0
+        ? { lat: a.latSum / a.coordN, lng: a.lngSum / a.coordN }
+        : ATLANTA_CENTROID,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }

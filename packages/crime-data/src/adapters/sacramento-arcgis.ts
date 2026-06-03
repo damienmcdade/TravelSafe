@@ -238,8 +238,14 @@ async function fetchSacramento(): Promise<Incident[]> {
         ibrOffenseDescription: (r.Description ?? r.Offense_Category ?? "Unknown").trim(),
         beat: r.Beat ?? r.Police_District ?? null,
         blockLabel: undefined,
-        lat: SACRAMENTO_CENTROID.lat,
-        lng: SACRAMENTO_CENTROID.lng,
+        // fix(audit map-sacramento-single-centroid): Sacramento's feed is
+        // coordless (it publishes a Neighborhood_Association name, no lat/lng).
+        // Stamping every incident with the downtown city centroid stacked all
+        // crime-map dots on one point — a misleading artifact. Leave coords
+        // undefined so the map renders no per-incident dots for this city; the
+        // area-level rollups (which use the area centroid) are unaffected.
+        lat: undefined,
+        lng: undefined,
       };
     });
 }
