@@ -26,6 +26,10 @@ interface Props {
 
 export function TrustedContactsManager({ embedded = false }: Props) {
   const { data, reload } = useApi<Contact[]>("/contacts");
+  // fix(audit safety-sms-unconfigured-2): when SMS isn't configured, phone-only
+  // contacts are never alerted — surface that honestly.
+  const { data: caps } = useApi<{ sms: boolean }>("/config/capabilities");
+  const smsConfigured = caps?.sms !== false; // default optimistic until loaded
   const [label, setLabel] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -110,6 +114,15 @@ export function TrustedContactsManager({ embedded = false }: Props) {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* fix(audit safety-sms-unconfigured-2): honest warning when SMS delivery
+          isn't configured — phone-only contacts can't be alerted. */}
+      {!smsConfigured && (
+        <p role="status" className="mt-3 rounded-md bg-amber2-100 px-3 py-2 text-xs text-amber2-800">
+          SMS alerts aren&apos;t enabled on this deployment. Contacts with only a phone
+          number won&apos;t be notified — add an email address so they can be reached.
+        </p>
       )}
 
       {/* v96 — added visible label elements via htmlFor (sr-only so the
