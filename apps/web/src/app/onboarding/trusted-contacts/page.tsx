@@ -20,7 +20,7 @@ export default function TrustedContactsPage() {
       </section>
 
       <div className="mt-8">
-        <Link href="/threats" className="text-slate2-700 underline">Skip and continue →</Link>
+        <Link href="/city" className="text-slate2-700 underline">Skip and continue →</Link>
       </div>
     </main>
   );

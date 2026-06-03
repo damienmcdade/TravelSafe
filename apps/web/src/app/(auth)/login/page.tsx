@@ -34,7 +34,7 @@ export default function LoginPage() {
         return;
       }
       setToken(r.token);
-      router.push("/threats");
+      router.push("/city");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -52,7 +52,7 @@ export default function LoginPage() {
         body: JSON.stringify({ mfaPendingToken, code }),
       });
       setToken(r.token);
-      router.push("/threats");
+      router.push("/city");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -113,7 +113,7 @@ export default function LoginPage() {
         New to CommunitySafe? You don&apos;t need an account to browse —
         every device gets an anonymous session automatically. Sign-in
         is only needed if you previously created an account.{" "}
-        <Link className="underline hover:text-bay-700 transition-colors" href="/threats">
+        <Link className="underline hover:text-bay-700 transition-colors" href="/city">
           Skip to the app
         </Link>
         .

@@ -175,10 +175,10 @@ export default async function CityLandingPage({ params }: Props) {
       <section className="surface-muted p-4 text-sm text-slate2-700 space-y-2">
         <h2 className="font-display text-base text-slate2-900">Jump into the live app</h2>
         <p>
-          <Link href="/threats" className="text-bay-700 hover:underline">Awareness</Link> ·{" "}
+          <Link href="/city" className="text-bay-700 hover:underline">Awareness</Link> ·{" "}
           <Link href="/map" className="text-bay-700 hover:underline">Crime Map</Link> ·{" "}
-          <Link href="/safety-score" className="text-bay-700 hover:underline">Safety Index</Link> ·{" "}
-          <Link href="/trends" className="text-bay-700 hover:underline">Trend Feed</Link> ·{" "}
+          <Link href="/city" className="text-bay-700 hover:underline">Safety Index</Link> ·{" "}
+          <Link href="/city" className="text-bay-700 hover:underline">Trend Feed</Link> ·{" "}
           <Link href="/watch" className="text-bay-700 hover:underline">Neighborhood Watch</Link>
         </p>
       </section>

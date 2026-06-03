@@ -152,14 +152,14 @@ export default function CoveragePage() {
 
                   <div className="mt-4 flex flex-wrap gap-2 text-xs">
                     <Link
-                      href="/threats"
+                      href="/city"
                       onClick={() => setCity(c.slug)}
                       className="text-bay-700 hover:underline"
                     >
                       Open Awareness for {c.label} →
                     </Link>
                     <Link
-                      href="/safety-score"
+                      href="/city"
                       onClick={() => setCity(c.slug)}
                       className="text-bay-700 hover:underline"
                     >

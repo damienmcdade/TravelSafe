@@ -28,7 +28,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
           <button onClick={() => reset()} className="btn-primary text-sm px-4 py-1.5">
             Retry
           </button>
-          <a href="/threats" className="btn-secondary text-sm px-4 py-1.5">
+          <a href="/city" className="btn-secondary text-sm px-4 py-1.5">
             Back to Awareness
           </a>
         </div>
