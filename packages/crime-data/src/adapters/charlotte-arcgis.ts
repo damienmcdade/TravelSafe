@@ -76,7 +76,11 @@ const PROVENANCE: DataProvenance = {
   source: "Charlotte-Mecklenburg Police Department CMPD Incidents (City of Charlotte Open Data, ArcGIS MapServer)",
   datasetUrl: "https://data.charlottenc.gov/datasets/CharlotteNC::cmpd-incidents",
   recency: "Refreshed daily by CMPD",
-  granularity: "neighborhood",
+  // fix(audit coverage-clt-divisions): the areas are CMPD's 14 patrol DIVISIONS
+  // (each ~10-20 sq mi), not neighborhoods — label the grain as "beat" (police
+  // patrol area) so the at-a-glance provenance doesn't overstate the resolution.
+  // The disclaimer below spells out the division grain.
+  granularity: "beat",
   disclaimer:
     "Incidents are reported by the Charlotte-Mecklenburg Police Department and " +
     "aggregated to CMPD's 14 patrol divisions (each ~10-20 sq mi). CMPD does not " +

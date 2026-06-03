@@ -179,7 +179,10 @@ const PROVENANCE: DataProvenance = {
   source: "Austin Police Crime Reports (City of Austin Open Data, Socrata)",
   datasetUrl: "https://data.austintexas.gov/Public-Safety/Crime-Reports/fdj4-gpfu",
   recency: "Refreshed routinely by APD; rolling ~365-day window",
-  granularity: "neighborhood",
+  // fix(audit cov-austin-sectors-2): areas are APD's 10 patrol SECTORS (the
+  // finest grain Austin's feed exposes), not neighborhoods — label as "beat".
+  // Sector labels already carry a "(Sector X)" suffix for transparency.
+  granularity: "beat",
   disclaimer:
     "Incidents are reported by the Austin Police Department and aggregated to " +
     "one of APD's named patrol sectors (Adam, Baker, Charlie…), the finest " +
