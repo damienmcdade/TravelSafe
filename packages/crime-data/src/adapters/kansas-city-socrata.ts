@@ -5,7 +5,31 @@ import { registerRowCache } from "../cache-registry.js";
 import { bucketByBands, deriveBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
-import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
+import { kansasCityPolygons as rawKansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
+
+// fix(audit cov-kc-name-typos): the bundled KC polygons are auto-generated from
+// a crowd-sourced source (blackmad/neighborhoods) that carries spelling errors,
+// surfaced verbatim as user-facing area labels. Each correction below was
+// verified against the City of Kansas City's OFFICIAL neighborhood registry
+// (data.kcmo.org "Population by Neighborhood", dataset 7nq4-imiw — 240
+// registered neighborhoods). Applied at import so both geocode and discovery
+// emit the corrected name and a future data-file regeneration is re-corrected.
+const KC_NAME_CORRECTIONS: Record<string, string> = {
+  "Indipendence Plaza": "Independence Plaza",
+  "Faireway Hills": "Fairway Hills",
+  "Northest Industrial District": "Northeast Industrial District",
+  "East Sqope Highlands": "East Swope Highlands",
+  "Norble And Gregory Ridge": "Noble And Gregory Ridge",
+  "Washington Weatley": "Washington Wheatley",
+  "Bannister Ares": "Bannister Acres",
+  "Bleheim Square-Research Hospital": "Blenheim Square Research Hospital",
+  "South India Mound": "South Indian Mound",
+  "North India Mound": "North Indian Mound",
+};
+const kansasCityPolygons = rawKansasCityPolygons.map((p) => ({
+  ...p,
+  name: KC_NAME_CORRECTIONS[p.name] ?? p.name,
+}));
 
 // Kansas City MO — KCPD Crime Data, current + prior year.
 // KCPD publishes one Socrata dataset per calendar year (data.kcmo.org).
