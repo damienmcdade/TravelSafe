@@ -39,9 +39,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, "..");
 const GEO_DIR = path.join(REPO_ROOT, "apps/web/public/geo");
+// fix(deploy/coverage): the generated population table was migrated to the
+// @travelsafe/crime-data package in v35 (apps/web + apps/api both re-export it
+// from there), but this tool still wrote to the dead apps/web-local path — so
+// re-runs silently never updated the live data, which is why the committed
+// table went stale (LA 23/Boston 12/Philly 21 slugs, Norfolk 0, Phoenix
+// 41 ZIP-orphans). Point it at the authoritative package file.
 const OUTPUT_PATH = path.join(
   REPO_ROOT,
-  "apps/web/src/server/services/crime-data/neighborhood-populations-generated.ts",
+  "packages/crime-data/src/neighborhood-populations-generated.ts",
 );
 
 // Census Reporter resolves "latest" to whichever 5-year release it has.
