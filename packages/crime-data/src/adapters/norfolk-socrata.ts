@@ -4,6 +4,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { bucketByBands, deriveBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
+import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
 
 // Norfolk VA — Norfolk Police Incident Reports on data.norfolk.gov
 // (Socrata dataset r7bn-2egr). Replaces Tucson in the supported-city
@@ -109,10 +110,20 @@ function safeIso(raw: string | null | undefined): string | null {
   return d.toISOString();
 }
 
-// Norfolk centroid (lat 36.85, lng -76.28). Used as a per-area
-// placeholder until/unless we add real polygon geocoding for the
-// city's Civic League neighborhoods.
+// Norfolk centroid (lat 36.85, lng -76.28). Citywide fallback only.
 const NORFOLK_CENTROID = { lat: 36.85, lng: -76.28 };
+
+// fix(audit cov-norfolk-centroid-collapse): Norfolk's feed publishes a Civic
+// League NAME per incident but no coordinates, so every area used to collapse
+// onto NORFOLK_CENTROID — breaking "use my location" → nearest area and stacking
+// every map dot on one point. Resolve each area to the REAL centroid of its
+// boundary polygon (apps/web/public/geo/norfolk.geojson, via build-area-
+// centroids.mjs), keyed by the same nor-<slugify(name)> the adapter emits.
+const NOR_CENTROIDS = GENERATED_AREA_CENTROIDS.norfolk ?? {};
+function norfolkCentroid(area: string): { lat: number; lng: number } {
+  const slug = `nor-${area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+  return NOR_CENTROIDS[slug] ?? NORFOLK_CENTROID;
+}
 
 // Norfolk's open-data feed publishes neighborhood names in ALLCAPS
 // ("GHENT", "OCEAN VIEW", "DOWNTOWN"). Title-case them at ingest so
@@ -169,8 +180,7 @@ async function fetchNorfolk(): Promise<Incident[]> {
       ibrOffenseDescription: r.offense?.trim() || "Unknown",
       beat: r.zone ?? r.district ?? null,
       blockLabel: undefined,
-      lat: NORFOLK_CENTROID.lat,
-      lng: NORFOLK_CENTROID.lng,
+      ...norfolkCentroid(area),
     });
   }
   return out;
@@ -226,7 +236,7 @@ export async function getDiscoveredAreasNorfolk(): Promise<KnownArea[]> {
         slug: `nor-${slugBody}`,
         label: correctNorfolkLabel(name),
         jurisdiction: "Norfolk",
-        centroid: NORFOLK_CENTROID,
+        centroid: NOR_CENTROIDS[`nor-${slugBody}`] ?? NORFOLK_CENTROID,
         _slugBody: slugBody,
       };
     })

@@ -5,6 +5,7 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
 
 // Virginia Beach — VBPD "Police Offense Reports" (FeatureServer, keyless).
 // Hosted ArcGIS Online layer (org CyVvlIiUfRBmMQuu) carrying ~163k
@@ -71,6 +72,11 @@ function isUnmappedSubdivision(v: string | null | undefined): boolean {
 }
 
 const VB_CENTROID = { lat: 36.8529, lng: -76.0339 };
+// fix(audit coverage-vb-shared-centroid): VB's feed has no per-incident coords,
+// so all 333 subdivisions used to share VB_CENTROID — "use my location" could
+// never distinguish them. Resolve each to the real centroid of its boundary
+// polygon (apps/web/public/geo/virginia-beach.geojson via build-area-centroids).
+const VB_CENTROIDS = GENERATED_AREA_CENTROIDS["virginia-beach"] ?? {};
 
 const PROVENANCE: DataProvenance = {
   source: "Virginia Beach Police Department Offense Reports (City of Virginia Beach, ArcGIS Feature Server)",
@@ -182,12 +188,15 @@ export async function getDiscoveredAreasVirginiaBeach(): Promise<KnownArea[]> {
   }
   return Array.from(agg.entries())
     .filter(([, count]) => count >= 1)
-    .map(([name]) => ({
-      slug: `vb-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
-      jurisdiction: "Virginia Beach",
-      centroid: { ...VB_CENTROID },
-    }))
+    .map(([name]) => {
+      const slug = `vb-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      return {
+        slug,
+        label: name,
+        jurisdiction: "Virginia Beach",
+        centroid: VB_CENTROIDS[slug] ?? { ...VB_CENTROID },
+      };
+    })
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 

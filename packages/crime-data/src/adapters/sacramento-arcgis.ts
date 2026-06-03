@@ -5,6 +5,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT } from "../lib/http.js";
+import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
 
 // Sacramento — Sacramento PD Report Data (current year).
 // ArcGIS FeatureServer on services5.arcgis.com (owner: City of Sacramento).
@@ -76,6 +77,12 @@ function classify(row: SacRow): CrimeCategory {
 }
 
 const SACRAMENTO_CENTROID = { lat: 38.5816, lng: -121.4944 };
+// fix(audit map-sacramento-single-centroid): per-incident coords are nulled
+// (above), but discovery still handed every area the downtown city point, so
+// "use my location" couldn't tell neighborhoods apart. Resolve each area to the
+// real centroid of its boundary polygon (apps/web/public/geo/sacramento.geojson
+// via build-area-centroids.mjs).
+const SAC_CENTROIDS = GENERATED_AREA_CENTROIDS.sacramento ?? {};
 
 // v95p34 — Sacramento's upstream `Neighborhood_Association` column is
 // the city's roster of community + business-improvement-district orgs.
@@ -272,12 +279,15 @@ export async function getDiscoveredAreasSacramento(): Promise<KnownArea[]> {
   }
   return Array.from(counts.entries())
     .filter(([, n]) => n >= 1)
-    .map(([name]) => ({
-      slug: `sac-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
-      jurisdiction: "Sacramento",
-      centroid: SACRAMENTO_CENTROID,
-    }))
+    .map(([name]) => {
+      const slug = `sac-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      return {
+        slug,
+        label: name,
+        jurisdiction: "Sacramento",
+        centroid: SAC_CENTROIDS[slug] ?? SACRAMENTO_CENTROID,
+      };
+    })
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
