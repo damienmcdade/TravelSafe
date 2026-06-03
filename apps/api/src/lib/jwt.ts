@@ -73,8 +73,13 @@ export function verifySession(token: string, opts?: { expectType?: "access" | "r
   const ver = typeof p.ver === "number" ? p.ver : 0;
   // Enforce token type when the caller specifies one (access for
   // protected routes, refresh for /auth/refresh).
-  if (opts?.expectType && p.typ && p.typ !== opts.expectType) {
-    throw new Error(`expected ${opts.expectType} token, got ${p.typ}`);
+  // fix(audit auth-token-type-confusion-7 / api-code-5): FAIL CLOSED. The prior
+  // `&& p.typ` let a token with NO typ claim slip past the type check, so e.g. an
+  // mfa-pending or refresh token (or a forged one omitting typ) could be accepted
+  // where an access token was required. All current minting sets typ, and legacy
+  // typ-less tokens are long expired, so requiring typ === expectType is safe.
+  if (opts?.expectType && p.typ !== opts.expectType) {
+    throw new Error(`expected ${opts.expectType} token, got ${p.typ ?? "none"}`);
   }
   return { uid: p.uid, email: p.email, ver, typ: p.typ };
 }
