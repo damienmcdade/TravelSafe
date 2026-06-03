@@ -371,7 +371,8 @@ async function downloadDispatchCsv(csvPath: string, trend: TrendResp, loaded: Tr
   const a = document.createElement("a");
   a.href = url;
   const slug = trend.area.slug.replace(/[^a-z0-9-]+/gi, "-");
-  a.download = `travelsafe-${slug}-${new Date().toISOString().slice(0, 10)}.csv`;
+  // fix(audit legal-brand-1/ui-brand-split): public brand on the exported file.
+  a.download = `communitysafe-${slug}-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

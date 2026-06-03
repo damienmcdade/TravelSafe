@@ -193,7 +193,9 @@ function AccountPanel() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `travelsafe-account-${new Date().toISOString().slice(0, 10)}.json`;
+      // fix(audit legal-brand-1/ui-brand-split): user-facing download must carry
+      // the public brand (CommunitySafe), not the internal "travelsafe" name.
+      a.download = `communitysafe-account-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
