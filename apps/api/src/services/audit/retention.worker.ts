@@ -45,6 +45,48 @@ async function pruneOnce(): Promise<{ deleted: number; cutoff: Date }> {
   return { deleted: result.count, cutoff };
 }
 
+// fix(audit api-code-1): softDeleteAccount() documents that "the retention worker
+// hard-deletes any row whose deletedAt is past the grace window" — but no such
+// sweep existed, so Express-soft-deleted accounts kept their PII (trusted
+// contacts, check-in coords, posts) indefinitely, contradicting the GDPR
+// erasure promise. This sweep hard-deletes them past the grace window, clearing
+// the RESTRICT-FK rows first (same order as the web account.ts hard-delete) so
+// the cascade can complete. Each user runs in its own transaction so one bad row
+// can't block the rest.
+const PURGE_GRACE_DAYS = (() => {
+  const n = Number.parseInt(process.env.ACCOUNT_PURGE_GRACE_DAYS ?? "", 10);
+  return Number.isFinite(n) && n >= 1 && n <= 365 ? n : 30;
+})();
+
+async function purgeSoftDeletedUsers(): Promise<number> {
+  const cutoff = new Date(Date.now() - PURGE_GRACE_DAYS * 24 * 60 * 60 * 1000);
+  const due = await prisma.user.findMany({
+    where: { deletedAt: { not: null, lt: cutoff } },
+    select: { id: true },
+    take: 200,
+  });
+  let purged = 0;
+  for (const { id } of due) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.postReviewAction.deleteMany({ where: { reviewerId: id } });
+        await tx.postReport.deleteMany({ where: { reporterId: id } });
+        await tx.postAcknowledgement.deleteMany({ where: { userId: id } });
+        await tx.postEdit.deleteMany({ where: { editorId: id } });
+        await tx.postReaction.deleteMany({ where: { userId: id } });
+        await tx.postComment.deleteMany({ where: { authorId: id } });
+        await tx.post.updateMany({ where: { reviewerId: id }, data: { reviewerId: null } });
+        await tx.post.deleteMany({ where: { authorId: id } });
+        await tx.user.delete({ where: { id } });
+      }, { timeout: 30_000 });
+      purged += 1;
+    } catch (err) {
+      console.warn(`[account-purge] failed to hard-delete user ${id}:`, (err as Error).message);
+    }
+  }
+  return purged;
+}
+
 export function startAuditRetentionWorker(): void {
   // v96 — backpressure: if a prior prune is still running when the
   // next tick fires (rare with a 24h cycle, but possible on a very
@@ -57,7 +99,12 @@ export function startAuditRetentionWorker(): void {
     try {
       const { deleted, cutoff } = await pruneOnce();
       if (deleted > 0) {
-        console.log(`[audit-retention] pruned ${deleted} rows older than ${cutoff.toISOString()}`);
+        console.log(`[audit-retention] pruned ${deleted} audit rows older than ${cutoff.toISOString()}`);
+      }
+      // fix(audit api-code-1): also hard-delete soft-deleted accounts past grace.
+      const purged = await purgeSoftDeletedUsers();
+      if (purged > 0) {
+        console.log(`[account-purge] hard-deleted ${purged} account(s) past the ${PURGE_GRACE_DAYS}d grace window`);
       }
     } catch (err) {
       console.warn("[audit-retention] prune failed:", (err as Error).message);
