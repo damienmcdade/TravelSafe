@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Virginia Beach — VBPD "Police Offense Reports" (FeatureServer, keyless).
@@ -98,7 +98,8 @@ async function fetchPage(offset: number, sinceDate: string): Promise<VbRow[]> {
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
-  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
+  // fix(deploy logs): retry undici-level transient "fetch failed" drops.
+  const res = await fetchWithRetry(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) {
     // High offsets page past the end of the window — ArcGIS answers
     // 404/400 there. On a non-first page that's just end-of-data, not a

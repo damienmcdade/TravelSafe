@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Tampa, FL — Tampa Police Department "crimes_public_365days" ArcGIS
@@ -104,7 +104,11 @@ async function fetchPage(offset: number, sinceDate: string): Promise<TpaRow[]> {
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
-  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
+  // fix(deploy logs): fetchWithRetry retries undici-level transient "fetch
+  // failed" drops (the `[tampa] page offset=N failed: fetch failed` build-log
+  // warning) up to twice before giving up, so a single socket blip no longer
+  // drops a whole page of incidents.
+  const res = await fetchWithRetry(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) {
     // High offsets page past the end of the window — ArcGIS answers 400/404
     // there; on a non-first page that's just end-of-data, not a failure.
