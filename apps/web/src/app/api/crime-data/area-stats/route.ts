@@ -5,6 +5,7 @@ import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import { crimeData } from "@/server/services/crime-data";
 import { nearestArea } from "@/server/services/crime-data/neighborhoods";
+import { withWarmingTimeout } from "@/server/lib/warming-timeout";
 
 /// Modes:
 ///   ?city=<slug>                      → citywide totals + provenance
@@ -35,8 +36,8 @@ export const GET = wrap(async (req: NextRequest) => {
   const proxied = await tryProxy(req, "/crime-data/area-stats");
   if (proxied) return proxied.response;
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
-  if (q.city) return NextResponse.json(await crimeData.getCitywideAreaStats(q.city), { headers: CACHE_HEADERS });
+  if (q.city) return withWarmingTimeout(crimeData.getCitywideAreaStats(q.city), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
   const area = q.neighborhood ?? q.jurisdiction ?? (q.lat != null && q.lng != null ? nearestArea({ lat: q.lat, lng: q.lng })?.slug ?? null : null);
   if (!area) throw new HttpError(400, "area_or_city_required");
-  return NextResponse.json(await crimeData.getAreaStats(area), { headers: CACHE_HEADERS });
+  return withWarmingTimeout(crimeData.getAreaStats(area), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
 });

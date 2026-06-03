@@ -4,6 +4,7 @@ import { wrap } from "@/server/lib/http";
 import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import { getCrimeMix, getCitywideCrimeMix } from "@/server/services/crime-data/mix";
+import { withWarmingTimeout } from "@/server/lib/warming-timeout";
 
 /// Two modes share this route:
 ///   ?city=<slug>                      → citywide aggregate
@@ -33,7 +34,7 @@ export const GET = wrap(async (req: NextRequest) => {
   if (proxied) return proxied.response;
 
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
-  if (q.city) return NextResponse.json(await getCitywideCrimeMix(q.city), { headers: CACHE_HEADERS });
+  if (q.city) return withWarmingTimeout(getCitywideCrimeMix(q.city), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
   const area = q.neighborhood ?? q.jurisdiction ?? "san-diego";
-  return NextResponse.json(await getCrimeMix(area, q.days), { headers: CACHE_HEADERS });
+  return withWarmingTimeout(getCrimeMix(area, q.days), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
 });

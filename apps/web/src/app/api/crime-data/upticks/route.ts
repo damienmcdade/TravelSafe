@@ -3,6 +3,7 @@ import { wrap } from "@/server/lib/http";
 import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import { getCitywideUpticks } from "@/server/services/watch/upticks";
+import { withWarmingTimeout } from "@/server/lib/warming-timeout";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -21,5 +22,5 @@ export const GET = wrap(async (req: NextRequest) => {
   if (proxied) return proxied.response;
 
   const citySlug = req.nextUrl.searchParams.get("city") ?? "san-diego";
-  return NextResponse.json(await getCitywideUpticks(citySlug), { headers: CACHE_HEADERS });
+  return withWarmingTimeout(getCitywideUpticks(citySlug), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
 });
