@@ -46,6 +46,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 // data the moment it lands without waiting an hour.
 export const revalidate = 300;
 
+// fix(deploy build logs): crime-data adapters return large datasets (citywide
+// pulls are multi-MB). During static generation Next tried to persist each
+// adapter fetch into its Data Cache (2 MB per-entry limit), producing build-log
+// spam: "Failed to set fetch cache URL … TimeoutError" + "QUOTA_EXCEEDED_ERR: 22".
+// The adapters already keep their own 5-minute in-memory cache, so Next's fetch
+// cache is redundant here. Opt the segment out; page freshness still governed by
+// `revalidate` (ISR) above.
+export const fetchCache = "force-no-store";
+
 export default async function CityLandingPage({ params }: Props) {
   const { city: slug } = await params;
   const city = cityBySlug(slug);
