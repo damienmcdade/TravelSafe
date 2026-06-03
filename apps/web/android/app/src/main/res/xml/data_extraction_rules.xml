@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  TravelSafe data-extraction rules (Android 12+, API 31+).
+  CommunitySafe data-extraction rules (Android 12+, API 31+).
 
   Per Android's data-extraction-rules spec (https://developer.android.com
   /guide/topics/data/autobackup#XMLSyntax) we deny BOTH the cloud-backup

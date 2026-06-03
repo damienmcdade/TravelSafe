@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  TravelSafe Auto Backup rules (Android 6-11 fallback for the
+  CommunitySafe Auto Backup rules (Android 6-11 fallback for the
   data-extraction-rules above). Same posture: deny full-disk replication
   to Google Drive. See data_extraction_rules.xml for rationale.
 -->

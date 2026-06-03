@@ -7,7 +7,7 @@
   it collects. Aligns with the privacy policy at /privacy.
 
   Notes:
-  - Tracking domains list is empty: TravelSafe runs no third-party
+  - Tracking domains list is empty: CommunitySafe runs no third-party
     cross-site tracking. AdSense, if enabled by deploy, is gated by a
     cookie banner (CCPA "sale/share" disclosure path).
   - Data types collected map to the privacy policy /privacy/page.tsx
