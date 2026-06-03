@@ -84,10 +84,37 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   });
 }
 
+// fix(audit perf-compute-5): the coverage probe used to fan an unbounded
+// Promise.all across all 44 cities, each doing discover() + two sample pulls.
+// 44 simultaneous cold adapter loads spike heap and DB/upstream connections and
+// make the per-request timeout math non-deterministic. Run the probe with
+// bounded concurrency that matches the shared compute gate (COMPUTE_CONCURRENCY,
+// default 6) so at most N cities load at once — order of results is preserved.
+const COVERAGE_CONCURRENCY = (() => {
+  const n = Number.parseInt(process.env.COMPUTE_CONCURRENCY ?? "", 10);
+  return Number.isFinite(n) && n >= 1 && n <= 16 ? n : 6;
+})();
+
+async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const out = new Array<R>(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= items.length) return;
+      out[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return out;
+}
+
 export async function getCoverage(): Promise<CoverageResponse> {
   const now = Date.now();
-  const results = await Promise.all(
-    CITIES.map(async (city): Promise<CityStatus> => {
+  const results = await mapWithConcurrency(
+    CITIES,
+    COVERAGE_CONCURRENCY,
+    async (city): Promise<CityStatus> => {
       // fix(audit cov-denver-token-gap): Denver's public crime endpoints went
       // behind a token; without DENVER_ARCGIS_TOKEN the adapter has no data, yet
       // the static-baseline fallback below would still report Denver "live" with
@@ -193,7 +220,7 @@ export async function getCoverage(): Promise<CoverageResponse> {
         newestIncidentAt,
         source: sourceLabel,
       };
-    }),
+    },
   );
 
   // Sort: live first (most coverage), then warming-up, then no-data.

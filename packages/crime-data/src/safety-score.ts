@@ -1257,11 +1257,14 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
       `annualized from the cached window and scaled to per-100,000 residents using ` +
       `${city.label}'s US Census Bureau Vintage 2023-2024 population (${pop.toLocaleString()}). ` +
       (fbiBaseline
-        ? `The grade compares this rate against ${city.label}'s OWN FBI-published rate for ${fbiBaseline.year} ` +
-          `(violent ${fbiBaseline.violent}/100k, property ${fbiBaseline.property}/100k via cde.ucr.cjis.gov agency ORI ${fbiBaseline.ori}). ` +
-          `A grade of A means the current adapter sample is ≥30% below that baseline; ` +
-          `C means within ±20% of it; E means ≥60% above (a real spike or adapter over-count). `
-        : `The grade compares this rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
+        ? `The letter grade is an absolute, cross-city measure: ${city.label}'s own FBI-published rate for ${fbiBaseline.year} ` +
+          `(violent ${fbiBaseline.violent}/100k, property ${fbiBaseline.property}/100k, via cde.ucr.cjis.gov agency ORI ${fbiBaseline.ori}) ` +
+          `measured against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
+          `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k), weighting violent crime 70% and property 30%. ` +
+          `A means at or below the national rate; B, C and D step up through roughly 1.3×, 1.9× and 2.6× it; E means well above. ` +
+          `The per-100,000 figure above is the live adapter sample — the grade reflects the city's stable published rate, so a temporarily high or low sample doesn't swing the letter. `
+        : `The letter grade compares ${city.label}'s live citywide rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
+          `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k, weighting violent 70% / property 30%) ` +
           `because no city-specific FBI baseline is on file for ${city.label} yet. `) +
       "Society / public-order offenses are excluded because the FBI does not publish a national rate." +
       (sourceType === "cfs"
