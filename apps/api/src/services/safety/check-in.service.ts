@@ -75,10 +75,18 @@ export async function triggerExpiry(timerId: string): Promise<DeliveryReceipt[]>
   const note = timer.message ? `\nUser note: ${timer.message}` : "";
   const body = `Your contact set a CommunitySafe check-in timer that just expired without confirmation. They may need help.\n\n${location}${note}\n\nThis is an automated notification.`;
 
+  // fix(audit api-code-2): isolate each contact's delivery so one unexpected
+  // throw (e.g. a transient SMS/email failure) can't abort notifying the rest of
+  // the trusted-contact list during a real check-in expiry.
   const receipts: DeliveryReceipt[] = [];
   for (const c of confirmed) {
-    const r = await notifyContact(c, subject, body);
-    receipts.push(...r);
+    try {
+      const r = await notifyContact(c, subject, body);
+      receipts.push(...r);
+    } catch (err) {
+      console.error(`[check-in] notify failed for a contact of timer ${timer.id}:`, (err as Error).message);
+      receipts.push({ contactLabel: c.label, channel: c.email ? "email" : "sms", status: "failed", detail: "notify_threw" });
+    }
   }
   return receipts;
 }
