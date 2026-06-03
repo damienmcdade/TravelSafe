@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FBI_NATIONAL_PER_100K_2024 } from "@travelsafe/crime-data";
+import { FBI_NATIONAL_PER_100K_2024, CITIES } from "@travelsafe/crime-data";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 import { LegalFooter } from "@/components/LegalFooter";
 
@@ -30,7 +30,7 @@ export default function MethodologyPage() {
         <ol className="list-decimal pl-5 space-y-2">
           <li>
             <strong className="text-slate2-900">City open-data portals.</strong> Each of CommunitySafe&apos;s
-            44 supported cities publishes police-incident records through an official open-data feed
+            {" "}{CITIES.length} supported cities publishes police-incident records through an official open-data feed
             (SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD, NYPD Complaint Data,
             Seattle SPD, Boston BPD, DC MPD, Philadelphia PPD, Colorado Springs, Detroit, Oakland, Cincinnati,
             New Orleans, Baton Rouge, Cambridge, Dallas, Charlotte, Baltimore, Minneapolis, Cleveland,

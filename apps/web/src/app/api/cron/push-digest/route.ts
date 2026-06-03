@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
         // to decide where to focus / open. Send it under `data` so
         // the SW finds it; the body of the payload is for visual
         // display only.
-        data: { url: "/threats" },
+        data: { url: "/city" },
       })
     : { users: 0, sent: 0, failed: 0, pruned: 0 };
 

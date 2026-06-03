@@ -43,12 +43,13 @@ const composeBody = z.object({
 const AREA_BRIEF_TIMEOUT_MS = 22_000;
 const AREA_BRIEF_TIMEOUT = Symbol("area-brief-timeout");
 function withAreaBriefTimeout<T>(p: Promise<T>): Promise<T | typeof AREA_BRIEF_TIMEOUT> {
-  return Promise.race([
-    p,
-    new Promise<typeof AREA_BRIEF_TIMEOUT>((resolve) =>
-      setTimeout(() => resolve(AREA_BRIEF_TIMEOUT), AREA_BRIEF_TIMEOUT_MS),
-    ),
-  ]);
+  // fix(audit api-code-6): clear the timer so a fast brief doesn't leave a 22s
+  // setTimeout pending.
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<typeof AREA_BRIEF_TIMEOUT>((resolve) => {
+    timer = setTimeout(() => resolve(AREA_BRIEF_TIMEOUT), AREA_BRIEF_TIMEOUT_MS);
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
 }
 
 aiRouter.get("/area-brief", aiReadLimiter, async (req, res, next) => {
@@ -98,12 +99,14 @@ aiRouter.get("/incident-summary", aiReadLimiter, async (req, res, next) => {
     const p = q.area
       ? generateIncidentSummary({ area: q.area, windowDays: q.windowDays })
       : generateIncidentSummary({ cityOnly: { citySlug: q.city! }, windowDays: q.windowDays });
+    // fix(audit api-code-6): clear the timer when the summary wins the race.
+    let summaryTimer: ReturnType<typeof setTimeout>;
     const raced = await Promise.race([
       p,
-      new Promise<typeof SUMMARY_TIMEOUT>((resolve) =>
-        setTimeout(() => resolve(SUMMARY_TIMEOUT), SUMMARY_TIMEOUT_MS),
-      ),
-    ]);
+      new Promise<typeof SUMMARY_TIMEOUT>((resolve) => {
+        summaryTimer = setTimeout(() => resolve(SUMMARY_TIMEOUT), SUMMARY_TIMEOUT_MS);
+      }),
+    ]).finally(() => clearTimeout(summaryTimer));
     if (raced === SUMMARY_TIMEOUT) {
       return res.status(503).json({
         error: "upstream_warming",

@@ -41,6 +41,16 @@ jobs:
       - name: Build crime-data (prerequisite for api + web)
         run: npm run build --workspace packages/crime-data
 
+      # fix(audit infra-ci-missing-typecheck-db-crimedata): typecheck the shared
+      # packages too. crime-data's build emits via tsc, but a type-only check
+      # catches errors the build's incremental cache can miss, and packages/db
+      # (Prisma-generated types) had no CI typecheck at all.
+      - name: Typecheck (crime-data)
+        run: npm run typecheck --workspace packages/crime-data
+
+      - name: Typecheck (db)
+        run: npm run db:generate && npm run typecheck --workspace packages/db
+
       - name: Typecheck (api)
         run: npm run typecheck --workspace apps/api
 

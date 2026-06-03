@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CITIES } from "@travelsafe/crime-data";
 import { LegalFooter } from "@/components/LegalFooter";
 
 export const metadata: Metadata = {
@@ -22,8 +23,8 @@ export default function AboutPage() {
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What CommunitySafe is</h2>
         <p>
-          CommunitySafe is an independent neighborhood-safety information site for 38
-          US cities. It takes police-department open-data feeds and FBI Uniform
+          CommunitySafe is an independent neighborhood-safety information site for {CITIES.length}
+          {" "}US cities. It takes police-department open-data feeds and FBI Uniform
           Crime Reporting figures &mdash; both already public &mdash; and turns
           them into a single 0&ndash;100 Safety Index per neighborhood, plus
           straightforward views of what kinds of incidents are reported and

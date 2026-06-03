@@ -15,10 +15,13 @@ export async function withWarmingTimeout<T>(
   ok: (value: T) => NextResponse,
   ms: number = DEFAULT_TIMEOUT_MS,
 ): Promise<NextResponse> {
+  // fix(audit api-code-6): clear the deadline timer when `compose` wins, so a
+  // fast response doesn't leave the (up to 50s) setTimeout pending on every call.
+  let timer: ReturnType<typeof setTimeout>;
   const result = await Promise.race([
     compose,
-    new Promise<typeof TIMEOUT>((resolve) => setTimeout(() => resolve(TIMEOUT), ms)),
-  ]);
+    new Promise<typeof TIMEOUT>((resolve) => { timer = setTimeout(() => resolve(TIMEOUT), ms); }),
+  ]).finally(() => clearTimeout(timer));
   if (result === TIMEOUT) {
     return NextResponse.json(
       { error: "warming_up", message: "Data is warming up — retry shortly." },

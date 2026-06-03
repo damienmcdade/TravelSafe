@@ -78,8 +78,17 @@ export async function tryProxy(
     return null;
   }
   const ct = upstream.headers.get("content-type") ?? "application/json";
-  const cc = upstream.headers.get("cache-control")
-    ?? "public, s-maxage=300, stale-while-revalidate=900";
+  // fix(audit web-cache-1): we forward the caller's Authorization upstream, so an
+  // authenticated request could in principle yield a user-specific body. The
+  // proxied crime-data/safezone routes are public and set their OWN explicit
+  // Cache-Control (which we always honor below), but the DEFAULT — used only when
+  // upstream is silent — must not be a SHARED cache for an auth-bearing request,
+  // or a CDN could serve one user's response to another. Default to private/no-
+  // store when Authorization was forwarded; keep the shared default otherwise.
+  const defaultCc = auth
+    ? "private, no-store"
+    : "public, s-maxage=300, stale-while-revalidate=900";
+  const cc = upstream.headers.get("cache-control") ?? defaultCc;
   return {
     response: new NextResponse(upstream.body, {
       status: 200,

@@ -27,7 +27,7 @@ export default function RegisterPage() {
         to access it.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/threats" className="btn-primary">Browse safety data</Link>
+        <Link href="/city" className="btn-primary">Browse safety data</Link>
         <Link href="/community" className="btn-secondary">Post anonymously</Link>
       </div>
     </main>
