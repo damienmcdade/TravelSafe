@@ -156,7 +156,10 @@ async function fetchNorfolk(): Promise<Incident[]> {
     const r = rows[i];
     const occurredAt = safeIso(r.date_occu);
     if (!occurredAt) continue;
-    const area = titleCaseArea(r.neighborhd?.trim());
+    // Correct the name at the SOURCE so the slug (slugify(area)) is corrected too
+    // and binds to the regenerated nor-* population table + map geojson, which
+    // were rebuilt from the corrected name ("Military Circle").
+    const area = correctNorfolkLabel(titleCaseArea(r.neighborhd?.trim()) ?? "");
     if (!area || area.toUpperCase() === "UNKNOWN") continue;
     out.push({
       id: `nor-${r.inci_id ?? i}`,

@@ -5,16 +5,19 @@ import { registerRowCache } from "../cache-registry.js";
 import { bucketByBands, deriveBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { fetchSocrata } from "../lib/http.js";
-import { kansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
+import { kansasCityPolygons as rawKansasCityPolygons } from "../data/kansas-city-neighborhoods.js";
 
 // fix(audit cov-kc-name-typos): the bundled KC polygons are auto-generated from
 // a crowd-sourced source (blackmad/neighborhoods) that carries spelling errors,
 // surfaced verbatim as user-facing area labels. Each correction below was
 // verified against the City of Kansas City's OFFICIAL neighborhood registry
 // (data.kcmo.org "Population by Neighborhood", dataset 7nq4-imiw — 240
-// registered neighborhoods). IMPORTANT: this corrects the DISPLAY LABEL only —
-// area SLUGS stay derived from the raw name so existing saved areas and the
-// curated kc-* population table (keyed to the original spellings) keep matching.
+// registered neighborhoods). Applied to the polygon NAME at import so the
+// correction flows everywhere CONSISTENTLY: geocode → incident area → slug →
+// label → and the regenerated kc-* population table + map geojson (which were
+// rebuilt from these same corrected names) all agree. (Earlier this was
+// display-label-only with raw slugs, but the ACS population regen keys off the
+// corrected geojson names, so the slug must be corrected too to bind.)
 const KC_NAME_CORRECTIONS: Record<string, string> = {
   "Indipendence Plaza": "Independence Plaza",
   "Faireway Hills": "Fairway Hills",
@@ -28,6 +31,7 @@ const KC_NAME_CORRECTIONS: Record<string, string> = {
   "North India Mound": "North Indian Mound",
 };
 const correctKcLabel = (name: string): string => KC_NAME_CORRECTIONS[name] ?? name;
+const kansasCityPolygons = rawKansasCityPolygons.map((p) => ({ ...p, name: correctKcLabel(p.name) }));
 
 // Kansas City MO — KCPD Crime Data, current + prior year.
 // KCPD publishes one Socrata dataset per calendar year (data.kcmo.org).

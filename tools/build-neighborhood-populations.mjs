@@ -95,6 +95,22 @@ const CITY_CONFIG = {
   "saint-paul":    { slugPrefix: "sp-",    counties: [["27", "123"]] },
   "pittsburgh":    { slugPrefix: "pgh-",   counties: [["42", "003"]] },
   "phoenix":       { slugPrefix: "phx-",   counties: [["04", "013"]] },
+  // fix(audit coverage-acs-pop-missing-2 / coverage-missing-generated-pops /
+  // coverage-balt-no-pop): these 9 cities had geojson + an adapter but were never
+  // added to this config, so they had ZERO generated populations and every area
+  // score fell back to peer-share. Slug prefixes match each adapter's discovery
+  // (baltimore/jacksonville/tampa emit bare slugify(name), so prefix=""). County
+  // FIPS are the official Census codes (independent cities use the 5xx/8xx
+  // county-equivalent, same pattern as norfolk 51710 above).
+  "baltimore":     { slugPrefix: "",       counties: [["24", "510"]] },              // Baltimore city (independent)
+  "jacksonville":  { slugPrefix: "",       counties: [["12", "031"]] },              // Duval County
+  "virginia-beach":{ slugPrefix: "vb-",    counties: [["51", "810"]] },              // Virginia Beach city (independent)
+  "gainesville":   { slugPrefix: "gnv-",   counties: [["12", "001"]] },              // Alachua County
+  "tampa":         { slugPrefix: "",       counties: [["12", "057"]] },              // Hillsborough County
+  "atlanta":       { slugPrefix: "atl-",   counties: [["13", "121"], ["13", "089"]] }, // Fulton + DeKalb
+  "indianapolis":  { slugPrefix: "indy-",  counties: [["18", "097"]] },              // Marion County
+  "raleigh":       { slugPrefix: "rdu-",   counties: [["37", "183"]] },              // Wake County
+  "tucson":        { slugPrefix: "tuc-",   counties: [["04", "019"]] },              // Pima County
 };
 
 function slugify(name) {
