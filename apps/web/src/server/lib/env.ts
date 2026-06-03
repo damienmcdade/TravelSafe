@@ -31,6 +31,16 @@ const Env = z.object({
   // plaintext (dev / pre-rollout) and encryption is a no-op.
   MFA_ENCRYPTION_KEY: z.string().optional(),
 
+  // fix(audit auth-register-deadend-5): the /register UI states account creation
+  // has been removed (anonymous-first product), but POST /api/auth/register still
+  // created accounts. New registration is now DISABLED by default to match the
+  // public claim; set ALLOW_REGISTRATION=true to re-open the endpoint. Login,
+  // MFA, and password-reset for EXISTING accounts are unaffected either way.
+  ALLOW_REGISTRATION: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+
   // Crime-data adapters
   SANDAG_SOCRATA_BASE: z.string().url().default("https://data.sandiegocounty.gov"),
   SANDAG_CRIME_RATES_RESOURCE_ID: z.string().default("486f-q228"),

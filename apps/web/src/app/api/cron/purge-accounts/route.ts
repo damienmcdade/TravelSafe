@@ -35,6 +35,63 @@ function graceDays(): number {
   return n;
 }
 
+// fix(audit auth-anon-account-accumulation-4): how old a content-free anonymous
+// device account must be before it's reaped. Default 90 days.
+const DEFAULT_ANON_RETENTION_DAYS = 90;
+function anonRetentionDays(): number {
+  const n = Number.parseInt(process.env.ANON_RETENTION_DAYS ?? "", 10);
+  if (!Number.isFinite(n) || n < 7 || n > 730) return DEFAULT_ANON_RETENTION_DAYS;
+  return n;
+}
+
+/// Reap OLD, CONTENT-FREE anonymous accounts. Every device that visits mints a
+/// permanent `device-*@travelsafe.local` User row (see /api/auth/anonymous); the
+/// soft-delete purge never touches them because they have no deletedAt, so
+/// without this they accumulate forever. We only delete anon rows older than the
+/// retention window AND with ZERO references in either direction (no posts/
+/// comments/reactions/reports/contacts/timers/live-shares/saved-places/push-subs/
+/// blocks/mutes/audits/etc.) — so the delete never trips an FK, and a still-active
+/// device whose row carried nothing simply re-bootstraps a fresh anon session on
+/// its next visit (transparent). Bounded per run like the soft-delete pass.
+async function purgeStaleAnonAccounts(limit: number): Promise<{ candidates: number; purged: number }> {
+  const cutoff = new Date(Date.now() - anonRetentionDays() * 24 * 60 * 60 * 1000);
+  const candidates = await prisma.user.findMany({
+    where: {
+      email: { startsWith: "device-", endsWith: "@travelsafe.local" },
+      mfaEnabled: false,
+      deletedAt: null,
+      createdAt: { lt: cutoff },
+      posts: { none: {} },
+      postReviews: { none: {} },
+      postEdits: { none: {} },
+      postComments: { none: {} },
+      postReactions: { none: {} },
+      reportsFiled: { none: {} },
+      acknowledgements: { none: {} },
+      trustedContacts: { none: {} },
+      checkInTimers: { none: {} },
+      liveShareLinks: { none: {} },
+      savedPlaces: { none: {} },
+      pushSubscriptions: { none: {} },
+      reviewActions: { none: {} },
+      blocking: { none: {} },
+      blockedBy: { none: {} },
+      mutes: { none: {} },
+      mutedBy: { none: {} },
+      suspensionEvents: { none: {} },
+      securityAudits: { none: {} },
+      alertPreference: { is: null },
+    },
+    select: { id: true },
+    take: limit,
+  });
+  if (candidates.length === 0) return { candidates: 0, purged: 0 };
+  const { count } = await prisma.user.deleteMany({
+    where: { id: { in: candidates.map((c) => c.id) } },
+  });
+  return { candidates: candidates.length, purged: count };
+}
+
 export async function GET(req: NextRequest) {
   const denied = requireCronSecret(req);
   if (denied) return denied;
@@ -71,8 +128,19 @@ export async function GET(req: NextRequest) {
     }),
   );
 
+  // Second pass: reap abandoned anonymous device accounts (separate retention
+  // window, content-free only). Isolated in a try so a failure here can't fail
+  // the soft-delete purge that enforces the 30-day privacy promise.
+  let anon = { candidates: 0, purged: 0, error: null as string | null };
+  try {
+    const r = await purgeStaleAnonAccounts(BATCH);
+    anon = { ...r, error: null };
+  } catch (e) {
+    anon.error = (e as Error)?.message?.slice(0, 160) ?? "unknown";
+  }
+
   return NextResponse.json({
-    ok: errors.length === 0,
+    ok: errors.length === 0 && !anon.error,
     generatedAt: new Date().toISOString(),
     graceDays: days,
     cutoff: cutoff.toISOString(),
@@ -80,8 +148,9 @@ export async function GET(req: NextRequest) {
     purged,
     // When we hit the batch cap there may be more to do; the next daily run
     // (or a manual re-trigger) continues from the new cutoff set.
-    drained: stale.length < BATCH,
+    drained: stale.length < BATCH && anon.candidates < BATCH,
     errors,
+    anonAccounts: { retentionDays: anonRetentionDays(), ...anon },
     totalMs: Date.now() - startedAt,
   });
 }

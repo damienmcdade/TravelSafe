@@ -314,7 +314,25 @@ const healthHandler = (req: import("express").Request, res: import("express").Re
 app.get("/health", healthHandler);
 app.get("/healthz", healthHandler);
 
-app.use("/auth", authRouter);
+// fix(audit auth-dual-stack-1): the CANONICAL auth stack is the Next.js (Vercel)
+// /api/auth routes — the web app implements login / MFA / tokenVersion revocation
+// there and never proxies /auth to this Railway service (only /crime-data and
+// /safezone are proxied). This Express auth router is a divergent, unused parallel
+// stack with its own, weaker session model — a live attack surface that can drift
+// out of sync with the real one. Retire it by default: every /auth/* path returns
+// 410 unless ENABLE_LEGACY_API_AUTH=true is explicitly set (escape hatch for a
+// rollback). Crime-data / safezone proxying is unaffected.
+if (process.env.ENABLE_LEGACY_API_AUTH === "true") {
+  app.use("/auth", authRouter);
+} else {
+  app.use("/auth", (_req, res) => {
+    res.status(410).json({
+      error: "auth_endpoint_retired",
+      message:
+        "This service's auth stack is retired. Authentication is handled by the CommunitySafe web app (/api/auth).",
+    });
+  });
+}
 app.use("/contacts", contactsRouter);
 app.use("/preferences", preferencesRouter);
 app.use("/crime-data", crimeDataRouter);
