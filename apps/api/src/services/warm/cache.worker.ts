@@ -58,6 +58,14 @@ const HEAVY_CITIES = [
   // saw it 502 across all endpoints. Under the timeout (45s) but heavy enough
   // to warrant continuous warming.
   "indianapolis",
+  // fix(prod e2e — Charlotte cold-start 504): CMPD publishes a deep multi-year
+  // dataset, so getCitywide's cold compute is heavy (the final prod E2E caught
+  // citywide=charlotte 504 on a post-redeploy cold cache; warm it returns in
+  // <1s). It was on the LIGHT path, so its 5-min cache lapsed before the late
+  // light batch re-warmed it — identical to the Atlanta/Indianapolis symptom
+  // above. Promote to the heavy bucket so it warms first each cycle and stays
+  // hot within the TTL. Heap headroom is ample (≈120MB vs 1700MB high-water).
+  "charlotte",   // deep multi-year CMPD dataset, heavy cold citywide compute
 ];
 
 // v96 — per-city deadline. Without this, a single hung adapter (one
