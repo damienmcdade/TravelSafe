@@ -17,7 +17,11 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/threats", "/map", "/watch", "/community", "/safety", "/safety-score", "/trends", "/route", "/privacy", "/terms", "/methodology", "/about", "/accessibility", "/dmca", "/credits", "/coverage", "/cities"],
+        // fix(audit pentest-robots-stale-routes): /safety-score, /trends and
+        // /threats are server redirect("/city") stubs — pointing crawlers at them
+        // wastes crawl budget on redirects. Advertise the canonical content pages
+        // (/city, /neighborhood) instead. /route is a tool, not indexable content.
+        allow: ["/", "/city", "/neighborhood", "/map", "/watch", "/community", "/safety", "/privacy", "/terms", "/methodology", "/about", "/accessibility", "/dmca", "/credits", "/coverage", "/cities"],
         disallow: ["/api/", "/login", "/register", "/moderation", "/onboarding/", "/share/", "/contacts/"],
       },
     ],

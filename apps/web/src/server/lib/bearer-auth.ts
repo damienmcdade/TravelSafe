@@ -1,6 +1,18 @@
 import "server-only";
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "./env";
+
+// fix(audit pentest-secrets-2): constant-time string compare for the shared
+// secret. Plain `===` short-circuits on the first differing byte (timing side
+// channel). timingSafeEqual requires equal-length buffers, so length-mismatch is
+// handled first (its own early-out leaks only the length, not content).
+function safeEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // Shared Bearer-secret gate used by /api/cron/* and /api/diag/* — any
 // route that should be reachable only by Vercel platform crons and
@@ -24,6 +36,6 @@ export function requireCronSecret(req: NextRequest): NextResponse | null {
     return NextResponse.json({ error: "cron_secret_required" }, { status: 503 });
   }
   const header = req.headers.get("authorization");
-  if (header === `Bearer ${env.CRON_SECRET}`) return null;
+  if (header && safeEqual(header, `Bearer ${env.CRON_SECRET}`)) return null;
   return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 }

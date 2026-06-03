@@ -25,8 +25,10 @@ export const maxDuration = 60;
 ///   - grade in {D, E} unexpectedly   → flagged for human review
 ///
 /// Same CRON_SECRET Bearer auth as /api/cron/warm-cache so the endpoint
-/// isn't a public trigger. Bypass available via NO_CRON_SECRET env var
-/// for local development.
+/// isn't a public trigger. fix(audit infra-stale-no-cron-secret-comment): there
+/// is NO NO_CRON_SECRET bypass — requireCronSecret fails CLOSED (503) when
+/// CRON_SECRET is unset and otherwise requires a constant-time Bearer match.
+/// For local dev, set CRON_SECRET and pass it in the Authorization header.
 ///
 /// v98 — this cron is now the CANONICAL grade monitor; the in-process
 /// Railway grade-sanity worker was retired (it OOM'd on the concurrent

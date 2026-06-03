@@ -7,6 +7,7 @@ import {
   getTrendForArea,
   getCitywideTrend,
 } from "@/server/services/watch/trend-feed";
+import { withWarmingTimeout } from "@/server/lib/warming-timeout";
 
 /// Accepts ?city=<slug> (citywide aggregate, the page's default state) OR
 /// ?area=<slug>&label=<label> (drill-down to one neighborhood). Both paths
@@ -53,6 +54,10 @@ export const GET = wrap(async (req: NextRequest) => {
   const { city, area, label, days, bullets } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   // fix(audit perf-compute-4): omitted → DEFAULT_BULLETS, not the full list.
   const bulletLimit = bullets ?? DEFAULT_BULLETS;
-  if (city) return NextResponse.json(await getCitywideTrend(city, { windowDays: days, bulletLimit }), { headers: CACHE_HEADERS });
-  return NextResponse.json(await getTrendForArea(area!, label ?? area!, { windowDays: days, bulletLimit }), { headers: CACHE_HEADERS });
+  // fix(audit perf-compute-6): wrap in withWarmingTimeout like the other heavy
+  // crime-data routes — a cold trend compute on a big city can otherwise blow the
+  // 60s function ceiling and return a hard 504. This races the compose against a
+  // sub-ceiling deadline and returns a retryable 503 warming_up instead.
+  if (city) return withWarmingTimeout(getCitywideTrend(city, { windowDays: days, bulletLimit }), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
+  return withWarmingTimeout(getTrendForArea(area!, label ?? area!, { windowDays: days, bulletLimit }), (v) => NextResponse.json(v, { headers: CACHE_HEADERS }));
 });

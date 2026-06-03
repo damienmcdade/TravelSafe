@@ -102,7 +102,9 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
     <main className="max-w-4xl mx-auto px-4 py-10 space-y-6">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        // fix(audit web-xss-1): escape "<" so a label can't break the <script>
+        // context via a literal </script> (JSON.stringify escapes quotes, not "<").
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }}
       />
       <nav aria-label="Breadcrumb" className="text-xs text-slate2-500">
         <Link href="/cities" className="text-bay-700 hover:underline">Cities</Link>

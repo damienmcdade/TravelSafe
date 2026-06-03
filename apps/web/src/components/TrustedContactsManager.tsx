@@ -68,14 +68,26 @@ export function TrustedContactsManager({ embedded = false }: Props) {
     }
   }
 
+  // fix(audit ui-cards-1): Remove and Resend silently swallowed failures (no
+  // catch), so a failed delete/resend looked like it worked. Surface the error.
   async function remove(id: string) {
-    await api(`/contacts/${id}`, { method: "DELETE" });
-    await reload();
+    setError(null);
+    try {
+      await api(`/contacts/${id}`, { method: "DELETE" });
+      await reload();
+    } catch (err) {
+      setError(`Couldn't remove that contact — ${(err as Error).message}. Try again.`);
+    }
   }
 
   async function resend(id: string) {
-    await api(`/contacts/${id}/resend`, { method: "POST" });
-    await reload();
+    setError(null);
+    try {
+      await api(`/contacts/${id}/resend`, { method: "POST" });
+      await reload();
+    } catch (err) {
+      setError(`Couldn't resend the confirmation — ${(err as Error).message}. Try again.`);
+    }
   }
 
   const wrapClass = embedded ? "" : "surface p-6";

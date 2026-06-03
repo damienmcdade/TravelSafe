@@ -34,4 +34,21 @@ echo "[prisma-deploy] resolving baseline (0_init)..."
   || echo "[prisma-deploy] baseline already resolved (expected on subsequent deploys)"
 
 echo "[prisma-deploy] applying pending migrations..."
-$PRISMA migrate deploy
+# fix(deploy logs — P1002): `migrate deploy` acquires a Postgres advisory lock
+# (pg_advisory_lock) with a 10s timeout. Two deploys racing for that lock — e.g.
+# a `railway up` followed quickly by a redeploy — can make one time out with
+# `Error: P1002 ... Timed out trying to acquire a postgres advisory lock`, which
+# (unlike the `|| true` baseline-resolve above) would abort the whole deploy.
+# Retry the deploy a few times on that transient lock contention; a real schema
+# error still fails after the retries are exhausted. migrate deploy is idempotent
+# (already-applied migrations are skipped), so retrying is safe.
+attempt=1
+until $PRISMA migrate deploy; do
+  if [ "$attempt" -ge 4 ]; then
+    echo "[prisma-deploy] migrate deploy failed after $attempt attempts — aborting"
+    exit 1
+  fi
+  echo "[prisma-deploy] migrate deploy attempt $attempt failed (likely advisory-lock contention); retrying in $((attempt * 5))s..."
+  sleep $((attempt * 5))
+  attempt=$((attempt + 1))
+done

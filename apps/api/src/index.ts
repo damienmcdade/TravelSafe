@@ -344,7 +344,22 @@ app.use("/push", pushRouter);
 app.use("/share", shareRouter);
 app.use("/geo", geoRouter);
 app.use("/ai", aiRouter);
-app.use("/official-alerts", officialAlertsRouter);
+// fix(audit alerts-legacy-express-sd-only-4): this Express /official-alerts route
+// is a stale, divergent surface — it returns a hardcoded San-Diego-only NWS pull
+// with no per-city geomatch, while the canonical /api/official-alerts (Vercel)
+// resolves the caller's city + uses the authoritative NWS point query. The web
+// never proxies /official-alerts to Railway, so this is dead. Retire it (410)
+// unless ENABLE_LEGACY_API_AUTH is set, same posture as the dead Express /auth.
+if (process.env.ENABLE_LEGACY_API_AUTH === "true") {
+  app.use("/official-alerts", officialAlertsRouter);
+} else {
+  app.use("/official-alerts", (_req, res) => {
+    res.status(410).json({
+      error: "endpoint_retired",
+      message: "Official alerts are served by the CommunitySafe web app (/api/official-alerts).",
+    });
+  });
+}
 app.use("/safezone", safezoneRouter);
 
 // v98 — grade-sanity diagnostic retired alongside the in-process worker.

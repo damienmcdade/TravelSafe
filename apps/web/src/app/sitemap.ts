@@ -22,7 +22,9 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://communitysafe.app";
   const now = new Date();
-  const tabs = ["/threats", "/map", "/watch", "/community", "/safety", "/safety-score", "/trends", "/route", "/coverage", "/cities"];
+  // fix(audit pentest-robots-stale-routes): list the canonical content pages, not
+  // the /safety-score · /trends · /threats redirect stubs.
+  const tabs = ["/city", "/neighborhood", "/map", "/watch", "/community", "/safety", "/coverage", "/cities"];
   const legal = ["/privacy", "/terms", "/methodology", "/about", "/accessibility", "/dmca", "/credits"];
 
   // Per-city discover() in parallel, soft-fail per city so one broken

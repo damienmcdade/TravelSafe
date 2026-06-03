@@ -1224,6 +1224,19 @@ for (const [code, entry] of [
 // Every other state — including WA (see the WSDOT note above) and any state
 // with neither a keyless feed nor a configured key — is intentionally absent:
 // trafficAgencyForState → null, getStateTraffic → [].
+//
+// fix(audit traffic-coverage-hi-3): HAWAII is intentionally absent, documented.
+// Hawaii DOT REMOVED its traveler-info feed (incidents / flow / travel times /
+// Hawaii-511) from goakamai.org effective Oct 1, 2021 — goakamai.org now serves
+// CCTV camera imagery only, with no public JSON/REST incident API (verified: its
+// /api/* paths return HTML, and geoportal.hawaii.gov publishes only static GIS
+// layers, no live incident service). The City & County of Honolulu DOES publish a
+// live "Traffic Incidents" Socrata feed (data.honolulu.gov/resource/ykb6-n5th,
+// HPD-sourced, 5-min refresh, keyless) — but its rows are address/neighborhood
+// TEXT with NULL geometry, so they can't be plotted without a geocoding step this
+// coordinate-based module doesn't do. Until that geocoding lands (or HiDOT
+// restores a WSDOT-style API), HI stays unsupported rather than shipping a
+// half-working layer. Neighbor islands have no public real-time feed at all.
 
 // ---------------------------------------------------------------------------
 // Public contract

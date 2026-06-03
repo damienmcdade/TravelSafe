@@ -17,7 +17,7 @@ import { PHOTOS } from "@/lib/city-photos";
 
 
 // 30-second rotation — keeps the backdrop visibly dynamic without distracting
-// the user. Each city carries 4 photos, so a full cycle is 2 minutes.
+// the user. Each city carries 8 verified photos, so a full cycle is 4 minutes.
 const ROTATE_MS = 30 * 1000;
 
 export function CityBackdrop() {

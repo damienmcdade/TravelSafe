@@ -2,17 +2,25 @@
 import { useEffect, useRef } from "react";
 import { API_BASE } from "./api-client";
 
-export function useCommunityStream(onEvent: (evt: { type: string; [k: string]: unknown }) => void) {
+export function useCommunityStream(
+  onEvent: (evt: { type: string; [k: string]: unknown }) => void,
+  // fix(audit ui-cards-2): optional connection-status callback so a consumer (the
+  // LiveActivityBadge) can reflect the REAL stream state instead of a hardcoded
+  // "Live" dot. Fires true on open, false on error (EventSource auto-reconnects).
+  onStatus?: (connected: boolean) => void,
+) {
   const ref = useRef<EventSource | null>(null);
 
   useEffect(() => {
     const es = new EventSource(`${API_BASE}/api/community/stream`);
     ref.current = es;
+    es.onopen = () => onStatus?.(true);
     es.onmessage = (m) => {
       try { onEvent(JSON.parse(m.data)); } catch { /* skip malformed */ }
     };
     es.onerror = () => {
       // EventSource auto-reconnects with exponential backoff by default.
+      onStatus?.(false);
     };
     return () => {
       es.close();

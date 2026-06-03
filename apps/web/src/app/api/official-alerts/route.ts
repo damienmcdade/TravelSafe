@@ -68,6 +68,11 @@ export const GET = wrap(async (req: Request) => {
   return NextResponse.json({
     sources: sourceLabels,
     alerts,
+    // fix(audit alerts-no-freshness-signal-7): expose when this aggregate was
+    // assembled so the client can show "as of HH:MM" / flag a stale card. The
+    // upstreams are each cached (NWS/AMBER/traffic ~5min), so a served response
+    // can be a few minutes old; generatedAt makes that legible instead of silent.
+    generatedAt: new Date().toISOString(),
     // null when the city's state has no free public traffic feed yet — the
     // panel shows an honest "not available" note instead of a blank card.
     roadAgency,

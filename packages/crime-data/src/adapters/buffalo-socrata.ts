@@ -12,7 +12,7 @@ import { titleCaseOffense } from "../lib/titlecase-offense.js";
 //
 // Buffalo publishes a clean `parent_incident_type` field with 7 categories
 // (Theft, Assault, Theft of Vehicle, Breaking & Entering, Robbery, Sexual
-// Offense, Homicide) and a `neighborhood` field naming one of 36 official
+// Offense, Homicide) and a `neighborhood` field naming one of 35 official
 // Buffalo neighborhoods (Allentown, North Park, Central, Broadway Fillmore,
 // West Side, Elmwood Bryant, Lower/Upper West Side, etc.).
 //
@@ -57,7 +57,7 @@ const PROVENANCE: DataProvenance = {
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the Buffalo Police Department and aggregated " +
-    "to one of 36 official Buffalo neighborhoods. BPD's `parent_incident_type` " +
+    "to one of 35 official Buffalo neighborhoods. BPD's `parent_incident_type` " +
     "field is honored directly (Theft / Assault / Vehicle Theft / Breaking & " +
     "Entering / Robbery / Sexual Offense / Homicide). Block-level addresses " +
     "only; per-incident locations are coarsened by BPD before publication.",

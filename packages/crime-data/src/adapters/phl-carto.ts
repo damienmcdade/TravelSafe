@@ -164,7 +164,16 @@ async function fetchPhl(): Promise<Incident[]> {
   const body = await res.json() as { rows?: PhlRow[]; error?: unknown };
   if (body.error) throw new Error(`PHL CARTO error: ${JSON.stringify(body.error)}`);
   const rows = body.rows ?? [];
-  return rows.map((r, i) => {
+  const out: Incident[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    // fix(audit loc-phl-epoch-fallback-3): DROP a row with no parseable dispatch
+    // time instead of stamping it epoch(0). An epoch-0 occurredAt poisons the
+    // citywide rate window (collapses windowDays toward 365 from 1970) and dates
+    // the incident to 1970 on the map. The SQL already filters NULLs, so this is
+    // the belt-and-suspenders for blank / unparseable strings.
+    const ts = r.dispatch_date_time ? +new Date(r.dispatch_date_time) : NaN;
+    if (!Number.isFinite(ts) || ts <= 0) continue;
     // CARTO returns point_x = lng, point_y = lat (the GIS XY convention).
     const lng = typeof r.point_x === "number" ? r.point_x : undefined;
     const lat = typeof r.point_y === "number" ? r.point_y : undefined;
@@ -173,18 +182,19 @@ async function fetchPhl(): Promise<Incident[]> {
     // back to the PPD-district anchor for rows with no/zeroed point or
     // that land outside every polygon.
     const area = (hasCoord ? geocodePhl(lng!, lat!) : null) ?? enrich(r.dc_dist);
-    return {
+    out.push({
       id: `phl-${r.objectid ?? i}`,
       area,
-      occurredAt: r.dispatch_date_time ?? new Date(0).toISOString(),
+      occurredAt: r.dispatch_date_time!,
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: r.text_general_code?.trim() || "Unknown",
       beat: r.psa ?? null,
       blockLabel: r.location_block ?? undefined,
       lat: hasCoord ? lat : undefined,
       lng: hasCoord ? lng : undefined,
-    };
-  });
+    });
+  }
+  return out;
 }
 
 export async function getRowsPhl(): Promise<Incident[]> {

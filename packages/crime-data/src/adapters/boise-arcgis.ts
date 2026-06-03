@@ -3,6 +3,14 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
+import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
+
+// fix(audit cov-boise-centroid-placeholder): real per-area centroids derived
+// from boise.geojson (the same polygons the map draws), so "use my location" →
+// nearest area can tell Boise neighborhoods apart instead of seeing them all at
+// the same downtown point. Falls back to the city centroid for any unmatched area.
+const BZI_CENTROIDS = GENERATED_AREA_CENTROIDS.boise ?? {};
+const BOISE_CENTROID = { lat: 43.62, lng: -116.21 };
 
 // Boise — Boise Police Department Calls for Service.
 // ArcGIS FeatureServer on services1.arcgis.com (owner: Boise_GIS).
@@ -138,12 +146,15 @@ export async function getDiscoveredAreasBoise(): Promise<KnownArea[]> {
   }
   return Array.from(counts.entries())
     .filter(([, c]) => c >= 3)
-    .map(([name]) => ({
-      slug: `bzi-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
-      jurisdiction: "Boise",
-      centroid: { lat: 43.62, lng: -116.21 }, // city centroid placeholder
-    }))
+    .map(([name]) => {
+      const slug = `bzi-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      return {
+        slug,
+        label: name,
+        jurisdiction: "Boise",
+        centroid: BZI_CENTROIDS[slug] ?? BOISE_CENTROID,
+      };
+    })
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 

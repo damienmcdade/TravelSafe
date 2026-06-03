@@ -130,8 +130,14 @@ export const sandagSocrataAdapter: CrimeDataAdapter = {
   name: "sandag-socrata",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {
+    // fix(audit pentest-inj-1): never interpolate the raw user-supplied `area`
+    // into the SoQL $where. An unrecognized area has no SANDAG jurisdiction, so
+    // when findArea() misses we return null instead of falling back to the raw
+    // string. The remaining value is the registry-controlled jurisdiction (still
+    // SoQL-escaped defensively), not user input.
     const known = findArea(area);
-    const jurisdiction = known?.jurisdiction ?? area;
+    if (!known) return null;
+    const jurisdiction = known.jurisdiction;
 
     const rows = await sodaGet({
       $where: `jurisdiction='${jurisdiction.replace(/'/g, "''")}'`,

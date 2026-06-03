@@ -14,7 +14,7 @@ const TRIGGER_CLS = "inline-flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1
 ///
 ///   1. Search-first (default open state): a single combobox the user
 ///      types into. Matches the same combobox UX we ship on Safe Route
-///      and SafeZone, scaled for 30 cities. Arrow keys + Enter commit.
+///      and SafeZone, scaled for all 44 supported cities. Arrow keys + Enter commit.
 ///
 ///   2. Browse-by-state (collapsible disclosure): the original
 ///      state + city wheels for users who don't know which city to

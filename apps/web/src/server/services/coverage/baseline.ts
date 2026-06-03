@@ -61,7 +61,7 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "cleveland":        { neighborhoodCount:  33, source: "Cleveland Division of Police — Part-1 Crime Incidents (NIBRS RMS)" },
   "detroit":          { neighborhoodCount: 208, source: "Detroit Police RMS Crime Incidents · data.detroitmi.gov" },
   // Texas / South
-  "dallas":           { neighborhoodCount:  27, source: "Dallas Police Incidents (City of Dallas Open Data)" },
+  "dallas":           { neighborhoodCount:  24, source: "Dallas Police Incidents (City of Dallas Open Data) — 24 area-sector polygons" },
   "baltimore":        { neighborhoodCount: 283, source: "BPD NIBRS Group A Crime Data · data.baltimorecity.gov" },
   "atlanta":          { neighborhoodCount:  25, source: "Atlanta Police Department Crime Incidents (Atlanta PD Open Data)" },
   "charlotte":        { neighborhoodCount:  13, source: "Charlotte-Mecklenburg Police Department Crime Incidents (charlottenc.gov ArcGIS)" },

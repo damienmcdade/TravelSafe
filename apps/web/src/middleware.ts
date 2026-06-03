@@ -123,6 +123,15 @@ const LIMITS: Array<{ prefix: string; cap: number }> = [
   { prefix: "/api/safezone/",      cap: 60 },
   { prefix: "/api/crime-data/",    cap: 60 },
   { prefix: "/api/geo/",           cap: 60 },
+  // fix(audit pentest-ratelimit-share-token / pentest-share-1): the public
+  // token-in-URL endpoints had NO rate limit, so an attacker could brute-force
+  // share / confirm tokens unbounded from one IP. A legitimate recipient opens
+  // the link a handful of times; 20/min/IP is generous for that while making
+  // enumeration (the tokens are 20-24 random bytes, already astronomically large
+  // a space) economically pointless. Pairs with the base64url shape guard added
+  // to both routes in PR #19.
+  { prefix: "/api/share/",         cap: 20 },
+  { prefix: "/api/contacts/confirm/", cap: 20 },
 ];
 
 // Path prefixes that are NEVER rate-limited (auth-protected by their

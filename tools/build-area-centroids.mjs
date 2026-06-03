@@ -35,6 +35,10 @@ const CITY_CONFIG = {
   "norfolk":        { slugPrefix: "nor-" },
   "virginia-beach": { slugPrefix: "vb-" },
   "sacramento":     { slugPrefix: "sac-" },
+  // fix(audit cov-boise-centroid-placeholder): Boise's CFS feed has no per-row
+  // coords and the adapter stamped every area with the same city-centroid
+  // placeholder; derive real per-area centroids from boise.geojson (35 polys).
+  "boise":          { slugPrefix: "bzi-" },
 };
 
 function slugify(name) {

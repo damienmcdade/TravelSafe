@@ -184,7 +184,12 @@ export const CITIES: CityEntry[] = [
   {
     slug: "dallas",
     label: "Dallas",
-    bbox: { south: 32.62, west: -96.99, north: 33.02, east: -96.55 },
+    // fix(audit coverage-dal-bbox-clip): widened to the official City of Dallas
+    // city-limits extent (eGIS CityLimits layer, reprojected to WGS84: N 33.031,
+    // S 32.606, E -96.463, W -97.001). The prior box clipped both the east edge
+    // (-96.55 vs -96.463) and the west edge (-96.99 vs -97.001), dropping real
+    // city territory from point-in-bbox routing.
+    bbox: { south: 32.60, west: -97.01, north: 33.04, east: -96.45 },
     adapter: dallasAdapter,
     discover: getDiscoveredAreasDallas,
   },

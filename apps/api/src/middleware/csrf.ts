@@ -25,9 +25,13 @@ import type { Request, Response, NextFunction } from "express";
 //     a negligible share of US traffic and the rate-limit + auth
 //     check still apply.
 //
-// Mobile clients: CommunitySafe has no native app yet. If one ships,
-// it should send Sec-Fetch-Site: none (its own request, not from a
-// hostile page) which passes the guard. No retrofit needed.
+// fix(audit pentest-csrf-stale-native-comment): a Capacitor iOS/Android app DOES
+// ship (it loads communitysafe.app in a WebView). Same-origin WebView requests
+// send Sec-Fetch-Site: same-origin (or none for app-initiated navigations), both
+// of which pass this guard, so no retrofit is needed — but note this surface IS
+// reached by the native shell, not hypothetical. (The web's primary CSRF defense
+// is the Bearer/Authorization context anyway; this Sec-Fetch-Site check is
+// defense-in-depth.)
 
 const STATE_CHANGING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
