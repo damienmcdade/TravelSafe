@@ -11,6 +11,10 @@ export const GET = wrap(async (req: NextRequest) => {
     where: { authorId: session.uid, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: { flags: true, area: true },
+    // fix(audit db-unbounded-mine-5): cap the result set. A prolific author (or a
+    // scripted spammer) could otherwise pull an unbounded list into memory + the
+    // response. 200 is well above any real per-author post count.
+    take: 200,
   });
   return NextResponse.json(posts);
 });

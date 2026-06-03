@@ -50,12 +50,15 @@ function resolveArea(q: z.infer<typeof areaQuery>): string | null {
 const CITYWIDE_TIMEOUT_MS = 45_000;
 const CITYWIDE_TIMEOUT = Symbol("citywide-timeout");
 function withCitywideTimeout<T>(p: Promise<T>): Promise<T | typeof CITYWIDE_TIMEOUT> {
-  return Promise.race([
-    p,
-    new Promise<typeof CITYWIDE_TIMEOUT>((resolve) =>
-      setTimeout(() => resolve(CITYWIDE_TIMEOUT), CITYWIDE_TIMEOUT_MS),
-    ),
-  ]);
+  // fix(audit api-code-6): clear the timer when the real work wins the race —
+  // otherwise the 45s setTimeout lingers (keeping the event loop / a closure
+  // alive) on every fast request, which adds up under load on the memory-bounded
+  // Railway container.
+  let timer: ReturnType<typeof setTimeout>;
+  const timeout = new Promise<typeof CITYWIDE_TIMEOUT>((resolve) => {
+    timer = setTimeout(() => resolve(CITYWIDE_TIMEOUT), CITYWIDE_TIMEOUT_MS);
+  });
+  return Promise.race([p, timeout]).finally(() => clearTimeout(timer));
 }
 
 crimeDataRouter.get("/citywide", optionalAuth, async (req, res, next) => {
