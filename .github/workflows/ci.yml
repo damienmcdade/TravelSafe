@@ -61,3 +61,31 @@ jobs:
 
       - name: Build (web)
         run: npm run build --workspace apps/web
+
+  # Keep Railway (apps/api) in lockstep with Vercel. ROOT CAUSE of the
+  # frontend↔backend drift the sync-check chases: Vercel auto-deploys every push
+  # to main, but Railway did NOT — so the API ran older adapter code than the web
+  # until someone manually ran `railway up`, and tryProxy then served stale/
+  # divergent responses. This job redeploys the API on every green push to main,
+  # so both sides always run the same commit. Gated on `ci` so we never deploy a
+  # red build.
+  deploy-railway:
+    name: Deploy API to Railway
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy (or warn if token unset)
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ]; then
+            echo "::warning title=Railway auto-deploy skipped::RAILWAY_TOKEN is not set in repo secrets. Railway will NOT auto-deploy, so the API can drift behind Vercel. Set RAILWAY_TOKEN (a project token for communitysafe-api) to enable lockstep deploys."
+            exit 0
+          fi
+          npm i -g @railway/cli@latest
+          # --service pins the API service; --detach returns once the build is
+          # queued (the /health healthcheck gates the actual cutover).
+          railway up --service 6a7c8ff7-b038-48d1-a623-d37ffe686011 --detach

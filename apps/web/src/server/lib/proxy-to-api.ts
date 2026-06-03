@@ -55,10 +55,15 @@ export async function tryProxy(
       headers: upstreamHeaders,
       signal: controller.signal,
     });
-  } catch {
+  } catch (err) {
     // Aborted, DNS failure, refused connection, etc. — fall through to
     // the local implementation. Never block the user on a Railway blip.
     clearTimeout(to);
+    // fix(sync): observability. A silent fall-through means the web is now
+    // serving its OWN crime-data codepath instead of Railway's — the exact
+    // condition under which the two can diverge. Log it (structured, no PII) so
+    // sustained fallbacks are visible in Vercel logs instead of hiding drift.
+    console.warn(`[proxy] fallback to local for ${upstreamPath}: ${(err as Error)?.name ?? "fetch_error"}`);
     return null;
   }
   // Headers are in hand — cancel the header-wait timer. From here we
@@ -69,6 +74,7 @@ export async function tryProxy(
   if (!upstream.ok || !upstream.body) {
     // 4xx / 5xx from Railway → let the local fallback kick in. The
     // adapter cache on Vercel might still have data.
+    console.warn(`[proxy] fallback to local for ${upstreamPath}: railway ${upstream.status}`);
     return null;
   }
   const ct = upstream.headers.get("content-type") ?? "application/json";

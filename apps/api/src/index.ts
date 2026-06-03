@@ -273,7 +273,11 @@ const healthHandler = (req: import("express").Request, res: import("express").Re
   // operator secret so monitors that want heap trajectory can still get it.
   const authed = !!env.CRON_SECRET && req.header("authorization") === `Bearer ${env.CRON_SECRET}`;
   if (!authed) {
-    res.json({ ok: true, service: "communitysafe-api", time: new Date().toISOString() });
+    // The git SHA is PUBLIC (it's on GitHub) and is the deploy-version signal the
+    // frontend↔backend sync-check compares against the web's /api/health `commit`
+    // to detect deploy skew (Railway runs older code than Vercel). Safe to expose;
+    // the sensitive heap/cache/compute telemetry stays behind the operator secret.
+    res.json({ ok: true, service: "communitysafe-api", time: new Date().toISOString(), commit: BUILD_SHA });
     return;
   }
   const mem = process.memoryUsage();

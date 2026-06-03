@@ -96,6 +96,25 @@ const PROBES = [
     "/api/crime-data/upticks?city=new-york",
     "/crime-data/upticks?city=new-york",
     (v, r) => keyParityCheck(v, r, "upticks.new-york")],
+
+  // Deploy-version coherence — the ROOT cause of data drift is the two sides
+  // running different code: Vercel auto-deploys on push, Railway does NOT, so
+  // until someone runs `railway up` the proxied responses come from older
+  // adapter logic. Compare the deployed git SHAs directly (web /api/health
+  // `commit` vs Railway /health `commit`/`buildSha`) so skew is caught even
+  // before it manifests as a data-shape difference.
+  ["deploy version coherence (web vs railway git SHA)",
+    "/api/health",
+    "/health",
+    (v, r) => {
+      const vSha = (v && v.commit) || null;
+      const rSha = (r && (r.commit || r.buildSha)) || null;
+      if (!vSha || !rSha) return []; // can't compare (local/unknown env) — not drift
+      if (vSha !== rSha) {
+        return [`DEPLOY SKEW: vercel=${vSha} railway=${rSha} — the two run different code; redeploy the lagging side (\`railway up\` for the API).`];
+      }
+      return [];
+    }],
 ];
 
 function keyParityCheck(v, r, label) {
