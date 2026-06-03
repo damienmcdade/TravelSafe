@@ -178,6 +178,11 @@ model SavedPlace {
   alertsEnabled      Boolean  @default(true)
   lastAlertAt        DateTime?                // last time we pushed an alert for this place
   lastSeenIncidentAt DateTime?                // newest incident timestamp we've already alerted on
+  // fix(audit safezone-proximity-occurredat-lag-miss): freshness keyed on a
+  // bounded set of already-seen incident IDs, not just a high-water occurredAt.
+  // Feeds publish out of order (a record can surface today dated weeks ago); the
+  // timestamp baseline would step over it, the ID set won't.
+  seenIncidentIds    String[] @default([])
   createdAt          DateTime @default(now())
   user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
