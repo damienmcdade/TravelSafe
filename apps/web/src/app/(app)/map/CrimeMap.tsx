@@ -1046,28 +1046,30 @@ function NeighborhoodPanel({ name, stats, recent }: { name: string; stats: AreaB
         </div>
       )}
 
-      {/* Each polygon click already syncs the global area selection
-          via pickPolygon → setArea(), so by the time these CTAs are
-          visible the destination page can read the area straight from
-          the useArea store. Next/Link gives us client-side navigation
-          (no full reload) without losing that context — the previous
-          <a> tags worked only because a full reload re-read storage,
-          which was slow and inconsistent with the rest of the app. */}
+      {/* fix(audit web-nav-1): each polygon click already syncs the global area
+          via pickPolygon → setArea(), so the destination reads the area straight
+          from the useArea store. These CTAs previously pointed at /safety-score,
+          /trends, /threats — which are server-redirect stubs to the CITYWIDE
+          /city page, throwing away the just-selected area. They now point at
+          /neighborhood, the per-area view that renders the Safety Index
+          (BlockScoreWidget), the 30-day timeline (TrendPanel), and the awareness
+          brief (AreaBriefPanel) all scoped to the selected area. Next/Link keeps
+          client-side navigation (no full reload) so the store context survives. */}
       <div className="mt-5 flex flex-wrap gap-2 text-xs">
         <Link
-          href="/safety-score"
+          href="/neighborhood"
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-bay-500 text-white hover:bg-bay-700 transition-colors"
         >
           Safety Index for {name} →
         </Link>
         <Link
-          href="/trends"
+          href="/neighborhood"
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg surface-muted hover:bg-bay-200 hover:text-bay-700 text-slate2-700 transition-colors"
         >
           30-day timeline for {name} →
         </Link>
         <Link
-          href="/threats"
+          href="/neighborhood"
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg surface-muted hover:bg-bay-200 hover:text-bay-700 text-slate2-700 transition-colors"
         >
           Awareness brief for {name} →
