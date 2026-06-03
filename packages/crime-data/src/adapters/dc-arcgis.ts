@@ -145,7 +145,7 @@ async function fetchPage(layer: number, offset: number): Promise<DcRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchDC(): Promise<Incident[]> {
+async function fetchDC(): Promise<{ incidents: Incident[]; complete: boolean }> {
   // Pull current year + prior year. The safety-score's 365d wall-clock
   // window then narrows back to one year; without prior-year coverage
   // every score in the first ~365 days of any new calendar year would
@@ -157,9 +157,15 @@ async function fetchDC(): Promise<Incident[]> {
     if (layer != null) layersToPull.push(layer);
   }
   // Within each layer, page through up to PAGES × PAGE_SIZE rows.
+  // fix(audit loc-dc-partial-cache-2): count page-level errors so the caller can
+  // refuse to cache a PARTIAL pull. A thrown page (HTTP error / network drop) and
+  // an end-of-data empty page both yield [], but only the former increments
+  // pageFailures — so `complete` is false only when a page genuinely failed.
+  let pageFailures = 0;
   const allPages = await Promise.all(
     layersToPull.flatMap((layer) =>
-      Array.from({ length: PAGES }, (_, i) => fetchPage(layer, i * PAGE_SIZE).catch(() => [] as DcRow[])),
+      Array.from({ length: PAGES }, (_, i) =>
+        fetchPage(layer, i * PAGE_SIZE).catch(() => { pageFailures++; return [] as DcRow[]; })),
     ),
   );
   // Dedupe by CCN — DC's incident numbers are unique across years so a
@@ -204,16 +210,20 @@ async function fetchDC(): Promise<Incident[]> {
       lng: typeof lon === "number" && lon !== 0 ? lon : undefined,
     });
   }
-  return out;
+  return { incidents: out, complete: pageFailures === 0 };
 }
 
 export async function getRowsDC(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
   try {
-    const rows = await fetchDC();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
+    const { incidents, complete } = await fetchDC();
+    // fix(audit loc-dc-partial-cache-2): only cache a COMPLETE pull. Caching a
+    // partial result (some pages errored) would pin an undercount for the whole
+    // TTL — the exact bug Detroit hit. On a partial pull we still SERVE what we
+    // got for this request, but leave the cache so the next request retries.
+    if (incidents.length > 0 && complete) cache = { fetchedAt: now, rows: incidents };
+    return incidents.length > 0 ? incidents : (cache?.rows ?? []);
   } catch (err) {
     console.warn("[dc] fetch failed:", (err as Error).message);
     return cache?.rows ?? [];

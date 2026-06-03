@@ -29,7 +29,7 @@ export const GET = wrap(async (req: Request) => {
   // "no active incidents" state rather than going blank.
   const roadAgency = trafficAgencyForState(city?.state ?? null);
   const [nws, usgs, amber, traffic] = await Promise.all([
-    getNwsAlerts(city?.state ?? null, city?.label ?? null),
+    getNwsAlerts(city?.state ?? null, city?.label ?? null, city?.centroid ?? null),
     getUsgsEarthquakes(city?.centroid ?? null),
     getAmberAlerts(city?.state ?? null),
     getStateTraffic(city?.state ?? null, city?.centroid ?? null),

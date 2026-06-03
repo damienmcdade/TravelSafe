@@ -39,19 +39,34 @@ interface NwsFeature {
   };
 }
 
-/// Pull active NWS alerts for the given USPS state code and narrow to
-/// the city label. If state is missing we fall back to a national pull
-/// (which is fine for a card titled "From official sources" — better
-/// to show SOMETHING than nothing).
-export async function getNwsAlerts(state: string | null, cityLabel: string | null): Promise<OfficialAlert[]> {
-  const key = `${state ?? "US"}|${cityLabel ?? ""}`.toLowerCase();
+/// Pull active NWS alerts for a city.
+///
+/// fix(audit alerts-nws-geomatch-3): the prior approach pulled every alert for
+/// the STATE and kept those whose areaDesc substring-matched the city LABEL. But
+/// NWS areaDesc lists COUNTY / forecast-zone names ("Cook; DuPage; ..."), not
+/// city names, so "Chicago" almost never matched — real alerts were dropped while
+/// a crude "≥5 zones ⇒ statewide ⇒ keep" heuristic leaked irrelevant ones. When a
+/// centroid is available we now hit NWS's authoritative POINT query
+/// (?point=lat,lng), which returns exactly the alerts whose zone polygon contains
+/// the point — no string guessing. The state+substring path remains only as a
+/// fallback for callers with no centroid.
+export async function getNwsAlerts(
+  state: string | null,
+  cityLabel: string | null,
+  centroid?: { lat: number; lng: number } | null,
+): Promise<OfficialAlert[]> {
+  const key = `${state ?? "US"}|${cityLabel ?? ""}|${centroid ? `${centroid.lat.toFixed(3)},${centroid.lng.toFixed(3)}` : ""}`.toLowerCase();
   const now = Date.now();
   const hit = cache.get(key);
   if (hit && now - hit.fetchedAt < CACHE_TTL_MS) return hit.alerts;
   try {
-    const path = state
-      ? `https://api.weather.gov/alerts/active?area=${encodeURIComponent(state)}`
-      : `https://api.weather.gov/alerts/active`;
+    // NWS rounds point coords to 4 decimals; pass them in that form.
+    const usePoint = centroid != null && Number.isFinite(centroid.lat) && Number.isFinite(centroid.lng);
+    const path = usePoint
+      ? `https://api.weather.gov/alerts/active?point=${centroid!.lat.toFixed(4)},${centroid!.lng.toFixed(4)}`
+      : state
+        ? `https://api.weather.gov/alerts/active?area=${encodeURIComponent(state)}`
+        : `https://api.weather.gov/alerts/active`;
     const res = await fetch(path, {
       headers: {
         Accept: "application/geo+json",
@@ -65,7 +80,9 @@ export async function getNwsAlerts(state: string | null, cityLabel: string | nul
     const cityNeedle = cityLabel?.toLowerCase() ?? null;
     const alerts: OfficialAlert[] = (json.features ?? [])
       .filter((f) => {
-        if (!cityNeedle) return true;
+        // The point query already returns only zone-matched alerts — keep them
+        // all. Substring filtering is the fallback path's job (no centroid).
+        if (usePoint || !cityNeedle) return true;
         const area = f.properties.areaDesc?.toLowerCase() ?? "";
         // Keep alerts that mention the city by name OR are state-wide
         // (no county-level qualifier in areaDesc means it likely covers
