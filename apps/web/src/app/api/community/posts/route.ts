@@ -57,11 +57,15 @@ export const GET = wrap(async (req: NextRequest) => {
   // city.defaultArea which the adapter doesn't recognize as a real
   // neighborhood; the endpoint returned every VERIFIED post across
   // every city — a Chicago user could see San Diego posts.
+  // fix(audit db-post-softdelete-2): every feed query must filter `deletedAt IS
+  // NULL` (the schema's @@index([deletedAt]) and the Post model comment both
+  // assume this), but these where-clauses only checked status — so a soft-deleted
+  // post would still surface. Enforce the documented invariant on all three paths.
   const where = areaSlug
-    ? { status: PostStatus.VERIFIED, area: { slug: areaSlug } }
+    ? { status: PostStatus.VERIFIED, deletedAt: null, area: { slug: areaSlug } }
     : citySlug
-      ? { status: PostStatus.VERIFIED, area: { parentSlug: citySlug } }
-      : { status: PostStatus.VERIFIED };
+      ? { status: PostStatus.VERIFIED, deletedAt: null, area: { parentSlug: citySlug } }
+      : { status: PostStatus.VERIFIED, deletedAt: null };
   const posts = await prisma.post.findMany({
     where,
     orderBy: { createdAt: "desc" },

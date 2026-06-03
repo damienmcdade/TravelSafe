@@ -7,7 +7,8 @@ export const dynamic = "force-dynamic";
 export const GET = wrap(async (req: NextRequest) => {
   const session = await requireSession(req);
   const posts = await prisma.post.findMany({
-    where: { authorId: session.uid },
+    // fix(audit db-post-softdelete-2): a soft-deleted post is gone for the author too.
+    where: { authorId: session.uid, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: { flags: true, area: true },
   });

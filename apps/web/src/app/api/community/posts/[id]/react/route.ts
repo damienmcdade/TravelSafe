@@ -13,8 +13,9 @@ export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<
   // VERIFIED before reacting — the same guard the comment route already has.
   // Previously a blind upsert against a missing post FK'd to a 500 (not 404),
   // and a user could react to a PENDING / removed / hidden post.
-  const post = await prisma.post.findUnique({ where: { id }, select: { status: true } });
-  if (!post || post.status !== PostStatus.VERIFIED) {
+  // fix(audit db-post-softdelete-2): also treat a soft-deleted post as not-found.
+  const post = await prisma.post.findUnique({ where: { id }, select: { status: true, deletedAt: true } });
+  if (!post || post.status !== PostStatus.VERIFIED || post.deletedAt) {
     return NextResponse.json({ error: "post_not_found" }, { status: 404 });
   }
   await prisma.postReaction.upsert({

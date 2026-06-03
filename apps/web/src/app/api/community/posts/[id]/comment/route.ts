@@ -16,8 +16,9 @@ export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<
   // before attaching a comment. Previously a comment could be created against a
   // PENDING / removed / hidden post (the FK only guarantees the row exists, not
   // that it's publicly visible), letting users comment on non-visible content.
-  const post = await prisma.post.findUnique({ where: { id }, select: { status: true } });
-  if (!post || post.status !== PostStatus.VERIFIED) {
+  // fix(audit db-post-softdelete-2): also treat a soft-deleted post as not-found.
+  const post = await prisma.post.findUnique({ where: { id }, select: { status: true, deletedAt: true } });
+  if (!post || post.status !== PostStatus.VERIFIED || post.deletedAt) {
     return NextResponse.json({ error: "post_not_found" }, { status: 404 });
   }
   const vet = preVetPost(body);
