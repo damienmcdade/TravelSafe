@@ -112,7 +112,9 @@ export function IncidentSummaryCard({
         // useful because the deterministic counts + trend are
         // computed without the model.
         <p className="text-sm text-slate2-700 leading-snug">
-          {data.recentCount.toLocaleString()} incidents reported in {contextLabel.toLowerCase()} over the last {data.windowDays} days
+          {/* fix(audit ui-card-3): contextLabel is a proper-noun area/city name
+              (rendered as-is in the header above) — don't lowercase it. */}
+          {data.recentCount.toLocaleString()} incidents reported in {contextLabel} over the last {data.windowDays} days
           {data.priorCount > 0 ? ` (${data.priorCount.toLocaleString()} in the prior ${data.windowDays}-day window).` : "."}
         </p>
       )}
