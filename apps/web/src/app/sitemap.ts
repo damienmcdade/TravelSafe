@@ -41,10 +41,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const CITY_DISCOVER_TIMEOUT_MS = 15_000;
   const perCity = await Promise.all(
     CITIES.map(async (city) => {
+      // fix(audit api-code-6): clear the per-city timeout once discover settles.
+      let timer: ReturnType<typeof setTimeout>;
       const areas: KnownArea[] = await Promise.race<KnownArea[]>([
         city.discover().catch(() => [] as KnownArea[]),
-        new Promise<KnownArea[]>((resolve) => setTimeout(() => resolve([] as KnownArea[]), CITY_DISCOVER_TIMEOUT_MS)),
-      ]);
+        new Promise<KnownArea[]>((resolve) => { timer = setTimeout(() => resolve([] as KnownArea[]), CITY_DISCOVER_TIMEOUT_MS); }),
+      ]).finally(() => clearTimeout(timer));
       return { city, areas };
     }),
   );

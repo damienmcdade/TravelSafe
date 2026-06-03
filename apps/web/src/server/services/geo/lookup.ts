@@ -206,9 +206,12 @@ export async function lookupLocation(q: string, citySlug?: string): Promise<Look
     if (areas.length < 50) {
       // Cache is cold or fallback-only — pull fresh but cap the wait
       // at 12s so the endpoint returns SOMETHING within Vercel's budget.
-      const timeout = new Promise<KnownArea[]>((resolve) =>
-        setTimeout(() => resolve(areas), 12_000));
-      areas = await Promise.race([listKnownAreas(), timeout]);
+      // fix(audit api-code-6): clear the timer when listKnownAreas() wins.
+      let timer: ReturnType<typeof setTimeout>;
+      const timeout = new Promise<KnownArea[]>((resolve) => {
+        timer = setTimeout(() => resolve(areas), 12_000);
+      });
+      areas = await Promise.race([listKnownAreas(), timeout]).finally(() => clearTimeout(timer));
     }
     const fuzzy = fuzzyMatch(trimmed, areas);
     if (fuzzy) return { area: fuzzy, matchedVia: "fuzzy", rawQuery: trimmed };

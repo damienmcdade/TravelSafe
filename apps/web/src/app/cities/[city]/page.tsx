@@ -57,11 +57,16 @@ export default async function CityLandingPage({ params }: Props) {
   // the page renders with `null`/`[]` and the user sees a "data is
   // warming up" surface instead of a Vercel error screen.
   const TIMEOUT_MS = 12_000;
-  const withTimeout = <T,>(p: Promise<T>, fallback: T): Promise<T> =>
-    Promise.race([
+  // fix(audit api-code-6): clear the deadline timer once the work settles so a
+  // fast render doesn't leave a 12s setTimeout pending on the (possibly warm)
+  // function instance.
+  const withTimeout = <T,>(p: Promise<T>, fallback: T): Promise<T> => {
+    let timer: ReturnType<typeof setTimeout>;
+    return Promise.race([
       p,
-      new Promise<T>((resolve) => setTimeout(() => resolve(fallback), TIMEOUT_MS)),
-    ]);
+      new Promise<T>((resolve) => { timer = setTimeout(() => resolve(fallback), TIMEOUT_MS); }),
+    ]).finally(() => clearTimeout(timer));
+  };
   const [areas, citywideScore] = await Promise.all([
     withTimeout(city.discover().catch(() => []), [] as Awaited<ReturnType<typeof city.discover>>),
     withTimeout(getCitywideSafetyScore(slug).catch(() => null), null),
