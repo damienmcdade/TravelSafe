@@ -145,14 +145,21 @@ function safeIso(raw: string | null | undefined): string {
 // fallback when an incident lacks lat/lng coords (geocodeNola()
 // handles the typical case). Replaces the old "District 4" / "District
 // 7" labels which were operational shorthand, not neighborhood names.
+// fix(audit cov-nola-district-fallback-labels): these coord-less fallback labels
+// must match an actual polygon in new-orleans.geojson, or a row without lat/lng
+// joins to a non-renderable area. 'Treme', 'Algiers', and 'New Orleans East' had
+// no matching polygon — remapped to the real GNOCDC neighborhood-statistical-area
+// names ('Treme - Lafitte', 'Algiers Point', and 'Little Woods' — the largest/
+// most-recognized New Orleans East neighborhood, NOPD 7th district). The other
+// five already matched polygons.
 const NOPD_DISTRICT_TO_NEIGHBORHOOD: Record<string, string> = {
-  "1": "Treme",            // 1st: French Quarter / Treme / Marigny
+  "1": "Treme - Lafitte",  // 1st: French Quarter / Treme / Marigny
   "2": "Uptown",           // 2nd: Uptown, Garden District, Magazine St
   "3": "Mid-City",         // 3rd: Mid-City, Lakeview
-  "4": "Algiers",          // 4th: Algiers / West Bank
+  "4": "Algiers Point",    // 4th: Algiers / West Bank
   "5": "Bywater",          // 5th: Marigny / Bywater / St. Roch
   "6": "Central City",     // 6th: Garden District / Central City
-  "7": "New Orleans East", // 7th: New Orleans East
+  "7": "Little Woods",     // 7th: New Orleans East (Little Woods is the largest NOE NSA)
   "8": "French Quarter",   // 8th: French Quarter / CBD
 };
 function districtToNeighborhood(raw: string | undefined | null): string {
