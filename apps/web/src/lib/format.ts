@@ -36,3 +36,21 @@ export function formatDeltaPct(pct: number | null | undefined): string {
   const rounded = Math.round(pct);
   return `${rounded > 0 ? "+" : ""}${rounded}%`;
 }
+
+/// Format a "newest report" date (e.g. score.asOf) DETERMINISTICALLY.
+///
+/// Pins both the locale ("en-US") and the timezone ("UTC") so the server
+/// (which runs in UTC) and the browser (any local TZ) render the IDENTICAL
+/// string. Without this, `new Date(asOf).toLocaleDateString()` uses each
+/// runtime's own TZ + locale: on the server-rendered city / neighborhood
+/// profile pages (where the score is an SSR prop), that produced a server-vs-
+/// client text mismatch → React #418 hydration error whenever `asOf` sits near
+/// a day boundary (intermittent, more frequent on some cities). UTC is also the
+/// correct interpretation for a date-only value — a negative-offset local TZ
+/// would otherwise render it off-by-one (the previous calendar day).
+export function formatReportDate(asOf: string | null | undefined): string | null {
+  if (!asOf) return null;
+  const d = new Date(asOf);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-US", { timeZone: "UTC", year: "numeric", month: "short", day: "numeric" });
+}

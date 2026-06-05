@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CITIES } from "@/lib/use-city";
-import { formatRatePer100k, formatDeltaPct } from "@/lib/format";
+import { formatRatePer100k, formatDeltaPct, formatReportDate } from "@/lib/format";
 
 interface ScoreRow {
   category: "PERSONS" | "PROPERTY";
@@ -114,7 +114,7 @@ function CityScoreCard({ score, loading, accent }: { score: ScoreResp | null; lo
         </div>
         <div className="mt-3 text-xs text-slate2-500 tabular-nums">
           ~{score.populationEstimate.toLocaleString()} residents · window ~{score.windowDays} days
-          {score.asOf && <> · newest report {new Date(score.asOf).toLocaleDateString()}</>}
+          {score.asOf && <> · newest report {formatReportDate(score.asOf)}</>}
         </div>
         {score.dataConfidence && score.dataConfidence !== "high" && score.dataConfidenceNote && (
           <p
