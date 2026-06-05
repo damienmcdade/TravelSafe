@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 export interface CityInfo {
   slug: string;
@@ -114,50 +114,48 @@ export const STATES: Array<{ abbr: string; label: string; cities: number }> = ((
 
 const STORAGE_KEY = "travelsafe.city.v1";
 
-const listeners = new Set<(c: CityInfo) => void>();
-let current: CityInfo | null = null;
+const listeners = new Set<() => void>();
 
-function load(): CityInfo {
-  // Server render: no localStorage available. Hold onto whatever the
-  // module-level cache has (set by a prior client save()) so SSR and
-  // first client paint don't disagree.
-  if (typeof window === "undefined") return current ?? CITIES[0];
-  // ALWAYS re-read localStorage on the client. Previously this short-
-  // circuited on `current` and returned the cached CityInfo without
-  // checking storage — any direct localStorage write (e.g., a sibling
-  // page setting the city without going through save()) was invisible
-  // and the destination page rendered the stale city. The Coverage
-  // page hit this. Re-reading every load() keeps the module cache as
-  // a write-through and means save() is the only path that broadcasts
-  // to listeners, but readers never get a stale snapshot.
-  const stored = window.localStorage.getItem(STORAGE_KEY);
-  const found = CITIES.find((c) => c.slug === stored && c.status === "live");
-  current = found ?? CITIES[0];
-  return current;
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => { listeners.delete(cb); };
 }
 
-function save(city: CityInfo) {
-  current = city;
-  if (typeof window !== "undefined") window.localStorage.setItem(STORAGE_KEY, city.slug);
-  for (const cb of listeners) cb(city);
+/// Current client snapshot: re-reads localStorage every call so a direct write
+/// (e.g. a sibling page setting the city without going through setCity) is never
+/// stale. Returns a referentially STABLE value — the element from CITIES (or the
+/// CITIES[0] fallback) — so useSyncExternalStore doesn't loop.
+function getSnapshot(): CityInfo {
+  if (typeof window === "undefined") return CITIES[0];
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  return CITIES.find((c) => c.slug === stored && c.status === "live") ?? CITIES[0];
+}
+
+/// SSR — and CRUCIALLY the first client (hydration) render — have no
+/// localStorage, so both sides agree on CITIES[0]. useSyncExternalStore then
+/// swaps in the stored city on the post-hydration commit. This mirrors
+/// useArea's getServerSnapshot and is what fixes React #418: the previous
+/// useState(() => load()) read localStorage during hydration, so a returning
+/// user with any non-default city stored produced a server(San Diego) vs
+/// client(stored city) text mismatch on every city + neighborhood page.
+function getServerSnapshot(): CityInfo { return CITIES[0]; }
+
+function persist(city: CityInfo) {
+  if (typeof window !== "undefined") {
+    try { window.localStorage.setItem(STORAGE_KEY, city.slug); } catch { /* quota — ignore */ }
+  }
+  for (const cb of listeners) cb();
 }
 
 /// React hook returning the currently-selected city + a setter. The choice
 /// is persisted to localStorage and broadcasts to every other useCity()
 /// consumer so the whole UI re-renders on a switch.
 export function useCity() {
-  const [city, setCityState] = useState<CityInfo>(() => (typeof window === "undefined" ? CITIES[0] : load()));
-
-  useEffect(() => {
-    setCityState(load());
-    const sub = (c: CityInfo) => setCityState(c);
-    listeners.add(sub);
-    return () => { listeners.delete(sub); };
-  }, []);
+  const city = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const setCity = useCallback((slug: string) => {
     const next = CITIES.find((c) => c.slug === slug && c.status === "live");
-    if (next) save(next);
+    if (next) persist(next);
   }, []);
 
   return { city, setCity, cities: CITIES };
