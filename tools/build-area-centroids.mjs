@@ -39,6 +39,12 @@ const CITY_CONFIG = {
   // coords and the adapter stamped every area with the same city-centroid
   // placeholder; derive real per-area centroids from boise.geojson (35 polys).
   "boise":          { slugPrefix: "bzi-" },
+  // fix(audit cities-saint-paul-centroid-collapse): SPPD's feed is neighborhood-
+  // level only (NEIGHBORHOOD_NUMBER → District Council name, no per-row coords),
+  // so the adapter stamped all 17 areas with the citywide placeholder and the
+  // map collapsed every district onto downtown. Derive real centroids from
+  // saint-paul.geojson (17 District Council planning-district polygons).
+  "saint-paul":     { slugPrefix: "sp-" },
 };
 
 function slugify(name) {
