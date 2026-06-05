@@ -4,6 +4,14 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { districtNumberToName } from "../data/saint-paul-neighborhoods.js";
+import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
+
+// fix(audit cities-saint-paul-centroid-collapse): SPPD's feed has no per-row
+// coords, so every district used to get the citywide placeholder and the map
+// collapsed all 17 onto downtown. Resolve each to the real centroid of its
+// District Council polygon (saint-paul.geojson via build-area-centroids).
+const SP_CENTROIDS = GENERATED_AREA_CENTROIDS["saint-paul"] ?? {};
+const SP_CITY_CENTROID = { lat: 44.95, lng: -93.10 };
 
 // Saint Paul, MN — Saint Paul Police Department Crime Incident Report.
 // ArcGIS FeatureServer on services1.arcgis.com (owner: CityofSaintPaul).
@@ -171,12 +179,15 @@ export async function getDiscoveredAreasSaintPaul(): Promise<KnownArea[]> {
   }
   return Array.from(counts.entries())
     .filter(([, c]) => c >= 3)
-    .map(([name]) => ({
-      slug: `sp-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
-      jurisdiction: "Saint Paul",
-      centroid: { lat: 44.95, lng: -93.10 }, // city centroid placeholder
-    }))
+    .map(([name]) => {
+      const slug = `sp-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      return {
+        slug,
+        label: name,
+        jurisdiction: "Saint Paul",
+        centroid: SP_CENTROIDS[slug] ?? { ...SP_CITY_CENTROID },
+      };
+    })
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 

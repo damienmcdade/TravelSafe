@@ -122,23 +122,13 @@ export async function getCoverage(): Promise<CoverageResponse> {
     CITIES,
     COVERAGE_CONCURRENCY,
     async (city): Promise<CityStatus> => {
-      // fix(audit cov-denver-token-gap): Denver's public crime endpoints went
-      // behind a token; without DENVER_ARCGIS_TOKEN the adapter has no data, yet
-      // the static-baseline fallback below would still report Denver "live" with
-      // 77 neighborhoods. Report it honestly as no-data until the token is set.
-      if (city.slug === "denver" && !process.env.DENVER_ARCGIS_TOKEN) {
-        return {
-          slug: city.slug,
-          label: city.label,
-          state: extractState(city.label, city.slug),
-          health: "no-data",
-          neighborhoodCount: 0,
-          adapterFetchedAt: new Date(now).toISOString(),
-          newestIncidentAt: null,
-          source: "Denver Open Data (ArcGIS) — requires DENVER_ARCGIS_TOKEN (not configured)",
-        };
-      }
-
+      // fix(audit cities-denver-false-no-data): an earlier token-gap guard hard-
+      // coded Denver to "no-data" whenever DENVER_ARCGIS_TOKEN was unset. Denver's
+      // ArcGIS feed is public again — the adapter returns live data without the
+      // token (verified: 67,925 incidents across 78 neighborhoods, asOf within
+      // ~2 days) — so the guard now FALSELY reports a healthy city as down on the
+      // Coverage page. Removed; Denver is assessed from the live adapter like
+      // every other city.
       let neighborhoodCount = 0;
       let newestIncidentAt: string | null = null;
       let sourceLabel = `${city.label} police open-data feed`;
