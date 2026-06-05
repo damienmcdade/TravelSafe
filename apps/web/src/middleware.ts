@@ -63,7 +63,9 @@ const ADSENSE_ORIGINS =
   "https://pagead2.googlesyndication.com " +
   "https://googleads.g.doubleclick.net " +
   "https://www.googletagservices.com " +
-  "https://ep1.adtrafficquality.google " +
+  // AdSense fraud-detection (sodar) loads from ep1 AND ep2.adtrafficquality.google;
+  // use the wildcard Google documents so a new subdomain doesn't get CSP-blocked.
+  "https://*.adtrafficquality.google " +
   "https://www.google.com";
 
 function buildCsp(): string {
