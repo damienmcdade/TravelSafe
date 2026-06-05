@@ -5,6 +5,7 @@ import { cityBySlug } from "@/server/services/crime-data/cities";
 import { getSafetyScore } from "@/server/services/watch/safety-score";
 import { getTrendForArea } from "@/server/services/watch/trend-feed";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
+import { formatReportDate } from "@/lib/format";
 
 interface Props {
   params: Promise<{ city: string; neighborhood: string }>;
@@ -157,7 +158,7 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
           <p className="mt-4 text-xs text-slate2-500">
             ~{score.populationEstimate.toLocaleString()} residents (estimated, US Census Vintage 2023-2024) ·{" "}
             window ~{score.windowDays} days ·{" "}
-            {score.asOf && <>newest report {new Date(score.asOf).toLocaleDateString()} · </>}
+            {score.asOf && <>newest report {formatReportDate(score.asOf)} · </>}
             <a href={score.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">{score.source.label}</a>
           </p>
           {/* CFS calibration badge — only renders for Cleveland, NOLA,

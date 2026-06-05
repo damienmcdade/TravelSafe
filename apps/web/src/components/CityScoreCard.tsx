@@ -1,6 +1,6 @@
 "use client";
 import { useApi } from "@/lib/api-client";
-import { formatRatePer100k, formatRatePer100kProse, formatDeltaPct } from "@/lib/format";
+import { formatRatePer100k, formatRatePer100kProse, formatDeltaPct, formatReportDate } from "@/lib/format";
 // Import the vintage label DIRECTLY from the package (not the apps/web
 // server-only shim) so this client component can include it in the
 // bundle without tripping Next's server/client boundary. The constant
@@ -84,7 +84,7 @@ export function CityScoreCard({ citySlug, cityLabel }: { citySlug: string; cityL
         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate2-500 tabular-nums items-center">
           <span>~{score.populationEstimate.toLocaleString()} residents (estimated, US Census {POPULATION_VINTAGE})</span>
           {score.windowDays > 0 && <span>·  window: ~{score.windowDays} days</span>}
-          {score.asOf && <span>·  newest report: {new Date(score.asOf).toLocaleDateString()}</span>}
+          {score.asOf && <span>·  newest report: {formatReportDate(score.asOf)}</span>}
         </div>
         {score.dataConfidence && score.dataConfidence !== "high" && score.dataConfidenceNote && (
           <p
