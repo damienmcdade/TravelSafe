@@ -6,6 +6,7 @@ import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
+import { VB_AREA_CENTROIDS } from "../data/virginia-beach-area-centroids.js";
 
 // Virginia Beach — VBPD "Police Offense Reports" (FeatureServer, keyless).
 // Hosted ArcGIS Online layer (org CyVvlIiUfRBmMQuu) carrying ~163k
@@ -72,10 +73,15 @@ function isUnmappedSubdivision(v: string | null | undefined): boolean {
 }
 
 const VB_CENTROID = { lat: 36.8529, lng: -76.0339 };
-// fix(audit coverage-vb-shared-centroid): VB's feed has no per-incident coords,
-// so all 333 subdivisions used to share VB_CENTROID — "use my location" could
-// never distinguish them. Resolve each to the real centroid of its boundary
-// polygon (apps/web/public/geo/virginia-beach.geojson via build-area-centroids).
+// fix(audit cities-vb-centroid-collapse): VB's feed has no per-incident coords,
+// and its free-text Subdivision names only slug-match ~33% of the city's
+// Planning_Subdivisions polygon layer — so 629 of 961 areas collapsed onto
+// VB_CENTROID and "use my location" / map markers could never distinguish them.
+// VB_AREA_CENTROIDS resolves 962 subdivisions to real points (Census-geocoded
+// representative incident addresses + matching polygon centroids; see
+// tools/build-virginia-beach-centroids.mjs). GENERATED_AREA_CENTROIDS (the
+// 333-polygon geojson) stays as a secondary fallback; only un-geocodable
+// subdivisions with no polygon fall through to the citywide point.
 const VB_CENTROIDS = GENERATED_AREA_CENTROIDS["virginia-beach"] ?? {};
 
 const PROVENANCE: DataProvenance = {
@@ -194,7 +200,7 @@ export async function getDiscoveredAreasVirginiaBeach(): Promise<KnownArea[]> {
         slug,
         label: name,
         jurisdiction: "Virginia Beach",
-        centroid: VB_CENTROIDS[slug] ?? { ...VB_CENTROID },
+        centroid: VB_AREA_CENTROIDS[slug] ?? VB_CENTROIDS[slug] ?? { ...VB_CENTROID },
       };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
