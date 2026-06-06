@@ -7,6 +7,7 @@ import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
 import { VB_AREA_CENTROIDS } from "../data/virginia-beach-area-centroids.js";
+import { VB_SUBDIVISION_PARENT } from "../data/virginia-beach-subdivision-parent.js";
 
 // Virginia Beach — VBPD "Police Offense Reports" (FeatureServer, keyless).
 // Hosted ArcGIS Online layer (org CyVvlIiUfRBmMQuu) carrying ~163k
@@ -150,7 +151,21 @@ async function fetchVirginiaBeach(): Promise<Incident[]> {
     // The feed publishes Date_Occurred as an absolute epoch-ms instant
     // (full time-of-day), so new Date(ms) is already correct UTC — no
     // wall-clock-to-UTC conversion is needed (cf. Tucson/Raleigh).
-    const area = isUnmappedSubdivision(r.Subdivision) ? "Unmapped" : titleCaseArea(r.Subdivision as string);
+    // fix(audit vb-fragmentation): VB's feed splits the city into ~1,135 hyper-
+    // granular "Subdivision" values (individual apartment/condo complexes, "X in
+    // <Parent>" developments) — only ~333 of which are real neighbourhoods with a
+    // curated population, so 71% of incidents landed on an area with NO population
+    // and a peer-share-fallback grade. Roll each subdivision up to its parent real
+    // neighbourhood (data/virginia-beach-subdivision-parent.ts, 1135→333 via name
+    // parse + point-in-polygon over the 333-neighbourhood geojson). This is a
+    // LOSSLESS RE-LABEL: every incident still maps to exactly one area, so the
+    // citywide incident total (the grade numerator) is unchanged, while the area
+    // now has a real population denominator + polygon.
+    let area = isUnmappedSubdivision(r.Subdivision) ? "Unmapped" : titleCaseArea(r.Subdivision as string);
+    if (area !== "Unmapped") {
+      const rawSlug = `vb-${area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+      area = VB_SUBDIVISION_PARENT[rawSlug] ?? area;
+    }
     out.push({
       id: `vb-${r.IncidentNumber ?? r.OBJECTID ?? i}`,
       area,
