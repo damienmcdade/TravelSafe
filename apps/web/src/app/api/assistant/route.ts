@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z, ZodError } from "zod";
 import { requireSession } from "@/server/lib/auth";
-import { HttpError } from "@/server/lib/http";
+import { HttpError, csrfBlocked } from "@/server/lib/http";
 import { streamAssistant } from "@/server/services/ai/assistant";
 
 const Body = z.object({
@@ -21,6 +21,11 @@ export const maxDuration = 60;
 // the per-IP middleware cap (10/min) still applies on top.
 export async function POST(req: NextRequest): Promise<Response> {
   try {
+    // CSRF parity with `wrap`-ed routes — this streaming handler bypasses `wrap`,
+    // so apply the shared sec-fetch-site guard explicitly. Blocks cross-site
+    // state-changing calls (each invocation streams a paid LLM).
+    const blocked = csrfBlocked([req]);
+    if (blocked) return blocked;
     await requireSession(req);
     const { messages } = Body.parse(await req.json());
     const r = await streamAssistant(messages);

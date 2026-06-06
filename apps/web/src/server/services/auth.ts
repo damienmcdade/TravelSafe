@@ -192,7 +192,7 @@ export async function verifyMfaAndIssueTokens(mfaPendingToken: string, code: str
     );
   }
 
-  const { verifyMfaCode } = await import("./mfa.service");
+  const { verifyMfaCode, consumeMfaCode } = await import("./mfa.service");
   if (!verifyMfaCode(user.mfaSecret, code)) {
     const fails = user.failedAttempts + 1;
     await prisma.user.update({
@@ -202,6 +202,16 @@ export async function verifyMfaAndIssueTokens(mfaPendingToken: string, code: str
         lockedUntil: fails >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + LOCKOUT_DURATION_MS) : null,
       },
     });
+    throw new HttpError(401, "mfa_invalid_code");
+  }
+
+  // fix(audit mfa-totp-replay): the code is cryptographically valid — now enforce
+  // RFC 6238 §5.2 single-use so an observed/intercepted code can't be replayed
+  // within its validity window. Returns the SAME generic error as a wrong code so
+  // a replay isn't distinguishable. No lockout increment: the code WAS valid, so
+  // this is a retry/replay (not a brute-force guess) and incrementing could lock
+  // out a user who legitimately double-submitted.
+  if (!(await consumeMfaCode(user.id, code))) {
     throw new HttpError(401, "mfa_invalid_code");
   }
 

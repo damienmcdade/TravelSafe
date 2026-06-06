@@ -44,6 +44,22 @@ function anonRetentionDays(): number {
   return n;
 }
 
+// fix(audit audit-retention-railway-dependency): SecurityAuditLog rows store
+// email + IP + user-agent (written by the WEB stack on account.export/.delete).
+// The only pruner was an in-process setInterval in the Railway Express service,
+// so the privacy policy's "90-day retention" promise (GDPR Art. 5(1)(e)) silently
+// failed whenever Railway was paused/out-of-sync. Folded into this daily Vercel
+// cron (rather than a 4th cron entry — the plan's cron budget is limited) so
+// retention is enforced independently of the Railway service's liveness. Mirrors
+// the worker's bound exactly (7–730d) and is idempotent with it (deleteMany on an
+// already-pruned range is a no-op).
+const DEFAULT_AUDIT_RETENTION_DAYS = 90;
+function auditRetentionDays(): number {
+  const n = Number.parseInt(process.env.SECURITY_AUDIT_RETENTION_DAYS ?? "", 10);
+  if (!Number.isFinite(n) || n < 7 || n > 730) return DEFAULT_AUDIT_RETENTION_DAYS;
+  return n;
+}
+
 /// Reap OLD, CONTENT-FREE anonymous accounts. Every device that visits mints a
 /// permanent `device-*@travelsafe.local` User row (see /api/auth/anonymous); the
 /// soft-delete purge never touches them because they have no deletedAt, so
@@ -139,8 +155,21 @@ export async function GET(req: NextRequest) {
     anon.error = (e as Error)?.message?.slice(0, 160) ?? "unknown";
   }
 
+  // Third pass: enforce SecurityAuditLog retention (Railway-independent backstop;
+  // see auditRetentionDays comment). Isolated so a failure can't fail the purges.
+  const auditLog = { deleted: 0, retentionDays: auditRetentionDays(), error: null as string | null };
+  try {
+    const auditCutoff = new Date(Date.now() - auditRetentionDays() * 24 * 60 * 60 * 1000);
+    const { count } = await prisma.securityAuditLog.deleteMany({
+      where: { createdAt: { lt: auditCutoff } },
+    });
+    auditLog.deleted = count;
+  } catch (e) {
+    auditLog.error = (e as Error)?.message?.slice(0, 160) ?? "unknown";
+  }
+
   return NextResponse.json({
-    ok: errors.length === 0 && !anon.error,
+    ok: errors.length === 0 && !anon.error && !auditLog.error,
     generatedAt: new Date().toISOString(),
     graceDays: days,
     cutoff: cutoff.toISOString(),
@@ -151,6 +180,7 @@ export async function GET(req: NextRequest) {
     drained: stale.length < BATCH && anon.candidates < BATCH,
     errors,
     anonAccounts: { retentionDays: anonRetentionDays(), ...anon },
+    auditLog,
     totalMs: Date.now() - startedAt,
   });
 }

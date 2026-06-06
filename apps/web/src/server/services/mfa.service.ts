@@ -1,6 +1,8 @@
 import "server-only";
+import { createHash } from "node:crypto";
 import { generateSecret, generateURI, verifySync } from "otplib";
 import { prisma } from "../lib/prisma";
+import { getRedis } from "../lib/redis";
 import { HttpError } from "../lib/http";
 import { encryptSecret, decryptSecret } from "../lib/secret-crypto";
 
@@ -52,6 +54,33 @@ export async function verifyAndEnableMfa(userId: string, secret: string, code: s
 // plaintext); decryptSecret transparently handles both.
 export function verifyMfaCode(storedSecret: string, code: string): boolean {
   return safeVerify(decryptSecret(storedSecret), code);
+}
+
+// fix(audit mfa-totp-replay): RFC 6238 §5.2 — "the verifier MUST NOT accept the
+// second attempt of the OTP after the successful validation has been issued for
+// the first OTP." otplib's verifySync alone accepts the same code repeatedly
+// within its ~90s window (one valid code observed via shoulder-surf / intercept
+// could be replayed to mint a session). Enforce single-use via an ephemeral
+// Redis key (SET NX, TTL = the code's max validity) keyed by user + code hash.
+// Returns true when the code is FRESH (caller may proceed) and false when it was
+// already consumed (replay → caller must reject). Fail-OPEN if Redis is down:
+// replay protection is best-effort and must never lock a legitimate user out of
+// MFA because the cache is unavailable; the code's 30s rotation remains the
+// primary control. The code is hashed (not stored raw) since it's a 6-digit
+// secret-adjacent value.
+const MFA_REPLAY_WINDOW_S = 90;
+export async function consumeMfaCode(userId: string, code: string): Promise<boolean> {
+  const redis = getRedis();
+  if (!redis) return true; // no cache → can't dedup; degrade gracefully
+  const key = `mfa:used:${userId}:${createHash("sha256").update(code).digest("hex")}`;
+  try {
+    // SET NX returns "OK" on first write, null when the key already exists.
+    const res = await redis.set(key, "1", "EX", MFA_REPLAY_WINDOW_S, "NX");
+    return res === "OK";
+  } catch (err) {
+    console.warn("[mfa] replay-guard redis error:", (err as Error).message);
+    return true; // fail open
+  }
 }
 
 export async function disableMfa(userId: string, code: string): Promise<void> {

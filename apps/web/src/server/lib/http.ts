@@ -43,7 +43,9 @@ const STATE_CHANGING = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 function isCsrfAllowlisted(pathname: string): boolean {
   return pathname.includes("/confirm/") || pathname.includes("/share/");
 }
-function csrfBlocked(args: unknown[]): NextResponse | null {
+// Exported so streaming routes that can't go through `wrap` (e.g. /api/assistant,
+// which returns a raw text-stream Response) can still apply the same CSRF guard.
+export function csrfBlocked(args: unknown[]): NextResponse | null {
   const req = args[0] as { method?: string; headers?: { get(name: string): string | null }; nextUrl?: { pathname: string } } | undefined;
   if (!req || typeof req.method !== "string" || !req.headers?.get) return null;
   if (!STATE_CHANGING.has(req.method)) return null;

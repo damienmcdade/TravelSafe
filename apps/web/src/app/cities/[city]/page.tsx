@@ -5,6 +5,7 @@ import { cityBySlug } from "@/server/services/crime-data/cities";
 import { getCitywideSafetyScore } from "@/server/services/watch/safety-score";
 import { CityCompare } from "@/components/CityCompare";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
+import { formatReportDate } from "@/lib/format";
 
 interface Props {
   params: Promise<{ city: string }>;
@@ -147,7 +148,7 @@ export default async function CityLandingPage({ params }: Props) {
           </div>
           <p className="mt-4 text-xs text-slate2-500">
             Source: <a href={citywideScore.source.url} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">{citywideScore.source.label}</a>
-            {citywideScore.asOf && <> · newest report {new Date(citywideScore.asOf).toLocaleDateString()}</>}
+            {citywideScore.asOf && <> · newest report {formatReportDate(citywideScore.asOf)}</>}
           </p>
         </section>
       )}
