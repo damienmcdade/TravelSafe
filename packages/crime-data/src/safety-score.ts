@@ -304,6 +304,12 @@ export interface SafetyScoreResponse {
   /// dataSourceType=cfs. Always 1.0 for nibrs. Useful for the UI
   /// tooltip on the CFS badge.
   cfsScale: number;
+  /// v110 dynamic scoring (citywide only). How much the live pulled data drove
+  /// the grade vs the static FBI baseline anchor: 0 = pure baseline (sparse /
+  /// low-confidence / wildly divergent data), up to DYNAMIC_W_MAX = the live
+  /// signal's max share. Lets the UI show "grade reflects the latest data pull".
+  /// Omitted for per-neighborhood scores (those are already live-vs-live).
+  dynamicWeight?: number;
 }
 
 // FBI UCR Part 1 violent + property filters. The FBI's published
@@ -758,6 +764,60 @@ function gradeCitywideAbsolute(baseline: { violent: number; property: number }):
   return "E";                     // multiples of the national rate
 }
 
+/// DYNAMIC citywide scoring (v110). The grade should be the most up-to-date AND
+/// accurate read whenever fresh data is pulled — not frozen to a static, hand-
+/// maintained FBI baseline that goes stale between annual UCR releases. So we
+/// grade a CONFIDENCE-WEIGHTED BLEND of the city's LIVE calibrated annual rate
+/// (recomputed on every adapter/warm-worker pull) and the FBI baseline anchor:
+///
+///   effectiveRate = w·liveRate + (1−w)·fbiBaseline      (per category)
+///
+/// then feed effectiveRate to gradeCitywideAbsolute (national-anchored, so cities
+/// still discriminate A→E). `w` is how much we trust the live signal as a current
+/// measurement:
+///   • ramps with window completeness (0 below 30d → full by ~180d),
+///   • scaled down for medium/low dataConfidence,
+///   • damped hard when the live rate sits far from the baseline (a large gap is
+///     almost always a feed/calibration artifact, not a real one-cycle trend),
+///   • capped at W_MAX so the FBI-verified baseline ALWAYS anchors a majority of
+///     the grade (accuracy floor); fresh data nudges, it doesn't hijack.
+///
+/// Net effect: a well-calibrated feed (live ≈ baseline, the CFS-calibration
+/// design point) keeps its baseline grade — stable. When current data genuinely
+/// departs from the stale annual anchor (a real surge or drop), the blend moves
+/// the grade toward today's reality without waiting for the next UCR release.
+/// Neighborhood grades are already dynamic (gradeFromCityDeltas: area-live vs
+/// city-live), so this closes the loop: every grade now tracks the latest pull.
+const DYNAMIC_W_MAX = 0.6;
+function dynamicLiveWeight(
+  windowDays: number,
+  dataConfidence: "high" | "medium" | "low",
+  maxDivergence: number,
+): number {
+  // Window completeness: a fuller window is a more stable annual estimate.
+  let w = Math.max(0, Math.min(1, (windowDays - 30) / 150));
+  if (dataConfidence === "low") w *= 0.2;
+  else if (dataConfidence === "medium") w *= 0.6;
+  // Distrust a live rate that sits far from the baseline — that's the signature
+  // of a partial pull / wrong calibration, not a real one-window swing.
+  if (maxDivergence >= 2.5) w *= 0.15;
+  else if (maxDivergence >= 1.75) w *= 0.5;
+  return Math.max(0, Math.min(DYNAMIC_W_MAX, w));
+}
+
+/// Blend live + baseline per category (guarding a missing/zero live rate, which
+/// must NOT drag the effective rate to 0 — fall back to the baseline for that
+/// category), then grade the result national-anchored.
+function gradeCitywideDynamic(
+  live: { violent: number; property: number },
+  baseline: { violent: number; property: number },
+  weight: number,
+): { grade: SafetyScoreResponse["grade"]; effective: { violent: number; property: number } } {
+  const blend = (l: number, b: number) => (l > 0 ? Math.round(weight * l + (1 - weight) * b) : b);
+  const effective = { violent: blend(live.violent, baseline.violent), property: blend(live.property, baseline.property) };
+  return { grade: gradeCitywideAbsolute(effective), effective };
+}
+
 function headlineForArea(grade: SafetyScoreResponse["grade"], areaLabel: string, cityLabel: string): string {
   switch (grade) {
     case "A": return `${areaLabel} reports lower per-capita rates than ${cityLabel} citywide.`;
@@ -1158,9 +1218,26 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // instead of the prior feed-vs-own-baseline check that landed ~C for every
   // healthy city. See gradeCitywideAbsolute. (The old feed-vs-baseline
   // divergence check still runs below for dataConfidence, independently.)
-  const rawGrade = fbiBaseline
-    ? gradeCitywideAbsolute(fbiBaseline)
-    : gradeFromNationalDeltas(rows);
+  // ── Dynamic citywide grade (v110) — blend the LIVE calibrated rate with the
+  // FBI baseline, weighted by how much we trust the live signal. See
+  // dynamicLiveWeight / gradeCitywideDynamic. The live rates are the same
+  // per-category localPer100k the divergence guard checks below.
+  const personsRowCw = rows.find((r) => r.category === "PERSONS");
+  const propertyRowCw = rows.find((r) => r.category === "PROPERTY");
+  const liveViolent = personsRowCw?.localPer100k ?? 0;
+  const liveProperty = propertyRowCw?.localPer100k ?? 0;
+  let dynamicWeight = 0;
+  let rawGrade: SafetyScoreResponse["grade"];
+  if (fbiBaseline) {
+    const vDiv = fbiBaseline.violent > 0 && liveViolent > 0
+      ? Math.max(liveViolent / fbiBaseline.violent, fbiBaseline.violent / liveViolent) : 1;
+    const pDiv = fbiBaseline.property > 0 && liveProperty > 0
+      ? Math.max(liveProperty / fbiBaseline.property, fbiBaseline.property / liveProperty) : 1;
+    dynamicWeight = dynamicLiveWeight(windowDays, confidence.dataConfidence, Math.max(vDiv, pDiv));
+    rawGrade = gradeCitywideDynamic({ violent: liveViolent, property: liveProperty }, fbiBaseline, dynamicWeight).grade;
+  } else {
+    rawGrade = gradeFromNationalDeltas(rows);
+  }
   let grade = gradeWithNullGuard(rawGrade, persons + property, confidence.dataConfidence);
   // Note: gradeWithUndercountGuard runs AFTER the divergence guard
   // below — the divergence guard upgrades confidence to "low" for
@@ -1262,7 +1339,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
           `measured against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
           `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k), weighting violent crime 70% and property 30%. ` +
           `A means at or below the national rate; B, C and D step up through roughly 1.3×, 1.9× and 2.6× it; E means well above. ` +
-          `The per-100,000 figure above is the live adapter sample — the grade reflects the city's stable published rate, so a temporarily high or low sample doesn't swing the letter. `
+          `The grade is DYNAMIC: it blends ${city.label}'s latest pulled data (${Math.round(dynamicWeight * 100)}%) with that published baseline (${Math.round((1 - dynamicWeight) * 100)}%), so a sustained real shift in current crime moves the letter, while a single noisy sample or a short data window leans on the stable baseline and can't swing it. `
         : `The letter grade compares ${city.label}'s live citywide rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
           `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k, weighting violent 70% / property 30%) ` +
           `because no city-specific FBI baseline is on file for ${city.label} yet. `) +
@@ -1279,6 +1356,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
     ...confidence,
     dataSourceType: isCfs ? "cfs" : "nibrs",
     cfsScale: cfsScalePersons,
+    dynamicWeight: fbiBaseline ? Math.round(dynamicWeight * 100) / 100 : undefined,
   };
 }
 
