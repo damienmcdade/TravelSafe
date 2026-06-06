@@ -95,15 +95,20 @@ export async function sendToMany(
   // hostage until web-push's internal default timed out).
   const PUSH_TIMEOUT_MS = 10_000;
   await Promise.all(allSubs.map(async (s) => {
+    // fix(audit perf-push-timer-leak): clear the deadline timer when the send
+    // wins (the common case). Previously each of thousands of parallel sends in a
+    // digest fan-out armed a 10s timer that was never cleared, retaining its
+    // closure for the full timeout — a transient memory hold under load.
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         webpush.sendNotification(
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           body,
         ),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error("push_timeout")), PUSH_TIMEOUT_MS),
-        ),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error("push_timeout")), PUSH_TIMEOUT_MS);
+        }),
       ]);
       sent += 1;
     } catch (err) {
@@ -114,6 +119,8 @@ export async function sendToMany(
       } else {
         failed += 1;
       }
+    } finally {
+      if (timer) clearTimeout(timer);
     }
   }));
 

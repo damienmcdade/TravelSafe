@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { FBI_NATIONAL_PER_100K_2024, CITIES } from "@travelsafe/crime-data";
+import { FBI_NATIONAL_PER_100K, CITIES } from "@travelsafe/crime-data";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 import { LegalFooter } from "@/components/LegalFooter";
 
@@ -31,17 +31,14 @@ export default function MethodologyPage() {
           <li>
             <strong className="text-slate2-900">City open-data portals.</strong> Each of CommunitySafe&apos;s
             {" "}{CITIES.length} supported cities publishes police-incident records through an official open-data feed
-            (SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD, NYPD Complaint Data,
-            Seattle SPD, Boston BPD, DC MPD, Philadelphia PPD, Colorado Springs, Detroit, Oakland, Cincinnati,
-            New Orleans, Baton Rouge, Cambridge, Dallas, Charlotte, Baltimore, Minneapolis, Cleveland,
-            Milwaukee, Las Vegas, Boise, Buffalo, Norfolk, Kansas City, Saint Paul, Pittsburgh, Fort Worth,
-            Denver, Sacramento, Atlanta, Indianapolis, Raleigh, Tucson, Honolulu, Long Beach).
-            We pull the raw records via the same public API the city itself documents.
+            (for example: SDPD NIBRS, LAPD Crime Data, SFPD Incident Reports, Chicago CPD, NYPD Complaint Data,
+            Seattle SPD, Boston BPD, DC MPD, and Philadelphia PPD — see the Cities directory for the full list of
+            all {CITIES.length}). We pull the raw records via the same public API the city itself documents.
           </li>
           <li>
             <strong className="text-slate2-900">{FBI_DATA_LABEL}.</strong> The benchmark we
-            compare per-100,000 rates against — Violent (Persons): {FBI_NATIONAL_PER_100K_2024.PERSONS.toLocaleString()},
-            Property: {FBI_NATIONAL_PER_100K_2024.PROPERTY.toLocaleString()}.
+            compare per-100,000 rates against — Violent (Persons): {FBI_NATIONAL_PER_100K.PERSONS.toLocaleString()},
+            Property: {FBI_NATIONAL_PER_100K.PROPERTY.toLocaleString()}.
             Source:{" "}
             <a
               href="https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend"

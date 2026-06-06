@@ -91,7 +91,10 @@ export async function createLiveShare(
 export async function revokeLiveShare(userId: string, id: string) {
   const result = await prisma.liveShareLink.updateMany({
     where: { id, userId, revokedAt: null },
-    data: { revokedAt: new Date() },
+    // fix(audit liveshare-coord-retention): null the last broadcast position on
+    // revoke so precise location is "retained only for the duration of an active
+    // session" as the privacy policy promises — mirroring markSafe() for check-ins.
+    data: { revokedAt: new Date(), lastLat: null, lastLng: null, lastLocationAt: null },
   });
   if (result.count === 0) throw new HttpError(404, "not_found_or_already_revoked");
   return { ok: true };

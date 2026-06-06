@@ -118,6 +118,11 @@ const LIMITS: Array<{ prefix: string; cap: number }> = [
   // reset-password (single-use-token brute-force).
   { prefix: "/api/auth/forgot-password", cap: 5 },
   { prefix: "/api/auth/reset-password",  cap: 10 },
+  // fix(audit mfa-mgmt-no-lockout): the authenticated MFA enroll-verify/disable
+  // endpoints accept a 6-digit TOTP and (unlike the login path) carry no per-
+  // account attempt lockout. Cap the prefix so a compromised session can't walk
+  // the 6-digit space against enroll/disable. (Login MFA keeps its own lockout.)
+  { prefix: "/api/auth/mfa/", cap: 12 },
   // v47 bump 5 → 40. The original cap of 5/min was set before the
   // Redis cache landed on Railway (v16, v38). Now ~90% of /api/ai/
   // calls are cache hits with no LLM cost — the cap was throttling

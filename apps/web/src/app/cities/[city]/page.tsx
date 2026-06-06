@@ -197,7 +197,7 @@ export default async function CityLandingPage({ params }: Props) {
         <strong className="text-slate2-900">How to read this:</strong>{" "}
         CommunitySafe summarizes publicly published police reports. Scores reflect
         historical reporting only — not predictions of future risk, and not a
-        substitute for professional safety advice. Should not be used as the sole
+        substitute for professional safety advice. These scores should not be used as the sole
         basis for housing, lending, insurance, or hiring decisions — verify each
         statistic with the cited official source before acting on it. See{" "}
         <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}

@@ -50,7 +50,9 @@ communityRouter.get("/posts", optionalAuth, async (req, res, next) => {
       include: {
         author: { select: { id: true, displayName: true } },
         area: true,
-        reactions: true,
+        // fix(audit perf-feed-reactions-include): drop the unbounded per-post
+        // reaction rows; only the aggregate count is consumed. Mirrors the
+        // canonical Vercel route.
         _count: { select: { comments: true, reactions: true, reports: true } },
       },
     });
@@ -65,6 +67,7 @@ communityRouter.get("/posts/mine", requireAuth, async (req, res, next) => {
     const posts = await prisma.post.findMany({
       where: { authorId: req.session!.uid },
       orderBy: { createdAt: "desc" },
+      take: 200, // bound the result set, mirroring the canonical Vercel route
       include: { flags: true, area: true },
     });
     res.json(posts);

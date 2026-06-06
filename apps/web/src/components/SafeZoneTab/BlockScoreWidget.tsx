@@ -168,7 +168,7 @@ export function BlockScoreWidget({ score, loading, unavailable, contextLabel }: 
 
       <p className="mt-3 text-[11px] text-slate2-500 leading-snug">
         Based on publicly published police reports over the cached window. Reflects historical reporting only — not a prediction
-        of future risk, and not a substitute for professional safety advice. Should not be used as the sole basis for housing,
+        of future risk, and not a substitute for professional safety advice. These scores should not be used as the sole basis for housing,
         lending, insurance, or hiring decisions.
       </p>
     </section>

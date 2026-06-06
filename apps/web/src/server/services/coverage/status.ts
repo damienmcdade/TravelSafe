@@ -138,9 +138,8 @@ export async function getCoverage(): Promise<CoverageResponse> {
         const areas = await withTimeout(city.discover(), PER_CITY_TIMEOUT_MS, [] as Awaited<ReturnType<typeof city.discover>>);
         neighborhoodCount = areas.length;
 
-        // Sample the first area for provenance + asOf timestamp. One
-        // sample is enough because the adapter shares its upstream pull
-        // across all areas of the city.
+        // Provenance from the first area (the adapter shares one upstream pull,
+        // so the source label is identical across areas).
         if (areas.length > 0) {
           // v106 — these sample calls were untimed. For a city whose discover()
           // returns fast off a static seed (Milwaukee) or whose incident load
@@ -150,14 +149,32 @@ export async function getCoverage(): Promise<CoverageResponse> {
           // health check; on timeout we simply skip the asOf for that city.
           const stats = await withTimeout(crimeData.getAreaStats(areas[0].slug).catch(() => null), SAMPLE_TIMEOUT_MS, null);
           if (stats?.provenance.source) sourceLabel = stats.provenance.source;
-          const recent = await withTimeout(crimeData.getIncidents(areas[0].slug, { limit: 50 }).catch(() => []), SAMPLE_TIMEOUT_MS, []);
-          if (recent.length > 0) {
-            const latest = recent
-              .map((i) => +new Date(i.occurredAt))
-              .filter((t) => Number.isFinite(t) && t > 0)
-              .sort((a, b) => b - a)[0];
-            if (latest > 0) newestIncidentAt = new Date(latest).toISOString();
-          }
+
+          // fix(audit coverage-newest-single-area): newestIncidentAt was computed
+          // from areas[0] ONLY (the alphabetically-first discovered area). If that
+          // area is sparse, the dashboard showed a city as ~year-stale while its
+          // feed was 1-2 days fresh (e.g. Tampa "341d" when truly 2d). Sample the
+          // newest incident across a SPREAD of areas and take the global max. The
+          // adapter shares one warm upstream pull, so these reads are cheap; we
+          // still cap each at SAMPLE_TIMEOUT and bound the count so the freshness
+          // probe can never dominate the coverage window.
+          const SAMPLE_AREAS = 12;
+          const step = Math.max(1, Math.floor(areas.length / SAMPLE_AREAS));
+          const sample = areas.filter((_, i) => i % step === 0).slice(0, SAMPLE_AREAS);
+          const newestPerArea = await Promise.all(
+            sample.map((a) =>
+              withTimeout(crimeData.getIncidents(a.slug, { limit: 50 }).catch(() => []), SAMPLE_TIMEOUT_MS, []).then((recent) => {
+                let max = 0;
+                for (const inc of recent) {
+                  const t = +new Date(inc.occurredAt);
+                  if (Number.isFinite(t) && t > max) max = t;
+                }
+                return max;
+              }),
+            ),
+          );
+          const latest = Math.max(0, ...newestPerArea);
+          if (latest > 0) newestIncidentAt = new Date(latest).toISOString();
         }
 
         if (neighborhoodCount === 0) health = "warming-up";

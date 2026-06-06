@@ -41,10 +41,11 @@ export { CITY_FBI_BASELINES } from "./fbi-baselines.js";
 // fix(audit legal-accuracy-1): expose the FBI national benchmark so the
 // canonical methodology page renders the SAME numbers the scoring engine
 // uses, instead of a hand-typed copy that drifted (page said 364/1,896 while
-// the engine compared against the live constant). fix(audit
-// legal-fbi-year-mislabel-1): export the correctly-named 2024 constant (real FBI
-// 2024 national rate); the _2025 alias is kept exported for back-compat only.
-export { FBI_NATIONAL_PER_100K_2024, FBI_NATIONAL_PER_100K_2025, FBI_NATIONAL_SOURCE } from "./safety-score.js";
+// the engine compared against the live constant). fix(audit fbi-anchor-year-mix-1):
+// the canonical anchor is FBI_NATIONAL_PER_100K (FBI 2023-revised: 379.5 / 1934.1,
+// year-matched to the city baselines). The year-named _2024/_2025 aliases are kept
+// exported for back-compat only and resolve to the same canonical object.
+export { FBI_NATIONAL_PER_100K, FBI_NATIONAL_PER_100K_2023, FBI_NATIONAL_PER_100K_2024, FBI_NATIONAL_PER_100K_2025, FBI_NATIONAL_SOURCE } from "./safety-score.js";
 
 // Cities + neighborhoods registry.
 export type { CityEntry } from "./cities.js";

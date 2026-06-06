@@ -45,10 +45,18 @@ const ScoreQuery = z.object({
 // fits inside Vercel's 60s tryProxy header timeout with 15s headroom.
 const SCORE_TIMEOUT_MS = 45_000;
 function withScoreTimeout<T>(p: Promise<T>): Promise<T | typeof TIMEOUT> {
+  // fix(audit perf-score-timer-leak): clear the deadline timer when the compose
+  // wins (the common warm-cache path, ~180ms) so a 45s timer + closure isn't
+  // retained on every non-cached safety-score request.
+  let timer: ReturnType<typeof setTimeout> | undefined;
   return Promise.race([
     p,
-    new Promise<typeof TIMEOUT>((resolve) => setTimeout(() => resolve(TIMEOUT), SCORE_TIMEOUT_MS)),
-  ]);
+    new Promise<typeof TIMEOUT>((resolve) => {
+      timer = setTimeout(() => resolve(TIMEOUT), SCORE_TIMEOUT_MS);
+    }),
+  ]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
 }
 const TIMEOUT = Symbol("safety-score-timeout");
 

@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           <li>No demographic data — race, ethnicity, religion, age, gender, sexual orientation are not stored, displayed, or analyzed anywhere in the app.</li>
           <li>No individual identification from public data — police-incident data is aggregated to neighborhood-level only; names, addresses below the block level, plates, and photos are never surfaced.</li>
           <li>No persistent background tracking. Geolocation is requested only when you tap &quot;Use my location&quot; OR when you arm a Check-In timer / Live Share link (both opt-in). The mobile shells (iOS / Android) declare permissions for background-location, contacts, and camera so that <em>if</em> you opt into Check-In, Live Share, Trusted Contact import, or photo attachment, the OS allows it — none of these run without an explicit user action.</li>
-          <li>No data sales. We do not currently show ads. If advertising is ever enabled, it will be Google AdSense and disclosed here; see the <strong>Advertising</strong> section below for what AdSense would receive, what it wouldn&apos;t, and how to opt out of personalised ads.</li>
+          <li>No data sales. We do not currently show ads. If advertising is ever enabled, it will be Google AdSense and disclosed here; see the <strong>Advertising</strong> section below for what AdSense would receive, what it wouldn&apos;t, and how to opt out of personalized ads.</li>
           <li>Browsing the map / safety scores / community feed does NOT require an account. Account-required features are explicitly labeled (Personal Safety, CommunitySafe posts).</li>
         </ul>
       </section>
@@ -61,12 +61,12 @@ export default function PrivacyPage() {
           <li>If you enable two-factor authentication, an encrypted TOTP secret we use to verify your codes.</li>
           <li>For each Trusted Contact you add: their email and/or phone number, the relationship label you chose, and your confirmation that you have their permission to contact them.</li>
           <li>For each Check-In timer you arm: the scheduled expiry, your optional note, and the last latitude/longitude you shared to that timer.</li>
-          <li>For each Live Share link you generate: the cancel token, the recipient channel (email/SMS), and the expiry.</li>
+          <li>For each Live Share link you generate: the cancel token, the recipient channel (email/SMS), the expiry, and — while the link is active — the most recent latitude/longitude your device broadcasts to it. That location is cleared when the link is revoked or expires.</li>
           <li>For each Web Push subscription you opt into: the browser-issued endpoint URL and the two public crypto keys (used to encrypt notifications). Push subscriptions never carry personal content.</li>
           <li>Your CommunitySafe post bodies, comments, and reports — and an append-only edit log if you revise a post.</li>
           <li>Moderation records: post flags, suspensions, and any blocks/mutes you set.</li>
         </ul>
-        <p>You can export or delete your account directly from inside the app: go to <strong>Personal Safety → Your account &amp; data</strong>. Export downloads a single JSON file with every record we hold about you. Deleting your account immediately disables it and signs you out everywhere, and your profile is obfuscated at once. Your account and associated records — posts, comments, check-in timers, trusted contacts, push subscriptions, and live-share links — are then permanently purged within 30 days, after which nothing is recoverable. If you can&apos;t access your account, use the contact path in <strong>Contact</strong> below and we&apos;ll process the request within 30 days. Local browser data is not part of the server-side account and can be cleared at any time from your browser settings.</p>
+        <p>You can export or delete your account directly from inside the app: go to <strong>Personal Safety → Your account &amp; data</strong>. Export downloads a single JSON file with every record we hold about you. Deleting your account immediately and permanently removes your account and all associated records — posts, comments, check-in timers, trusted contacts, push subscriptions, and live-share links — from our servers, and signs you out everywhere. The removal happens at once and is irreversible; there is no recovery window. If you can&apos;t access your account, use the contact path in <strong>Contact</strong> below and we&apos;ll process the request within 30 days. Local browser data is not part of the server-side account and can be cleared at any time from your browser settings.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
@@ -83,7 +83,7 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li>Account data (profile, posts, comments, contacts, timers, push subscriptions, live-share links) is kept until you delete it.</li>
           <li>Security-audit logs are retained for 90 days.</li>
-          <li>Deleted accounts and their associated records are permanently purged within 30 days.</li>
+          <li>Deleting your account permanently and irreversibly removes it and its associated records at the time of deletion.</li>
           <li>Server / access logs are retained up to 30 days.</li>
           <li>AI prompts are not retained by us — only by the AI sub-processor that handled the request, under its own retention terms.</li>
         </ul>
@@ -103,13 +103,13 @@ export default function PrivacyPage() {
           <li>Your IP address, user-agent, language, and screen size.</li>
           <li>Google&apos;s own advertising / measurement cookies, if you&apos;ve previously consented under Google&apos;s consent prompt.</li>
         </ul>
-        <p>How to opt out of personalised ads:</p>
+        <p>How to opt out of personalized ads:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Use Google&apos;s{" "}
             <a href="https://adssettings.google.com/" target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">Ads Settings</a>{" "}
-            to turn off personalisation for your Google account.</li>
+            to turn off personalization for your Google account.</li>
           <li>Use your browser&apos;s tracking-protection / cookie-blocking features. Ads will still show but won&apos;t be tailored to you.</li>
-          <li>For EU/UK/Swiss users, Google&apos;s consent prompt will appear before personalisation begins.</li>
+          <li>For EU/UK/Swiss users, Google&apos;s consent prompt will appear before personalization begins.</li>
         </ul>
       </section>
 
@@ -149,7 +149,7 @@ export default function PrivacyPage() {
           <li><strong>AI sub-processors (Groq, Google Gemini, or Anthropic via the Vercel AI Gateway)</strong> — only when you use the AI Assistant (above). Prompts are sent server-side; your IP is not directly exposed to the provider, but the contents of your prompt are.</li>
         </ul>
         <p>Map routing (OpenStreetMap&apos;s OSRM) and all police open-data feeds are called from our server, not from your browser, so those services don&apos;t see your IP.</p>
-        <p><strong>Error monitoring:</strong> Sentry — when an error occurs on our production servers, Sentry receives your account ID and the request path to help us debug. It does not receive your email or IP address.</p>
+        <p><strong>Error monitoring:</strong> Our backend API service can use Sentry for error monitoring when enabled. In that case, when an error occurs on that service Sentry receives your account ID and the request path to help us debug; it does not receive your email or IP address. It is not active on the main web application.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Access</strong> — request a copy of the personal data we hold about you.</li>
           <li><strong>Rectification</strong> — correct any inaccurate data.</li>
-          <li><strong>Erasure</strong> — delete your account and the associated records listed under &quot;When you create a CommunitySafe account&quot; above. The fastest path is the <strong>Delete my account</strong> button in Personal Safety; it immediately disables your account, signs you out everywhere, and obfuscates your profile, then permanently purges your account and its records within 30 days, after which nothing is recoverable. Replies left by other users on your deleted posts are removed along with the parent post, since the conversation is unintelligible without it.</li>
+          <li><strong>Erasure</strong> — delete your account and the associated records listed under &quot;When you create a CommunitySafe account&quot; above. The fastest path is the <strong>Delete my account</strong> button in Personal Safety; it immediately and permanently removes your account and its records and signs you out everywhere — this happens at once and is irreversible, with no recovery window. Replies left by other users on your deleted posts are removed along with the parent post, since the conversation is unintelligible without it.</li>
           <li><strong>Portability</strong> — request a machine-readable export.</li>
           <li><strong>Withdraw consent</strong> — disable Push, delete Trusted Contacts, or cancel pending Check-Ins from within the app at any time.</li>
         </ul>

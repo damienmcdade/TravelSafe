@@ -73,7 +73,10 @@ export const GET = wrap(async (req: NextRequest) => {
     include: {
       author: { select: { id: true, displayName: true, trustLevel: true } },
       area: true,
-      reactions: true,
+      // fix(audit perf-feed-reactions-include): the client only reads
+      // _count.reactions, never the rows. Including every reaction row per post
+      // is redundant and unbounded — a single viral post would ship thousands of
+      // rows on the hottest read path. Keep the aggregate count only.
       _count: { select: { comments: true, reactions: true, reports: true } },
     },
   });

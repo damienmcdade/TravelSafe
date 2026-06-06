@@ -32,6 +32,9 @@ export function CookieConsentBanner() {
   if (!show) return null;
   function decide(choice: "accept" | "reject") {
     try { window.localStorage.setItem(KEY, choice); } catch {}
+    // Notify same-tab listeners (storage events only fire cross-tab) so the
+    // consent-gated AdSense loader reacts immediately without a reload.
+    try { window.dispatchEvent(new CustomEvent("cs-consent-change", { detail: choice })); } catch {}
     setShow(false);
   }
   return (

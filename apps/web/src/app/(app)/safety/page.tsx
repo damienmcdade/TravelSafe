@@ -842,7 +842,7 @@ function LiveSharePanel() {
     <section className="surface p-6">
       <h2 className="font-display text-xl text-slate2-900">Live location share</h2>
       <p className="mt-1 text-sm text-slate2-500">
-        Generate a temporary link for one contact. Auto-expires; you can revoke at any time.
+        Generate a temporary live-location link and send it to one or more trusted contacts. Auto-expires; you can revoke it at any time.
       </p>
 
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">

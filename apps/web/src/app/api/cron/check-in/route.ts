@@ -25,5 +25,20 @@ export async function GET(req: NextRequest) {
     await triggerExpiry(id);
     fired.push(id);
   }
-  return NextResponse.json({ ok: true, fired: fired.length, ids: fired });
+
+  // fix(audit liveshare-coord-retention): physically clear the last broadcast
+  // position on expired/revoked Live Share links that still hold one, so precise
+  // location is retained only for the active session (privacy promise). Revoke
+  // already nulls coords inline; this sweeps links that simply EXPIRED and were
+  // never hit again. resolveSharedView already refuses to serve them, so this is
+  // pure data-minimization hygiene.
+  const cleared = await prisma.liveShareLink.updateMany({
+    where: {
+      lastLocationAt: { not: null },
+      OR: [{ revokedAt: { not: null } }, { expiresAt: { lt: new Date() } }],
+    },
+    data: { lastLat: null, lastLng: null, lastLocationAt: null },
+  });
+
+  return NextResponse.json({ ok: true, fired: fired.length, ids: fired, liveShareCoordsCleared: cleared.count });
 }

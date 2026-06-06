@@ -21,7 +21,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)",  color: "#0F172A" },
   ],
 };
-import Script from "next/script";
+import { ConsentedAdSense } from "@/components/ConsentedAdSense";
 // v96 — CityBackdrop is ~169 kB of city photo URLs that was eagerly
 // imported into the root layout's First Load JS on every route.
 // The Lazy wrapper is a client-only dynamic import so the chunk
@@ -120,19 +120,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             on <html> stops React from complaining about the class
             mismatch this script intentionally introduces. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }} />
-        {/* Google AdSense auto-ads loader. Conditional on the env var
-            being set so non-production deploys don't request ads.
-            strategy="afterInteractive" loads after the page is
-            interactive — keeps Largest Contentful Paint clean. */}
-        {ADSENSE_CLIENT_ID && (
-          <Script
-            id="adsense-auto-ads"
-            async
-            strategy="afterInteractive"
-            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT_ID}`}
-            crossOrigin="anonymous"
-          />
-        )}
+        {/* Google AdSense auto-ads loader. Conditional on the env var being set
+            so non-production deploys don't request ads, AND consent-gated:
+            ConsentedAdSense only injects the script after the user explicitly
+            accepts (fix(audit ads-consent-gate)). strategy="afterInteractive"
+            keeps Largest Contentful Paint clean. */}
+        {ADSENSE_CLIENT_ID && <ConsentedAdSense clientId={ADSENSE_CLIENT_ID} />}
       </head>
       <body>
         {/* CityBackdrop sits at z:0 (its own stacking context via position:fixed).

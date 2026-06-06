@@ -13,33 +13,43 @@ import { withComputeLimit } from "./lib/compute-limit.js";
 /// re-doing the math.
 ///
 /// SOURCE / VINTAGE
-/// fix(audit legal-fbi-year-mislabel-1 / legal-accuracy-1): these are now the
-/// FBI's official 2024 national rates per 100,000 inhabitants — the most-recent
-/// COMPLETE annual release (published Aug/Sept 2025). The FBI has NOT published
-/// 2024's successor; the prior "2025" values (328 / 1548) matched no official
-/// FBI release for any year and the "2025" label was forward-dated.
-///   Violent (Persons): 379.5  ·  Property: 1,760.1
-/// Source: FBI UCR "Reported Crimes in the Nation, 2024" / cde.ucr.cjis.gov
+/// fix(audit fbi-anchor-year-mix-1): the national anchor MUST be the same vintage
+/// as the per-city baselines it is compared against. The 44 city baselines in
+/// CITY_FBI_BASELINES are FBI 2023 (revised), so this anchor is FBI 2023 (revised)
+/// too. A previous pass set this to 379.5 / 1760.1 mislabeled "2024" — but that
+/// pair never existed in any single FBI year: 379.5 is the 2023-REVISED violent
+/// rate (as restated in the FBI 2024 report), while 1760.1 is the 2024 PROPERTY
+/// rate. Mixing a 2023 violent with a 2024 property silently over-penalized every
+/// city on property (2024 property fell ~9% vs 2023, so the smaller denominator
+/// inflated each city's property danger). Corrected to the true, year-consistent
+/// FBI 2023-revised pair: violent 379.5 · property 1934.1.
+///
+/// VERIFIED against primary FBI sources (FBI "UCR Summary of Reported Crimes in
+/// the Nation, 2024", released Aug 2025, which restates 2023 for comparison):
+///   2024:          violent 359.1, property 1760.1
+///   2023 (revised): violent 379.5, property 1934.1   ← IN USE (matches baselines)
+///   2023 (original, 2023 report): violent 363.8, property 1916.7
+///   2022:          violent 369.8, property 1954.4
+/// Source: https://cde.ucr.cjis.gov/LATEST/resources/reports/UCR%20Summary%20of%20Reported%20Crimes%20in%20the%20Nation%202024.pdf
 ///   https://www.fbi.gov/news/press-releases/fbi-releases-2024-reported-crimes-in-the-nation-statistics
 ///
-/// FBI national rate per 100k, year over year (for sanity-checking):
-///   2024: violent 379.5, property 1760.1  ← in use (latest complete release)
-///   2023: violent 363.8, property 1934.1
-///
-/// When the FBI publishes the next complete annual release, update the values
-/// AND the threshold scale in gradeCitywideAbsolute together (see note there) so
-/// the cross-city grade spread stays anchored to the correct national rate.
-export const FBI_NATIONAL_PER_100K_2024 = { PERSONS: 379.5, PROPERTY: 1760.1 };
-/// Back-compat aliases for consumers that import an older year-named constant.
-/// They all resolve to the latest published year so updates happen in one place;
-/// the "2025" alias is retained only because external imports reference it and is
-/// NOT a claim that 2025 data exists.
-export const FBI_NATIONAL_PER_100K_2025 = FBI_NATIONAL_PER_100K_2024;
-export const FBI_NATIONAL_PER_100K_2023 = FBI_NATIONAL_PER_100K_2024;
+/// The grade thresholds in gradeCitywideAbsolute are MULTIPLES of this national
+/// rate (danger 1.0 == national average), so they stay valid as the anchor is
+/// corrected — a city exactly at the national rate is danger 1.0 by construction.
+/// When the FBI publishes the next complete release AND the city baselines are
+/// re-pulled to that year, update both together to keep vintages matched.
+export const FBI_NATIONAL_PER_100K = { PERSONS: 379.5, PROPERTY: 1934.1 };
+/// Year-named + back-compat aliases. The canonical anchor is FBI 2023-revised
+/// (matching the city baselines). The "_2024"/"_2025" names are retained ONLY
+/// because external modules import them; they are NOT a claim that those years'
+/// data is in use (the true 2024 pair is 359.1 / 1760.1, not this).
+export const FBI_NATIONAL_PER_100K_2023 = FBI_NATIONAL_PER_100K;
+export const FBI_NATIONAL_PER_100K_2024 = FBI_NATIONAL_PER_100K;
+export const FBI_NATIONAL_PER_100K_2025 = FBI_NATIONAL_PER_100K;
 export const FBI_NATIONAL_SOURCE = {
-  label: "FBI Crime Data Explorer 2024 (UCR national rate per 100k)",
+  label: "FBI UCR national rate per 100k (2023 revised, per CIUS 2024)",
   url: "https://cde.ucr.cjis.gov/LATEST/webapp/#/pages/explorer/crime/crime-trend",
-  publishedYear: 2024,
+  publishedYear: 2023,
 };
 
 // Population estimates and FBI national rates live in shared modules so
@@ -664,7 +674,7 @@ function computeDataConfidence(
   // For CFS-calibrated cities, apply the same scale we apply to the rates
   // shown to users; otherwise the ratio is on a different yardstick from
   // the national reference.
-  const nationalCombined = FBI_NATIONAL_PER_100K_2024.PERSONS + FBI_NATIONAL_PER_100K_2024.PROPERTY;
+  const nationalCombined = FBI_NATIONAL_PER_100K.PERSONS + FBI_NATIONAL_PER_100K.PROPERTY;
   const observedAnnual = observedAnnualCombined != null
     ? observedAnnualCombined
     : (pop > 0 ? (totalIncidents * (365 / windowDays) / pop) * 100_000 : 0);
@@ -766,18 +776,15 @@ function gradeFromNationalDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["g
 /// neighborhood grade still uses gradeFromCityDeltas (area vs its own city),
 /// which is the correct frame for within-city comparison.
 function gradeCitywideAbsolute(baseline: { violent: number; property: number }): SafetyScoreResponse["grade"] {
-  const vr = baseline.violent  / FBI_NATIONAL_PER_100K_2024.PERSONS;
-  const pr = baseline.property / FBI_NATIONAL_PER_100K_2024.PROPERTY;
+  const vr = baseline.violent  / FBI_NATIONAL_PER_100K.PERSONS;
+  const pr = baseline.property / FBI_NATIONAL_PER_100K.PROPERTY;
   const danger = vr * 0.7 + pr * 0.3;
-  // fix(audit legal-fbi-year-mislabel-1): thresholds re-derived when the national
-  // rate was corrected from the old (wrong) 328/1548 to the real FBI-2024
-  // 379.5/1760.1. Raising the denominators shrinks every city's `danger` by a
-  // violent-weighted factor of ~0.866, so the original thresholds (1.15 / 1.50 /
-  // 2.20 / 3.05) were scaled by 0.866 and rounded. Verified across all 44 tracked
-  // cities' baselines: this reproduces the EXACT prior grade for every city
-  // (San Diego→A, Chicago→C, Detroit→E), i.e. the correction fixes the published
-  // benchmark number without shifting any city's grade. Re-derive this scale if
-  // the national rate changes again.
+  // Thresholds are MULTIPLES of the national rate: a city whose baseline equals
+  // the national rate (vr=1, pr=1) lands at danger 1.00 — the top of A. So the
+  // ladder is invariant to the anchor's exact value and stays valid as the anchor
+  // is corrected (fix(audit fbi-anchor-year-mix-1): property 1760.1→1934.1 to
+  // match the 2023-vintage city baselines; this only relaxes cities that the
+  // wrong 2024-property denominator had been over-penalizing). 1.00=national avg.
   if (danger <= 1.00) return "A"; // at/below the (violent-weighted) national rate
   if (danger <= 1.30) return "B";
   if (danger <= 1.91) return "C";
@@ -1213,9 +1220,9 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
       localPer100k: personsLocal100k,
       cityPer100k: personsLocal100k,
       cityDeltaPct: 0,
-      nationalPer100k: FBI_NATIONAL_PER_100K_2024.PERSONS,
-      deltaPct: FBI_NATIONAL_PER_100K_2024.PERSONS === 0 ? 0
-        : Math.round(((personsLocal100k - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
+      nationalPer100k: FBI_NATIONAL_PER_100K.PERSONS,
+      deltaPct: FBI_NATIONAL_PER_100K.PERSONS === 0 ? 0
+        : Math.round(((personsLocal100k - FBI_NATIONAL_PER_100K.PERSONS) / FBI_NATIONAL_PER_100K.PERSONS) * 100),
       cityFbiPer100k: cityBaseline ? cityBaseline.violent : null,
     },
     {
@@ -1224,9 +1231,9 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
       localPer100k: propertyLocal100k,
       cityPer100k: propertyLocal100k,
       cityDeltaPct: 0,
-      nationalPer100k: FBI_NATIONAL_PER_100K_2024.PROPERTY,
-      deltaPct: FBI_NATIONAL_PER_100K_2024.PROPERTY === 0 ? 0
-        : Math.round(((propertyLocal100k - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
+      nationalPer100k: FBI_NATIONAL_PER_100K.PROPERTY,
+      deltaPct: FBI_NATIONAL_PER_100K.PROPERTY === 0 ? 0
+        : Math.round(((propertyLocal100k - FBI_NATIONAL_PER_100K.PROPERTY) / FBI_NATIONAL_PER_100K.PROPERTY) * 100),
       cityFbiPer100k: cityBaseline ? cityBaseline.property : null,
     },
   ];
@@ -1371,11 +1378,11 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
         ? `The letter grade is an absolute, cross-city measure: ${city.label}'s own FBI-published rate for ${fbiBaseline.year} ` +
           `(violent ${fbiBaseline.violent}/100k, property ${fbiBaseline.property}/100k, via cde.ucr.cjis.gov agency ORI ${fbiBaseline.ori}) ` +
           `measured against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
-          `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k), weighting violent crime 70% and property 30%. ` +
+          `(violent ${FBI_NATIONAL_PER_100K.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K.PROPERTY}/100k), weighting violent crime 70% and property 30%. ` +
           `A means at or below the national rate; B, C and D step up through roughly 1.3×, 1.9× and 2.6× it; E means well above. ` +
           `The grade is DYNAMIC and current-data-aware: the FBI-published rate is the floor, and when ${city.label}'s latest pulled data shows crime running ABOVE that rate the grade steps up toward today's level (closing up to ${Math.round(dynamicWeight * 100)}% of the gap), so an emerging surge surfaces immediately instead of waiting for the next annual release; a reading below the published rate is treated as open-feed under-capture rather than a real drop, so the grade never falsely eases. `
         : `The letter grade compares ${city.label}'s live citywide rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
-          `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k, weighting violent 70% / property 30%) ` +
+          `(violent ${FBI_NATIONAL_PER_100K.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K.PROPERTY}/100k, weighting violent 70% / property 30%) ` +
           `because no city-specific FBI baseline is on file for ${city.label} yet. `) +
       "Society / public-order offenses are excluded because the FBI does not publish a national rate." +
       (sourceType === "cfs"
@@ -1690,9 +1697,9 @@ async function computeSafetyScore(areaSlug: string, areaLabel: string): Promise<
       cityDeltaPct: cityPersonsRounded > 0
         ? Math.round(((persons100k - cityPersonsRounded) / cityPersonsRounded) * 100)
         : 0,
-      nationalPer100k: FBI_NATIONAL_PER_100K_2024.PERSONS,
-      deltaPct: FBI_NATIONAL_PER_100K_2024.PERSONS === 0 ? 0
-        : Math.round(((persons100k - FBI_NATIONAL_PER_100K_2024.PERSONS) / FBI_NATIONAL_PER_100K_2024.PERSONS) * 100),
+      nationalPer100k: FBI_NATIONAL_PER_100K.PERSONS,
+      deltaPct: FBI_NATIONAL_PER_100K.PERSONS === 0 ? 0
+        : Math.round(((persons100k - FBI_NATIONAL_PER_100K.PERSONS) / FBI_NATIONAL_PER_100K.PERSONS) * 100),
       cityFbiPer100k: cityBaselinePerArea ? cityBaselinePerArea.violent : null,
     },
     {
@@ -1703,9 +1710,9 @@ async function computeSafetyScore(areaSlug: string, areaLabel: string): Promise<
       cityDeltaPct: cityPropertyRounded > 0
         ? Math.round(((property100k - cityPropertyRounded) / cityPropertyRounded) * 100)
         : 0,
-      nationalPer100k: FBI_NATIONAL_PER_100K_2024.PROPERTY,
-      deltaPct: FBI_NATIONAL_PER_100K_2024.PROPERTY === 0 ? 0
-        : Math.round(((property100k - FBI_NATIONAL_PER_100K_2024.PROPERTY) / FBI_NATIONAL_PER_100K_2024.PROPERTY) * 100),
+      nationalPer100k: FBI_NATIONAL_PER_100K.PROPERTY,
+      deltaPct: FBI_NATIONAL_PER_100K.PROPERTY === 0 ? 0
+        : Math.round(((property100k - FBI_NATIONAL_PER_100K.PROPERTY) / FBI_NATIONAL_PER_100K.PROPERTY) * 100),
       cityFbiPer100k: cityBaselinePerArea ? cityBaselinePerArea.property : null,
     },
   ];

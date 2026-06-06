@@ -40,12 +40,17 @@ export async function triggerSos(
   }
 
   const durationMinutes = Math.min(240, Math.max(5, opts.durationMinutes ?? DEFAULT_DURATION_MIN));
-  // Open a live-share session (no inline contact — we fan out to ALL contacts
-  // below). createLiveShare handles token + expiry + the /share link.
-  const share = await createLiveShare(userId, { durationMinutes });
-
   const hasLoc = typeof opts.lat === "number" && typeof opts.lng === "number";
   const mapUrl = hasLoc ? `https://maps.google.com/?q=${opts.lat},${opts.lng}` : null;
+
+  // Open a live-share session (no inline contact — we fan out to ALL contacts
+  // below). createLiveShare handles token + expiry + the /share link. Seed it
+  // with the SOS location so the recipient's live map shows a pin immediately,
+  // then the sharer's device keeps it current via the heartbeat.
+  const share = await createLiveShare(userId, {
+    durationMinutes,
+    ...(hasLoc ? { lat: opts.lat, lng: opts.lng } : {}),
+  });
 
   const note = (opts.message ?? "").trim();
   const subject = "🚨 CommunitySafe SOS — your contact may need help";
@@ -53,10 +58,9 @@ export async function triggerSos(
     `A CommunitySafe contact just triggered an SOS and asked to alert you right now.\n\n` +
     (note ? `Their message: "${note}"\n\n` : "") +
     (mapUrl ? `Location when they sent it: ${mapUrl}\n` : "") +
-    // fix(audit safety-liveshare-no-location-3): the SOS map pin above is a real
-    // one-time location; the share link is a Live Share *session* link (it does
-    // not continuously stream coordinates yet), so don't label it "live location".
-    `Live Share session link (active until ${share.expiresAt.toLocaleString()}): ${share.shareUrl}\n\n` +
+    // v113: the Live Share link now shows the sender's LIVE location on a map that
+    // updates as their device sends positions (no longer a static session link).
+    `Live location link (active until ${share.expiresAt.toLocaleString()}) — follow them on a map: ${share.shareUrl}\n\n` +
     `If you can't reach them and believe they are in danger, call 911.\n` +
     `This is an automated message sent at their request.`;
 
