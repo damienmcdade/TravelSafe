@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
+    "icons:generate": "node scripts/generate-communitysafe-icons.mjs",
     "build": "npm run build --workspace=@travelsafe/crime-data && npx -y prisma@7.8.0 generate --schema=../../packages/db/prisma/schema.prisma && next build",
     "start": "next start -p 3000",
     "lint": "eslint .",

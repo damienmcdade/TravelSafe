@@ -1,4 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import sharp from "sharp";
+
+const root = path.resolve(import.meta.dirname, "..");
+
+const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
@@ -78,4 +84,34 @@
   <ellipse cx="256" cy="142" rx="34" ry="9" fill="none" stroke="#C99841" stroke-width="1.5" opacity="0.75"/>
   <ellipse cx="246" cy="138" rx="8" ry="2" fill="#FBF7E6" opacity="0.9"/>
   <circle cx="256" cy="220" r="100" fill="none" stroke="#FFE7A8" stroke-width="1" opacity="0.2"/>
-</svg>
+</svg>`;
+
+async function png(outPath, size, flatten = true) {
+  await mkdir(path.dirname(outPath), { recursive: true });
+  let image = sharp(Buffer.from(svg)).resize(size, size, { fit: "cover" });
+  if (flatten) image = image.flatten({ background: "#0A1628" });
+  await image.png().toFile(outPath);
+}
+
+await writeFile(path.join(root, "public/icons/icon.svg"), svg);
+await png(path.join(root, "public/icons/icon-192.png"), 192);
+await png(path.join(root, "public/icons/icon-512.png"), 512);
+await png(path.join(root, "public/icons/icon-1024.png"), 1024);
+await png(path.join(root, "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"), 1024);
+
+const android = [
+  ["mipmap-mdpi", 48],
+  ["mipmap-hdpi", 72],
+  ["mipmap-xhdpi", 96],
+  ["mipmap-xxhdpi", 144],
+  ["mipmap-xxxhdpi", 192],
+];
+
+for (const [dir, size] of android) {
+  const base = path.join(root, "android/app/src/main/res", dir);
+  await png(path.join(base, "ic_launcher.png"), size);
+  await png(path.join(base, "ic_launcher_round.png"), size);
+  await png(path.join(base, "ic_launcher_foreground.png"), size, false);
+}
+
+console.log("CommunitySafe icon assets regenerated.");
