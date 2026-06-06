@@ -661,17 +661,20 @@ function computeDataConfidence(
         "The reported per-capita rate is much lower than expected for a city this size, suggesting the upstream feed is currently serving partial data. Grade may shift when the feed refreshes.",
     };
   }
-  // v110 — COUNT-AWARE confidence. A short window with a LARGE incident count is
-  // statistically stable: the relative standard error of a rate scales ~1/√N, so
-  // ~5,000+ Part-1 incidents put it under ~1.5% — more reliable than a 95-day
-  // window with a few hundred incidents. The prior flat 90-day cutoff unfairly
-  // rated high-volume cities medium (Chicago/Dallas/Philadelphia/Oakland: tens of
-  // thousands of incidents over ~60-84 days). So a window ≥45 days carrying a
-  // stable volume is treated as high-confidence — this is statistically earned,
-  // not a relaxed bar. Genuinely sparse feeds (short window AND low volume, e.g.
-  // Tucson's rolling ~45-day feed) correctly remain medium. The undercount check
-  // (a rate implausibly low for the city size) is independent and still applies.
-  const STABLE_VOLUME = 5_000;
+  // v110 — COUNT-AWARE confidence. A short window with a stable incident count is
+  // statistically reliable: the relative standard error of a rate scales ~1/√N,
+  // so ~2,000+ Part-1 incidents put the RSE under ~2.2% — far tighter than any
+  // grade band (the danger thresholds are ~30-60% apart), so a 2k+ sample over a
+  // ≥45-day window cannot flip the letter on sampling noise. The prior flat
+  // 90-day cutoff unfairly rated high-volume CITIES medium (Chicago/Dallas/
+  // Philadelphia/Oakland) AND every NEIGHBORHOOD in a sub-90-day-window city
+  // (e.g. Chicago's Loop), even busy ones with thousands of incidents. So a
+  // window ≥45 days carrying a stable volume is high-confidence — statistically
+  // earned, not a relaxed bar. Genuinely sparse scores (short window AND low
+  // volume, e.g. Tucson's rolling ~45-day feed, or a quiet residential
+  // neighborhood) correctly remain medium. The undercount check (a rate
+  // implausibly low for the population) is independent and still applies.
+  const STABLE_VOLUME = 2_000;
   const windowStable = windowDays >= 90 || (windowDays >= 45 && totalIncidents >= STABLE_VOLUME);
   const undercount = pop > 200_000 && ratio < 0.5;
   if (!windowStable || undercount) {
