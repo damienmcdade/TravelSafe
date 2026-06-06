@@ -363,45 +363,57 @@ async function fetchBostonFromCSV(): Promise<Incident[]> {
   });
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent CSV downloads (~45MB each). Concurrent
+// callers now await the same promise.
+let inFlightBostonFetch: Promise<Incident[]> | null = null;
 export async function getRowsBoston(): Promise<Incident[]> {
   const now = Date.now();
   // v70 — CSV cache has its own longer TTL (30min) because BPD only
   // publishes daily; refreshing every 5min on a 45MB download wastes
   // bandwidth without producing new data.
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CSV_CACHE_TTL_MS) return cache.rows;
+  if (inFlightBostonFetch) return inFlightBostonFetch;
+  inFlightBostonFetch = (async () => {
+    try {
+      // PRIMARY PATH: direct CSV download (S3-signed, works from any IP).
+      // This bypasses the data.boston.gov IP-blocking that hit the CKAN
+      // API path. Returns 20-30k rows of recent BPD incidents in ~3-5s
+      // total (3s fetch + 1-2s parse).
+      try {
+        const rows = await fetchBostonFromCSV();
+        if (rows.length > 0) {
+          cache = { fetchedAt: now, rows };
+          return rows;
+        }
+      } catch (err) {
+        console.warn("[boston] CSV fetch failed, trying CKAN/snapshot fallbacks:", (err as Error).message);
+      }
 
-  // PRIMARY PATH: direct CSV download (S3-signed, works from any IP).
-  // This bypasses the data.boston.gov IP-blocking that hit the CKAN
-  // API path. Returns 20-30k rows of recent BPD incidents in ~3-5s
-  // total (3s fetch + 1-2s parse).
-  try {
-    const rows = await fetchBostonFromCSV();
-    if (rows.length > 0) {
+      // SECONDARY: Cloudflare Worker → CKAN proxy if configured.
+      if (env.BOSTON_PROXY_URL) {
+        try {
+          const rows = await fetchBoston();
+          if (rows.length > 0) {
+            cache = { fetchedAt: now, rows };
+            return rows;
+          }
+        } catch (err) {
+          console.warn("[boston] proxy fetch failed, falling back to snapshot:", (err as Error).message);
+        }
+      }
+
+      // LAST RESORT: bundled snapshot (5k rows committed at build time).
+      // Stays in sync via the GitHub Actions weekly refresh workflow.
+      const rows = rowsFromSnapshot();
       cache = { fetchedAt: now, rows };
       return rows;
+    } finally {
+      inFlightBostonFetch = null;
     }
-  } catch (err) {
-    console.warn("[boston] CSV fetch failed, trying CKAN/snapshot fallbacks:", (err as Error).message);
-  }
-
-  // SECONDARY: Cloudflare Worker → CKAN proxy if configured.
-  if (env.BOSTON_PROXY_URL) {
-    try {
-      const rows = await fetchBoston();
-      if (rows.length > 0) {
-        cache = { fetchedAt: now, rows };
-        return rows;
-      }
-    } catch (err) {
-      console.warn("[boston] proxy fetch failed, falling back to snapshot:", (err as Error).message);
-    }
-  }
-
-  // LAST RESORT: bundled snapshot (5k rows committed at build time).
-  // Stays in sync via the GitHub Actions weekly refresh workflow.
-  const rows = rowsFromSnapshot();
-  cache = { fetchedAt: now, rows };
-  return rows;
+  })();
+  return inFlightBostonFetch;
 }
 
 export async function getDiscoveredAreasBoston(): Promise<KnownArea[]> {

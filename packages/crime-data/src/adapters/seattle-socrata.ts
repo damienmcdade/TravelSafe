@@ -118,17 +118,28 @@ async function fetchSeattle(): Promise<Incident[]> {
   });
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent full fetches. Concurrent callers now
+// await the same promise.
+let inFlightSeattleFetch: Promise<Incident[]> | null = null;
 export async function getRowsSeattle(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchSeattle();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[seattle] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightSeattleFetch) return inFlightSeattleFetch;
+  inFlightSeattleFetch = (async () => {
+    try {
+      const rows = await fetchSeattle();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[seattle] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightSeattleFetch = null;
+    }
+  })();
+  return inFlightSeattleFetch;
 }
 
 export async function getDiscoveredAreasSeattle(): Promise<KnownArea[]> {

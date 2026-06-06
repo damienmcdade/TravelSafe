@@ -257,17 +257,28 @@ async function fetchSacramento(): Promise<Incident[]> {
     });
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent full fetches. Concurrent callers now
+// await the same promise.
+let inFlightSacramentoFetch: Promise<Incident[]> | null = null;
 export async function getRowsSacramento(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchSacramento();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[sac] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightSacramentoFetch) return inFlightSacramentoFetch;
+  inFlightSacramentoFetch = (async () => {
+    try {
+      const rows = await fetchSacramento();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[sac] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightSacramentoFetch = null;
+    }
+  })();
+  return inFlightSacramentoFetch;
 }
 
 export async function getDiscoveredAreasSacramento(): Promise<KnownArea[]> {

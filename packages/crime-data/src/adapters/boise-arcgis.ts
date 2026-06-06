@@ -120,17 +120,28 @@ async function fetchBoise(): Promise<Incident[]> {
   return out;
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent full fetches. Concurrent callers now
+// await the same promise.
+let inFlightBoiseFetch: Promise<Incident[]> | null = null;
 export async function getRowsBoise(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchBoise();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[bzi] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightBoiseFetch) return inFlightBoiseFetch;
+  inFlightBoiseFetch = (async () => {
+    try {
+      const rows = await fetchBoise();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[bzi] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightBoiseFetch = null;
+    }
+  })();
+  return inFlightBoiseFetch;
 }
 
 export async function getDiscoveredAreasBoise(): Promise<KnownArea[]> {

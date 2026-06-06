@@ -95,17 +95,28 @@ async function fetchRaleigh(): Promise<Incident[]> {
     }));
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent full fetches. Concurrent callers now
+// await the same promise.
+let inFlightRaleighFetch: Promise<Incident[]> | null = null;
 export async function getRowsRaleigh(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchRaleigh();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[rdu] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightRaleighFetch) return inFlightRaleighFetch;
+  inFlightRaleighFetch = (async () => {
+    try {
+      const rows = await fetchRaleigh();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[rdu] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightRaleighFetch = null;
+    }
+  })();
+  return inFlightRaleighFetch;
 }
 
 export async function getDiscoveredAreasRaleigh(): Promise<KnownArea[]> {

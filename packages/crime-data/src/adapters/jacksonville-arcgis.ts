@@ -172,17 +172,28 @@ async function fetchJacksonville(): Promise<Incident[]> {
     });
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent full fetches. Concurrent callers now
+// await the same promise.
+let inFlightJacksonvilleFetch: Promise<Incident[]> | null = null;
 export async function getRowsJacksonville(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchJacksonville();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[jacksonville] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightJacksonvilleFetch) return inFlightJacksonvilleFetch;
+  inFlightJacksonvilleFetch = (async () => {
+    try {
+      const rows = await fetchJacksonville();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[jacksonville] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightJacksonvilleFetch = null;
+    }
+  })();
+  return inFlightJacksonvilleFetch;
 }
 
 // Area label is the neighborhood name; slug = "jax-<name>" (unique prefix). The

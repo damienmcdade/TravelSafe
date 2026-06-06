@@ -163,17 +163,28 @@ async function fetchCoSp(): Promise<Incident[]> {
   });
 }
 
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
+// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
+// cache previously fired N concurrent full fetches. Concurrent callers now
+// await the same promise.
+let inFlightCoSpFetch: Promise<Incident[]> | null = null;
 export async function getRowsCoSp(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchCoSp();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[colorado-springs] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightCoSpFetch) return inFlightCoSpFetch;
+  inFlightCoSpFetch = (async () => {
+    try {
+      const rows = await fetchCoSp();
+      if (rows.length > 0) cache = { fetchedAt: now, rows };
+      return rows;
+    } catch (err) {
+      console.warn("[colorado-springs] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightCoSpFetch = null;
+    }
+  })();
+  return inFlightCoSpFetch;
 }
 
 export async function getDiscoveredAreasCoSp(): Promise<KnownArea[]> {
