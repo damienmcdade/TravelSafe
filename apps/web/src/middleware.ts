@@ -275,12 +275,12 @@ export function middleware(req: NextRequest) {
   return applyCsp(res, csp);
 }
 
-// Run on all routes EXCEPT Next's static assets / image optimizer / favicon,
+// Run on all routes EXCEPT Next's static assets / image optimizer / metadata icons,
 // so the CSP header reaches pages (the rate-limiter still only acts on /api/*).
 export const config = {
   matcher: [
     {
-      source: "/((?!_next/static|_next/image|favicon.ico|icons/|manifest.json|sw.js|robots.txt|sitemap.xml).*)",
+      source: "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|icons/|manifest.json|sw.js|robots.txt|sitemap.xml).*)",
     },
   ],
 };

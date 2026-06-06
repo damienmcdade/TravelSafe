@@ -60,6 +60,14 @@ export const metadata: Metadata = {
     `official police data sources and the ${FBI_DATA_LABEL} ` +
     "national average. Not surveillance; not a substitute for emergency services.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" }],
+    shortcut: ["/icons/icon-192.png"],
+  },
   // openGraph defaults inherited by every page. Per-page metadata can
   // override `title`, `description`, `images`, etc. and Next merges with
   // these defaults. Without these, social previews for the homepage and
