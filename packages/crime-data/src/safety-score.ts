@@ -144,7 +144,11 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // gap is almost entirely the missing non-weapon aggravated assaults). No
   // public DC source has the missing rows, so calibrate the violent aggregate
   // to the FBI baseline (×2.1) and flag it. Property (~0.90×) is accurate → 1.0.
-  "washington-dc": { persons: 2.1, property: 1.0, sourceType: "partial" },
+  // v112 — retuned to the corrected FBI baseline (748→1157 violent, 3081→4336
+  // property): persons 2.1×(1157/748)=3.25, property 1.0×(4336/3081)=1.41. Keeps
+  // the same calibrated-vs-baseline ratio (no divergence-guard change) while the
+  // displayed rate tracks the now-correct (higher) DC rate. DC is now grade E.
+  "washington-dc": { persons: 3.25, property: 1.41, sourceType: "partial" },
   // v99 — Boston's open feed publishes NO rape/sexual-assault offense at all
   // (confirmed: 0 rape rows in 262k records, 2023-2026) — BPD suppresses it like
   // Cambridge. So the feed structurally caps at ~0.61× FBI (rape is ~7% of
@@ -182,10 +186,12 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // Family" (a Class-A misdemeanor we correctly exclude from Part-1) rather than
   // PC 22.02, so the feed captures only ~44% of FBI agg assault. Net: the feed
   // reads violent ~0.40× FBI (184 vs 458/100k) and property ~0.76× (2061 vs
-  // 2700) over a 259-day window — without calibration Fort Worth false-grades A.
-  // Scale persons ×2.49 and property ×1.31 to recover the FBI baseline (→ grade
-  // C, matching its own baseline) + the partial-feed disclaimer.
-  "fort-worth":    { persons: 2.13, property: 1.13, sourceType: "partial" },
+  // 2700) over its window — without calibration Fort Worth false-grades A.
+  // v112 — retuned to the CORRECTED FW baseline (the prior baseline used the
+  // wrong agency, Azle PD; real Fort Worth PD = 498 violent / 2680 property, FBI
+  // CDE 2023): persons 2.13×(498/392)=2.71, property 1.13×(2680/2323)=1.30. Same
+  // calibrated-vs-baseline ratio (no divergence change); FW is grade C.
+  "fort-worth":    { persons: 2.71, property: 1.30, sourceType: "partial" },
   // v100 — Denver / Cambridge / Indianapolis cluster. (Phoenix was removed in
   // v101 — its upstream feed froze at 2025-12-24 and no replacement exists;
   // Baltimore + Fort Worth replaced Phoenix + Nashville.) FBI baselines
@@ -682,11 +688,19 @@ function computeDataConfidence(
   // (e.g. Chicago's Loop), even busy ones with thousands of incidents. So a
   // window ≥45 days carrying a stable volume is high-confidence — statistically
   // earned, not a relaxed bar. Genuinely sparse scores (short window AND low
-  // volume, e.g. Tucson's rolling ~45-day feed, or a quiet residential
-  // neighborhood) correctly remain medium. The undercount check (a rate
-  // implausibly low for the population) is independent and still applies.
-  const STABLE_VOLUME = 2_000;
-  const windowStable = windowDays >= 90 || (windowDays >= 45 && totalIncidents >= STABLE_VOLUME);
+  // volume, or a quiet residential neighborhood) correctly remain medium. The
+  // undercount check (a rate implausibly low for the population) is independent
+  // and still applies.
+  //
+  // v112 — threshold set to the statistical line: high confidence = sampling
+  // error too small to flip a grade. RSE = 1/√N, grade bands are ~30-60% apart,
+  // so N≥1,500 (RSE ~2.6%) is comfortably "can't change the letter". The window
+  // floor is 42 days (not 45) because roundWindowDays() snaps a genuine 45-day
+  // rolling feed — e.g. Tucson PD's daily-refreshed 45-day layer, its only FRESH
+  // source — down to a 42-day boundary; at 1,977 Part-1 incidents that feed is
+  // statistically high-confidence and was being penalized purely by the rounding.
+  const STABLE_VOLUME = 1_500;
+  const windowStable = windowDays >= 90 || (windowDays >= 42 && totalIncidents >= STABLE_VOLUME);
   const undercount = pop > 200_000 && ratio < 0.5;
   if (!windowStable || undercount) {
     return {

@@ -80,13 +80,21 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "norfolk": { violent: 543, property: 3851, year: 2023, ori: "VA1170000" },
   "oakland": { violent: 1475, property: 5255, year: 2025, ori: "CA0010900" },
   "philadelphia": { violent: 992, property: 5121, year: 2023, ori: "PAPEP0000" },
-  "fort-worth": { violent: 392, property: 2323, year: 2025, ori: "TX2200200" },
+  // v112 — corrected to the REAL Fort Worth PD. The prior ORI TX2200200 was Azle
+  // PD (a tiny suburb, 337/1567); Fort Worth PD is TX2201200 → FBI CDE 2023
+  // 498 violent / 2680 property. Grade shifts B→C (accurate). Calibration retuned.
+  "fort-worth": { violent: 498, property: 2680, year: 2023, ori: "TX2201200" },
   "pittsburgh": { violent: 507, property: 2532, year: 2023, ori: "PAPPD0000" },
   "saint-paul": { violent: 626, property: 3157, year: 2023, ori: "MN0620900" },
   "san-diego": { violent: 425, property: 1831, year: 2023, ori: "CA0371100" },
   "san-francisco": { violent: 486, property: 2960, year: 2025, ori: "CA0380100" },
   "seattle": { violent: 789, property: 5071, year: 2023, ori: "WASPD0000" },
-  "washington-dc": { violent: 748, property: 3081, year: 2025, ori: "DCMPD0000" },
+  // v112 — corrected to FBI CDE 2023 for MPD (DCMPD0000): the agency series is
+  // keyed "District of Columbia" (MPD polices all of DC) = 1157 violent / 4336
+  // property — DC's 2023 violent spike. The prior 748/3081 was held too low (a
+  // partial-feed estimate) → graded C; the real rate is grade E. Calibration
+  // retuned proportionally below.
+  "washington-dc": { violent: 1157, property: 4336, year: 2023, ori: "DCMPD0000" },
   "sacramento": { violent: 805, property: 2980, year: 2023, ori: "CA0340400" },
   "atlanta": { violent: 709, property: 3917, year: 2023, ori: "GAAPD0000" },
   "indianapolis": { violent: 1088, property: 3594, year: 2023, ori: "INIPD0000" },
