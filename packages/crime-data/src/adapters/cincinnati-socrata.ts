@@ -94,20 +94,43 @@ function safeIso(raw: string | null | undefined): string | null {
   return +new Date(iso) <= 0 ? null : iso;
 }
 
+// Explicit $select — never request demographic columns.
+const CIN_SELECT = "incident_no,stars_category,type,datefrom,datereported,cpd_neighborhood,latitude_x,longitude_x";
+const CIN_WHERE = "datefrom IS NOT NULL AND cpd_neighborhood IS NOT NULL";
+
 async function fetchCin(): Promise<Incident[]> {
   // v96 — migrated to fetchSocrata helper. The earlier hand-built URL
   // template-string is replaced with structured query params; the
   // helper handles URL encoding of $where consistently.
-  // Explicit $select — never request demographic columns. Order by
-  // datefrom (incident occurrence) DESC so the newest pull covers
+  // Order by datefrom (incident occurrence) DESC so the newest pull covers
   // recent activity rather than backlog that skews datereported.
-  const rows = await fetchSocrata<CinRow>("Cincinnati Socrata", {
-    url: BASE,
-    select: "incident_no,stars_category,type,datefrom,datereported,cpd_neighborhood,latitude_x,longitude_x",
-    where: "datefrom IS NOT NULL AND cpd_neighborhood IS NOT NULL",
-    order: "datefrom DESC",
-    limit: ROW_LIMIT,
-  });
+  let rows: CinRow[];
+  try {
+    rows = await fetchSocrata<CinRow>("Cincinnati Socrata", {
+      url: BASE,
+      select: CIN_SELECT,
+      where: CIN_WHERE,
+      order: "datefrom DESC",
+      limit: ROW_LIMIT,
+    });
+  } catch (err) {
+    // v107 — Socrata slow-sorts `datefrom DESC` across the full multi-year
+    // STARS table and intermittently exceeds fetchSocrata's 45s abort (which,
+    // by design, is NOT retried), blanking Cincinnati on cold cache. Fall back
+    // to a date-bounded, UNORDERED pull: the windowDays filter caps the set to
+    // the last year (well under the 50k ceiling at CPD volume), so Socrata
+    // needs no server-side sort — the per-area / citywide code already sorts by
+    // occurredAt downstream, so recency is preserved without the slow ORDER BY.
+    console.warn("[cincinnati] ordered pull failed, retrying windowed/unordered:", (err as Error).message);
+    rows = await fetchSocrata<CinRow>("Cincinnati Socrata", {
+      url: BASE,
+      select: CIN_SELECT,
+      where: CIN_WHERE,
+      windowDays: 365,
+      dateField: "datefrom",
+      limit: ROW_LIMIT,
+    });
+  }
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];

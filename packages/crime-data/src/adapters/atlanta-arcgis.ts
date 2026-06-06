@@ -19,9 +19,33 @@ import { USER_AGENT } from "../lib/http.js";
 
 const BASE = "https://services3.arcgis.com/Et5Qfajgiyosiw4d/arcgis/rest/services/OpenDataWebsite_Crime_view/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const PAGES = 30;  // ~60k recent incidents — covers ~90-180d of APD volume
+// v107 — tiered cold load. Pre-v107 a cold cache blocked on all 30 pages
+// (~60k rows, ~45s) before returning ANYTHING. Atlanta is the slowest
+// ArcGIS cold load in the fleet, so it routinely lost the ~45s route-timeout
+// race and served EMPTY → "all Atlanta neighborhoods show no current
+// activity". Now we fetch the most-recent RECENT_PAGES first (ordered
+// OccurredFromDate DESC), cache + serve those within a few seconds so current
+// activity and the area list are immediately available, then backfill the
+// remaining pages in the background to restore full-depth baselines.
+const RECENT_PAGES = 6;  // ~12k most-recent rows — covers current activity + every active neighbourhood
+const PAGES = 30;        // ~60k recent incidents — full depth for accurate baseline counts
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+// `full` flips true once the background deep-load has merged all pages, so a
+// recent-only tier isn't mistaken for the complete dataset.
+let cache: { fetchedAt: number; rows: Incident[]; full: boolean } | null = null;
+// v107 — last-known-good area list, so a transient empty pull (or the brief
+// cold window before the first fetch returns) never blanks the neighbourhood
+// list. Mirrors Detroit/Cleveland's STATIC_<city>_AREAS seed, but derived from
+// live data instead of a bundled polygon file (Atlanta has no polygon bundle).
+let lastGoodAreas: KnownArea[] | null = null;
+// v107 — in-flight fetch dedup. The dispatcher fans out a per-area Promise.all
+// over all 246 Atlanta neighbourhoods; on a cold cache that previously fired
+// 246 simultaneous getRowsAtlanta() calls, each allocating its own ~60k-row
+// buffer (246 × 60k ≈ 15M rows in flight → OOM, the same failure Detroit fixed
+// in v94 and the likely driver of the warm-worker OOM that disabled it). Now
+// concurrent callers all await the SAME promise.
+let inFlightFetch: Promise<Incident[]> | null = null;
+let bgDeepenInFlight = false;
 registerRowCache(() => { cache = null; }, "atlanta-arcgis");
 
 interface AtlRow {
@@ -80,18 +104,7 @@ async function fetchPage(offset: number): Promise<AtlRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchAtlanta(): Promise<Incident[]> {
-  const results: AtlRow[][] = new Array(PAGES);
-  let cursor = 0;
-  const workers = Array.from({ length: 4 }, async () => {
-    while (true) {
-      const i = cursor++;
-      if (i >= PAGES) return;
-      results[i] = await fetchPage(i * PAGE_SIZE).catch(() => [] as AtlRow[]);
-    }
-  });
-  await Promise.all(workers);
-  const rows = results.flat();
+function mapRows(rows: AtlRow[]): Incident[] {
   return rows
     .filter((r) => (r.OccurredFromDate || r.ReportDate) && r.NhoodName)
     .map((r, i) => ({
@@ -107,17 +120,70 @@ async function fetchAtlanta(): Promise<Incident[]> {
     }));
 }
 
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency,
+// in OccurredFromDate-DESC order (so page 0 is the most recent). A single page
+// failure degrades to [] rather than failing the whole pull.
+async function fetchPageRange(startPage: number, endPage: number): Promise<Incident[]> {
+  const count = endPage - startPage;
+  const results: AtlRow[][] = new Array(count);
+  let cursor = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      results[i] = await fetchPage((startPage + i) * PAGE_SIZE).catch(() => [] as AtlRow[]);
+    }
+  });
+  await Promise.all(workers);
+  return mapRows(results.flat());
+}
+
+// v107 — background deep-load: pull the remaining pages and merge with the
+// already-served recent tier (dedup by incident id), upgrading the cache to a
+// full-depth dataset. Fire-and-forget; failure just leaves the recent tier in
+// place to be retried on the next TTL lapse.
+async function deepenAtlanta(recentRows: Incident[]): Promise<void> {
+  if (bgDeepenInFlight) return;
+  bgDeepenInFlight = true;
+  try {
+    const rest = await fetchPageRange(RECENT_PAGES, PAGES);
+    if (rest.length === 0) return;  // nothing gained; keep the recent tier as-is
+    const byId = new Map<string, Incident>();
+    for (const r of recentRows) byId.set(r.id, r);
+    for (const r of rest) if (!byId.has(r.id)) byId.set(r.id, r);
+    const merged = Array.from(byId.values());
+    cache = { fetchedAt: Date.now(), rows: merged, full: true };
+    lastGoodAreas = buildAtlantaAreas(merged);
+  } catch (err) {
+    console.warn("[atl] deepen failed:", (err as Error).message);
+  } finally {
+    bgDeepenInFlight = false;
+  }
+}
+
 export async function getRowsAtlanta(): Promise<Incident[]> {
   const now = Date.now();
   if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  try {
-    const rows = await fetchAtlanta();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
-  } catch (err) {
-    console.warn("[atl] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
-  }
+  if (inFlightFetch) return inFlightFetch;
+  inFlightFetch = (async () => {
+    try {
+      // Tiered cold load: serve the most-recent pages fast, then backfill.
+      const recent = await fetchPageRange(0, RECENT_PAGES);
+      if (recent.length > 0) {
+        cache = { fetchedAt: now, rows: recent, full: false };
+        lastGoodAreas = buildAtlantaAreas(recent);
+        void deepenAtlanta(recent);
+        return recent;
+      }
+      return cache?.rows ?? [];
+    } catch (err) {
+      console.warn("[atl] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightFetch = null;
+    }
+  })();
+  return inFlightFetch;
 }
 
 function buildAtlantaAreas(rows: Incident[]): KnownArea[] {
@@ -156,19 +222,24 @@ function buildAtlantaAreas(rows: Incident[]): KnownArea[] {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-// v96 — fire-and-forget on cold cache produced a persistent
-// "windowDays=0 totalCounted=0" degenerate result for Atlanta on every
-// warm-worker cycle: discover returned [] → safety-score iterated 0
-// areas → wrote no rows → next cycle hit the same empty cache, repeat.
-// Without a STATIC_<city>_AREAS fallback (Phoenix has one; Atlanta does
-// not), the only correct answer is to AWAIT the row fetch on cold cache.
-// The user-facing cost is a single ~5-30 s blocking call on a true
-// cold-start (no warm-worker has run yet); the warm-worker runs every
-// 4 min, so steady-state requests always see warm cache.
+// v107 — supersedes the v96 "always AWAIT on cold cache" behaviour. v96 had
+// to block (potentially ~45s) because there was no fallback and returning []
+// caused a self-perpetuating "windowDays=0 totalCounted=0" degenerate loop.
+// Now: (1) the tiered cold load makes the awaited path resolve in a few
+// seconds instead of ~45s, and (2) a last-known-good area list (populated by
+// any prior successful pull in this pod) is served instantly while a refresh
+// runs in the background — the Detroit/Cleveland LKG pattern. So discover
+// never blocks on the full fetch and never returns a degenerate empty once the
+// pod has warmed even once.
 export async function getDiscoveredAreasAtlanta(): Promise<KnownArea[]> {
   if (cache && cache.rows.length > 0) {
     return buildAtlantaAreas(cache.rows);
   }
+  if (lastGoodAreas && lastGoodAreas.length > 0) {
+    void getRowsAtlanta().catch(() => {});  // refresh in background
+    return lastGoodAreas;
+  }
+  // True cold start (pod has never fetched). Await only the fast recent tier.
   const rows = await getRowsAtlanta().catch(() => [] as Incident[]);
   if (rows.length === 0) return [];
   return buildAtlantaAreas(rows);

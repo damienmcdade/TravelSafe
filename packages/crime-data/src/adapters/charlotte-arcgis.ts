@@ -23,9 +23,17 @@ const PAGE_SIZE = 2000;
 // incidents per 100k per year — about 10× below Charlotte's real
 // FBI rate. 60k rows ≈ 240 days of recent activity; safety-score's
 // 365d clamp then trims back honestly.
+// v107 — tiered cold load: fetch the most-recent pages first so current
+// activity + the division list are servable within a few seconds, then backfill
+// the rest in the background for full-depth baselines. Pre-v107 a cold cache
+// blocked on all 30 pages, so the warm path raced the route timeout and could
+// serve empty (same failure class fixed for Atlanta).
+const RECENT_PAGES = 6;
 const PAGES = 30;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+let cache: { fetchedAt: number; rows: Incident[]; full: boolean } | null = null;
+let lastGoodAreas: KnownArea[] | null = null;
+let bgDeepenInFlight = false;
 registerRowCache(() => { cache = null; }, "charlotte-arcgis");
 
 interface CmpdRow {
@@ -105,36 +113,7 @@ async function fetchPage(offset: number): Promise<CmpdRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-// v69 followup-5 — bounded-concurrency same as Cleveland's v63 fix.
-// All-30-parallel via Promise.all was getting rate-limited by Charlotte's
-// ArcGIS host: on Railway, only ~1 of the 30 pages succeeded each cycle,
-// leaving the cache with 1998 rows (one page) instead of 60k. The
-// safety-score then reported PERSONS=91, PROPERTY=730 with asOf
-// 2025-10-07 (the most recent in-cache Part-1 hit), grade=N/A,
-// ratio 0.02× — caught by the all-cities test.
-async function fetchPagesBounded<T>(
-  count: number,
-  pageSize: number,
-  fetcher: (offset: number) => Promise<T[]>,
-  concurrency: number,
-): Promise<T[][]> {
-  const offsets = Array.from({ length: count }, (_, i) => i * pageSize);
-  const results: T[][] = new Array(count);
-  let cursor = 0;
-  const workers = Array.from({ length: Math.min(concurrency, count) }, async () => {
-    while (true) {
-      const idx = cursor++;
-      if (idx >= offsets.length) return;
-      results[idx] = await fetcher(offsets[idx]).catch(() => [] as T[]);
-    }
-  });
-  await Promise.all(workers);
-  return results;
-}
-
-async function fetchCharlotte(): Promise<Incident[]> {
-  const pages = await fetchPagesBounded<CmpdRow>(PAGES, PAGE_SIZE, fetchPage, 4);
-  const rows = pages.flat();
+function mapCharlotteRows(rows: CmpdRow[]): Incident[] {
   // Filter out rows with no parseable date BEFORE constructing Incidents.
   // The earlier `new Date(0).toISOString()` fallback survived row mapping
   // but was filtered out by the citywide aggregator's `t > 0` invariant,
@@ -166,6 +145,46 @@ async function fetchCharlotte(): Promise<Incident[]> {
   return out;
 }
 
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency.
+// v69 followup-5 — concurrency 4 (not all-parallel): Charlotte's ArcGIS host
+// rate-limited 30 simultaneous requests down to ~1 success/cycle, leaving the
+// cache with a single page (~2k rows) and a bogus 0.02× citywide ratio. A
+// per-page failure degrades to [] rather than failing the whole pull.
+async function fetchCharlotteRange(startPage: number, endPage: number): Promise<Incident[]> {
+  const offsets = Array.from({ length: endPage - startPage }, (_, i) => (startPage + i) * PAGE_SIZE);
+  const results: CmpdRow[][] = new Array(offsets.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(4, offsets.length) }, async () => {
+    while (true) {
+      const idx = cursor++;
+      if (idx >= offsets.length) return;
+      results[idx] = await fetchPage(offsets[idx]).catch(() => [] as CmpdRow[]);
+    }
+  });
+  await Promise.all(workers);
+  return mapCharlotteRows(results.flat());
+}
+
+// v107 — background deep-load (see atlanta-arcgis.ts for the pattern).
+async function deepenCharlotte(recentRows: Incident[]): Promise<void> {
+  if (bgDeepenInFlight) return;
+  bgDeepenInFlight = true;
+  try {
+    const rest = await fetchCharlotteRange(RECENT_PAGES, PAGES);
+    if (rest.length === 0) return;
+    const byId = new Map<string, Incident>();
+    for (const r of recentRows) byId.set(r.id, r);
+    for (const r of rest) if (!byId.has(r.id)) byId.set(r.id, r);
+    const merged = Array.from(byId.values());
+    cache = { fetchedAt: Date.now(), rows: merged, full: true };
+    lastGoodAreas = buildCharlotteAreas(merged);
+  } catch (err) {
+    console.warn("[clt] deepen failed:", (err as Error).message);
+  } finally {
+    bgDeepenInFlight = false;
+  }
+}
+
 // v94 — in-flight Promise dedup (see detroit-arcgis.ts for rationale).
 let inFlightCltFetch: Promise<Incident[]> | null = null;
 
@@ -175,9 +194,14 @@ export async function getRowsCharlotte(): Promise<Incident[]> {
   if (inFlightCltFetch) return inFlightCltFetch;
   inFlightCltFetch = (async () => {
     try {
-      const rows = await fetchCharlotte();
-      if (rows.length > 0) cache = { fetchedAt: now, rows };
-      return rows;
+      const recent = await fetchCharlotteRange(0, RECENT_PAGES);
+      if (recent.length > 0) {
+        cache = { fetchedAt: now, rows: recent, full: false };
+        lastGoodAreas = buildCharlotteAreas(recent);
+        void deepenCharlotte(recent);
+        return recent;
+      }
+      return cache?.rows ?? [];
     } catch (err) {
       console.warn("[clt] fetch failed:", (err as Error).message);
       return cache?.rows ?? [];
@@ -208,18 +232,19 @@ function buildCharlotteAreas(rows: Incident[]): KnownArea[] {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-// v90p10 — LKG pattern (same as Cleveland v77 / Detroit v90p7). Pre-v90p10
-// the discover() blocked synchronously on getRowsCharlotte() which routinely
-// timed out HTTP clients on cold cache. Now returns cached areas if any,
-// otherwise fires the refresh in the background and returns []. Warm-worker
-// fills the cache within ~30s of container boot.
-// v96 — same fix as atlanta-arcgis: await row fetch on cold cache.
-// Charlotte was hitting the identical "windowDays=0 totalCounted=0"
-// loop in every warm cycle. Without a static area fallback the only
-// correct answer is to block discover() until row cache is populated.
+// v107 — supersedes the v96 "always AWAIT on cold cache" behaviour. The tiered
+// cold load now resolves the awaited path in a few seconds (not ~45s), and a
+// last-known-good area list (populated by any prior successful pull in this pod)
+// is served instantly while a refresh runs in the background — the
+// Detroit/Cleveland LKG pattern. So discover never blocks on the full fetch and
+// never returns a degenerate empty once the pod has warmed even once.
 export async function getDiscoveredAreasCharlotte(): Promise<KnownArea[]> {
   if (cache && cache.rows.length > 0) {
     return buildCharlotteAreas(cache.rows);
+  }
+  if (lastGoodAreas && lastGoodAreas.length > 0) {
+    void getRowsCharlotte().catch(() => {});  // refresh in background
+    return lastGoodAreas;
   }
   const rows = await getRowsCharlotte().catch(() => [] as Incident[]);
   if (rows.length === 0) return [];

@@ -36,8 +36,20 @@ const PAGE_SIZE = 2000;
 // Bumped to 90 pages (180k records ≈ ~100 days at observed volume) to
 // fully clear the SHORT_WINDOW grade-sanity flag (<60d).
 const PAGES = 90;
+// v107 — tiered cold load. LV is the highest-volume feed (90 pages / ~180k raw
+// CFS rows, heavily filtered at ingest); a cold cache previously blocked on all
+// 90 pages and could serve empty under the route timeout. Fetch the most-recent
+// RECENT_PAGES first (covers current activity + every active polygon), then
+// backfill the rest in the background. RECENT_PAGES is larger here because the
+// raw CFS feed is dense and most rows are dropped at ingest, lowering kept-row
+// yield per page.
+const RECENT_PAGES = 14;
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+let cache: { fetchedAt: number; rows: Incident[]; full: boolean } | null = null;
+let lastGoodAreas: KnownArea[] | null = null;
+// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94).
+let inFlightLvFetch: Promise<Incident[]> | null = null;
+let bgDeepenInFlight = false;
 registerRowCache(() => { cache = null; }, "las-vegas-arcgis");
 
 interface LvRow {
@@ -172,25 +184,7 @@ async function fetchPage(offset: number): Promise<LvRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchLasVegas(): Promise<Incident[]> {
-  // v72 — bounded concurrency to avoid rate-limiting the ArcGIS
-  // endpoint with 40 parallel requests (same pattern Charlotte +
-  // Cleveland adopted in v63/v69 after their all-parallel fetches
-  // dropped to 1998/60k rows under rate-limit). Concurrency=4
-  // keeps us well below ArcGIS's per-IP cap while still finishing
-  // 40 pages in ~10s total.
-  const pages: LvRow[][] = new Array(PAGES);
-  let cursor = 0;
-  const concurrency = 4;
-  const workers = Array.from({ length: Math.min(concurrency, PAGES) }, async () => {
-    while (true) {
-      const i = cursor++;
-      if (i >= PAGES) return;
-      pages[i] = await fetchPage(i * PAGE_SIZE).catch(() => [] as LvRow[]);
-    }
-  });
-  await Promise.all(workers);
-  const rows = pages.flat();
+function mapLvRows(rows: LvRow[]): Incident[] {
   const out: Incident[] = [];
   for (const r of rows) {
     const desc = r.Type_Description?.trim() ?? "";
@@ -220,21 +214,70 @@ async function fetchLasVegas(): Promise<Incident[]> {
   return out;
 }
 
-export async function getRowsLasVegas(): Promise<Incident[]> {
-  const now = Date.now();
-  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency.
+// v72 — concurrency 4 to avoid rate-limiting the ArcGIS endpoint (same pattern
+// Charlotte/Cleveland adopted after their all-parallel fetches dropped rows).
+// A per-page failure degrades to [] rather than failing the whole pull.
+async function fetchLvRange(startPage: number, endPage: number): Promise<Incident[]> {
+  const count = endPage - startPage;
+  const pages: LvRow[][] = new Array(count);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(4, count) }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      pages[i] = await fetchPage((startPage + i) * PAGE_SIZE).catch(() => [] as LvRow[]);
+    }
+  });
+  await Promise.all(workers);
+  return mapLvRows(pages.flat());
+}
+
+// v107 — background deep-load (see atlanta-arcgis.ts for the pattern).
+async function deepenLasVegas(recentRows: Incident[]): Promise<void> {
+  if (bgDeepenInFlight) return;
+  bgDeepenInFlight = true;
   try {
-    const rows = await fetchLasVegas();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
+    const rest = await fetchLvRange(RECENT_PAGES, PAGES);
+    if (rest.length === 0) return;
+    const byId = new Map<string, Incident>();
+    for (const r of recentRows) byId.set(r.id, r);
+    for (const r of rest) if (!byId.has(r.id)) byId.set(r.id, r);
+    const merged = Array.from(byId.values());
+    cache = { fetchedAt: Date.now(), rows: merged, full: true };
+    lastGoodAreas = buildLasVegasAreas(merged);
   } catch (err) {
-    console.warn("[lv] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
+    console.warn("[lv] deepen failed:", (err as Error).message);
+  } finally {
+    bgDeepenInFlight = false;
   }
 }
 
-export async function getDiscoveredAreasLasVegas(): Promise<KnownArea[]> {
-  const rows = await getRowsLasVegas();
+export async function getRowsLasVegas(): Promise<Incident[]> {
+  const now = Date.now();
+  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
+  if (inFlightLvFetch) return inFlightLvFetch;
+  inFlightLvFetch = (async () => {
+    try {
+      const recent = await fetchLvRange(0, RECENT_PAGES);
+      if (recent.length > 0) {
+        cache = { fetchedAt: now, rows: recent, full: false };
+        lastGoodAreas = buildLasVegasAreas(recent);
+        void deepenLasVegas(recent);
+        return recent;
+      }
+      return cache?.rows ?? [];
+    } catch (err) {
+      console.warn("[lv] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightLvFetch = null;
+    }
+  })();
+  return inFlightLvFetch;
+}
+
+function buildLasVegasAreas(rows: Incident[]): KnownArea[] {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
@@ -252,6 +295,20 @@ export async function getDiscoveredAreasLasVegas(): Promise<KnownArea[]> {
       centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// v107 — non-blocking discover with LKG fallback (see atlanta-arcgis.ts).
+export async function getDiscoveredAreasLasVegas(): Promise<KnownArea[]> {
+  if (cache && cache.rows.length > 0) {
+    return buildLasVegasAreas(cache.rows);
+  }
+  if (lastGoodAreas && lastGoodAreas.length > 0) {
+    void getRowsLasVegas().catch(() => {});  // refresh in background
+    return lastGoodAreas;
+  }
+  const rows = await getRowsLasVegas().catch(() => [] as Incident[]);
+  if (rows.length === 0) return [];
+  return buildLasVegasAreas(rows);
 }
 
 function labelForLasVegasSlug(slug: string, rows: Incident[]): string | null {

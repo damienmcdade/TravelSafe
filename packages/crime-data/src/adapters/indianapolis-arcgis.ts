@@ -22,8 +22,21 @@ const PAGE_SIZE = 2000;
 // months so the rate reflects a representative window. Classification is already
 // correct (Simple Assault excluded, Aggravated Assault counted).
 const PAGES = 55;
+// v107 — tiered cold load. Indianapolis is the heaviest cold load in the fleet
+// (110k rows, ~21s). Pre-v107 a cold cache blocked on all 55 pages before
+// returning anything, so a cold request raced the route timeout and could serve
+// empty. Now fetch the most-recent RECENT_PAGES first (serves current activity +
+// the neighbourhood list in a few seconds), then backfill in the background.
+const RECENT_PAGES = 8;  // ~16k most-recent rows
 const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
+let cache: { fetchedAt: number; rows: Incident[]; full: boolean } | null = null;
+let lastGoodAreas: KnownArea[] | null = null;
+// v107 — in-flight fetch dedup. The dispatcher fans a per-area Promise.all over
+// all ~95 Indianapolis neighbourhoods; on a cold cache that previously fired ~95
+// simultaneous 110k-row fetches → OOM (the failure Detroit fixed in v94). Now
+// concurrent callers await the same promise.
+let inFlightIndyFetch: Promise<Incident[]> | null = null;
+let bgDeepenInFlight = false;
 registerRowCache(() => { cache = null; }, "indianapolis-arcgis");
 
 interface IndyRow {
@@ -116,18 +129,7 @@ async function fetchPage(offset: number): Promise<IndyRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchIndianapolis(): Promise<Incident[]> {
-  const results: IndyRow[][] = new Array(PAGES);
-  let cursor = 0;
-  const workers = Array.from({ length: 4 }, async () => {
-    while (true) {
-      const i = cursor++;
-      if (i >= PAGES) return;
-      results[i] = await fetchPage(i * PAGE_SIZE).catch(() => [] as IndyRow[]);
-    }
-  });
-  await Promise.all(workers);
-  const rows = results.flat();
+function mapIndyRows(rows: IndyRow[]): Incident[] {
   return rows
     .filter((r) => r.sOccDate)
     .map((r, i) => {
@@ -151,21 +153,67 @@ async function fetchIndianapolis(): Promise<Incident[]> {
     });
 }
 
-export async function getRowsIndianapolis(): Promise<Incident[]> {
-  const now = Date.now();
-  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency.
+async function fetchIndyRange(startPage: number, endPage: number): Promise<Incident[]> {
+  const count = endPage - startPage;
+  const results: IndyRow[][] = new Array(count);
+  let cursor = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      results[i] = await fetchPage((startPage + i) * PAGE_SIZE).catch(() => [] as IndyRow[]);
+    }
+  });
+  await Promise.all(workers);
+  return mapIndyRows(results.flat());
+}
+
+// v107 — background deep-load (see atlanta-arcgis.ts for the pattern).
+async function deepenIndianapolis(recentRows: Incident[]): Promise<void> {
+  if (bgDeepenInFlight) return;
+  bgDeepenInFlight = true;
   try {
-    const rows = await fetchIndianapolis();
-    if (rows.length > 0) cache = { fetchedAt: now, rows };
-    return rows;
+    const rest = await fetchIndyRange(RECENT_PAGES, PAGES);
+    if (rest.length === 0) return;
+    const byId = new Map<string, Incident>();
+    for (const r of recentRows) byId.set(r.id, r);
+    for (const r of rest) if (!byId.has(r.id)) byId.set(r.id, r);
+    const merged = Array.from(byId.values());
+    cache = { fetchedAt: Date.now(), rows: merged, full: true };
+    lastGoodAreas = buildIndyAreas(merged);
   } catch (err) {
-    console.warn("[indy] fetch failed:", (err as Error).message);
-    return cache?.rows ?? [];
+    console.warn("[indy] deepen failed:", (err as Error).message);
+  } finally {
+    bgDeepenInFlight = false;
   }
 }
 
-export async function getDiscoveredAreasIndianapolis(): Promise<KnownArea[]> {
-  const rows = await getRowsIndianapolis();
+export async function getRowsIndianapolis(): Promise<Incident[]> {
+  const now = Date.now();
+  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
+  if (inFlightIndyFetch) return inFlightIndyFetch;
+  inFlightIndyFetch = (async () => {
+    try {
+      const recent = await fetchIndyRange(0, RECENT_PAGES);
+      if (recent.length > 0) {
+        cache = { fetchedAt: now, rows: recent, full: false };
+        lastGoodAreas = buildIndyAreas(recent);
+        void deepenIndianapolis(recent);
+        return recent;
+      }
+      return cache?.rows ?? [];
+    } catch (err) {
+      console.warn("[indy] fetch failed:", (err as Error).message);
+      return cache?.rows ?? [];
+    } finally {
+      inFlightIndyFetch = null;
+    }
+  })();
+  return inFlightIndyFetch;
+}
+
+function buildIndyAreas(rows: Incident[]): KnownArea[] {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
@@ -192,6 +240,20 @@ export async function getDiscoveredAreasIndianapolis(): Promise<KnownArea[]> {
       centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+// v107 — non-blocking discover with LKG fallback (see atlanta-arcgis.ts).
+export async function getDiscoveredAreasIndianapolis(): Promise<KnownArea[]> {
+  if (cache && cache.rows.length > 0) {
+    return buildIndyAreas(cache.rows);
+  }
+  if (lastGoodAreas && lastGoodAreas.length > 0) {
+    void getRowsIndianapolis().catch(() => {});  // refresh in background
+    return lastGoodAreas;
+  }
+  const rows = await getRowsIndianapolis().catch(() => [] as Incident[]);
+  if (rows.length === 0) return [];
+  return buildIndyAreas(rows);
 }
 
 function labelForIndySlug(slug: string, rows: Incident[]): string | null {
