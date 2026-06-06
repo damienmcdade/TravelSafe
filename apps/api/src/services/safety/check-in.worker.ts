@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { isTransientDbError } from "../../lib/db-errors.js";
 import { CheckInStatus } from "../../generated/prisma/client.js";
 import { env } from "../../env.js";
 import { triggerExpiry } from "./check-in.service.js";
@@ -40,11 +41,10 @@ async function tick() {
     // v105 — transient Neon-pooler connection blips (ETIMEDOUT / ECONNRESET /
     // Prisma P1001/P1002/P1017) self-heal on the next 30s tick. Log those as a
     // warning so they don't trip error monitoring (Sentry) for a non-event;
-    // anything else is a genuine error worth surfacing. (The deployment-log
-    // audit saw exactly one such ETIMEDOUT — graceful, but noisy as an error.)
-    const e = err as { message?: string; code?: string };
-    const sig = `${e?.code ?? ""} ${e?.message ?? ""}`;
-    if (/ETIMEDOUT|ECONNRESET|ECONNREFUSED|can't reach database|connection (pool|terminated)|P10(01|02|17)/i.test(sig)) {
+    // anything else is a genuine error worth surfacing. (v107 — extracted the
+    // classifier to lib/db-errors so proximity.worker shares it.)
+    if (isTransientDbError(err)) {
+      const e = err as { message?: string; code?: string };
       console.warn("[checkin-worker] transient DB blip, retrying next tick:", (e?.code || e?.message || "").slice(0, 120));
     } else {
       console.error("[checkin-worker] tick failed:", err);

@@ -123,7 +123,7 @@ export async function verifyMfaAndIssueTokens(mfaPendingToken: string, code: str
   } catch {
     throw new HttpError(401, "invalid_mfa_pending_token");
   }
-  const { verifyMfaCode } = await import("./mfa.service.js");
+  const { verifyMfaCode, consumeMfaCode } = await import("./mfa.service.js");
   const user = await prisma.user.findUnique({
     where: { id: uid },
     select: { id: true, email: true, displayName: true, tokenVersion: true, mfaEnabled: true, mfaSecret: true, permanentlyBanned: true },
@@ -131,6 +131,10 @@ export async function verifyMfaAndIssueTokens(mfaPendingToken: string, code: str
   if (!user || user.permanentlyBanned) throw new HttpError(401, "invalid_credentials");
   if (!user.mfaEnabled || !user.mfaSecret) throw new HttpError(400, "mfa_not_enabled");
   if (!verifyMfaCode(user.mfaSecret, code)) throw new HttpError(401, "mfa_invalid_code");
+  // fix(audit mfa-totp-replay): RFC 6238 §5.2 single-use — reject a replayed
+  // valid code (same generic error so replay is indistinguishable from a wrong
+  // code). Best-effort via Redis; see consumeMfaCode.
+  if (!(await consumeMfaCode(user.id, code))) throw new HttpError(401, "mfa_invalid_code");
   return {
     user: { id: user.id, email: user.email, displayName: user.displayName },
     ...mintTokens(user),

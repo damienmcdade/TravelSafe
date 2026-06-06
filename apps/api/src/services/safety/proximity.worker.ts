@@ -1,4 +1,5 @@
 import { prisma } from "../../lib/prisma.js";
+import { isTransientDbError } from "../../lib/db-errors.js";
 import { sendToUser } from "../push/webpush.service.js";
 import { crimeData } from "@travelsafe/crime-data/dispatcher";
 import { cityFromLatLng } from "@travelsafe/crime-data/cities";
@@ -165,7 +166,13 @@ async function tick(): Promise<void> {
       }
     }
   } catch (err) {
-    console.error("[proximity-worker] tick failed:", err);
+    // v107 — classify transient Neon-pooler blips as warnings (they self-heal
+    // next tick) so they don't trip Sentry, matching check-in.worker.
+    if (isTransientDbError(err)) {
+      console.warn("[proximity-worker] transient DB blip, retrying next tick:", ((err as Error)?.message ?? "").slice(0, 120));
+    } else {
+      console.error("[proximity-worker] tick failed:", err);
+    }
   } finally {
     inFlight = false;
   }
