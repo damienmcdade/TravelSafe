@@ -1564,7 +1564,11 @@ async function computeSafetyScore(areaSlug: string, areaLabel: string): Promise<
       t = Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
     }
     if (t <= 0) continue;
-    if (t < windowStartMsArea || t > nowMsArea) continue;
+    // fix(audit window-asymmetry): bound at anchorMsArea (not nowMsArea) so the
+    // per-AREA numerator window matches the per-CITY denominator loop above
+    // (line ~1508). On a lagged feed (anchor = dataLatest < now) the two used
+    // different upper bounds, breaking the apples-to-apples area-vs-city ratio.
+    if (t < windowStartMsArea || t > anchorMsArea) continue;
     const cat = i.nibrsCategory as "PERSONS" | "PROPERTY" | "SOCIETY";
     const desc = i.ibrOffenseDescription;
     if (cat === "PERSONS" && isPart1Violent(desc)) persons += 1;

@@ -17,6 +17,14 @@ export function errorResponse(err: unknown): NextResponse {
   if (err instanceof HttpError) {
     return NextResponse.json({ error: err.code, message: err.message }, { status: err.status });
   }
+  // fix(audit malformed-body-500): a malformed/empty request body makes
+  // `await req.json()` throw a SyntaxError, which is neither ZodError nor
+  // HttpError — so it fell through to a misleading 500. A bad client body is a
+  // 400. Centralized here so every wrapped route gets the right status without
+  // touching ~20 individual `req.json()` call sites.
+  if (err instanceof SyntaxError) {
+    return NextResponse.json({ error: "invalid_json", message: "Request body is not valid JSON." }, { status: 400 });
+  }
   console.error("[unhandled]", err);
   return NextResponse.json({ error: "internal_error" }, { status: 500 });
 }

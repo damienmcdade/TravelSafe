@@ -78,6 +78,14 @@ export async function reviewPost(reviewerId: string, postId: string, action: Rev
 }
 
 export async function reportPost(reporterId: string, postId: string, reason?: string) {
+  // fix(audit report-no-existence-guard): mirror the react/comment routes —
+  // validate the post exists, is VERIFIED, and isn't soft-deleted BEFORE the
+  // upsert. A blind upsert with a bogus postId hit an FK violation (P2003) → 500
+  // instead of a clean 404, and let users report hidden/removed posts.
+  const post = await prisma.post.findUnique({ where: { id: postId }, select: { status: true, deletedAt: true } });
+  if (!post || post.status !== PostStatus.VERIFIED || post.deletedAt) {
+    throw new HttpError(404, "post_not_found");
+  }
   await prisma.postReport.upsert({
     where: { postId_reporterId: { postId, reporterId } },
     update: { reason },

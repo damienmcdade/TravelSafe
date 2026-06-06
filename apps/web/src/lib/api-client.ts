@@ -255,7 +255,13 @@ export function useApi<T = unknown>(
   opts: UseApiOptions = {},
 ) {
   const swrMs = opts.staleWhileRevalidateMs === false ? 0 : (opts.staleWhileRevalidateMs ?? SWR_DEFAULT_MS);
-  const [data, setData] = useState<T | null>(() => path && swrMs > 0 ? swrRead<T>(path, swrMs) : null);
+  // fix(audit hydration): start null on BOTH server and the first client render
+  // so they agree (no React #418). swrRead() reads localStorage — server-null but
+  // client-populated — so seeding it in the useState initializer made the first
+  // client render diverge from the SSR HTML. The mount/path-change effect below
+  // already restores the SWR cache synchronously (the "instant stale data" UX is
+  // unchanged), just one tick later, after hydration completes.
+  const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState(false);
 

@@ -31,8 +31,14 @@ interface Props {
 /// Updates the displayed relative time every 30s without a fetch — the
 /// timestamp itself is static; only the "X ago" presentation drifts.
 export function DataFreshnessBadge({ asOf, sourceLabel, size = "sm", showCheck = true }: Props) {
-  const [now, setNow] = useState(() => Date.now());
+  // fix(audit hydration): `now` and the locale/TZ-dependent toLocaleString below
+  // differ between the server render and the client, so seeding now=Date.now() in
+  // the initializer caused an intermittent React #418. Start null (server + first
+  // client render agree → a stable "recently" placeholder), then fill in the real
+  // client time after mount. The 30s interval keeps the relative string fresh.
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const id = window.setInterval(() => setNow(Date.now()), 30_000);
     return () => window.clearInterval(id);
   }, []);
@@ -41,11 +47,11 @@ export function DataFreshnessBadge({ asOf, sourceLabel, size = "sm", showCheck =
   const t = new Date(asOf);
   if (Number.isNaN(t.getTime())) return null;
 
-  const rel = relativeAgo(now - t.getTime());
-  const exact = t.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
-  const title = sourceLabel
-    ? `Newest report from ${sourceLabel}: ${exact}`
-    : `Newest report in the cache: ${exact}`;
+  const rel = now != null ? relativeAgo(now - t.getTime()) : "recently";
+  const exact = now != null ? t.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : null;
+  const title = exact
+    ? (sourceLabel ? `Newest report from ${sourceLabel}: ${exact}` : `Newest report in the cache: ${exact}`)
+    : (sourceLabel ? `Newest report from ${sourceLabel}` : "Newest report in the cache");
 
   const padding = size === "md" ? "px-2.5 py-1" : "px-2 py-0.5";
   const text = size === "md" ? "text-xs" : "text-[11px]";

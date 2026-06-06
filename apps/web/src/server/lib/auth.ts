@@ -4,6 +4,8 @@ import { HttpError } from "./http";
 import { prisma } from "./prisma";
 import { verifySession, type SessionPayload } from "./jwt";
 import { readSessionCookie } from "./session-cookie";
+import { env } from "./env";
+import { TrustLevel } from "@/generated/prisma/client";
 
 /// fix(audit pentest-authn-4): the session token can arrive two ways now — the
 /// HttpOnly `cs_session` cookie (preferred; not readable by JS, so XSS-safe) or
@@ -108,9 +110,32 @@ export function invalidateSessionRevocation(uid: string): void {
   revocationCache.delete(uid);
 }
 
-export function requireModerator(session: SessionPayload, moderatorEmailsCsv: string) {
-  const list = moderatorEmailsCsv.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  if (!list.includes(session.email.toLowerCase())) {
+// fix(audit dual-auth-weaker-web): the web moderation surface (Vercel, prod-
+// primary) previously authorized by a static MODERATOR_EMAILS env-CSV email
+// match only — so a DB-demoted moderator kept web access, and anyone still
+// listed in the env var was a moderator regardless of trust state. Port the
+// canonical RBAC from apps/api: trustLevel === MODERATOR is authoritative; the
+// env-CSV is honored ONLY as a bootstrap path while zero real moderators exist
+// AND within 24h of process boot. Banned/suspended users are always rejected.
+const MOD_BOOT_TIME = Date.now();
+const MOD_BOOTSTRAP_GRACE_MS = 24 * 60 * 60 * 1000;
+export async function requireModerator(session: SessionPayload): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: session.uid },
+    select: { trustLevel: true, email: true, suspendedUntil: true, permanentlyBanned: true },
+  });
+  if (!user) throw new HttpError(403, "moderator_only");
+  if (user.permanentlyBanned || (user.suspendedUntil && user.suspendedUntil > new Date())) {
+    throw new HttpError(403, "moderator_only");
+  }
+  if (user.trustLevel === TrustLevel.MODERATOR) return;
+  const moderatorCount = await prisma.user.count({ where: { trustLevel: TrustLevel.MODERATOR } });
+  if (moderatorCount > 0) throw new HttpError(403, "moderator_only");
+  if (Date.now() - MOD_BOOT_TIME > MOD_BOOTSTRAP_GRACE_MS) {
+    throw new HttpError(403, "moderator_bootstrap_window_closed");
+  }
+  const list = (env.MODERATOR_EMAILS ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  if (!list.includes((user.email ?? "").toLowerCase())) {
     throw new HttpError(403, "moderator_only");
   }
 }

@@ -37,9 +37,12 @@ communityRouter.get("/stream", (req, res) => {
 communityRouter.get("/posts", optionalAuth, async (req, res, next) => {
   try {
     const areaSlug = String(req.query.area ?? "");
+    // fix(audit db-post-softdelete-2 parity): exclude soft-deleted posts, matching
+    // the canonical web /api/community/posts route. (This Express route is not
+    // currently proxied, but the missing filter was a latent leak if it ever is.)
     const where = areaSlug
-      ? { status: PostStatus.VERIFIED, area: { slug: areaSlug } }
-      : { status: PostStatus.VERIFIED };
+      ? { status: PostStatus.VERIFIED, deletedAt: null, area: { slug: areaSlug } }
+      : { status: PostStatus.VERIFIED, deletedAt: null };
     const posts = await prisma.post.findMany({
       where,
       orderBy: { createdAt: "desc" },
