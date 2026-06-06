@@ -61,6 +61,15 @@ export default function PersonalSafetyPage() {
 
   return (
     <main className="space-y-5">
+      {/* fix(audit a11y-safety-h1): the tab previously started at an <h2>, so it
+          had no page <h1> landmark (every sibling tab has one). */}
+      <header>
+        <h1 className="font-display text-3xl sm:text-4xl leading-tight text-slate2-900">Personal safety</h1>
+        <p className="mt-1 text-sm text-slate2-500">
+          SOS, check-ins, live location sharing, and safety tips for {area?.label ?? city.label}.
+        </p>
+      </header>
+
       {showDisclaimer && (
         <div className="surface p-5 border-amber2-500/40">
           <h2 className="font-display text-lg text-slate2-900">Before you use this tab</h2>

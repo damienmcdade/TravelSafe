@@ -129,7 +129,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
     return -1;
   }
 
-  function onListKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
+  function onListKeyDown(e: React.KeyboardEvent<HTMLUListElement>) {
     if (filtered.length === 0) return;
     if (e.key === "ArrowDown") {
       e.preventDefault();
@@ -187,15 +187,7 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
           )}
         </div>
       )}
-      <div
-        className="relative w-full focus:outline-none focus:ring-2 focus:ring-bay-300 focus:ring-offset-2 rounded-md"
-        style={{ height }}
-        role="listbox"
-        aria-label={ariaLabel}
-        aria-activedescendant={activeOptionId}
-        tabIndex={0}
-        onKeyDown={onListKeyDown}
-      >
+      <div className="relative w-full rounded-md" style={{ height }}>
       {/* Center indicator — TRANSPARENT band so the active row's text
           shows through cleanly. The previous solid `bg-bay-100` fill
           covered the neighborhood name on hover. The visual highlight
@@ -211,10 +203,23 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
       <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-12 bg-gradient-to-b from-white to-transparent" />
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 h-12 bg-gradient-to-t from-white to-transparent" />
 
+      {/* fix(audit a11y-wheelpicker): the scroll container <ul> IS the listbox,
+          so the role="option" rows are its DIRECT children (fixes
+          aria-required-parent / aria-required-children, and drops the bare-<ul>
+          `list` violation since it's now role=listbox). It's keyboard-focusable
+          (tabIndex=0 → fixes scrollable-region-focusable) and carries the
+          listbox semantics + key handling. Each <li role="option"> is the
+          interactive element itself — no nested <button> (fixes
+          nested-interactive); disabled rows use aria-disabled and tap() no-ops. */}
       <ul
         ref={ref}
         onScroll={onScroll}
-        className="relative h-full overflow-y-scroll [scroll-snap-type:y_mandatory] [scrollbar-width:none] [-ms-overflow-style:none]"
+        role="listbox"
+        aria-label={ariaLabel}
+        aria-activedescendant={activeOptionId}
+        tabIndex={0}
+        onKeyDown={onListKeyDown}
+        className="relative h-full overflow-y-scroll [scroll-snap-type:y_mandatory] [scrollbar-width:none] [-ms-overflow-style:none] focus:outline-none focus:ring-2 focus:ring-bay-300 focus:ring-inset rounded-md"
         style={{ paddingTop: padding, paddingBottom: padding }}
       >
         <style jsx>{`ul::-webkit-scrollbar { display: none; }`}</style>
@@ -226,28 +231,22 @@ export function WheelPicker({ items, value, onChange, height = 196, rowHeight = 
           return (
             <li
               key={item.value}
-              className="[scroll-snap-align:center] flex items-center justify-center"
-              style={{ height: rowHeight }}
               role="option"
               id={optionId}
               aria-selected={i === activeIdx}
+              aria-disabled={item.disabled || undefined}
+              onClick={() => tap(i)}
+              className={`[scroll-snap-align:center] flex items-center justify-center px-2 leading-tight transition-all ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-bay-700 font-semibold cursor-pointer" : "text-slate2-700 cursor-pointer"}`}
+              style={{ height: rowHeight, opacity, transform: `scale(${scale})` }}
             >
-              <button
-                type="button"
-                onClick={() => tap(i)}
-                disabled={item.disabled}
-                tabIndex={-1}
-                className={`w-full text-center transition-all px-2 leading-tight ${item.disabled ? "text-slate2-500 cursor-not-allowed" : i === activeIdx ? "text-bay-700 font-semibold" : "text-slate2-700"}`}
-                style={{ opacity, transform: `scale(${scale})` }}
-              >
-                {/* Labels wrap inside the wheel instead of truncating
-                    with an ellipsis. break-words keeps long single
-                    words from overflowing the wheel column. */}
+              {/* Labels wrap inside the wheel instead of truncating with an
+                  ellipsis. break-words keeps long single words from overflowing. */}
+              <div className="w-full text-center">
                 <div className="break-words whitespace-normal">{item.label}</div>
                 {item.detail && (
                   <div className="text-[11px] uppercase tracking-wider text-slate2-500 break-words whitespace-normal">{item.detail}</div>
                 )}
-              </button>
+              </div>
             </li>
           );
         })}

@@ -106,9 +106,20 @@ export async function ensureAnonymousAuth(): Promise<void> {
 
 /// React hook: kicks off bootstrap on mount and returns a tri-state.
 export function useAnonymousAuth(): { ready: boolean } {
-  const [ready, setReady] = useState<boolean>(() => typeof window !== "undefined" && isSignedIn());
+  // fix(audit mfa-… / react-418-safety): `ready` MUST start false on SSR AND
+  // the first client (hydration) render so the server HTML and the first client
+  // render agree. The previous `useState(() => isSignedIn())` read localStorage
+  // in the initializer, so a returning user hydrated with ready=true while the
+  // server rendered ready=false — diverging every signedIn-gated branch (the
+  // /safety AccountPanel renders null vs. content, the SOS/check-in panels swap
+  // text) and tripping React #418 on the most safety-critical tab. Same bug
+  // class as useCity's getServerSnapshot fix. The effect runs only on the
+  // client, post-hydration, so reading isSignedIn() there is safe; the real
+  // signed-in state is committed one tick after hydration.
+  const [ready, setReady] = useState<boolean>(false);
   useEffect(() => {
     if (ready) return;
+    if (isSignedIn()) { setReady(true); return; }
     void ensureAnonymousAuth().then(() => setReady(isSignedIn()));
   }, [ready]);
   return { ready };

@@ -40,6 +40,11 @@ export async function exportAccount(userId: string) {
       trustedContacts: { select: { id: true, label: true, email: true, phone: true, status: true, confirmedAt: true, createdAt: true } },
       checkInTimers: { select: { id: true, scheduledFor: true, message: true, status: true, lastLat: true, lastLng: true, createdAt: true, triggeredAt: true } },
       liveShareLinks: { select: { id: true, expiresAt: true, revokedAt: true, createdAt: true } },
+      // fix(audit dsar-export-savedplaces): Saved Places were omitted from the
+      // portability export despite holding the user's home/work COORDINATES —
+      // exactly the sensitive personal data a GDPR/CCPA data-portability request
+      // must include. (Erasure already covers them via onDelete: Cascade.)
+      savedPlaces: { select: { id: true, label: true, lat: true, lng: true, radiusM: true, alertsEnabled: true, createdAt: true } },
       pushSubscriptions: { select: { id: true, endpoint: true, createdAt: true } },
       posts: { select: { id: true, areaId: true, kind: true, body: true, status: true, createdAt: true, updatedAt: true } },
       postComments: { select: { id: true, postId: true, body: true, status: true, createdAt: true } },
