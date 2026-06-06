@@ -124,6 +124,17 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // aggregate (persons ≈ 1 / observed-over-count). Property is accurate → 1.0.
   "honolulu":      { persons: 0.35, property: 1.0, sourceType: "coarse" },
   "milwaukee":     { persons: 0.53, property: 1.0, sourceType: "coarse" },
+  // v111 — Austin. APD's open "Crime Reports" feed reports the city's full set of
+  // person-offense reports (per-victim, every family-violence / strangulation
+  // aggravated-assault variant, threats), which runs ~3.0× Austin's own FBI
+  // Part-1 violent rate (live PERSONS ≈1,550 vs FBI 2023 violent 516/100k —
+  // 1,550 would make safe-reputation Austin as violent as Baltimore, clearly a
+  // feed-counting artifact, not reality; property matches FBI at ~1.02× so the
+  // window/pop/annualization are sound). Same over-count pattern as Honolulu /
+  // Milwaukee's coarse assault buckets: calibrate persons to the FBI baseline
+  // (516/1550 ≈ 0.33) so the divergence guard stops suppressing Austin to N/A and
+  // it reports its true grade (C). Property accurate → 1.0.
+  "austin":        { persons: 0.33, property: 1.0, sourceType: "coarse" },
   // v99 — Washington DC publishes ONLY "ASSAULT W/DANGEROUS WEAPON" (weapon-
   // involved) in its open Crime Incidents feed; the FBI counts ALL aggravated
   // assaults (with OR without a weapon — DC files the rest as simple assault,
