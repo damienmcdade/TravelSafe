@@ -649,6 +649,11 @@ model CheckInTimer {
   // Last known location captured when timer was set.
   lastLat      Float?
   lastLng      Float?
+  // v113 — which trusted contacts to alert if this timer expires. Empty = ALL
+  // confirmed contacts (the "notify everyone" default). A non-empty subset is
+  // the user's explicit pick in the arm dialog; triggerExpiry honors it so the
+  // selection is no longer silently ignored.
+  notifyContactIds String[]   @default([])
   createdAt    DateTime      @default(now())
   triggeredAt  DateTime?
 
@@ -666,12 +671,22 @@ model LiveShareLink {
   revokedAt DateTime?
   createdAt DateTime @default(now())
 
+  // v113 — live location. The sharer's device POSTs its current position to
+  // /api/safety/live-share/heartbeat; the recipient's /share/<token> page polls
+  // resolveSharedView() for it. Nullable: a share with no heartbeat yet renders
+  // "waiting for location" rather than a stale point.
+  lastLat        Float?
+  lastLng        Float?
+  lastLocationAt DateTime?
+
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// NOTE: There is intentionally NO SosEvent / alert-dispatch model. Per the
-// product spec, the app does not contact emergency services or trusted contacts
-// on the user's behalf in an emergency — the Personal Safety tab only surfaces
-// guidance to call 911 directly via a device-native dial action.
+// NOTE: SOS alert dispatch is stateless by design — there is no persisted
+// SosEvent model. When a user triggers SOS, the server fans an alert out to
+// their CONFIRMED TrustedContacts (email/SMS via notifyContact) in real time
+// and returns per-contact receipts to the client; nothing is stored server-side.
+// The app never contacts emergency services on the user's behalf — the Personal
+// Safety tab still surfaces a device-native 911 dial action for that.

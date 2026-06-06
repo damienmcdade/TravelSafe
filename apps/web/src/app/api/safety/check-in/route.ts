@@ -10,6 +10,9 @@ const Body = z.object({
   message: z.string().max(200).optional(),
   lat: latitude.optional(),
   lng: longitude.optional(),
+  // Optional subset of trusted-contact ids to alert if the timer expires;
+  // omitted/empty = notify all confirmed contacts.
+  contactIds: z.array(z.string()).max(50).optional(),
 });
 
 export const POST = wrap(async (req: NextRequest) => {

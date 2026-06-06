@@ -735,6 +735,29 @@ function LiveSharePanel() {
   const [createBusy, setCreateBusy] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
 
+  // v113 — while ANY Live Share is active, stream this device's position to the
+  // heartbeat endpoint so recipients follow live movement on the /share map. One
+  // watch updates every active share (server fans out). Throttled to ~15s to stay
+  // well under the /api/safety rate limit and to save battery.
+  const hasActive = active.length > 0;
+  useEffect(() => {
+    if (!hasActive || typeof navigator === "undefined" || !navigator.geolocation) return;
+    let lastSent = 0;
+    const onPos = (pos: GeolocationPosition) => {
+      const now = Date.now();
+      if (now - lastSent < 15_000) return;
+      lastSent = now;
+      void api("/safety/live-share/heartbeat", {
+        method: "POST",
+        body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      }).catch(() => { /* best-effort; next position retries */ });
+    };
+    const id = navigator.geolocation.watchPosition(onPos, () => { /* permission denied / unavailable */ }, {
+      enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000,
+    });
+    return () => navigator.geolocation.clearWatch(id);
+  }, [hasActive]);
+
   async function create() {
     if (!signedIn || createBusy) return;
     setCreateBusy(true);

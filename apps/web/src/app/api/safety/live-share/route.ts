@@ -15,6 +15,10 @@ const Body = z.object({
   durationMinutes: z.number().int().min(5).max(240),
   contact: z.string().min(1).max(200).optional(),
   contactEmail: z.string().min(1).max(200).optional(),
+  // v113 — optional starting position; the device then keeps it fresh via the
+  // /api/safety/live-share/heartbeat endpoint (browser geolocation watch).
+  lat: z.number().min(-90).max(90).optional(),
+  lng: z.number().min(-180).max(180).optional(),
 });
 
 export const dynamic = "force-dynamic";

@@ -30,15 +30,21 @@ function classifyContact(raw: string): { kind: "email" | "phone" | "unknown"; va
 
 export async function createLiveShare(
   userId: string,
-  opts: { durationMinutes: number; contact?: string; contactEmail?: string },
+  opts: { durationMinutes: number; contact?: string; contactEmail?: string; lat?: number; lng?: number },
 ) {
   if (opts.durationMinutes < 5 || opts.durationMinutes > 240) {
     throw new HttpError(400, "duration_out_of_range", "Duration must be 5–240 minutes");
   }
   const token = crypto.randomBytes(20).toString("base64url");
   const expiresAt = new Date(Date.now() + opts.durationMinutes * 60_000);
+  // v113 — seed the share with the sharer's starting position when the browser
+  // provided one; the device then keeps it fresh via the heartbeat endpoint.
+  const hasStart = Number.isFinite(opts.lat) && Number.isFinite(opts.lng);
   const link = await prisma.liveShareLink.create({
-    data: { userId, token, expiresAt },
+    data: {
+      userId, token, expiresAt,
+      ...(hasStart ? { lastLat: opts.lat, lastLng: opts.lng, lastLocationAt: new Date() } : {}),
+    },
   });
   // v47 — delivery status now surfaced to UI. Prior code awaited
   // sendEmail without checking its result; the nodemailer
@@ -55,16 +61,16 @@ export async function createLiveShare(
   if (contactRaw) {
     const c = classifyContact(contactRaw);
     const url = buildShareUrl(token);
-    // fix(audit safety-liveshare-no-location-3): the recipient page does NOT
-    // stream live coordinates yet (it confirms an active session), so the
-    // notification must not promise "live location". Copy matches the honest
-    // share-page wording until coordinate streaming ships.
+    // v113 — live coordinate streaming now ships: the recipient page renders the
+    // sharer's location on a map and auto-refreshes as their device sends
+    // heartbeats. Copy updated to match (it no longer over-/under-promises).
     const msg =
-      `CommunitySafe: your contact has started a Live Share safety session with you, ` +
+      `CommunitySafe: your contact has started sharing their LIVE location with you, ` +
       `active until ${expiresAt.toLocaleString()}. ` +
-      `Open ${url} to view the session — the link stops working at expiry, or sooner if revoked. ` +
+      `Open ${url} to follow them on a map — it updates as their device moves and ` +
+      `stops working at expiry, or sooner if they revoke it. ` +
       `In an emergency, contact local authorities directly.`;
-    const subject = "CommunitySafe — your contact started a Live Share session";
+    const subject = "CommunitySafe — your contact is sharing their live location";
     if (c.kind === "email") {
       const r = await sendEmail(c.value, subject, msg);
       delivery = { kind: "email", sent: r.ok, reason: r.reason };
@@ -99,13 +105,33 @@ export async function listLiveShares(userId: string) {
   });
 }
 
+// v113 — the sharer's device POSTs its current position here on a heartbeat
+// (browser geolocation watch). Updates EVERY active (non-revoked, non-expired)
+// share the user has, so one device update fans out to all their open links.
+export async function updateLiveShareLocation(userId: string, lat: number, lng: number) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    throw new HttpError(400, "invalid_coordinates");
+  }
+  const now = new Date();
+  const result = await prisma.liveShareLink.updateMany({
+    where: { userId, revokedAt: null, expiresAt: { gt: now } },
+    data: { lastLat: lat, lastLng: lng, lastLocationAt: now },
+  });
+  return { updated: result.count };
+}
+
 export async function resolveSharedView(token: string) {
   const link = await prisma.liveShareLink.findUnique({ where: { token } });
   if (!link) throw new HttpError(404, "not_found");
   if (link.revokedAt) throw new HttpError(410, "revoked");
   if (link.expiresAt < new Date()) throw new HttpError(410, "expired");
   // fix(audit loc-share-userid-leak-2): the public, token-only share endpoint
-  // must not leak the sharer's internal userId (cuid). The recipient page only
-  // renders expiresAt, so return just that.
-  return { expiresAt: link.expiresAt };
+  // must NOT leak the sharer's internal userId (cuid). Return only the public
+  // view: expiry + the latest broadcast position (null until the first heartbeat).
+  return {
+    expiresAt: link.expiresAt,
+    lat: link.lastLat ?? null,
+    lng: link.lastLng ?? null,
+    locationAt: link.lastLocationAt ? link.lastLocationAt.toISOString() : null,
+  };
 }

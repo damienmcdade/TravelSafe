@@ -5,7 +5,10 @@ import { CheckInStatus } from "@/generated/prisma/client";
 import { getConfirmedContacts } from "../contacts";
 import { notifyContact, type DeliveryReceipt } from "../notifications";
 
-export async function armCheckIn(userId: string, opts: { durationMinutes: number; message?: string; lat?: number; lng?: number }) {
+export async function armCheckIn(
+  userId: string,
+  opts: { durationMinutes: number; message?: string; lat?: number; lng?: number; contactIds?: string[] },
+) {
   if (opts.durationMinutes < 1 || opts.durationMinutes > 240) {
     throw new HttpError(400, "duration_out_of_range", "Duration must be 1–240 minutes");
   }
@@ -14,6 +17,11 @@ export async function armCheckIn(userId: string, opts: { durationMinutes: number
     // Per spec: warn but allow — the user may want a personal-only timer.
     // The UI must surface "no confirmed contacts" loudly before this point.
   }
+  // Restrict the requested selection to THIS user's confirmed contacts, so a
+  // stale/foreign id can't slip through and an unconfirmed contact is never
+  // alerted. Empty result (incl. "select all") persists as [] = notify all.
+  const confirmedIds = new Set(confirmed.map((c) => c.id));
+  const notifyContactIds = (opts.contactIds ?? []).filter((id) => confirmedIds.has(id));
   const timer = await prisma.checkInTimer.create({
     data: {
       userId,
@@ -22,6 +30,7 @@ export async function armCheckIn(userId: string, opts: { durationMinutes: number
       cancelToken: crypto.randomBytes(20).toString("base64url"),
       lastLat: opts.lat,
       lastLng: opts.lng,
+      notifyContactIds,
     },
   });
   return { id: timer.id, scheduledFor: timer.scheduledFor, confirmedContactCount: confirmed.length };
@@ -54,7 +63,13 @@ export async function listActive(userId: string) {
 export async function triggerExpiry(timerId: string): Promise<DeliveryReceipt[]> {
   const timer = await prisma.checkInTimer.findUnique({ where: { id: timerId } });
   if (!timer || timer.status !== CheckInStatus.ACTIVE) return [];
-  const confirmed = await getConfirmedContacts(timer.userId);
+  const allConfirmed = await getConfirmedContacts(timer.userId);
+  // Honor the user's pick from the arm dialog: a non-empty notifyContactIds
+  // restricts the alert to those contacts; empty = notify everyone.
+  const confirmed =
+    timer.notifyContactIds.length > 0
+      ? allConfirmed.filter((c) => timer.notifyContactIds.includes(c.id))
+      : allConfirmed;
 
   const subject = "CommunitySafe — a contact didn't check in";
   const location =

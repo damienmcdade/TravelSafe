@@ -60,11 +60,13 @@ export async function triggerSos(
     `If you can't reach them and believe they are in danger, call 911.\n` +
     `This is an automated message sent at their request.`;
 
-  // Notify every confirmed contact in parallel.
-  const receiptGroups = await Promise.all(
+  // Notify every confirmed contact in parallel. fix(audit sos-fanout-abort):
+  // allSettled (not all) so one contact's hard failure can never abort the
+  // rest — for a panic fan-out, every other contact MUST still be tried.
+  const settled = await Promise.allSettled(
     contacts.map((c) => notifyContact({ label: c.label, email: c.email, phone: c.phone }, subject, body)),
   );
-  const receipts = receiptGroups.flat();
+  const receipts = settled.flatMap((r) => (r.status === "fulfilled" ? r.value : []));
 
   return {
     shareUrl: share.shareUrl,

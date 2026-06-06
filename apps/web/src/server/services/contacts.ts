@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/http";
 import { sendEmail } from "./notifications/email";
+import { sendSms } from "./notifications/sms";
 import { env } from "../lib/env";
 
 const MAX_CONTACTS = 5;
@@ -44,6 +45,18 @@ export async function addContact(userId: string, input: { label: string; email?:
         `If you agree to receive check-in and live-share notifications from them,\n` +
         `confirm here: ${buildConfirmUrl(token)}\n\n` +
         `If you don't recognize this, ignore this email — you will not be contacted further.`,
+    );
+  } else if (contact.phone) {
+    // fix(audit phone-contact-never-confirms): a phone-only contact previously
+    // got NO confirmation message, so it sat PENDING forever and was never
+    // eligible for alerts. Send the confirm link by SMS (no-op with a recorded
+    // reason if Twilio is unconfigured — surfaced so the UI can prompt for an
+    // email fallback instead of silently leaving the contact unusable).
+    await sendSms(
+      contact.phone,
+      `CommunitySafe: someone added you as a trusted safety contact. ` +
+        `Confirm to receive their check-in / live-location alerts: ${buildConfirmUrl(token)} ` +
+        `— ignore if you don't recognize this.`,
     );
   }
   return { id: contact.id, status: contact.status };

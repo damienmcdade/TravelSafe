@@ -745,31 +745,10 @@ function gradeFromNationalDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["g
   return "E";
 }
 
-/// Grade the CITYWIDE rate vs the city's OWN FBI-published rate. This
-/// is the authoritative comparison: "is the current adapter sample
-/// reading above or below what the FBI published as this city's
-/// canonical per-100k rate?" Grades are tighter than the legacy
-/// vs-national ladder because city-vs-its-own-baseline ratios cluster
-/// around 1.0 (a healthy adapter on a stable-crime city should match
-/// the FBI baseline within ~20%). Big deviations point to either a
-/// genuine spike or adapter inflation — both are meaningful signals.
-function gradeFromCityFbiBaseline(
-  rows: SafetyScoreRow[],
-  baseline: { violent: number; property: number },
-): SafetyScoreResponse["grade"] {
-  const personsRow = rows.find((r) => r.category === "PERSONS");
-  const propertyRow = rows.find((r) => r.category === "PROPERTY");
-  const ratios: number[] = [];
-  if (personsRow && baseline.violent > 0) ratios.push(personsRow.localPer100k / baseline.violent);
-  if (propertyRow && baseline.property > 0) ratios.push(propertyRow.localPer100k / baseline.property);
-  if (ratios.length === 0) return "C";
-  const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
-  if (avg <= 0.7) return "A";  // ≥30% below city's baseline — meaningfully quieter
-  if (avg <= 0.9) return "B";  // 10-30% below
-  if (avg <= 1.2) return "C";  // within ±20% — matches baseline
-  if (avg <= 1.6) return "D";  // 20-60% above
-  return "E";                   // >60% above (or adapter is over-counting)
-}
+// NOTE (v102): the legacy gradeFromCityFbiBaseline (city sample vs the city's
+// OWN FBI rate) was removed — it was superseded by gradeCitywideAbsolute below,
+// which anchors to the FBI NATIONAL rate so grades are comparable across cities.
+// The rationale is preserved in the doc block immediately following.
 
 /// CITYWIDE grade — the city's OWN FBI-published rate vs the FBI NATIONAL
 /// rate, with violent weighted heavier than property (violent crime dominates
