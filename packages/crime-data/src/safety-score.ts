@@ -661,11 +661,25 @@ function computeDataConfidence(
         "The reported per-capita rate is much lower than expected for a city this size, suggesting the upstream feed is currently serving partial data. Grade may shift when the feed refreshes.",
     };
   }
-  if (windowDays < 90 || (pop > 200_000 && ratio < 0.5)) {
+  // v110 — COUNT-AWARE confidence. A short window with a LARGE incident count is
+  // statistically stable: the relative standard error of a rate scales ~1/√N, so
+  // ~5,000+ Part-1 incidents put it under ~1.5% — more reliable than a 95-day
+  // window with a few hundred incidents. The prior flat 90-day cutoff unfairly
+  // rated high-volume cities medium (Chicago/Dallas/Philadelphia/Oakland: tens of
+  // thousands of incidents over ~60-84 days). So a window ≥45 days carrying a
+  // stable volume is treated as high-confidence — this is statistically earned,
+  // not a relaxed bar. Genuinely sparse feeds (short window AND low volume, e.g.
+  // Tucson's rolling ~45-day feed) correctly remain medium. The undercount check
+  // (a rate implausibly low for the city size) is independent and still applies.
+  const STABLE_VOLUME = 5_000;
+  const windowStable = windowDays >= 90 || (windowDays >= 45 && totalIncidents >= STABLE_VOLUME);
+  const undercount = pop > 200_000 && ratio < 0.5;
+  if (!windowStable || undercount) {
     return {
       dataConfidence: "medium",
-      dataConfidenceNote:
-        `Based on a ~${windowDays}-day data window — read the grade as provisional. When the upstream feed refreshes, the longer window will tighten the comparison.`,
+      dataConfidenceNote: undercount
+        ? `The reported per-capita rate is lower than expected for a city this size, so the grade is read as provisional until the upstream feed fills in. `
+        : `Based on a ~${windowDays}-day data window with ${totalIncidents.toLocaleString()} incidents — read the grade as provisional; a longer window will tighten the comparison.`,
     };
   }
   return { dataConfidence: "high" };
@@ -805,15 +819,28 @@ function dynamicLiveWeight(
   return Math.max(0, Math.min(DYNAMIC_W_MAX, w));
 }
 
-/// Blend live + baseline per category (guarding a missing/zero live rate, which
-/// must NOT drag the effective rate to 0 — fall back to the baseline for that
-/// category), then grade the result national-anchored.
+/// Blend live + baseline per category, ASYMMETRICALLY, then grade national-
+/// anchored. The live signal can only push the effective rate UP toward more
+/// danger (live > baseline), never down:
+///
+///   effective = live > baseline ? baseline + w·(live − baseline) : baseline
+///
+/// Why asymmetric: the open city feeds structurally UNDER-capture vs the FBI
+/// total (partial categories, redaction, CFS calibration tuned to the prior
+/// baselines), so a live rate that sits BELOW the authoritative FBI baseline is
+/// almost always feed bias, not a real decline — honoring it would falsely
+/// reassure users that a city got safer when it didn't (unacceptable for a
+/// safety app). A live rate ABOVE the baseline, on the other hand, is a real
+/// current surge the annual baseline hasn't caught up to yet — exactly the
+/// "most up-to-date" signal worth surfacing immediately. So grades stay pinned
+/// to the FBI-verified baseline as a floor and only worsen when fresh data
+/// genuinely shows the city is currently more dangerous than its published rate.
 function gradeCitywideDynamic(
   live: { violent: number; property: number },
   baseline: { violent: number; property: number },
   weight: number,
 ): { grade: SafetyScoreResponse["grade"]; effective: { violent: number; property: number } } {
-  const blend = (l: number, b: number) => (l > 0 ? Math.round(weight * l + (1 - weight) * b) : b);
+  const blend = (l: number, b: number) => (l > b ? Math.round(b + weight * (l - b)) : b);
   const effective = { violent: blend(live.violent, baseline.violent), property: blend(live.property, baseline.property) };
   return { grade: gradeCitywideAbsolute(effective), effective };
 }
@@ -1339,7 +1366,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
           `measured against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
           `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k), weighting violent crime 70% and property 30%. ` +
           `A means at or below the national rate; B, C and D step up through roughly 1.3×, 1.9× and 2.6× it; E means well above. ` +
-          `The grade is DYNAMIC: it blends ${city.label}'s latest pulled data (${Math.round(dynamicWeight * 100)}%) with that published baseline (${Math.round((1 - dynamicWeight) * 100)}%), so a sustained real shift in current crime moves the letter, while a single noisy sample or a short data window leans on the stable baseline and can't swing it. `
+          `The grade is DYNAMIC and current-data-aware: the FBI-published rate is the floor, and when ${city.label}'s latest pulled data shows crime running ABOVE that rate the grade steps up toward today's level (closing up to ${Math.round(dynamicWeight * 100)}% of the gap), so an emerging surge surfaces immediately instead of waiting for the next annual release; a reading below the published rate is treated as open-feed under-capture rather than a real drop, so the grade never falsely eases. `
         : `The letter grade compares ${city.label}'s live citywide rate against the FBI ${FBI_NATIONAL_SOURCE.publishedYear} national average ` +
           `(violent ${FBI_NATIONAL_PER_100K_2024.PERSONS}/100k, property ${FBI_NATIONAL_PER_100K_2024.PROPERTY}/100k, weighting violent 70% / property 30%) ` +
           `because no city-specific FBI baseline is on file for ${city.label} yet. `) +
