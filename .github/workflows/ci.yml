@@ -96,6 +96,16 @@ jobs:
             exit 0
           fi
           npm i -g @railway/cli@latest
+          SVC=6a7c8ff7-b038-48d1-a623-d37ffe686011
+          # fix(deploy sha-staleness): stamp the deployed commit FIRST so the new
+          # container boots already reporting the right SHA. `railway up` is a CLI
+          # file upload that carries NO git context, so GIT_COMMIT_SHA would
+          # otherwise stay frozen at whatever it was last set to — /health then
+          # reports a stale SHA and the sync-check deploy-coherence probe FAILS
+          # even though the code is in lockstep. Setting the var redeploys the
+          # current image with the new SHA; the `railway up` below supersedes it
+          # with the new code, which inherits the freshly-set SHA.
+          railway variables --service "$SVC" --set "GIT_COMMIT_SHA=${GITHUB_SHA:0:7}"
           # --service pins the API service; --detach returns once the build is
           # queued (the /health healthcheck gates the actual cutover).
-          railway up --service 6a7c8ff7-b038-48d1-a623-d37ffe686011 --detach
+          railway up --service "$SVC" --detach
