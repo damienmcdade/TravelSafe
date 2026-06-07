@@ -4,7 +4,7 @@ import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, readJson } from "../lib/http.js";
 
 // Phoenix AZ — Phoenix PD Crime Data (phoenixopendata.com CKAN datastore).
 //
@@ -269,7 +269,7 @@ async function fetchPage(offset: number): Promise<PhxRow[]> {
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Phoenix CKAN ${res.status} offset=${offset}`);
-  const body = (await res.json()) as DatastoreResp;
+  const body = (await readJson(res)) as DatastoreResp;
   if (body.success === false) throw new Error(`Phoenix CKAN unsuccessful offset=${offset}`);
   return body.result?.records ?? [];
 }

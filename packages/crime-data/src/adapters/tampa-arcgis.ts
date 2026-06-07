@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
+import { USER_AGENT, fetchWithRetry, readJson } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 
 // Tampa, FL — Tampa Police Department "crimes_public_365days" ArcGIS
@@ -115,7 +115,7 @@ async function fetchPage(offset: number, sinceDate: string): Promise<TpaRow[]> {
     if (offset > 0 && (res.status === 404 || res.status === 400)) return [];
     throw new Error(`Tampa ArcGIS ${res.status} offset=${offset}`);
   }
-  const body = await res.json() as {
+  const body = await readJson(res) as {
     features?: Array<{ attributes: TpaRow; geometry?: { x: number; y: number } }>;
     error?: { code?: number; message?: string };
   };

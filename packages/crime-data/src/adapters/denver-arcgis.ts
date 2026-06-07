@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
@@ -100,7 +101,7 @@ async function fetchPage(offset: number): Promise<DenverRow[]> {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
   if (!res.ok) throw new Error(`Denver ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: DenverRow }>; error?: { code?: number; message?: string } };
+  const body = await readJson(res) as { features?: Array<{ attributes: DenverRow }>; error?: { code?: number; message?: string } };
   if (body.error) {
     // ArcGIS returns HTTP 200 with an embedded error envelope for
     // 499 Token Required, so the !res.ok check above doesn't catch

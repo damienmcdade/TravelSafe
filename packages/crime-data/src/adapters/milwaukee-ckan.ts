@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
@@ -147,7 +148,7 @@ async function fetchPage(offset: number, signal?: AbortSignal): Promise<RawRow[]
     `&limit=${PAGE_SIZE}&offset=${offset}&sort=${encodeURIComponent("_id desc")}`;
   const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Milwaukee datastore ${res.status} at offset ${offset}`);
-  const body = (await res.json()) as DatastoreResp;
+  const body = (await readJson(res)) as DatastoreResp;
   return body.result?.records ?? [];
 }
 

@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, readJson } from "../lib/http.js";
 import { indianapolisPolygons } from "../data/indianapolis-neighborhoods.js";
 
 // Indianapolis — IMPD Public Data MapServer layer 1 (Incidents_Public).
@@ -125,7 +125,7 @@ async function fetchPage(offset: number): Promise<IndyRow[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Indianapolis ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: IndyRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: IndyRow }> };
   return (body.features ?? []).map((f) => f.attributes);
 }
 

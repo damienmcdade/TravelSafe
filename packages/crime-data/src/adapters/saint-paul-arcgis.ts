@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
@@ -118,7 +119,7 @@ async function fetchPage(offset: number): Promise<SpRow[]> {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
   if (!res.ok) throw new Error(`Saint Paul ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: SpRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: SpRow }> };
   return (body.features ?? []).map((f) => f.attributes);
 }
 

@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, readJson } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { longBeachPolygons } from "../data/long-beach-neighborhoods.js";
 
@@ -122,7 +122,7 @@ async function fetchPage(offset: number): Promise<LbFeature[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Long Beach ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: LbFeature[] };
+  const body = await readJson(res) as { features?: LbFeature[] };
   return body.features ?? [];
 }
 

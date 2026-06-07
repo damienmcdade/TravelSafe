@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
@@ -161,7 +162,7 @@ async function fetchPhl(): Promise<Incident[]> {
     body: formBody,
   });
   if (!res.ok) throw new Error(`PHL CARTO ${res.status}`);
-  const body = await res.json() as { rows?: PhlRow[]; error?: unknown };
+  const body = await readJson(res) as { rows?: PhlRow[]; error?: unknown };
   if (body.error) throw new Error(`PHL CARTO error: ${JSON.stringify(body.error)}`);
   const rows = body.rows ?? [];
   const out: Incident[] = [];

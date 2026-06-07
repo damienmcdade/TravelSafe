@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, readJson } from "../lib/http.js";
 
 // Raleigh — Raleigh PD Police Incidents (NIBRS).
 // ArcGIS FeatureServer on services.arcgis.com (owner: Raleigh Open Data).
@@ -64,7 +64,7 @@ async function fetchPage(offset: number): Promise<RduRow[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Raleigh ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: RduRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: RduRow }> };
   return (body.features ?? []).map((f) => f.attributes);
 }
 

@@ -101,6 +101,54 @@ export interface SocrataQuery {
   signal?: AbortSignal;
 }
 
+// v108 — upstream returned a body that is NOT JSON. Open-data portals
+// (Esri ArcGIS, Socrata, CKAN, Carto) and the CDNs / WAFs in front of
+// them frequently answer a 200 OR a 5xx with an HTML or plain-text
+// error page ("An error has occurred", a Cloudflare challenge, an nginx
+// 502, a maintenance notice) instead of JSON. Calling res.json() on
+// that throws a raw `SyntaxError: Unexpected identifier "An"` deep
+// inside the adapter, which previously bubbled all the way to the
+// client and was rendered verbatim to users. We classify it as a
+// transient upstream failure so the shared retry path re-attempts, and
+// — on final failure — the dispatcher falls back to last-known-good.
+export class UpstreamNonJsonError extends Error {
+  readonly transient = true;
+  constructor(message: string) {
+    super(message);
+    this.name = "UpstreamNonJsonError";
+  }
+}
+
+// v108 — single safe JSON reader for every adapter that fetches by hand
+// (all the ArcGIS / CKAN / Carto / SANDAG adapters). Reads the body as
+// text first, then parses inside a try/catch so a non-JSON error page
+// becomes an UpstreamNonJsonError (with a short snippet for the log)
+// instead of an uncaught SyntaxError. Returns the parsed value; callers
+// keep their own `as <Shape>` cast and their own `body.error` envelope
+// checks. Use this everywhere instead of `await res.json()`.
+export async function readJson<T = unknown>(res: Response): Promise<T> {
+  const text = await res.text();
+  if (!text || !text.trim()) {
+    throw new UpstreamNonJsonError(`empty body from ${res.url || "upstream"} (HTTP ${res.status})`);
+  }
+  // Cheap pre-check: a JSON value can only start with { [ " digit - t f n.
+  // An HTML/text error page starts with "<", "A", "U", etc. This lets us
+  // produce a clear message without relying on the engine's parse error.
+  const head = text.trimStart()[0];
+  const looksJson = head === "{" || head === "[" || head === '"' || head === "-" || (head >= "0" && head <= "9")
+    || text.trimStart().startsWith("true") || text.trimStart().startsWith("false") || text.trimStart().startsWith("null");
+  if (!looksJson) {
+    const snippet = text.slice(0, 120).replace(/\s+/g, " ").trim();
+    throw new UpstreamNonJsonError(`non-JSON body from ${res.url || "upstream"} (HTTP ${res.status}): ${snippet}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch (err) {
+    const snippet = text.slice(0, 120).replace(/\s+/g, " ").trim();
+    throw new UpstreamNonJsonError(`malformed JSON from ${res.url || "upstream"} (HTTP ${res.status}): ${snippet} — ${(err as Error).message}`);
+  }
+}
+
 // v96p2 — retry classifier. The deployment-log scan kept turning up
 // `fetch failed: fetch failed` lines that are undici-level transient
 // network errors (DNS blip, TLS handshake reset, connection drop)
@@ -113,6 +161,10 @@ export interface SocrataQuery {
 function isTransientFetchError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   if (err.name === "AbortError") return false;
+  // v108 — a non-JSON upstream error page is worth one quick retry: it's
+  // very often a transient CDN/WAF 502/503 or a momentary maintenance
+  // page that clears within a second or two.
+  if (err instanceof UpstreamNonJsonError) return true;
   // undici wraps the underlying error in `.cause`. Match the codes
   // that empirically retry-successfully: connection-level failures
   // and DNS errors.
@@ -202,7 +254,11 @@ export async function fetchSocrata<TRow>(
       if (!res.ok) {
         throw new Error(`${adapterName} ${res.status} ${url}`);
       }
-      const body = await res.json() as TRow[] | { error: true; message?: string };
+      // v108 — safe parse: a 200 with an HTML/text error page (seen from
+      // Socrata's CDN during incidents) no longer throws a raw SyntaxError;
+      // readJson raises an UpstreamNonJsonError which retries here, then
+      // surfaces cleanly so the dispatcher serves last-known-good.
+      const body = await readJson<TRow[] | { error: true; message?: string }>(res);
       if (!Array.isArray(body)) {
         throw new Error(`${adapterName} error: ${("message" in body && body.message) || "unknown"}`);
       }

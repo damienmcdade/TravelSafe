@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
@@ -112,7 +113,7 @@ async function fetchPittsburgh(): Promise<Incident[]> {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
   if (!res.ok) throw new Error(`Pittsburgh CKAN ${res.status}`);
-  const body = await res.json() as { result?: { records?: PghRow[] } };
+  const body = await readJson(res) as { result?: { records?: PghRow[] } };
   const rows = (body.result?.records ?? []).filter((r) => (r.Neighborhood ?? "").trim().length > 0);
   // PBP can emit multiple rows per Report_Number (one per offense). Dedup
   // so each incident contributes a single card — keep the first row, which

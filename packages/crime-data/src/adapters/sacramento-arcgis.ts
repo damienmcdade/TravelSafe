@@ -4,7 +4,7 @@ import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, readJson } from "../lib/http.js";
 import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
 
 // Sacramento — Sacramento PD Report Data (current year).
@@ -166,7 +166,7 @@ async function fetchPage(baseUrl: string, offset: number): Promise<SacRow[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Sacramento ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: SacRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: SacRow }> };
   return (body.features ?? []).map((f) => f.attributes);
 }
 

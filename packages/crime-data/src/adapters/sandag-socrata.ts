@@ -1,4 +1,5 @@
 import { env } from "../env.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { findArea } from "../neighborhoods.js";
 
@@ -117,7 +118,7 @@ async function sodaGet(query: Record<string, string>): Promise<SodaRow[]> {
   try {
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`SANDAG SODA ${res.status}: ${await res.text()}`);
-    return (await res.json()) as SodaRow[];
+    return (await readJson(res)) as SodaRow[];
   } catch (err) {
     // Surface SANDAG upstream issues in deploy logs — matches the warn
     // pattern in every other adapter so we never silently swallow failures.

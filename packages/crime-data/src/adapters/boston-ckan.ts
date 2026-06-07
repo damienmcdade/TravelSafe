@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import { env } from "../env.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
@@ -247,7 +248,7 @@ async function fetchPage(offset: number): Promise<BostonRow[]> {
     },
   });
   if (!res.ok) throw new Error(`Boston CKAN ${res.status} offset=${offset}`);
-  const body = await res.json() as { success?: boolean; error?: unknown; result?: { records?: BostonRow[] } };
+  const body = await readJson(res) as { success?: boolean; error?: unknown; result?: { records?: BostonRow[] } };
   if (body.success === false) throw new Error(`Boston CKAN error: ${JSON.stringify(body.error)}`);
   return body.result?.records ?? [];
 }

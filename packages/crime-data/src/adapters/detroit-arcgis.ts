@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { bucketByBands, deriveBands } from "../risk-bands.js";
@@ -105,11 +106,18 @@ async function fetchPage(offset: number): Promise<DetroitRow[]> {
   for (let attempt = 0; attempt < 4; attempt++) {
     if (attempt > 0) await new Promise((r) => setTimeout(r, 250 * attempt));
     try {
+      // v108 — explicit per-page timeout. Detroit's Esri Feature Server is
+      // the worst cold-start case in the fleet; a single hung page could
+      // stall the whole 15-page pull until the platform undici body timeout
+      // (30s) tripped. Bounding each page at 20s lets a slow page fail fast,
+      // hit the retry/backoff above, and keeps populate within the 45s route
+      // budget.
       const res = await fetch(url, {
         headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+        signal: AbortSignal.timeout(20_000),
       });
       if (!res.ok) throw new Error(`Detroit ArcGIS ${res.status} offset=${offset}`);
-      const body = await res.json() as { features?: Array<{ attributes: DetroitRow }>; error?: unknown };
+      const body = await readJson(res) as { features?: Array<{ attributes: DetroitRow }>; error?: unknown };
       if (body.error) throw new Error(`Detroit ArcGIS body error offset=${offset}`);
       return (body.features ?? []).map((f) => f.attributes);
     } catch (err) {

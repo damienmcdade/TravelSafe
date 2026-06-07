@@ -176,9 +176,37 @@ async function rawApi<T = unknown>(path: string, init: RequestInit = {}): Promis
   // pass an AbortSignal will see the underlying fetch cancel on .abort().
   const res = await fetch(`${API_BASE}/api${path}`, { credentials: "include", ...init, headers });
   const text = await res.text();
-  const body = text ? JSON.parse(text) : null;
+  // v108 — never feed a non-JSON body to JSON.parse. Upstream open-data
+  // portals (and the CDN/WAF/proxy layers in front of our own API) can
+  // answer with an HTML or plain-text error page — a Cloudflare 5xx, an
+  // nginx 502, a maintenance notice, the literal "An error has occurred"
+  // — on either a 5xx OR a 200. Parsing that threw a raw
+  // `SyntaxError: JSON Parse error: Unexpected identifier "An"` that
+  // bubbled up to useApi and was rendered verbatim to users across every
+  // city. We now parse defensively: a parse failure becomes a clean,
+  // classified error. For a 5xx / 429 (or a body-less success) we raise
+  // `upstream_unavailable`, which useApi treats as a transient "warming"
+  // condition and auto-retries with backoff — so cards keep showing the
+  // last-known cached data and self-heal instead of stranding on an error.
+  let body: unknown = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      const transient = !res.ok ? (res.status >= 500 || res.status === 429) : true;
+      const snippet = text.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 140);
+      const message = transient
+        ? "upstream_unavailable"
+        : `http_${res.status}`;
+      const err = new Error(message) as Error & { status: number; body: unknown };
+      err.status = res.status || 502;
+      err.body = snippet;
+      throw err;
+    }
+  }
   if (!res.ok) {
-    const message = (body && (body.error || body.message)) || `http_${res.status}`;
+    const b = body as { error?: string; message?: string } | null;
+    const message = (b && (b.error || b.message)) || `http_${res.status}`;
     const err = new Error(message) as Error & { status: number; body: unknown };
     err.status = res.status;
     err.body = body;
@@ -250,7 +278,12 @@ function swrWrite<T>(path: string, data: T) {
 // We now auto-retry those two specific errors a bounded number of times with
 // backoff so the page recovers on its own. Bounded (not infinite) so a feed
 // that's genuinely down still surfaces the error instead of retry-storming.
-const WARMING_ERROR_RE = /upstream_timeout|warming_up/i;
+// v108 — `upstream_unavailable` joins the auto-retry set: it's raised when
+// the API (or a proxy/CDN in front of it) returns a non-JSON error page,
+// which is almost always a transient gateway blip that clears within a few
+// seconds. Retrying with backoff lets the card recover on its own while it
+// keeps showing the last-known cached data.
+const WARMING_ERROR_RE = /upstream_timeout|warming_up|upstream_unavailable/i;
 const WARMING_MAX_RETRIES = 4;
 const WARMING_BACKOFF_MS = [2000, 3000, 5000, 8000];
 
@@ -286,6 +319,11 @@ export function useApi<T = unknown>(
   // dep changes (e.g. someone scrubbing through cities).
   const versionRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+  // v108 — remembers the path the committed `data` belongs to, so the
+  // effect below can tell a genuine selection switch (path changed → must
+  // drop the previous city's data to prevent cross-city bleed) apart from a
+  // same-path dependency/refresh tick (keep showing current data, no flash).
+  const dataPathRef = useRef<string | null>(null);
   // Bounded auto-retry state for cold-cache "warming" 503s (see WARMING_* above).
   const warmRetryRef = useRef(0);
   const warmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -337,9 +375,30 @@ export function useApi<T = unknown>(
 
   useEffect(() => {
     if (!path) { setData(null); return; }
-    // Restore from SWR cache the moment the path changes so the UI flashes
-    // the prior city/area immediately instead of skeleton-loading.
-    if (swrMs > 0) {
+    // v108 — DATA-BLEED FIX. When the user switches state/city/neighborhood
+    // on the selector wheel, `path` changes and this effect re-runs. We must
+    // replace the *previous* selection's data on the spot — otherwise a card
+    // for the new city keeps rendering the old city's numbers until its fresh
+    // fetch resolves, and because each card resolves at a different time the
+    // page shows a mix of old-city and new-city cards (the reported bleed).
+    //
+    // The correct value for the new `path` is: its own SWR cache if we have a
+    // fresh one (instant, correct, scoped per-path), otherwise null (skeleton
+    // — strictly better than showing a different city's data). Either way the
+    // committed value belongs to THIS path, never the prior one. The version
+    // guard in reload() already drops any in-flight response from the old
+    // path, so combining the two means a card can never display stale
+    // cross-city data even while rapidly scrubbing the wheel.
+    if (dataPathRef.current !== path) {
+      // Real selection switch: commit this path's own cached value (or null
+      // → skeleton). Never leave the previous city's data on screen.
+      const cached = swrMs > 0 ? swrRead<T>(path, swrMs) : null;
+      setData(cached);
+      setError(null);
+      dataPathRef.current = path;
+    } else if (swrMs > 0) {
+      // Same path (dep/refresh tick): keep the prior UX of flashing fresh
+      // cache if present, but don't clear — avoids an unnecessary skeleton.
       const cached = swrRead<T>(path, swrMs);
       if (cached != null) setData(cached);
     }

@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT } from "../lib/http.js";
+import { USER_AGENT, readJson } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { jacksonvillePolygons } from "../data/jacksonville-neighborhoods.js";
 
@@ -130,7 +130,7 @@ async function fetchPage(offset: number, sinceIso: string): Promise<JsoFeature[]
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`Jacksonville ArcGIS ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: JsoFeature[]; error?: { message?: string } };
+  const body = await readJson(res) as { features?: JsoFeature[]; error?: { message?: string } };
   if (body.error) throw new Error(`Jacksonville ArcGIS error: ${body.error.message}`);
   return body.features ?? [];
 }

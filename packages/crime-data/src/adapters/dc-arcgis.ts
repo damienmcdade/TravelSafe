@@ -1,4 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
+import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
@@ -141,7 +142,7 @@ async function fetchPage(layer: number, offset: number): Promise<DcRow[]> {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
   if (!res.ok) throw new Error(`DC ArcGIS layer=${layer} ${res.status} offset=${offset}`);
-  const body = await res.json() as { features?: Array<{ attributes: DcRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: DcRow }> };
   return (body.features ?? []).map((f) => f.attributes);
 }
 

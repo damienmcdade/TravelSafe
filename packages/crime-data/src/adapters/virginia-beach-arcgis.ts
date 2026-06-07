@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT, fetchWithRetry } from "../lib/http.js";
+import { USER_AGENT, fetchWithRetry, readJson } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { GENERATED_AREA_CENTROIDS } from "../area-centroids-generated.js";
 import { VB_AREA_CENTROIDS } from "../data/virginia-beach-area-centroids.js";
@@ -120,7 +120,7 @@ async function fetchPage(offset: number, sinceDate: string): Promise<VbRow[]> {
     if (offset > 0 && (res.status === 404 || res.status === 400)) return [];
     throw new Error(`Virginia Beach ArcGIS ${res.status} offset=${offset}`);
   }
-  const body = await res.json() as { features?: Array<{ attributes: VbRow }>; error?: { code?: number; message?: string } };
+  const body = await readJson(res) as { features?: Array<{ attributes: VbRow }>; error?: { code?: number; message?: string } };
   if (body.error) throw new Error(`Virginia Beach ArcGIS error ${body.error.code}: ${body.error.message}`);
   return (body.features ?? []).map((f) => f.attributes);
 }

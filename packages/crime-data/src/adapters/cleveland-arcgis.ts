@@ -4,7 +4,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
-import { fetchWithRetry } from "../lib/http.js";
+import { fetchWithRetry, readJson } from "../lib/http.js";
 import { clevelandPolygons } from "../data/cleveland-neighborhoods.js";
 
 // v89 — static seed list from the bundled neighborhood polygons.
@@ -141,7 +141,7 @@ async function fetchPageOnce(url: URL): Promise<CleFeature[]> {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
   });
   if (!res.ok) throw new Error(`Cleveland ArcGIS ${res.status}`);
-  const body = await res.json() as { features?: CleFeature[]; error?: { code?: number; message?: string } };
+  const body = await readJson(res) as { features?: CleFeature[]; error?: { code?: number; message?: string } };
   if (body.error) throw new Error(`Cleveland ArcGIS error ${body.error.code}: ${body.error.message}`);
   return body.features ?? [];
 }
