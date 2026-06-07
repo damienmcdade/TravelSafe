@@ -45,6 +45,10 @@ export interface TieredLoader {
   getRows(): Promise<Incident[]>;
   /** Currently-cached rows without triggering a fetch (or null when cold). */
   peek(): Incident[] | null;
+  /** True only when the cache holds the COMPLETE (deep) dataset — false while
+   *  serving the recent tier or after a partial deep pull. Lets callers (e.g.
+   *  citywide) avoid edge-caching a still-warming, partial result. */
+  complete(): boolean;
 }
 
 export function createTieredLoader(opts: TieredLoaderOptions): TieredLoader {
@@ -116,5 +120,5 @@ export function createTieredLoader(opts: TieredLoaderOptions): TieredLoader {
     return inFlight;
   }
 
-  return { getRows, peek: () => cache?.rows ?? null };
+  return { getRows, peek: () => cache?.rows ?? null, complete: () => cache?.full ?? false };
 }

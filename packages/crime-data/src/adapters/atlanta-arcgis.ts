@@ -256,6 +256,7 @@ function labelForAtlSlug(slug: string, rows: Incident[]): string | null {
 }
 
 export const atlantaAdapter: CrimeDataAdapter = {
+  isComplete: () => cache?.full ?? false,
   name: "atlanta-arcgis",
   async getAreaStats(area: string): Promise<AreaStats | null> {
     const rows = await getRowsAtlanta();

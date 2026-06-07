@@ -52,6 +52,12 @@ export interface CrimeDataAdapter {
   getAreaStats(area: string): Promise<AreaStats | null>;
   getIncidents(area: string, opts?: { limit?: number; since?: Date }): Promise<Incident[]>;
   getRecentReports(area: string, opts?: { limit?: number }): Promise<Incident[]>;
+  /// v108 — optional completeness signal for tiered adapters. Returns false
+  /// while only the recent tier (or a partial deep pull) is cached, true once
+  /// the full dataset is loaded. Absent ⇒ treated as always-complete (the
+  /// non-tiered adapters do a single full pull). The citywide route uses this
+  /// to avoid edge-caching a still-warming, partial count.
+  isComplete?(): boolean;
 }
 
 /// Neighborhood / area discovery contract. Adapters' discover() methods

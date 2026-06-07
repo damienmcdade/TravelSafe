@@ -230,6 +230,7 @@ function labelForJacksonvilleSlug(slug: string, rows: Incident[]): string | null
 }
 
 export const jacksonvilleAdapter: CrimeDataAdapter = {
+  isComplete: () => jacksonvilleLoader.complete(),
   name: "jacksonville-arcgis",
   async getAreaStats(area: string): Promise<AreaStats | null> {
     const rows = await getRowsJacksonville();

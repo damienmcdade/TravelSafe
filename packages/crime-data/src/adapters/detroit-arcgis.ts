@@ -354,6 +354,7 @@ function labelForDetroitSlug(slug: string): string | null {
 }
 
 export const detroitAdapter: CrimeDataAdapter = {
+  isComplete: () => cache?.full ?? false,
   name: "detroit-arcgis",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {

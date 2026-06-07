@@ -186,6 +186,11 @@ export const crimeData = {
       byCategory: { PERSONS: number; PROPERTY: number; SOCIETY: number };
       dominantCategory: "PERSONS" | "PROPERTY" | "SOCIETY" | null;
     }>;
+    /// v108 — false while the city's tiered adapter is still warming (recent
+    /// tier / partial deep pull), so `totalIncidents` reflects a shorter window
+    /// than the eventual full dataset. The route uses this to avoid edge-caching
+    /// a still-warming count. Non-tiered adapters are always complete.
+    complete: boolean;
   }> {
     // v95 — dedupe concurrent same-city composes. See lib/inflight.ts.
     return dedupe(`citywide:${citySlug}:${opts.offense ?? ""}:${opts.windowDays ?? ""}`, () => withComputeLimit(citySlug, () => this._getCitywide(citySlug, opts)));
@@ -353,6 +358,9 @@ export const crimeData = {
       topOffenses,
       alerts,
       perArea: perArea.sort((a, b) => b.incidentCount - a.incidentCount),
+      // v108 — surface tiered-adapter completeness so the route can skip
+      // edge-caching a still-warming, partial citywide count.
+      complete: city.adapter.isComplete?.() ?? true,
     };
   },
 

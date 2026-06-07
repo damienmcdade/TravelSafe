@@ -188,6 +188,7 @@ function labelForBaltimoreSlug(slug: string, rows: Incident[]): string | null {
 }
 
 export const baltimoreAdapter: CrimeDataAdapter = {
+  isComplete: () => baltimoreLoader.complete(),
   name: "baltimore-arcgis",
   async getAreaStats(area: string): Promise<AreaStats | null> {
     const rows = await getRowsBaltimore();

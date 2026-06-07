@@ -232,6 +232,7 @@ function labelForFortWorthSlug(slug: string, rows: Incident[]): string | null {
 }
 
 export const fortWorthAdapter: CrimeDataAdapter = {
+  isComplete: () => fortWorthLoader.complete(),
   name: "fort-worth-arcgis",
   async getAreaStats(area: string): Promise<AreaStats | null> {
     const rows = await getRowsFortWorth();

@@ -324,6 +324,7 @@ function labelForLasVegasSlug(slug: string, rows: Incident[]): string | null {
 
 export const lasVegasAdapter: CrimeDataAdapter = {
   name: "las-vegas-arcgis",
+  isComplete: () => cache?.full ?? false,
 
   async getAreaStats(area: string): Promise<AreaStats | null> {
     const rows = await getRowsLasVegas();

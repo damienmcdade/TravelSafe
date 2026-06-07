@@ -192,6 +192,7 @@ function labelForDenverSlug(slug: string, rows: Incident[]): string | null {
 }
 
 export const denverAdapter: CrimeDataAdapter = {
+  isComplete: () => denverLoader.complete(),
   name: "denver-arcgis",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {

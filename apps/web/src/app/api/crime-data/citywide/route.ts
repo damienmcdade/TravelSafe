@@ -40,6 +40,13 @@ export const GET = wrap(async (req: NextRequest) => {
     : undefined;
   return withWarmingTimeout(
     crimeData.getCitywide(city, { offense, windowDays }),
-    (v) => NextResponse.json(v, { headers: CACHE_HEADERS }),
+    // v108 — only edge-cache a COMPLETE result. On a cold Vercel instance the
+    // local fallback serves the recent tier (complete=false) and its background
+    // deepen can't finish (the function freezes after responding), so caching it
+    // would pin a partial count. no-store while warming → the next request
+    // re-proxies to Railway's full count, keeping the two runtimes consistent.
+    (v) => NextResponse.json(v, {
+      headers: (v as { complete?: boolean }).complete === false ? { "Cache-Control": "no-store" } : CACHE_HEADERS,
+    }),
   );
 });

@@ -81,7 +81,18 @@ crimeDataRouter.get("/citywide", optionalAuth, async (req, res, next) => {
     // v99 — this endpoint was the one crime-data GET with NO Cache-Control,
     // so the CDN/edge hit origin on every load (~0.8s each, even warm).
     // Match the trend/mix/upticks routes so repeat loads are absorbed.
-    res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=900");
+    //
+    // v108 — but ONLY cache a COMPLETE result. Heavy tiered cities (Detroit et
+    // al.) serve a recent-tier count for the first ~30-90s after a cold start;
+    // caching that at the edge for s-maxage=300 pinned a partial `totalIncidents`
+    // (e.g. Detroit 11.5k) while the origin had already deepened to the full
+    // count (25k+), so the Vercel-cached value diverged from Railway for minutes.
+    // While warming, send no-store so the CDN re-proxies live (Vercel matches
+    // Railway); once the deep tier is loaded, resume the normal long cache.
+    res.setHeader(
+      "Cache-Control",
+      result.complete ? "public, s-maxage=300, stale-while-revalidate=900" : "no-store",
+    );
     res.json(result);
   } catch (err) {
     // v96 — same city_not_supported handling as the safety-score route.

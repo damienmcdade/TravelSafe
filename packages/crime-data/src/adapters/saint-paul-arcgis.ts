@@ -244,6 +244,7 @@ function labelForSaintPaulSlug(slug: string, index: SpIndex): string | null {
 }
 
 export const saintPaulAdapter: CrimeDataAdapter = {
+  isComplete: () => saintPaulLoader.complete(),
   name: "saint-paul-arcgis",
 
   async getAreaStats(area: string): Promise<AreaStats | null> {

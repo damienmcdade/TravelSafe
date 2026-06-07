@@ -268,6 +268,7 @@ function labelForIndySlug(slug: string, rows: Incident[]): string | null {
 
 export const indianapolisAdapter: CrimeDataAdapter = {
   name: "indianapolis-arcgis",
+  isComplete: () => cache?.full ?? false,
   async getAreaStats(area: string): Promise<AreaStats | null> {
     const rows = await getRowsIndianapolis();
     const label = labelForIndySlug(area, rows);
