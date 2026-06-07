@@ -33,12 +33,12 @@ fan-out by replacing the `svg` source with a 1024×1024 PNG.
 ## Deployment targets
 | Surface | Source |
 |---|---|
-| Browser tab favicon | `apps/web/src/app/icon.tsx` (Edge runtime ImageResponse) |
-| iOS home screen | `apps/web/src/app/apple-icon.tsx` + `Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` |
+| Browser tab favicon | `apps/web/src/app/favicon.ico` (App-Router auto-served at `/favicon.ico`) + `icons` metadata in `apps/web/src/app/layout.tsx` → `/icons/icon-192.png`,`/icon-512.png` |
+| iOS home screen | `apps/web/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png` (1024², Xcode auto-scales) |
 | Android launcher | `apps/web/android/app/src/main/res/mipmap-*/ic_launcher*.png` (5 densities) |
 | Android adaptive bg | `apps/web/android/app/src/main/res/values/ic_launcher_background.xml` |
 | Web app install | `apps/web/public/manifest.json` |
-| Icon generator | `apps/web/scripts/generate-communitysafe-icons.mjs` |
+| Icon generator | `apps/web/scripts/generate-communitysafe-icons.mjs` (emits all of the above incl. `favicon.ico`) |
 
 ## Regenerating PNGs from the SVG
 ```bash

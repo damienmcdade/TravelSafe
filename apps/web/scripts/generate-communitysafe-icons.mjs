@@ -122,7 +122,33 @@ async function png(outPath, size, flatten = true) {
   await image.png().toFile(outPath);
 }
 
+// favicon.ico — a PNG-based (Vista+) multi-size .ico assembled by hand so we
+// don't pull a new dependency. Next.js App Router auto-serves src/app/favicon.ico
+// at /favicon.ico (fixes the bare /favicon.ico 404; the <link> metadata in
+// layout.tsx already covers modern browsers, this covers the legacy request).
+async function pngBuffer(size) {
+  return sharp(Buffer.from(svg)).resize(size, size, { fit: "cover" }).flatten({ background: "#0A1628" }).png().toBuffer();
+}
+async function writeFavicon(outPath) {
+  const sizes = [16, 32, 48];
+  const imgs = await Promise.all(sizes.map(pngBuffer));
+  const header = Buffer.alloc(6);
+  header.writeUInt16LE(0, 0); header.writeUInt16LE(1, 2); header.writeUInt16LE(sizes.length, 4);
+  const entries = Buffer.alloc(16 * sizes.length);
+  let offset = 6 + entries.length;
+  imgs.forEach((buf, i) => {
+    const e = entries.subarray(i * 16, i * 16 + 16);
+    e.writeUInt8(sizes[i], 0); e.writeUInt8(sizes[i], 1); // w,h (≤255 fit in a byte)
+    e.writeUInt16LE(1, 4); e.writeUInt16LE(32, 6);        // planes, bit depth
+    e.writeUInt32LE(buf.length, 8); e.writeUInt32LE(offset, 12);
+    offset += buf.length;
+  });
+  await mkdir(path.dirname(outPath), { recursive: true });
+  await writeFile(outPath, Buffer.concat([header, entries, ...imgs]));
+}
+
 await writeFile(path.join(root, "public/icons/icon.svg"), svg);
+await writeFavicon(path.join(root, "src/app/favicon.ico"));
 await png(path.join(root, "public/icons/icon-192.png"), 192);
 await png(path.join(root, "public/icons/icon-512.png"), 512);
 await png(path.join(root, "public/icons/icon-1024.png"), 1024);
