@@ -64,9 +64,12 @@ async function writeFavicon(outPath) {
 await png(path.join(root, "public/icons/icon-192.png"), 192);
 await png(path.join(root, "public/icons/icon-512.png"), 512);
 await png(path.join(root, "public/icons/icon-1024.png"), 1024);
-// favicon + apple-touch (App Router auto-serves these at /favicon.ico and /apple-icon)
+// favicon (App Router auto-serves src/app/favicon.ico at /favicon.ico) + a 180px
+// apple-touch-icon served from public/ at a literal path (the App-Router
+// /apple-icon metadata convention is overridden by layout.tsx's explicit `icons`
+// config, so we reference this explicitly in layout.tsx + manifest.json instead).
 await writeFavicon(path.join(root, "src/app/favicon.ico"));
-await png(path.join(root, "src/app/apple-icon.png"), 180);
+await png(path.join(root, "public/icons/apple-touch-icon.png"), 180);
 // iOS (Xcode auto-scales the 1024 marketing icon)
 await png(path.join(root, "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png"), 1024);
 
