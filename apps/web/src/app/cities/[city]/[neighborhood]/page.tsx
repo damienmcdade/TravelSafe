@@ -6,6 +6,7 @@ import { getSafetyScore } from "@/server/services/watch/safety-score";
 import { getTrendForArea } from "@/server/services/watch/trend-feed";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 import { formatReportDate } from "@/lib/format";
+import { LegalFooter } from "@/components/LegalFooter";
 
 interface Props {
   params: Promise<{ city: string; neighborhood: string }>;
@@ -221,6 +222,8 @@ export default async function NeighborhoodLandingPage({ params }: Props) {
         <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}
         for the full calculation.
       </p>
+
+      <LegalFooter />
     </main>
   );
 }

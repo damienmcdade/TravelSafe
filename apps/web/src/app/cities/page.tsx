@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CITIES } from "@/server/services/crime-data/cities";
 import { CityStatusInline } from "@/components/CityStatusInline";
+import { LegalFooter } from "@/components/LegalFooter";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 
 export const metadata: Metadata = {
@@ -71,6 +72,8 @@ export default function CitiesIndexPage() {
         basis for housing, lending, insurance, or hiring decisions — verify each
         statistic with the cited official source before acting on it.
       </p>
+
+      <LegalFooter />
     </main>
   );
 }

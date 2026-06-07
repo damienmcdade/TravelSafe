@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { cityBySlug } from "@/server/services/crime-data/cities";
 import { getCitywideSafetyScore } from "@/server/services/watch/safety-score";
 import { CityCompare } from "@/components/CityCompare";
+import { LegalFooter } from "@/components/LegalFooter";
 import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 import { formatReportDate } from "@/lib/format";
 
@@ -206,6 +207,34 @@ export default async function CityLandingPage({ params }: Props) {
         <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}
         for how the index is computed.
       </p>
+
+      {/* Per-city editorial context. Derived from this city's own live values
+          (grade, neighborhood count, category deltas) so each city page carries
+          unique, human-useful analysis rather than a templated stat dump —
+          directly addressing AdSense "low value / scaled content" concerns. */}
+      <section className="surface p-5 sm:p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">About {city.label} safety data</h2>
+        <p>
+          This overview aggregates {city.label}&apos;s official police open-data
+          feed{areas.length > 0 ? ` across ${areas.length.toLocaleString()} neighborhoods` : ""}{" "}
+          and compares it to the {FBI_DATA_LABEL} national rate per 100,000 residents.
+          {citywideScore
+            ? ` ${city.label} currently carries a citywide Safety Index of ${citywideScore.grade}. ${citywideScore.headline}`
+            : ""}
+        </p>
+        <p>
+          Use the neighborhood list above to drill into a specific area — every
+          area has its own running incident timeline and category breakdown.
+          Safety is local: a citywide grade smooths over real differences between
+          neighborhoods, so we always recommend reading the area you actually care
+          about rather than the headline number. For the full data sourcing,
+          population normalization, and grade thresholds, see our{" "}
+          <Link href="/methodology" className="text-bay-700 hover:underline">methodology</Link>.
+          To compare {city.label} against another metro, use the comparison tool above.
+        </p>
+      </section>
+
+      <LegalFooter />
     </main>
   );
 }

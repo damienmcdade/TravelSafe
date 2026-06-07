@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { LegalFooter } from "@/components/LegalFooter";
 
 export default function WelcomePage() {
   return (
@@ -27,6 +28,9 @@ export default function WelcomePage() {
               <Link href="/now" className="btn-coral text-base px-6 py-3 w-full sm:w-auto text-center justify-center">Explore CommunitySafe →</Link>
               <Link href="/map" className="btn-secondary text-base px-6 py-3 w-full sm:w-auto text-center justify-center !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
                 Open the Crime Map
+              </Link>
+              <Link href="/cities" className="btn-secondary text-base px-6 py-3 w-full sm:w-auto text-center justify-center !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
+                Browse all 44 cities
               </Link>
             </div>
             <p className="mt-6 text-xs text-sand-100/80">
@@ -115,6 +119,10 @@ export default function WelcomePage() {
           </article>
         </div>
       </section>
+
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12">
+        <LegalFooter />
+      </div>
     </main>
   );
 }

@@ -9,6 +9,16 @@ import Link from "next/link";
 export function LegalFooter() {
   return (
     <footer className="mt-8 border-t border-sand-200 pt-4 text-center text-xs text-slate2-500 space-y-2">
+      {/* Content nav — surfaces the crawlable city/coverage pages from every
+          public surface so the rich content is reachable in one click from any
+          entry point (the homepage included). A clear navigational path to the
+          substantive content is part of AdSense's "good user experience" bar. */}
+      <nav aria-label="Browse" className="flex flex-wrap justify-center gap-x-3 gap-y-1">
+        <Link href="/cities" className="text-bay-700 hover:underline">All cities</Link>
+        <Link href="/coverage" className="text-bay-700 hover:underline">Coverage &amp; status</Link>
+        <Link href="/map" className="text-bay-700 hover:underline">Crime map</Link>
+        <Link href="/community" className="text-bay-700 hover:underline">Community</Link>
+      </nav>
       <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-3 gap-y-1">
         <Link href="/about" className="text-bay-700 hover:underline">About</Link>
         <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>
