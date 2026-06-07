@@ -77,12 +77,12 @@ export const CITIES: CityInfo[] = [
   { slug: "atlanta",       label: "Atlanta",       state: "GA", stateLabel: "Georgia",        defaultArea: "atl-midtown",      centroid: { lat: 33.75, lng: -84.39 }, status: "live",        source: "APD Crime Incidents · opendata.atlantapd.org (ArcGIS)" },
   { slug: "indianapolis",  label: "Indianapolis",  state: "IN", stateLabel: "Indiana",        defaultArea: "indy-downtown",    centroid: { lat: 39.77, lng: -86.16 }, status: "live",        source: "IMPD Crime Incidents · data.indy.gov (ArcGIS)" },
   { slug: "raleigh",       label: "Raleigh",       state: "NC", stateLabel: "North Carolina", defaultArea: "rdu-downtown",     centroid: { lat: 35.78, lng: -78.64 }, status: "live",        source: "Raleigh Police Incidents · data.raleighnc.gov (ArcGIS)" },
-  // v95p1 — Tucson re-added with documented-stale flag. Upstream feed
-  // (gis.tucsonaz.gov) is severely partial as of 2026-05-26 (newest
-  // row 2025-09-22, only ~3 Part-1 rows/year via direct query). Grade
-  // shows N/A by the under-count guard; UI still lists the city so
-  // users can find it. New source TBD.
-  { slug: "tucson",        label: "Tucson",        state: "AZ", stateLabel: "Arizona",        defaultArea: "tuc-downtown",     centroid: { lat: 32.22, lng: -110.97 }, status: "live",        source: "Tucson PD Public Incidents · gis.tucsonaz.gov (ArcGIS, feed currently partial)" },
+  // v108 — Tucson repointed to the COMPLETE "Tucson Police Reported Crimes"
+  // table (UCR Part 1, 2017→present, ~256k rows). The old 45-day neighborhood
+  // layer was too thin to grade (N/A); the new feed grades properly but is
+  // Ward-level (6 council wards) since the complete table has no neighborhood
+  // geography. See adapters/tucson-arcgis.ts.
+  { slug: "tucson",        label: "Tucson",        state: "AZ", stateLabel: "Arizona",        defaultArea: "tuc-ward-1",       centroid: { lat: 32.22, lng: -110.97 }, status: "live",        source: "Tucson Police Reported Crimes (UCR Part 1) · City of Tucson Open Data (ArcGIS)" },
   // v95p1/v95p4 — Honolulu added as the 37th city. HPD's
   // data.honolulu.gov feed lacks lat/lng, so per-neighborhood comes
   // from a one-time OSM Nominatim geocode of every blockaddress.

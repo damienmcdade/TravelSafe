@@ -9,12 +9,15 @@ import { USER_AGENT, readJson } from "../lib/http.js";
 // Phoenix AZ — Phoenix PD Crime Data (phoenixopendata.com CKAN datastore).
 //
 // HONESTY NOTE — read before touching this adapter:
-// Phoenix was REMOVED from the app once before for under-counting, and the
-// upstream data is genuinely compromised. The ONLY official feed is an
-// ANNUAL ARCHIVAL SNAPSHOT, not a live feed:
-//   * It is FROZEN at 2025-12-31 — the newest row in the dataset occurred
-//     on 2025-12-31. There is no rolling refresh; it updates roughly once a
-//     year. So our "recency" is honestly "data through Dec 2025".
+// Phoenix was REMOVED from the app once before for under-counting, so be
+// careful. Upstream specifics (verified 2026):
+//   * The CKAN resource is a single ever-growing table (~624k rows,
+//     2015→present) that refreshes PERIODICALLY but with a multi-week
+//     publication lag, so the newest occurrences trail real time. It is NOT a
+//     once-a-year frozen snapshot (an earlier note claimed "frozen at
+//     2025-12-31, updated about once a year" — that was wrong). We pull the
+//     newest rows and keep a rolling ~18-month window (see WINDOW_DAYS), so
+//     recency auto-tracks the feed instead of rotting at a hardcoded year.
 //   * Geography is ZIP-ONLY. There is no lat/lng, no neighborhood, no beat.
 //     The raw `ZIP` column is therefore the only locator. To make areas read
 //     as recognizable places instead of bare 5-digit codes, we map each
@@ -39,9 +42,9 @@ import { USER_AGENT, readJson } from "../lib/http.js";
 //     than dropped (so citywide totals stay complete) or faked. With the
 //     village mapping, ~96% of rows that DO carry a Phoenix ZIP land in a
 //     named village; the rest keep their ZIP label.
-// Every one of these limits is surfaced verbatim in PROVENANCE below and is
-// the reason the city-meta/use-city wiring must show a "data through Dec
-// 2025" banner. Do NOT present this as live/street-level data.
+// Every one of these limits is surfaced verbatim in PROVENANCE below. Do NOT
+// present this as live/street-level data — the publication lag means the
+// newest incidents are several weeks behind real time.
 //
 // CKAN datastore_search:
 //   https://www.phoenixopendata.com/api/3/action/datastore_search
@@ -64,10 +67,15 @@ const PAGES = 3;
 // needless re-pulls while still picking up the once-a-year refresh.
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
-// Only keep incidents occurring in this calendar year and later. The
-// snapshot ends 2025-12-31, so this yields the most recent ~12 months
-// present in the data (an honest full-year window, not a rolling one).
-const WINDOW_START_MS = Date.UTC(2025, 0, 1);
+// v108 — ROLLING window (was a hardcoded Date.UTC(2025,0,1)). Verified 2026:
+// the Phoenix CKAN resource is NOT a frozen annual snapshot — it refreshes
+// periodically but with a multi-week publication lag. A hardcoded 2025 start
+// would silently rot into a stale "most recent year" as the feed advances; a
+// rolling ~18-month bound auto-tracks the freshest data present (the dispatcher
+// derives the real windowDays from the data's own date range, so a generous
+// bound here only avoids truncating).
+const WINDOW_DAYS = 548;
+const WINDOW_MS = WINDOW_DAYS * 24 * 60 * 60 * 1000;
 
 // Phoenix observes NO daylight saving — America/Phoenix is a fixed UTC-7.
 const PHOENIX_TZ = "America/Phoenix";
@@ -236,17 +244,18 @@ const SLUG_TO_VILLAGE: Record<string, string> = Object.fromEntries(
 );
 
 const PROVENANCE: DataProvenance = {
-  source: "Phoenix PD Crime Data · phoenixopendata.com (CKAN, annual snapshot)",
+  source: "Phoenix PD Crime Data · phoenixopendata.com (CKAN)",
   datasetUrl:
     "https://www.phoenixopendata.com/dataset/crime-data",
-  // Surfaced verbatim in the UI — this is the honesty signal. The feed is an
-  // annual archival snapshot frozen at 2025-12-31, NOT a live/rolling feed.
+  // Surfaced verbatim in the UI — this is the honesty signal. The feed is a
+  // rolling dataset with a multi-week publication lag (NOT a frozen snapshot),
+  // and is ZIP-level only.
   recency:
-    "Data through Dec 2025 — annual snapshot (frozen at 2025-12-31, updated about once a year). ZIP-level only.",
+    "ZIP-level only. Rolling dataset refreshed periodically with a multi-week publication lag, so the newest incidents trail real time; we show the most recent ~18 months available.",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Phoenix Police Department and published as an " +
-    "annual archival snapshot that ends Dec 31 2025 — this is NOT live, NOT " +
+    "Incidents are reported by the Phoenix Police Department and published on a " +
+    "rolling basis with a multi-week publication lag — this is NOT live, NOT " +
     "street-level data. The feed has no coordinates or neighborhoods, only ZIP " +
     "codes, which we map to the City of Phoenix urban villages (Maryvale, " +
     "Camelback East, Central City, …); suburban ZIPs with no Phoenix village " +
@@ -289,8 +298,8 @@ async function fetchPhoenix(): Promise<Incident[]> {
     const r = records[i];
     const occurredAt = parsePhoenixDate(r["OCCURRED ON"]);
     if (!occurredAt) continue;
-    // Keep only the most-recent full year present in the snapshot (2025).
-    if (+new Date(occurredAt) < WINDOW_START_MS) continue;
+    // Keep only incidents within the rolling window (auto-tracks the feed).
+    if (+new Date(occurredAt) < Date.now() - WINDOW_MS) continue;
     const category = (r["UCR CRIME CATEGORY"] ?? "").trim();
     if (!category) continue;
     out.push({

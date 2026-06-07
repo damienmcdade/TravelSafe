@@ -121,21 +121,35 @@ export async function getRowsRaleigh(): Promise<Incident[]> {
 
 export async function getDiscoveredAreasRaleigh(): Promise<KnownArea[]> {
   const rows = await getRowsRaleigh();
-  const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
+  // v108 — ~37% of Raleigh rows have null/0 coords and fall back to
+  // RALEIGH_CENTROID (set in fetchRaleigh). Including those in the per-district
+  // centroid average pulled ALL six districts' map pins toward downtown. Track
+  // real-coord contributions (coordN) separately from total presence so a
+  // district still appears, but its centroid is averaged ONLY over genuine
+  // per-incident coords (mirrors the Atlanta coordN guard). Counts/grades are
+  // unaffected — this is map-pin accuracy only.
+  const agg = new Map<string, { latSum: number; lngSum: number; coordN: number; total: number }>();
   for (const r of rows) {
     if (!r.area || r.area === "Unknown") continue;
-    if (r.lat == null || r.lng == null) continue;
-    const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
-    e.latSum += r.lat; e.lngSum += r.lng; e.count += 1;
+    const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, coordN: 0, total: 0 };
+    e.total += 1;
+    if (
+      r.lat != null && r.lng != null &&
+      !(r.lat === RALEIGH_CENTROID.lat && r.lng === RALEIGH_CENTROID.lng)
+    ) {
+      e.latSum += r.lat; e.lngSum += r.lng; e.coordN += 1;
+    }
     agg.set(r.area, e);
   }
   return Array.from(agg.entries())
-    .filter(([, e]) => e.count >= 1)
+    .filter(([, e]) => e.total >= 1)
     .map(([name, e]) => ({
       slug: `rdu-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
       label: name,
       jurisdiction: "Raleigh",
-      centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
+      centroid: e.coordN > 0
+        ? { lat: e.latSum / e.coordN, lng: e.lngSum / e.coordN }
+        : { ...RALEIGH_CENTROID },
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }

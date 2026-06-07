@@ -5,117 +5,98 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, fetchWithRetry, readJson } from "../lib/http.js";
 
-// Tucson — TPD Incidents Public (2025).
-// ArcGIS MapServer on gis.tucsonaz.gov. Rows carry NEIGHBORHD (pre-joined),
-// UCRSummary, LAT/LONG, OFFENSE, and DATE_OCCU. We use the pre-joined
-// neighborhood field directly so no PIP at intake.
-// Doc: https://gisdata.tucsonaz.gov/
-
-// v95p6 — switched from MapServer/81 (TPD_INCIDENTS_PUBLIC_2025,
-// year-specific layer) to MapServer/42 (TUCSON_INCIDENTS_PUBLIC_45D,
-// the 45-day rolling layer). The 2025 layer stopped returning fresh
-// rows in our audit window (newest sortable row was 2025-09-22 with
-// only a single PERSONS row reaching the cache), which tripped the
-// under-count guard and suppressed Tucson's grade to N/A. The 45D
-// layer is the live rolling feed used by Tucson's own dashboards;
-// it carries the same schema (NHA_NAME, NEIGHBORHD, DATETIME_OCCU)
-// and was verified fresh through 2026-05-22 with 9.5k rows across
-// 142 named neighborhoods.
+// Tucson — TPD "Reported Crimes" (UCR Part 1), Jan 2017→present.
 //
-// Trade-off: windowDays is bounded by ~45d, which trips the
-// computeDataConfidence "low confidence" note (under 90d). That's
-// the honest signal — we have a short-but-current window — and is
-// preferable to the prior state of grading off a fossilized full-
-// year layer that had effectively zero recent data.
-const BASE = "https://gis.tucsonaz.gov/arcgis/rest/services/PublicMaps/OpenData_PublicSafety/MapServer/42/query";
+// v108 — switched from the 45-day rolling NEIGHBORHOOD layer
+// (PublicMaps/OpenData_PublicSafety/MapServer/42) to the COMPLETE hosted
+// "Tucson Police Reported Crimes" table — the backing store for TPD's official
+// public dashboard (policeanalysis.tucsonaz.gov). WHY: the 45-day layer carried
+// only ~9.5k rows over a 45-day window, so windowDays sat under the 90-day
+// confidence floor and Tucson's grade was suppressed to N/A — the documented
+// "feed currently partial" limitation. The Reported Crimes table holds ~256k
+// Part-1 incidents Jan 2017→present (verified newest 2026-05-02; ~37k in the
+// rolling 18-month window across the 6 wards), giving a real multi-year Part-1
+// volume and a proper, high-confidence grade.
+//
+// TRADE-OFF (documented honestly): this table has NO geometry / lat-lng /
+// neighborhood — its only geography is Ward (1–6) + Division. So Tucson now
+// grades + maps at WARD granularity (6 City of Tucson council wards), the same
+// honest coarse-but-complete model as Raleigh's 6 RPD districts, instead of the
+// prior ~142 neighborhoods that could not be graded. The table is Part-1-only,
+// so no Part-2 filtering is needed.
+// Doc: https://gisdata.tucsonaz.gov/datasets/tucson-police-reported-crimes
+
+const BASE = "https://services3.arcgis.com/9coHY2fvuFjG9HQX/arcgis/rest/services/Tucson_Police_Reported_Crimes/FeatureServer/8/query";
 const PAGE_SIZE = 2000;
-// 6 pages × 2k = 12k records — comfortably exceeds the live layer's
-// ~9.5k 45-day capacity, so we get everything in the rolling window.
-const PAGES = 6;
+// Rolling ~18-month window: bounds memory (~37k rows verified) while giving the
+// annualizer a solid Part-1 sample well past the 90-day confidence floor.
+const WINDOW_DAYS = 548;
+const PAGES = 40; // 40 × 2k = 80k headroom over the ~37k rows in the window
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[] } | null = null;
 registerRowCache(() => { cache = null; }, "tucson-arcgis");
 
+// Bbox centroids of the 6 City of Tucson council wards, computed from the
+// official Ward Boundaries layer (gis.tucsonaz.gov PublicMaps/Boundaries/15).
+// The Reported Crimes table is coordless, so these seed the area picker's
+// "nearest" lookup and the map's per-ward pin.
+const WARD_CENTROID: Record<string, { lat: number; lng: number }> = {
+  "Ward 1": { lat: 32.1990, lng: -111.0097 },
+  "Ward 2": { lat: 32.2329, lng: -110.8230 },
+  "Ward 3": { lat: 32.2783, lng: -110.9715 },
+  "Ward 4": { lat: 32.1187, lng: -110.8077 },
+  "Ward 5": { lat: 32.1059, lng: -110.8543 },
+  "Ward 6": { lat: 32.2275, lng: -110.9146 },
+};
+const TUCSON_CENTROID = { lat: 32.2226, lng: -110.9747 };
+
 interface TucRow {
-  INCI_ID?: string;
-  // Layer 42 (45D rolling) leaves DATE_OCCU null and uses
-  // DATETIME_OCCU as the only populated timestamp. Layer 81 (year-
-  // specific) populated both. Adapter reads DATETIME_OCCU first,
-  // falls back to DATE_OCCU so a future layer switch back is safe.
-  DATE_OCCU?: number | null;
-  DATETIME_OCCU?: number | null;
-  UCRSummary?: string;
-  UCRSummaryDesc?: string;
-  OFFENSE?: string;
-  STATUTDESC?: string;
-  CrimeCategory?: string;
-  CrimeType?: string;
-  // v95p9 — TPD explicitly tags each row "Part 1" or "Part 2" via
-  // the `Crime` field. Filter on this so the safety-score's Part-1
-  // counter doesn't pick up Part 2 simple-assault / juvenile /
-  // misdemeanor rows. Pre-v95p9 this drove Tucson's adapter rate
-  // 5.2× over the FBI baseline → divergence guard suppressed
-  // (false-positive "over baseline" instead of an honest grade).
-  Crime?: string;
-  NEIGHBORHD?: string;  // TPD short code like "T206"
-  NHA_NAME?: string;    // display name like "Eastside"
-  emdivision?: string;
-  DIVISION?: string;
-  WARD?: string;
-  LAT?: number;
-  LONG?: number;
-  X?: number;
-  Y?: number;
+  IncidentID?: string;
+  DateOccurred?: number | null; // epoch ms
+  UCR?: string;                 // "01".."08" (Part-1 only)
+  UCRDescription?: string;
+  OffenseDescription?: string;
+  Ward?: string | number | null;
+  Division?: string | null;
 }
 
+// UCR Part-1 code → NIBRS three-way bucket. 01 Homicide, 02 Sexual Assault,
+// 03 Robbery, 04 Aggravated Assault → violent (PERSONS). 05 Burglary,
+// 06 Larceny, 07 Motor-Vehicle Theft, 08 Arson → PROPERTY. The table is
+// Part-1-only, so there is no Part-2/SOCIETY noise to filter out.
 function classify(row: TucRow): CrimeCategory {
-  // v95p9 — when TPD has tagged this as Part 2 (non-UCR-Part-1),
-  // surface it as SOCIETY so the Part-1 counter in safety-score
-  // doesn't include it. Part 1 rows go through the same
-  // PERSONS/PROPERTY classification as before. Layer 42 stamps
-  // every row "Part 1" or "Part 2" in the `Crime` field.
-  if (row.Crime === "Part 2") return CrimeCategory.SOCIETY;
-  const cat = `${row.CrimeCategory ?? ""} ${row.CrimeType ?? ""}`.toLowerCase();
-  if (cat.includes("person") || cat.includes("violent")) return CrimeCategory.PERSONS;
-  if (cat.includes("property")) return CrimeCategory.PROPERTY;
-  const desc = `${row.OFFENSE ?? ""} ${row.UCRSummaryDesc ?? ""} ${row.STATUTDESC ?? ""}`.toUpperCase();
-  if (/(ASSAULT|BATTERY|ROBBERY|HOMICIDE|MURDER|RAPE|SEX|KIDNAP|STALK|THREAT)/.test(desc)) return CrimeCategory.PERSONS;
-  if (/(BURGLAR|THEFT|LARC|STOLEN|VANDAL|ARSON|FRAUD|MOTOR VEHICLE)/.test(desc)) return CrimeCategory.PROPERTY;
+  const code = (row.UCR ?? "").trim().slice(0, 2);
+  if (code === "01" || code === "02" || code === "03" || code === "04") return CrimeCategory.PERSONS;
+  if (code === "05" || code === "06" || code === "07" || code === "08") return CrimeCategory.PROPERTY;
   return CrimeCategory.SOCIETY;
 }
 
-const TUCSON_CENTROID = { lat: 32.2226, lng: -110.9747 };
-
-const PROVENANCE: DataProvenance = {
-  source: "Tucson Police Incidents — Last 45 Days (gis.tucsonaz.gov ArcGIS MapServer)",
-  datasetUrl: "https://gisdata.tucsonaz.gov/datasets/tpd-incidents-public-last-45-days",
-  recency: "Rolling 45-day window, refreshed daily by Tucson PD",
-  granularity: "neighborhood",
-  disclaimer:
-    "Incidents are reported by the Tucson Police Department and grouped by NEIGHBORHD. " +
-    "Not live, not street-level. CommunitySafe does not track individuals.",
-};
-
-interface TucFeature {
-  attributes: TucRow;
-  geometry?: { x?: number; y?: number };
+// Ward 1–6 → "Ward N"; null/blank/other → the honest "Unmapped" bucket (still
+// counted citywide, never listed as a selectable area).
+function wardLabel(ward: string | number | null | undefined): string {
+  const w = String(ward ?? "").trim();
+  return /^[1-6]$/.test(w) ? `Ward ${w}` : "Unmapped";
 }
 
-async function fetchPage(offset: number): Promise<TucFeature[]> {
+const PROVENANCE: DataProvenance = {
+  source: "Tucson Police Reported Crimes — UCR Part 1 (City of Tucson Open Data, ArcGIS)",
+  datasetUrl: "https://gisdata.tucsonaz.gov/datasets/tucson-police-reported-crimes",
+  recency: "UCR Part-1 incidents, Jan 2017–present; refreshed regularly by Tucson PD",
+  // "neighborhood" is the app's sub-city-area granularity bucket; Tucson's
+  // areas are the 6 council wards (same modeling as Saint Paul's districts).
+  granularity: "neighborhood",
+  disclaimer:
+    "Incidents are reported by the Tucson Police Department (UCR Part 1) and grouped " +
+    "by City of Tucson council ward (1–6) — this feed carries no neighborhood or " +
+    "street-level geography. Not live. CommunitySafe does not track individuals.",
+};
+
+async function fetchPage(offset: number, sinceIso: string): Promise<TucRow[]> {
   const url = new URL(BASE);
-  // Layer 42 populates DATETIME_OCCU (epoch ms) and leaves DATE_OCCU
-  // null; filter on the populated field so we don't drop every row.
-  url.searchParams.set("where", "DATETIME_OCCU IS NOT NULL");
-  // v95p8 — outFields=* dodges the layer-42 field-name typo trap
-  // (UCRSummary vs UCRsummary, LAT/LONG missing entirely) that made
-  // every named-field query return HTTP 200 with an empty 400-error
-  // body. Plus we need returnGeometry=true because layer 42's X/Y
-  // attribute fields are uniformly null — coordinates live in the
-  // geometry object (outSR=4326 → {x: lng, y: lat}).
-  url.searchParams.set("outFields", "*");
-  url.searchParams.set("returnGeometry", "true");
-  url.searchParams.set("outSR", "4326");
-  url.searchParams.set("orderByFields", "OBJECTID DESC");
+  url.searchParams.set("where", `DateOccurred >= TIMESTAMP '${sinceIso} 00:00:00'`);
+  url.searchParams.set("outFields", "IncidentID,DateOccurred,UCR,UCRDescription,OffenseDescription,Ward,Division");
+  url.searchParams.set("returnGeometry", "false");
+  url.searchParams.set("orderByFields", "DateOccurred DESC");
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
@@ -123,72 +104,57 @@ async function fetchPage(offset: number): Promise<TucFeature[]> {
   // fix(deploy logs): retry undici-level transient "fetch failed" drops.
   const res = await fetchWithRetry(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
   if (!res.ok) {
-    // The layer has fewer rows than PAGES×PAGE_SIZE, so high offsets page
-    // past the end — ArcGIS answers 404/400 there. On a non-first page
-    // that's just end-of-data, not a failure: return empty so the
-    // parallel fan-out doesn't log a stream of bogus "404 offset=N"
-    // warnings every cache cycle. A first-page (offset 0) error is real
-    // and still throws.
+    // Offsets past the windowed row count answer 404/400 — that's end-of-data
+    // on a non-first page, not a failure.
     if (offset > 0 && (res.status === 404 || res.status === 400)) return [];
     throw new Error(`Tucson ArcGIS ${res.status} offset=${offset}`);
   }
-  const body = await readJson(res) as { features?: TucFeature[]; error?: { code?: number; message?: string } };
+  const body = await readJson(res) as { features?: Array<{ attributes: TucRow }>; error?: { code?: number; message?: string } };
   if (body.error) throw new Error(`Tucson ArcGIS error ${body.error.code}: ${body.error.message}`);
-  return body.features ?? [];
+  return (body.features ?? []).map((f) => f.attributes);
 }
 
 async function fetchTucson(): Promise<Incident[]> {
-  const results: TucFeature[][] = new Array(PAGES);
+  const sinceIso = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const results: TucRow[][] = new Array(PAGES);
   let cursor = 0;
   const workers = Array.from({ length: 4 }, async () => {
     while (true) {
       const i = cursor++;
       if (i >= PAGES) return;
-      results[i] = await fetchPage(i * PAGE_SIZE).catch((err) => {
+      const page = await fetchPage(i * PAGE_SIZE, sinceIso).catch((err) => {
         console.warn(`[tuc] page offset=${i * PAGE_SIZE} failed: ${(err as Error).message}`);
-        return [] as TucFeature[];
+        return [] as TucRow[];
       });
+      results[i] = page;
+      if (page.length === 0) return; // ran past the window
     }
   });
   await Promise.all(workers);
-  const features = results.flat();
+  const rows = results.flat();
   const out: Incident[] = [];
-  for (let i = 0; i < features.length; i++) {
-    const f = features[i];
-    const r = f.attributes;
-    // Prefer DATETIME_OCCU (layer 42), fall back to DATE_OCCU (any
-    // year-specific layer if we ever re-add one).
-    const ts = r.DATETIME_OCCU ?? r.DATE_OCCU;
-    if (!ts) continue;
-    // Layer 42's geometry is the only source of coordinates. x=lng,
-    // y=lat at outSR=4326 (standard WGS84).
-    const lng = f.geometry?.x;
-    const lat = f.geometry?.y;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r.DateOccurred) continue;
     out.push({
-      id: `tuc-${r.INCI_ID ?? i}`,
-      // Prefer NHA_NAME (a real neighborhood like "Eastside"). v102 — the
-      // ~half of rows with an empty NHA_NAME used to fall back to the raw
-      // NEIGHBORHD code (e.g. "T206" — a TPD operations zone, NOT a
-      // neighborhood). Those codes showed up as ~31 bogus "neighborhoods"
-      // that have no boundary polygon, fragmenting the crime map (82%
-      // coverage). Collapse them into a single honest "Unmapped" bucket so
-      // the per-area split + map only show real, mappable neighborhoods.
-      area: (r.NHA_NAME && r.NHA_NAME.trim()) || "Unmapped",
-      occurredAt: new Date(ts).toISOString(),
+      id: `tuc-${r.IncidentID ?? `idx${i}`}`,
+      area: wardLabel(r.Ward),
+      occurredAt: new Date(r.DateOccurred).toISOString(),
       nibrsCategory: classify(r),
-      ibrOffenseDescription: (r.OFFENSE ?? r.UCRSummaryDesc ?? r.STATUTDESC ?? "Unknown").trim(),
-      beat: r.emdivision ?? r.DIVISION ?? r.WARD ?? null,
+      ibrOffenseDescription: (r.OffenseDescription ?? r.UCRDescription ?? "Unknown").trim(),
+      beat: r.Division ?? null,
       blockLabel: undefined,
-      lat: typeof lat === "number" && lat !== 0 ? lat : undefined,
-      lng: typeof lng === "number" && lng !== 0 ? lng : undefined,
+      // No per-incident coordinates on this table (Ward-level geography only).
+      lat: undefined,
+      lng: undefined,
     });
   }
   return out;
 }
 
 // v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
-// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
-// cache previously fired N concurrent full fetches. Concurrent callers now
+// dispatcher fans a per-area Promise.all over every area, so a cold cache
+// would otherwise fire N concurrent full fetches. Concurrent callers now
 // await the same promise.
 let inFlightTucsonFetch: Promise<Incident[]> | null = null;
 export async function getRowsTucson(): Promise<Incident[]> {
@@ -212,29 +178,18 @@ export async function getRowsTucson(): Promise<Incident[]> {
 
 export async function getDiscoveredAreasTucson(): Promise<KnownArea[]> {
   const rows = await getRowsTucson();
-  const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
+  const counts = new Map<string, number>();
   for (const r of rows) {
-    if (!r.area || r.area === "Unknown") continue;
-    // v95p38 — drop purely-numeric labels. Tucson's adapter falls back
-    // to the TPD ward/division code when the named-neighborhood join
-    // misses, producing rows like "106" or "401" that are
-    // unrecognizable to users. Mirrors the Cincinnati filter.
-    if (/^\d+$/.test(r.area.trim())) continue;
-    // fix(audit coverage-unmapped-leak-3): keep "Unmapped" as the off-polygon
-    // incident bucket but don't list it as a selectable neighborhood.
-    if (r.area === "Unmapped") continue;
-    if (r.lat == null || r.lng == null) continue;
-    const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
-    e.latSum += r.lat; e.lngSum += r.lng; e.count += 1;
-    agg.set(r.area, e);
+    if (!r.area || r.area === "Unmapped") continue;
+    counts.set(r.area, (counts.get(r.area) ?? 0) + 1);
   }
-  return Array.from(agg.entries())
-    .filter(([, e]) => e.count >= 1)
-    .map(([name, e]) => ({
-      slug: `tuc-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
-      label: name,
+  return Array.from(counts.entries())
+    .filter(([, n]) => n >= 1)
+    .map(([label]) => ({
+      slug: `tuc-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+      label,
       jurisdiction: "Tucson",
-      centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
+      centroid: WARD_CENTROID[label] ?? TUCSON_CENTROID,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }
@@ -257,7 +212,9 @@ export const tucsonAdapter: CrimeDataAdapter = {
     if (!label) return null;
     const inArea = rows.filter((r) => r.area === label);
     if (inArea.length === 0) return null;
-    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [50, 150, 400, 800]);
+    // Ward buckets are large (city/6), so the static fallback thresholds are
+    // scaled up accordingly; deriveBands self-calibrates over the 6 wards.
+    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [2000, 4000, 6000, 9000]);
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
   async getIncidents(area, opts) {
