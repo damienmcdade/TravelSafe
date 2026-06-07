@@ -678,6 +678,11 @@ export default function CrimeMap() {
           </div>
         )}
         <MapContainer
+          // v108 — preferCanvas: render polygons + markers on a single <canvas>
+          // instead of one SVG DOM node each. The dense city neighborhood
+          // GeoJSONs (Honolulu ~276KB gz, SF, Indy…) created thousands of SVG
+          // paths → main-thread jank on pan/zoom; canvas is far cheaper.
+          preferCanvas
           center={[city.centroid.lat, city.centroid.lng]} zoom={11} scrollWheelZoom
           className="h-[62vh] min-h-[460px] max-h-[720px] w-full"
           aria-label={`Crime map of ${city.label}. Use arrow keys to pan and the plus and minus keys to zoom. Tab to neighborhood markers for individual safety scores.`}

@@ -1,7 +1,7 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
-import { riskLevelFromAreaCounts } from "../risk-bands.js";
+import { deriveBands, bucketByBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, fetchWithRetry, readJson } from "../lib/http.js";
 
@@ -176,6 +176,30 @@ export async function getRowsTucson(): Promise<Incident[]> {
   return inFlightTucsonFetch;
 }
 
+// perf(tucson-index): the citywide compose calls getAreaStats/getIncidents once
+// per ward; each used to scan all ~37k rows (rows.filter + labelForTucSlug +
+// riskLevelFromAreaCounts) → O(wards × rows). Mirror Detroit/Saint Paul: build a
+// label→rows Map once, memoized by the loader's rows-array identity.
+interface TucIndex { rows: Incident[]; labelToRows: Map<string, Incident[]>; slugToLabel: Map<string, string> }
+let tucIndex: TucIndex | null = null;
+function getTucsonIndex(rows: Incident[]): TucIndex {
+  if (tucIndex && tucIndex.rows === rows) return tucIndex;
+  const labelToRows = new Map<string, Incident[]>();
+  const slugToLabel = new Map<string, string>();
+  for (const r of rows) {
+    if (!r.area || r.area === "Unmapped") continue;
+    let bucket = labelToRows.get(r.area);
+    if (!bucket) {
+      bucket = [];
+      labelToRows.set(r.area, bucket);
+      slugToLabel.set(r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), r.area);
+    }
+    bucket.push(r);
+  }
+  tucIndex = { rows, labelToRows, slugToLabel };
+  return tucIndex;
+}
+
 export async function getDiscoveredAreasTucson(): Promise<KnownArea[]> {
   const rows = await getRowsTucson();
   const counts = new Map<string, number>();
@@ -194,35 +218,34 @@ export async function getDiscoveredAreasTucson(): Promise<KnownArea[]> {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function labelForTucSlug(slug: string, rows: Incident[]): string | null {
+function labelForTucSlug(slug: string, index: TucIndex): string | null {
   const s = slug.toLowerCase();
   const want = s.startsWith("tuc-") ? s.slice(4) : s;
-  for (const r of rows) {
-    const cand = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (cand === want) return r.area;
-  }
-  return null;
+  return index.slugToLabel.get(want) ?? null;
 }
 
 export const tucsonAdapter: CrimeDataAdapter = {
   name: "tucson-arcgis",
   async getAreaStats(area: string): Promise<AreaStats | null> {
-    const rows = await getRowsTucson();
-    const label = labelForTucSlug(area, rows);
+    const index = getTucsonIndex(await getRowsTucson());
+    const label = labelForTucSlug(area, index);
     if (!label) return null;
-    const inArea = rows.filter((r) => r.area === label);
+    const inArea = index.labelToRows.get(label) ?? [];
     if (inArea.length === 0) return null;
-    // Ward buckets are large (city/6), so the static fallback thresholds are
-    // scaled up accordingly; deriveBands self-calibrates over the 6 wards.
-    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [2000, 4000, 6000, 9000]);
+    // Ward buckets are large (city/6); deriveBands self-calibrates over the 6
+    // wards' own distribution, degrading to the scaled static thresholds.
+    // Equivalent to the prior riskLevelFromAreaCounts but without re-scanning.
+    const dist = [...index.labelToRows.values()].map((g) => g.length).filter((n) => n >= 3);
+    const riskLevel = bucketByBands(inArea.length, deriveBands(dist, [2000, 4000, 6000, 9000]));
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
   async getIncidents(area, opts) {
-    const rows = await getRowsTucson();
-    const label = labelForTucSlug(area, rows);
+    const index = getTucsonIndex(await getRowsTucson());
+    const label = labelForTucSlug(area, index);
     if (!label) return [];
-    let filtered = rows.filter((r) => r.area === label);
+    let filtered = index.labelToRows.get(label) ?? [];
     if (opts?.since) filtered = filtered.filter((r) => new Date(r.occurredAt) >= opts.since!);
+    else filtered = [...filtered];
     filtered.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
     return filtered.slice(0, opts?.limit ?? 50);
   },

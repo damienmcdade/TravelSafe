@@ -1,7 +1,7 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
-import { riskLevelFromAreaCounts } from "../risk-bands.js";
+import { deriveBands, bucketByBands } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, readJson } from "../lib/http.js";
 
@@ -154,33 +154,57 @@ export async function getDiscoveredAreasRaleigh(): Promise<KnownArea[]> {
     .sort((a, b) => a.label.localeCompare(b.label));
 }
 
-function labelForRduSlug(slug: string, rows: Incident[]): string | null {
+// perf(raleigh-index): getAreaStats/getIncidents are called once per district in
+// the citywide compose; each used to scan all rows (rows.filter + labelForRduSlug
+// + riskLevelFromAreaCounts) → O(districts × rows). Mirror Detroit/Saint Paul:
+// build a district→rows Map once, memoized by the rows-array identity.
+interface RduIndex { rows: Incident[]; labelToRows: Map<string, Incident[]>; slugToLabel: Map<string, string> }
+let rduIndex: RduIndex | null = null;
+function getRaleighIndex(rows: Incident[]): RduIndex {
+  if (rduIndex && rduIndex.rows === rows) return rduIndex;
+  const labelToRows = new Map<string, Incident[]>();
+  const slugToLabel = new Map<string, string>();
+  for (const r of rows) {
+    if (!r.area || r.area === "Unknown") continue;
+    let bucket = labelToRows.get(r.area);
+    if (!bucket) {
+      bucket = [];
+      labelToRows.set(r.area, bucket);
+      slugToLabel.set(r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""), r.area);
+    }
+    bucket.push(r);
+  }
+  rduIndex = { rows, labelToRows, slugToLabel };
+  return rduIndex;
+}
+
+function labelForRduSlug(slug: string, index: RduIndex): string | null {
   const s = slug.toLowerCase();
   const want = s.startsWith("rdu-") ? s.slice(4) : s;
-  for (const r of rows) {
-    const cand = r.area.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    if (cand === want) return r.area;
-  }
-  return null;
+  return index.slugToLabel.get(want) ?? null;
 }
 
 export const raleighAdapter: CrimeDataAdapter = {
   name: "raleigh-arcgis",
   async getAreaStats(area: string): Promise<AreaStats | null> {
-    const rows = await getRowsRaleigh();
-    const label = labelForRduSlug(area, rows);
+    const index = getRaleighIndex(await getRowsRaleigh());
+    const label = labelForRduSlug(area, index);
     if (!label) return null;
-    const inArea = rows.filter((r) => r.area === label);
+    const inArea = index.labelToRows.get(label) ?? [];
     if (inArea.length === 0) return null;
-    const riskLevel = riskLevelFromAreaCounts(rows, inArea.length, [150, 500, 1000, 2000]);
+    // Equivalent to the prior riskLevelFromAreaCounts but over the precomputed
+    // index distribution instead of re-scanning all rows.
+    const dist = [...index.labelToRows.values()].map((g) => g.length).filter((n) => n >= 3);
+    const riskLevel = bucketByBands(inArea.length, deriveBands(dist, [150, 500, 1000, 2000]));
     return { area: label, crimeRate: null, violentCrimeRate: null, propertyCrimeRate: null, riskLevel, provenance: PROVENANCE };
   },
   async getIncidents(area, opts) {
-    const rows = await getRowsRaleigh();
-    const label = labelForRduSlug(area, rows);
+    const index = getRaleighIndex(await getRowsRaleigh());
+    const label = labelForRduSlug(area, index);
     if (!label) return [];
-    let filtered = rows.filter((r) => r.area === label);
+    let filtered = index.labelToRows.get(label) ?? [];
     if (opts?.since) filtered = filtered.filter((r) => new Date(r.occurredAt) >= opts.since!);
+    else filtered = [...filtered];
     filtered.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
     return filtered.slice(0, opts?.limit ?? 50);
   },

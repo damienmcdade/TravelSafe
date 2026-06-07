@@ -41,7 +41,7 @@ neighborhoodRouter.get("/feed", optionalAuth, async (req, res, next) => {
         where: { areaId: area.id, status: PostStatus.VERIFIED },
         orderBy: { createdAt: "desc" },
         take: 20,
-        include: { author: { select: { id: true, displayName: true } }, _count: { select: { comments: true, reactions: true } } },
+        include: { author: { select: { displayName: true } }, _count: { select: { comments: true, reactions: true } } },
       }),
       crimeData.getAreaAlerts(q.neighborhood),
       crimeData.getRecentReports(q.neighborhood, { limit: 10 }),

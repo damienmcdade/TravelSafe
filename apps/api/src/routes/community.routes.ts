@@ -48,7 +48,7 @@ communityRouter.get("/posts", optionalAuth, async (req, res, next) => {
       orderBy: { createdAt: "desc" },
       take: 50,
       include: {
-        author: { select: { id: true, displayName: true } },
+        author: { select: { displayName: true } },
         area: true,
         // fix(audit perf-feed-reactions-include): drop the unbounded per-post
         // reaction rows; only the aggregate count is consumed. Mirrors the

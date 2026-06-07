@@ -17,7 +17,7 @@ export const GET = wrap(async (req: NextRequest) => {
       where: { areaId: area.id, status: PostStatus.VERIFIED, deletedAt: null },
       orderBy: { createdAt: "desc" },
       take: 20,
-      include: { author: { select: { id: true, displayName: true } }, _count: { select: { comments: true, reactions: true } } },
+      include: { author: { select: { displayName: true } }, _count: { select: { comments: true, reactions: true } } },
     }),
     crimeData.getAreaAlerts(neighborhood),
     crimeData.getRecentReports(neighborhood, { limit: 10 }),

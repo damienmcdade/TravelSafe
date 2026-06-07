@@ -79,12 +79,19 @@ async function fetchSeattle(): Promise<Incident[]> {
   // path (169 timeouts observed in production logs); every user
   // surface only needs the recent window (mix → 30d, citywide →
   // 90d, year-long fallback → 365d).
+  // v108 — DROP the `$order offense_date DESC`. Measured against data.seattle.gov:
+  // the ordered select takes ~42s (Socrata's slow sort path) vs ~17s unordered —
+  // 42s exceeded the 45s route/score budget, so Seattle's cold compute timed out
+  // and the city sat in a persistent `warming_up` 503. The 180-day window is only
+  // ~36k rows (< the 50k limit), so we already pull the FULL window regardless of
+  // order; the adapter sorts client-side in getIncidents where recency matters, and
+  // the citywide/score/discovery aggregations are order-independent. Same rows,
+  // ~2.4× faster, comfortably inside budget.
   const rows = await fetchSocrata<SodaRow>("Seattle SODA", {
     url: BASE,
     select: "offense_id,offense_date,neighborhood,precinct,beat,offense_category,nibrs_offense_code_description,nibrs_crime_against_category,latitude,longitude",
     windowDays: 180,
     dateField: "offense_date",
-    order: "offense_date DESC",
     limit: 50000,
   });
   return rows.map((r, i) => {
