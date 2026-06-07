@@ -1,7 +1,7 @@
 import { CrimeCategory } from "../crime-category.js";
 import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
-import { registerRowCache } from "../cache-registry.js";
+import { createTieredLoader } from "../lib/tiered-loader.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 
@@ -31,9 +31,9 @@ const PAGE_SIZE = 2000;
 // ~58k incidents/yr; 35 pages (70k ≈ 14 months) gives a representative window.
 // Classification is correct (menacing-felony INCLUDE-override already added).
 const PAGES = 35;
-const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
-registerRowCache(() => { cache = null; }, "denver-arcgis");
+// v108 — tiered cold load (see lib/tiered-loader): serve the most-recent
+// RECENT_PAGES fast, backfill the rest in the background.
+const RECENT_PAGES = 6;
 
 interface DenverRow {
   OFFENSE_ID?: string;
@@ -111,17 +111,13 @@ async function fetchPage(offset: number): Promise<DenverRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchDenver(): Promise<Incident[]> {
-  const pages = await Promise.all(
-    Array.from({ length: PAGES }, (_, i) => fetchPage(i * PAGE_SIZE).catch(() => [] as DenverRow[])),
-  );
-  const rows = pages.flat();
+function mapDenver(rows: DenverRow[], baseIndex: number): Incident[] {
   return rows.map((r, i) => {
     const lat = r.GEO_LAT;
     const lon = r.GEO_LON;
     const area = r.NEIGHBORHOOD_ID ? titleizeId(r.NEIGHBORHOOD_ID) : "Unknown";
     return {
-      id: `den-${r.OFFENSE_ID ?? i}`,
+      id: `den-${r.OFFENSE_ID ?? `idx${baseIndex + i}`}`,
       area,
       occurredAt: r.FIRST_OCCURRENCE_DATE ? new Date(r.FIRST_OCCURRENCE_DATE).toISOString() : new Date(0).toISOString(),
       nibrsCategory: mapToNibrs(r),
@@ -134,28 +130,34 @@ async function fetchDenver(): Promise<Incident[]> {
   });
 }
 
-// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
-// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
-// cache previously fired N concurrent full fetches. Concurrent callers now
-// await the same promise.
-let inFlightDenverFetch: Promise<Incident[]> | null = null;
-export async function getRowsDenver(): Promise<Incident[]> {
-  const now = Date.now();
-  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  if (inFlightDenverFetch) return inFlightDenverFetch;
-  inFlightDenverFetch = (async () => {
-    try {
-      const rows = await fetchDenver();
-      if (rows.length > 0) cache = { fetchedAt: now, rows };
-      return rows;
-    } catch (err) {
-      console.warn("[denver] fetch failed:", (err as Error).message);
-      return cache?.rows ?? [];
-    } finally {
-      inFlightDenverFetch = null;
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency
+// (4) — v108: was a single Promise.all over all 35 pages at once (an unbounded
+// burst); bounding it avoids rate-limiting the ArcGIS tenant. A page failure
+// degrades to [] and marks the range incomplete.
+async function fetchRangeDenver(startPage: number, endPage: number): Promise<{ rows: Incident[]; complete: boolean }> {
+  const count = endPage - startPage;
+  const results: DenverRow[][] = new Array(count);
+  let cursor = 0;
+  let failures = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      results[i] = await fetchPage((startPage + i) * PAGE_SIZE).catch(() => { failures++; return [] as DenverRow[]; });
     }
-  })();
-  return inFlightDenverFetch;
+  });
+  await Promise.all(workers);
+  return { rows: mapDenver(results.flat(), startPage * PAGE_SIZE), complete: failures === 0 };
+}
+
+const denverLoader = createTieredLoader({
+  name: "denver-arcgis",
+  recentPages: RECENT_PAGES,
+  pages: PAGES,
+  fetchRange: fetchRangeDenver,
+});
+export async function getRowsDenver(): Promise<Incident[]> {
+  return denverLoader.getRows();
 }
 
 export async function getDiscoveredAreasDenver(): Promise<KnownArea[]> {

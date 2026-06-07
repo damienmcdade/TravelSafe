@@ -1,7 +1,7 @@
 import { CrimeCategory } from "../crime-category.js";
 import { readJson } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
-import { registerRowCache } from "../cache-registry.js";
+import { createTieredLoader } from "../lib/tiered-loader.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { districtNumberToName } from "../data/saint-paul-neighborhoods.js";
@@ -39,9 +39,9 @@ const PAGE_SIZE = 1000;
 // on both PERSONS and PROPERTY; deeper cache reduces the
 // annualization tax.
 const PAGES = 45;  // v99 — 45 × 1000 = 45k contiguous crime rows ≈ 14 months (Saint Paul ~38k crimes/yr after the proactive filter)
-const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
-registerRowCache(() => { cache = null; }, "saint-paul-arcgis");
+// v108 — tiered cold load (see lib/tiered-loader): serve the most-recent
+// RECENT_PAGES fast, backfill the rest in the background.
+const RECENT_PAGES = 8;
 
 interface SpRow {
   CASE_NUMBER?: number;
@@ -123,11 +123,7 @@ async function fetchPage(offset: number): Promise<SpRow[]> {
   return (body.features ?? []).map((f) => f.attributes);
 }
 
-async function fetchSaintPaul(): Promise<Incident[]> {
-  const pages = await Promise.all(
-    Array.from({ length: PAGES }, (_, i) => fetchPage(i * PAGE_SIZE).catch(() => [] as SpRow[])),
-  );
-  const rows = pages.flat();
+function mapSaintPaul(rows: SpRow[], baseIndex: number): Incident[] {
   const out: Incident[] = [];
   for (const r of rows) {
     const incident = (r.INCIDENT ?? "").trim();
@@ -143,7 +139,7 @@ async function fetchSaintPaul(): Promise<Incident[]> {
       ?? "Unknown";
     if (!area || area === "Unknown") continue;
     out.push({
-      id: `sp-${r.CASE_NUMBER ?? out.length}`,
+      id: `sp-${r.CASE_NUMBER ?? `idx${baseIndex + out.length}`}`,
       area,
       occurredAt: r.DATE ? new Date(r.DATE).toISOString() : new Date(0).toISOString(),
       nibrsCategory: cat,
@@ -158,28 +154,34 @@ async function fetchSaintPaul(): Promise<Incident[]> {
   return out;
 }
 
-// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
-// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
-// cache previously fired N concurrent full fetches. Concurrent callers now
-// await the same promise.
-let inFlightSaintPaulFetch: Promise<Incident[]> | null = null;
-export async function getRowsSaintPaul(): Promise<Incident[]> {
-  const now = Date.now();
-  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  if (inFlightSaintPaulFetch) return inFlightSaintPaulFetch;
-  inFlightSaintPaulFetch = (async () => {
-    try {
-      const rows = await fetchSaintPaul();
-      if (rows.length > 0) cache = { fetchedAt: now, rows };
-      return rows;
-    } catch (err) {
-      console.warn("[sp] fetch failed:", (err as Error).message);
-      return cache?.rows ?? [];
-    } finally {
-      inFlightSaintPaulFetch = null;
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency
+// (4) — v108: was a single Promise.all over all 45 pages at once (an unbounded
+// burst); bounding it avoids rate-limiting the ArcGIS tenant. A page failure
+// degrades to [] and marks the range incomplete.
+async function fetchRangeSaintPaul(startPage: number, endPage: number): Promise<{ rows: Incident[]; complete: boolean }> {
+  const count = endPage - startPage;
+  const results: SpRow[][] = new Array(count);
+  let cursor = 0;
+  let failures = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      results[i] = await fetchPage((startPage + i) * PAGE_SIZE).catch(() => { failures++; return [] as SpRow[]; });
     }
-  })();
-  return inFlightSaintPaulFetch;
+  });
+  await Promise.all(workers);
+  return { rows: mapSaintPaul(results.flat(), startPage * PAGE_SIZE), complete: failures === 0 };
+}
+
+const saintPaulLoader = createTieredLoader({
+  name: "saint-paul-arcgis",
+  recentPages: RECENT_PAGES,
+  pages: PAGES,
+  fetchRange: fetchRangeSaintPaul,
+});
+export async function getRowsSaintPaul(): Promise<Incident[]> {
+  return saintPaulLoader.getRows();
 }
 
 export async function getDiscoveredAreasSaintPaul(): Promise<KnownArea[]> {

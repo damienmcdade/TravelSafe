@@ -19,6 +19,17 @@ const PAGE_SIZE = 2000;
 // only spans ~12 days of Detroit's high crime volume; deeper cache
 // gives the annualization a true year-scale window.
 const PAGES = 15;
+// v108 — tiered cold load (mirrors Atlanta/Charlotte/Indy/LV v107). Detroit is
+// the worst cold-start case in the fleet: a 15-page bounded ArcGIS pull that
+// routinely takes 30-60s on a cold cache (Esri intermittently 400s deep-offset
+// pages under concurrency), so the very first request after a pod restart /
+// while the warm worker is behind lost the 45s route-timeout race and served
+// empty → the reported "Couldn't reach Detroit … stale data" loop. Now we pull
+// the most-recent RECENT_PAGES first (incident_occurred_at DESC), cache + serve
+// those within a few seconds so current activity + the neighborhood list are
+// immediately available, then backfill the remaining pages in the background to
+// restore the full-depth baseline used for grading.
+const RECENT_PAGES = 6;  // ~12k most-recent rows — current activity + every active neighborhood
 const CACHE_TTL_MS = 5 * 60 * 1000;
 // v69 followup — paired index keyed off the cache fetchedAt so the
 // index rebuilds whenever the row cache refreshes. Two structures:
@@ -31,6 +42,9 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 interface Cache {
   fetchedAt: number;
   rows: Incident[];
+  // v108 — flips true once the background deep-load has merged all pages, so a
+  // recent-only tier isn't mistaken for the complete dataset.
+  full: boolean;
   slugToLabel: Map<string, string>;
   labelToRows: Map<string, Incident[]>;
 }
@@ -127,25 +141,12 @@ async function fetchPage(offset: number): Promise<DetroitRow[]> {
   throw lastErr;
 }
 
-async function fetchDetroit(): Promise<{ rows: Incident[]; complete: boolean }> {
-  // v99 — bounded concurrency (4) instead of firing all 15 deep-offset pages
-  // at once (the burst is what triggers the Esri 400s), plus completeness
-  // tracking so a partial pull is never silently cached.
-  const results: DetroitRow[][] = new Array(PAGES);
-  let cursor = 0;
-  let failures = 0;
-  const workers = Array.from({ length: 4 }, async () => {
-    for (;;) {
-      const i = cursor++;
-      if (i >= PAGES) return;
-      try { results[i] = await fetchPage(i * PAGE_SIZE); }
-      catch { results[i] = []; failures += 1; }
-    }
-  });
-  await Promise.all(workers);
-  const rows = results.flat();
-  // Drop rows with no parseable date — see nypd-socrata for rationale.
-  // Epoch fallback would collapse Detroit citywide windowDays to 0.
+// Map raw Detroit rows → Incident[]. Drop rows with no parseable date — see
+// nypd-socrata for rationale. Epoch fallback would collapse Detroit citywide
+// windowDays to 0. `baseIndex` keeps the crime_id-less fallback ids unique
+// across separately-fetched page ranges (recent tier vs. deep backfill) so the
+// dedup-by-id merge can't silently drop a deep-tier row.
+function mapDetroitRows(rows: DetroitRow[], baseIndex = 0): Incident[] {
   const out: Incident[] = [];
   for (let i = 0; i < rows.length; i++) {
     const r = rows[i];
@@ -159,7 +160,7 @@ async function fetchDetroit(): Promise<{ rows: Incident[]; complete: boolean }> 
     // trim it so the autocomplete + drill-down read cleanly.
     const desc = r.offense_description?.trim().replace(/\s+/g, " ") || r.offense_category?.trim() || "Unknown";
     out.push({
-      id: `det-${r.crime_id ?? i}`,
+      id: `det-${r.crime_id ?? `idx${baseIndex + i}`}`,
       area,
       occurredAt: d.toISOString(),
       nibrsCategory: mapToNibrs(r),
@@ -170,7 +171,28 @@ async function fetchDetroit(): Promise<{ rows: Incident[]; complete: boolean }> 
       lng: typeof lon === "number" && lon !== 0 ? lon : undefined,
     });
   }
-  return { rows: out, complete: failures === 0 };
+  return out;
+}
+
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency
+// (4) — v99: never burst all pages, the burst is what triggers the Esri 400s.
+// Returns the mapped rows plus a completeness flag so a partial pull is never
+// silently promoted to the full-depth baseline.
+async function fetchRange(startPage: number, endPage: number): Promise<{ rows: Incident[]; complete: boolean }> {
+  const count = endPage - startPage;
+  const results: DetroitRow[][] = new Array(count);
+  let cursor = 0;
+  let failures = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= count) return;
+      try { results[i] = await fetchPage((startPage + i) * PAGE_SIZE); }
+      catch { results[i] = []; failures += 1; }
+    }
+  });
+  await Promise.all(workers);
+  return { rows: mapDetroitRows(results.flat(), startPage * PAGE_SIZE), complete: failures === 0 };
 }
 
 // v69 followup — build the two indexes once per cache load.
@@ -202,6 +224,34 @@ function buildIndexes(rows: Incident[]): Pick<Cache, "slugToLabel" | "labelToRow
 // promise. First-to-return populates the cache; the rest reuse the
 // already-fetched rows. Cuts memory pressure from O(N areas) to O(1).
 let inFlightFetch: Promise<Incident[]> | null = null;
+let bgDeepenInFlight = false;
+
+// v108 — background deep-load: pull the remaining pages [RECENT_PAGES, PAGES)
+// and merge with the already-served recent tier (dedup by incident id),
+// upgrading the cache to the full-depth dataset. Fire-and-forget; a failure
+// just leaves the recent tier in place to be retried on the next TTL lapse.
+async function deepenDetroit(recentRows: Incident[]): Promise<void> {
+  if (bgDeepenInFlight) return;
+  bgDeepenInFlight = true;
+  try {
+    const { rows: rest, complete } = await fetchRange(RECENT_PAGES, PAGES);
+    if (rest.length === 0) return;  // nothing gained; keep the recent tier as-is
+    const byId = new Map<string, Incident>();
+    for (const r of recentRows) byId.set(r.id, r);
+    for (const r of rest) if (!byId.has(r.id)) byId.set(r.id, r);
+    const merged = Array.from(byId.values());
+    // v99 rationale preserved: only mark the cache `full` when the deep pull
+    // was COMPLETE. A partial deep pull under-counts every neighborhood
+    // uniformly and would mis-grade the whole city; we still cache the merged
+    // rows (strictly more than the recent tier) but leave full=false so the
+    // next TTL lapse re-attempts a complete backfill.
+    cache = { fetchedAt: Date.now(), rows: merged, full: complete, ...buildIndexes(merged) };
+  } catch (err) {
+    console.warn("[detroit] deepen failed:", (err as Error).message);
+  } finally {
+    bgDeepenInFlight = false;
+  }
+}
 
 export async function getRowsDetroit(): Promise<Incident[]> {
   const now = Date.now();
@@ -209,16 +259,18 @@ export async function getRowsDetroit(): Promise<Incident[]> {
   if (inFlightFetch) return inFlightFetch;
   inFlightFetch = (async () => {
     try {
-      const { rows, complete } = await fetchDetroit();
-      // v99 — only overwrite a good cache when the pull was COMPLETE (every
-      // page loaded). A partial pull under-counts every neighborhood
-      // uniformly and would mis-grade the whole city; serve the prior
-      // last-known-good cache instead. With no prior cache, a partial pull is
-      // still better than nothing.
-      if (rows.length > 0 && (complete || !cache)) {
-        cache = { fetchedAt: now, rows, ...buildIndexes(rows) };
+      // Tiered cold load: serve the most-recent pages fast (~5s), then backfill
+      // the rest in the background so first paint never loses the route-timeout
+      // race. The recent tier is a valid recent WINDOW (not a silently-truncated
+      // full pull), so its annualized rate — counts ÷ windowDays — stays
+      // representative for grading until the deep tier widens the window.
+      const { rows: recent } = await fetchRange(0, RECENT_PAGES);
+      if (recent.length > 0) {
+        cache = { fetchedAt: now, rows: recent, full: false, ...buildIndexes(recent) };
+        void deepenDetroit(recent);
+        return recent;
       }
-      return cache?.rows ?? rows;
+      return cache?.rows ?? [];
     } catch (err) {
       console.warn("[detroit] fetch failed:", (err as Error).message);
       return cache?.rows ?? [];

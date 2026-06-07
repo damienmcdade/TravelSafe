@@ -1,9 +1,9 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
-import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, readJson } from "../lib/http.js";
+import { createTieredLoader } from "../lib/tiered-loader.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { jacksonvillePolygons } from "../data/jacksonville-neighborhoods.js";
 
@@ -28,14 +28,14 @@ const PAGE_SIZE = 2000; // = server maxRecordCount
 // (date-filtered) for an accurate annualized rate. ~65k rows/yr ÷ 2000 ≈ 33
 // pages; 40 pages (80k) covers the window with headroom.
 const PAGES = 40;
+// v108 — tiered cold load (see lib/tiered-loader): serve the most-recent
+// RECENT_PAGES fast, backfill the rest in the background.
+const RECENT_PAGES = 8;
 const WINDOW_DAYS = 400;
-const CACHE_TTL_MS = 5 * 60 * 1000;
 // Discovery min-count: keeps the browsable catalog to neighborhoods with a
 // real incident base. Every emitted neighborhood has a matching boundary
 // polygon (its name is taken straight from the polygon layer via PIP).
 const MIN_AREA_INCIDENTS = 10;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
-registerRowCache(() => { cache = null; }, "jacksonville-arcgis");
 
 interface JsoFeature {
   attributes: {
@@ -135,22 +135,7 @@ async function fetchPage(offset: number, sinceIso: string): Promise<JsoFeature[]
   return body.features ?? [];
 }
 
-async function fetchJacksonville(): Promise<Incident[]> {
-  const sinceIso = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-  const results: JsoFeature[][] = new Array(PAGES);
-  let cursor = 0;
-  const workers = Array.from({ length: 4 }, async () => {
-    while (true) {
-      const i = cursor++;
-      if (i >= PAGES) return;
-      const page = await fetchPage(i * PAGE_SIZE, sinceIso).catch(() => [] as JsoFeature[]);
-      results[i] = page;
-      // Short-circuit: an empty page means we've run past the window.
-      if (page.length === 0) return;
-    }
-  });
-  await Promise.all(workers);
-  const feats = results.flat();
+function mapJacksonville(feats: JsoFeature[], baseIndex: number): Incident[] {
   return feats
     .filter((f) => typeof f.attributes.IncidentDateTime === "number")
     .map((f, i) => {
@@ -159,7 +144,7 @@ async function fetchJacksonville(): Promise<Incident[]> {
       const lat = f.geometry && f.geometry.y !== 0 ? f.geometry.y : undefined;
       const nbhd = (lat != null && lng != null) ? geocodeJacksonville(lng, lat) : null;
       return {
-        id: `jax-${a.OBJECTID ?? i}`,
+        id: `jax-${a.OBJECTID ?? `idx${baseIndex + i}`}`,
         area: nbhd ?? "Unmapped",
         occurredAt: new Date(a.IncidentDateTime!).toISOString(),
         nibrsCategory: classify(a.nibrsCode, a.nibrsDescription),
@@ -172,28 +157,36 @@ async function fetchJacksonville(): Promise<Incident[]> {
     });
 }
 
-// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
-// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
-// cache previously fired N concurrent full fetches. Concurrent callers now
-// await the same promise.
-let inFlightJacksonvilleFetch: Promise<Incident[]> | null = null;
-export async function getRowsJacksonville(): Promise<Incident[]> {
-  const now = Date.now();
-  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  if (inFlightJacksonvilleFetch) return inFlightJacksonvilleFetch;
-  inFlightJacksonvilleFetch = (async () => {
-    try {
-      const rows = await fetchJacksonville();
-      if (rows.length > 0) cache = { fetchedAt: now, rows };
-      return rows;
-    } catch (err) {
-      console.warn("[jacksonville] fetch failed:", (err as Error).message);
-      return cache?.rows ?? [];
-    } finally {
-      inFlightJacksonvilleFetch = null;
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency
+// (4). A page failure degrades to [] and marks the range incomplete; an empty
+// page short-circuits the worker (ran past the WINDOW_DAYS window).
+async function fetchRangeJacksonville(startPage: number, endPage: number): Promise<{ rows: Incident[]; complete: boolean }> {
+  const sinceIso = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const count = endPage - startPage;
+  const results: JsoFeature[][] = new Array(count);
+  let cursor = 0;
+  let failures = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      const page = await fetchPage((startPage + i) * PAGE_SIZE, sinceIso).catch(() => { failures++; return [] as JsoFeature[]; });
+      results[i] = page;
+      if (page.length === 0) return; // ran past the window
     }
-  })();
-  return inFlightJacksonvilleFetch;
+  });
+  await Promise.all(workers);
+  return { rows: mapJacksonville(results.flat(), startPage * PAGE_SIZE), complete: failures === 0 };
+}
+
+const jacksonvilleLoader = createTieredLoader({
+  name: "jacksonville-arcgis",
+  recentPages: RECENT_PAGES,
+  pages: PAGES,
+  fetchRange: fetchRangeJacksonville,
+});
+export async function getRowsJacksonville(): Promise<Incident[]> {
+  return jacksonvilleLoader.getRows();
 }
 
 // Area label is the neighborhood name; slug = "jax-<name>" (unique prefix). The

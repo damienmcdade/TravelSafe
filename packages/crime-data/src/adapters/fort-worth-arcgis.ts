@@ -1,9 +1,9 @@
 import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
-import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, readJson } from "../lib/http.js";
+import { createTieredLoader } from "../lib/tiered-loader.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { fortWorthNeighborhoods, fortWorthDivisions } from "../data/fort-worth-neighborhoods.js";
 
@@ -25,10 +25,10 @@ const PAGE_SIZE = 1000; // = server maxRecordCount
 // annualized rate. ~60k rows/yr ÷ 1000 ≈ 60 pages/yr; 45 pages (~270 days)
 // is a statistically solid window the annualizer scales up.
 const PAGES = 45;
+// v108 — tiered cold load (see lib/tiered-loader): serve the most-recent
+// RECENT_PAGES fast, backfill the rest in the background.
+const RECENT_PAGES = 8;
 const WINDOW_DAYS = 270;
-const CACHE_TTL_MS = 5 * 60 * 1000;
-let cache: { fetchedAt: number; rows: Incident[] } | null = null;
-registerRowCache(() => { cache = null; }, "fort-worth-arcgis");
 
 interface FwFeature {
   attributes: {
@@ -141,22 +141,7 @@ async function fetchPage(offset: number, sinceIso: string): Promise<FwFeature[]>
   return body.features ?? [];
 }
 
-async function fetchFortWorth(): Promise<Incident[]> {
-  const since = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000);
-  const sinceIso = since.toISOString().slice(0, 10);
-  const results: FwFeature[][] = new Array(PAGES);
-  let cursor = 0;
-  const workers = Array.from({ length: 4 }, async () => {
-    while (true) {
-      const i = cursor++;
-      if (i >= PAGES) return;
-      const page = await fetchPage(i * PAGE_SIZE, sinceIso).catch(() => [] as FwFeature[]);
-      results[i] = page;
-      if (page.length === 0) return; // ran past the window
-    }
-  });
-  await Promise.all(workers);
-  const feats = results.flat();
+function mapFortWorth(feats: FwFeature[], baseIndex: number): Incident[] {
   return feats
     .filter((f) => typeof f.attributes.Reported_Date === "number")
     .map((f, i) => {
@@ -165,7 +150,7 @@ async function fetchFortWorth(): Promise<Incident[]> {
       const lng = typeof a.Longitude === "number" && Math.abs(a.Longitude) > 1 ? a.Longitude : undefined;
       const area = (lat != null && lng != null) ? (geocodeFortWorth(lng, lat) ?? "Unknown") : "Unknown";
       return {
-        id: `fw-${a.Case_No_Offense ?? i}`,
+        id: `fw-${a.Case_No_Offense ?? `idx${baseIndex + i}`}`,
         area,
         occurredAt: new Date(a.Reported_Date!).toISOString(),
         nibrsCategory: classify(a.Offense_Desc),
@@ -178,28 +163,36 @@ async function fetchFortWorth(): Promise<Incident[]> {
     });
 }
 
-// v107 — in-flight fetch dedup (the OOM-guard Detroit added in v94): the
-// dispatcher fans a per-area Promise.all over every neighbourhood, so a cold
-// cache previously fired N concurrent full fetches. Concurrent callers now
-// await the same promise.
-let inFlightFortWorthFetch: Promise<Incident[]> | null = null;
-export async function getRowsFortWorth(): Promise<Incident[]> {
-  const now = Date.now();
-  if (cache && cache.rows.length > 0 && now - cache.fetchedAt < CACHE_TTL_MS) return cache.rows;
-  if (inFlightFortWorthFetch) return inFlightFortWorthFetch;
-  inFlightFortWorthFetch = (async () => {
-    try {
-      const rows = await fetchFortWorth();
-      if (rows.length > 0) cache = { fetchedAt: now, rows };
-      return rows;
-    } catch (err) {
-      console.warn("[fort-worth] fetch failed:", (err as Error).message);
-      return cache?.rows ?? [];
-    } finally {
-      inFlightFortWorthFetch = null;
+// Fetch the half-open page range [startPage, endPage) with bounded concurrency
+// (4). A page failure degrades to [] and marks the range incomplete; an empty
+// page short-circuits the worker (ran past the WINDOW_DAYS window).
+async function fetchRangeFortWorth(startPage: number, endPage: number): Promise<{ rows: Incident[]; complete: boolean }> {
+  const sinceIso = new Date(Date.now() - WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const count = endPage - startPage;
+  const results: FwFeature[][] = new Array(count);
+  let cursor = 0;
+  let failures = 0;
+  const workers = Array.from({ length: 4 }, async () => {
+    while (true) {
+      const i = cursor++;
+      if (i >= count) return;
+      const page = await fetchPage((startPage + i) * PAGE_SIZE, sinceIso).catch(() => { failures++; return [] as FwFeature[]; });
+      results[i] = page;
+      if (page.length === 0) return; // ran past the window
     }
-  })();
-  return inFlightFortWorthFetch;
+  });
+  await Promise.all(workers);
+  return { rows: mapFortWorth(results.flat(), startPage * PAGE_SIZE), complete: failures === 0 };
+}
+
+const fortWorthLoader = createTieredLoader({
+  name: "fort-worth-arcgis",
+  recentPages: RECENT_PAGES,
+  pages: PAGES,
+  fetchRange: fetchRangeFortWorth,
+});
+export async function getRowsFortWorth(): Promise<Incident[]> {
+  return fortWorthLoader.getRows();
 }
 
 function slugify(area: string): string {
