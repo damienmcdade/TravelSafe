@@ -21,7 +21,7 @@ export default function TermsPage() {
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">What CommunitySafe is</h2>
-        <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 41 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
+        <p>CommunitySafe is a neighborhood-level safety-awareness tool that surfaces publicly published police-incident data for 42 supported US cities, compared to the FBI Crime in the Nation national average. It is informational and educational.</p>
         <p>
           CommunitySafe is operated by{" "}
           <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">CyberWave Technologies LLC</a>{" "}

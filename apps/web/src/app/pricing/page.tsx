@@ -38,7 +38,7 @@ export default function PricingPage() {
           tagline="Everything you need to make safer travel decisions."
           highlight={false}
           features={[
-            "City & neighborhood Safety Scores across 41 US cities",
+            "City & neighborhood Safety Scores across 42 US cities",
             "Live crime feeds + analytical baselines",
             "Crime Map, Safe Route, Trend Feed",
             "Community posts (CommunitySafe)",

@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     template: "%s · CommunitySafe",
   },
   description:
-    "Neighborhood-level safety awareness across 41 US cities. Drawn from " +
+    "Neighborhood-level safety awareness across 42 US cities. Drawn from " +
     `official police data sources and the ${FBI_DATA_LABEL} ` +
     "national average. Not surveillance; not a substitute for emergency services.",
   manifest: "/manifest.json",
@@ -96,7 +96,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CommunitySafe",
     description:
-      "Neighborhood-level safety awareness across 41 US cities. Drawn from official police open-data feeds.",
+      "Neighborhood-level safety awareness across 42 US cities. Drawn from official police open-data feeds.",
   },
   // Apple-specific PWA hints so iOS gives the install a proper standalone
   // chrome (no Safari URL bar) and the right title under the home-screen
