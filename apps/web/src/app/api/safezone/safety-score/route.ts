@@ -35,6 +35,13 @@ export const maxDuration = 60;
 const CACHE_HEADERS = {
   "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=900",
 };
+// fix(perf safety-score-no-cold-cache-latch): a PROVISIONAL citywide score
+// (dataConfidence !== "high") is exactly the one that improves once the tiered
+// adapter warms — caching it for 5 min would latch the partial answer (the same
+// class of cold-latch the LV/Houston window-widen fix addressed at the adapter
+// level). Serve provisional citywide scores no-store so the next request
+// recomputes against the now-warm cache; HIGH-confidence scores cache normally.
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
 
 export const GET = wrap(async (req: NextRequest) => {
   const limited = rateLimit(req, { scope: "safezone" });
@@ -55,7 +62,9 @@ export const GET = wrap(async (req: NextRequest) => {
     if (!cityBySlug(city)) {
       return NextResponse.json({ error: "city_not_supported" }, { status: 404 });
     }
-    return NextResponse.json(await getCitywideSafetyScore(city), { headers: CACHE_HEADERS });
+    const score = await getCitywideSafetyScore(city);
+    const headers = score?.dataConfidence === "high" ? CACHE_HEADERS : NO_STORE_HEADERS;
+    return NextResponse.json(score, { headers });
   }
   return NextResponse.json(
     await getSafetyScore(area!, label && label !== area ? label : humanizeArea(area!)),

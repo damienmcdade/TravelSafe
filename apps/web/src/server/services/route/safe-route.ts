@@ -295,7 +295,24 @@ const NIGHT_INCIDENT_WEIGHT = 1.5;
 const ACTIVE_INCIDENT_WEIGHT = 2.0;
 const ACTIVE_INCIDENT_WINDOW_MS = 24 * 60 * 60 * 1000;
 
+// fix(perf safe-route-intensity-uncached): loadCityIntensity fans over every
+// area calling getIncidents(limit 5000) and scans them all — for Fort Worth (305
+// areas) / Baltimore (276) that's a heavy per-request CPU pass, and the route is
+// force-dynamic with no result cache, so every Safe Route request recomputed it.
+// Memoize per (citySlug, travel-time bucket) for the adapter's 5-min TTL. The
+// active-incident 24h boost shifts slowly, so a 5-min cache is accurate enough.
+const _intensityCache = new Map<string, { at: number; data: AreaIntensity[] }>();
+const INTENSITY_TTL_MS = 5 * 60 * 1000;
+function intensityBucket(timeOfTravel?: Date): string {
+  if (timeOfTravel == null) return "none";
+  const h = timeOfTravel.getHours();
+  return isDaytimeHour(h) ? "day" : "night";
+}
+
 async function loadCityIntensity(citySlug: string, timeOfTravel?: Date): Promise<AreaIntensity[]> {
+  const cacheKey = `${citySlug}:${intensityBucket(timeOfTravel)}`;
+  const hit = _intensityCache.get(cacheKey);
+  if (hit && Date.now() - hit.at < INTENSITY_TTL_MS) return hit.data;
   const { cityBySlug } = await import("../crime-data/cities");
   const city = cityBySlug(citySlug);
   if (!city) return [];
@@ -340,6 +357,10 @@ async function loadCityIntensity(citySlug: string, timeOfTravel?: Date): Promise
       return { area: a, intensity };
     }),
   );
+  // Cap the cache so a long-lived instance can't accumulate unbounded city×bucket
+  // keys (at most ~45 cities × 3 buckets, but guard anyway).
+  if (_intensityCache.size > 200) _intensityCache.clear();
+  _intensityCache.set(cacheKey, { at: Date.now(), data: intensities });
   return intensities;
 }
 

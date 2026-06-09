@@ -128,7 +128,7 @@ export default function MethodologyPage() {
           <li>Some calls aren&apos;t crimes at all (welfare checks, traffic complaints). We filter those out, but the count still runs higher than a finished-report city.</li>
         </ul>
         <p>
-          So those three cities don&apos;t look unfairly worse, we shrink their rate by a set amount
+          So that those three cities don&apos;t look unfairly worse, we shrink their rate by a set amount
           before grading:
         </p>
         <ul className="list-disc pl-5 space-y-1 tabular-nums">

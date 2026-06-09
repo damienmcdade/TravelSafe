@@ -7,9 +7,10 @@
 // at request time (500 errors).
 //
 // This module is the smallest possible substitute: just slug → label
-// for the 37 supported cities, no adapter imports, edge-safe. Lives
+// for the 45 supported jurisdictions, no adapter imports, edge-safe. Lives
 // here rather than the server services layer so client + edge code
-// can both import without dragging in server-only deps.
+// can both import without dragging in server-only deps. Must cover every
+// CITIES slug or the OG social-share image renders a literal "City" headline.
 
 export const CITY_LABEL_BY_SLUG: Record<string, string> = {
   "san-diego": "San Diego",
@@ -46,9 +47,17 @@ export const CITY_LABEL_BY_SLUG: Record<string, string> = {
   "sacramento": "Sacramento",
   "atlanta": "Atlanta",
   "indianapolis": "Indianapolis",
-  "raleigh": "Raleigh",
-  "tucson": "Tucson",
   "honolulu": "Honolulu",
+  "long-beach": "Long Beach",
+  "phoenix": "Phoenix",
+  "jacksonville": "Jacksonville",
+  "virginia-beach": "Virginia Beach",
+  "gainesville": "Gainesville",
+  "tampa": "Tampa",
+  "nashville": "Nashville",
+  "houston": "Houston",
+  "montgomery-county": "Montgomery County",
+  "prince-georges-county": "Prince George's County",
 };
 
 export function cityLabelBySlug(slug: string): string | null {

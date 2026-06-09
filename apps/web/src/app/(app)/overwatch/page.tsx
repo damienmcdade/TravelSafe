@@ -32,7 +32,7 @@ function OverwatchInner() {
 
   return (
     <div className="space-y-4">
-      <div role="tablist" aria-label="Overwatch workflow" className="surface-muted px-3 py-2 flex flex-wrap gap-1 text-sm">
+      <div role="tablist" aria-label="Pathfinder workflow" className="surface-muted px-3 py-2 flex flex-wrap gap-1 text-sm">
         {TABS.map((t) => (
           <button
             key={t.id}
@@ -76,7 +76,7 @@ function OverwatchInner() {
 
 export default function OverwatchPage() {
   return (
-    <Suspense fallback={<div className="surface p-6 text-sm text-slate2-500 animate-pulse">Loading Overwatch…</div>}>
+    <Suspense fallback={<div className="surface p-6 text-sm text-slate2-500 animate-pulse">Loading Pathfinder…</div>}>
       <OverwatchInner />
     </Suspense>
   );

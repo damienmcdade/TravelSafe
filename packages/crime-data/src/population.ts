@@ -32,7 +32,6 @@ export const CITY_POPULATION: Record<string, number> = {
   "seattle":         755_078,
   "new-york":      8_258_035,
   "colorado-springs": 488_664,
-  "austin":          961_855,  // 2020 US Census
   "phoenix":       1_608_139,  // 2020 US Census
   "jacksonville":    949_611,  // 2020 US Census
   "virginia-beach":  459_470,  // 2020 US Census
@@ -78,8 +77,6 @@ export const CITY_POPULATION: Record<string, number> = {
   "sacramento":      528_706,
   "atlanta":         505_268,
   "indianapolis":    891_484,
-  "raleigh":         481_031,
-  "tucson":          546_739,
   // v95p2 — 37th city. HPD's jurisdiction is the entire City and
   // County of Honolulu (Oahu), not just Honolulu CDP. Use County
   // population so the per-capita rate matches the FBI baseline,

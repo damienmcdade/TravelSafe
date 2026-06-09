@@ -34,7 +34,6 @@ const SOURCE_LABELS: Record<string, string> = {
   "las-vegas":     "Las Vegas Police (911 calls) · refreshed every 5 min",
   "boise":         "Boise Police (911 calls) · refreshed every 5 min",
   "buffalo":       "Buffalo Police · refreshed every 5 min",
-  "tucson":        "Tucson Police (last 45 days) · refreshed every 5 min",
   "kansas-city":   "Kansas City Police · refreshed every 5 min",
   "saint-paul":    "Saint Paul Police · refreshed every 5 min",
   "pittsburgh":    "Pittsburgh Police · refreshed every 5 min",

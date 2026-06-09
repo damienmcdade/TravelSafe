@@ -391,7 +391,7 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
     <section className="surface p-6">
       <h2 className="font-display text-lg text-slate2-900">Share a heads-up (anonymous)</h2>
       <p className="mt-1 text-sm text-slate2-500">
-        No sign-in needed. Describe <strong>what you saw</strong>, <strong>where</strong>, and <strong>when</strong>. The application blocks only posts that contain profanity, slurs, or threats of violence — everything else publishes immediately.
+        No sign-in needed. Describe <strong>what you saw</strong>, <strong>where</strong>, and <strong>when</strong>. Posts are screened before they go live — we block profanity and slurs, threats of violence, street addresses, license plates, phone numbers, named individuals, and descriptions that profile people by appearance. Everything else publishes immediately. See the <Link href="/community-guidelines" className="text-bay-700 hover:underline">Community guidelines</Link>.
       </p>
       <form className="mt-4 space-y-3" onSubmit={submit} aria-describedby={guidance ? "post-guidance" : undefined}>
         <div>

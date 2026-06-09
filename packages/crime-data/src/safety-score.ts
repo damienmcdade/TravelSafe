@@ -144,7 +144,6 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // Milwaukee's coarse assault buckets: calibrate persons to the FBI baseline
   // (516/1550 ≈ 0.33) so the divergence guard stops suppressing Austin to N/A and
   // it reports its true grade (C). Property accurate → 1.0.
-  "austin":        { persons: 0.33, property: 1.0, sourceType: "coarse" },
   // v99 — Washington DC publishes ONLY "ASSAULT W/DANGEROUS WEAPON" (weapon-
   // involved) in its open Crime Incidents feed; the FBI counts ALL aggravated
   // assaults (with OR without a weapon — DC files the rest as simple assault,

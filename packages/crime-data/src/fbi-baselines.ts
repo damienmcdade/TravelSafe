@@ -63,7 +63,6 @@ export interface CityFbiBaseline {
 const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "baton-rouge": { violent: 1422, property: 4927, year: 2024, ori: "LA0170200" },
   "boise": { violent: 280, property: 1268, year: 2023, ori: "ID0010100" },
-  "austin": { violent: 516, property: 3360, year: 2023, ori: "TX2270100" },
   "phoenix": { violent: 785, property: 2495, year: 2023, ori: "AZ0072300" },
   "jacksonville": { violent: 661, property: 2598, year: 2023, ori: "FL0160000" },
   "virginia-beach": { violent: 116, property: 1699, year: 2023, ori: "VA1210000" },
@@ -125,13 +124,11 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "sacramento": { violent: 805, property: 2980, year: 2023, ori: "CA0340400" },
   "atlanta": { violent: 709, property: 3917, year: 2023, ori: "GAAPD0000" },
   "indianapolis": { violent: 1088, property: 3594, year: 2023, ori: "INIPD0000" },
-  "raleigh": { violent: 533, property: 2623, year: 2023, ori: "NC0920100" },
   // fix(audit tucson-baseline-nonreporting): the prior 473/2764 was the RAW
   // 12-month CDE sum, but Tucson (AZ0100300) did NOT report Sep/Oct/Dec 2023
   // (non-reporting months read as 0), so the raw sum under-counts by ~25%.
   // Annualized over the 9 reporting months (sum/9*12) on pop 548,544: violent
   // 2,597/9*12=3,463 → 631/100k; property 15,120/9*12=20,160 → 3,675/100k.
-  "tucson": { violent: 631, property: 3675, year: 2023, ori: "AZ0100300" },
   "honolulu": { violent: 222, property: 2122, year: 2023, ori: "HI0020000" },
   "long-beach": { violent: 637, property: 3183, year: 2023, ori: "CA0194100" },
 };

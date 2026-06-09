@@ -1,111 +1,12 @@
 "use client";
 import { useMemo } from "react";
 import { useApi } from "@/lib/api-client";
+// Single client-safe source for slug-prefix → city, city → timezone, and the
+// date-only set (kept in lockstep with the server canonical by a guard test).
+// Replaces three hand-maintained tables that had drifted (wrong prefixes for 7
+// live cities → UTC histograms; the 4 newest cities omitted entirely).
+import { CITY_TZ, citySlugForArea, tzForAreaSlug, DATE_ONLY_SLUGS } from "@/lib/city-meta";
 
-// v95p33 — bucket by the *city's* local clock, not the viewer's runtime.
-// `new Date(b.at).getHours()` returned the hour in whatever timezone the
-// renderer is running in — which on Vercel is UTC, so an 11pm Pacific
-// Sacramento incident landed in the 6am bucket on the histogram. Map
-// the area slug to the city's IANA timezone and use Intl.DateTimeFormat.
-const CITY_TZ: Record<string, string> = {
-  "san-diego": "America/Los_Angeles",
-  "los-angeles": "America/Los_Angeles",
-  "san-francisco": "America/Los_Angeles",
-  "oakland": "America/Los_Angeles",
-  "sacramento": "America/Los_Angeles",
-  "seattle": "America/Los_Angeles",
-  "las-vegas": "America/Los_Angeles",
-  "baltimore": "America/New_York",
-  "boise": "America/Boise",
-  "denver": "America/Denver",
-  "colorado-springs": "America/Denver",
-  "chicago": "America/Chicago",
-  "minneapolis": "America/Chicago",
-  "saint-paul": "America/Chicago",
-  "milwaukee": "America/Chicago",
-  "kansas-city": "America/Chicago",
-  "dallas": "America/Chicago",
-  "fort-worth": "America/Chicago",
-  "new-orleans": "America/Chicago",
-  "nola": "America/Chicago",
-  "baton-rouge": "America/Chicago",
-  "atlanta": "America/New_York",
-  "charlotte": "America/New_York",
-  "cincinnati": "America/New_York",
-  "cleveland": "America/New_York",
-  "detroit": "America/Detroit",
-  "pittsburgh": "America/New_York",
-  "philadelphia": "America/New_York",
-  "washington-dc": "America/New_York",
-  "norfolk": "America/New_York",
-  "buffalo": "America/New_York",
-  "new-york": "America/New_York",
-  "cambridge": "America/New_York",
-  "boston": "America/New_York",
-  "raleigh": "America/New_York",
-  "indianapolis": "America/Indiana/Indianapolis",
-  "tucson": "America/Phoenix",
-  "austin": "America/Chicago",
-  "phoenix": "America/Phoenix",
-  "jacksonville": "America/New_York",
-  "virginia-beach": "America/New_York",
-  "gainesville": "America/New_York",
-  "tampa": "America/New_York",
-  "honolulu": "Pacific/Honolulu",
-  "long-beach": "America/Los_Angeles",
-};
-// Mirror cityForArea's slug-prefix scheme without pulling the server-only
-// crime-data package into this client component.
-const SLUG_PREFIXES: Array<[string, string]> = [
-  ["la-", "los-angeles"], ["sf-", "san-francisco"], ["chi-", "chicago"],
-  ["sea-", "seattle"], ["ny-", "new-york"], ["cosp-", "colorado-springs"],
-  ["det-", "detroit"], ["dc-", "washington-dc"], ["sd-", "san-diego"],
-  ["sac-", "sacramento"], ["fw-", "fort-worth"], ["bos-", "boston"],
-  ["phl-", "philadelphia"], ["oak-", "oakland"], ["cin-", "cincinnati"],
-  ["nola-", "new-orleans"], ["balt-", "baltimore"], ["min-", "minneapolis"],
-  ["cle-", "cleveland"], ["mke-", "milwaukee"], ["lv-", "las-vegas"],
-  ["boi-", "boise"], ["buf-", "buffalo"], ["nor-", "norfolk"],
-  ["kc-", "kansas-city"], ["sp-", "saint-paul"], ["pit-", "pittsburgh"],
-  ["dal-", "dallas"], ["char-", "charlotte"], ["atl-", "atlanta"],
-  ["denv-", "denver"], ["bat-", "baton-rouge"], ["cam-", "cambridge"],
-  ["hon-", "honolulu"], ["ral-", "raleigh"], ["indy-", "indianapolis"],
-  ["tuc-", "tucson"], ["atx-", "austin"], ["phx-", "phoenix"],
-  ["jax-", "jacksonville"], ["vb-", "virginia-beach"], ["gnv-", "gainesville"], ["tpa-", "tampa"],
-];
-
-/// Resolve an area slug to its city slug — either the slug IS a city
-/// slug (citywide view) or it carries one of the known prefixes.
-function citySlugForArea(areaSlug: string): string | null {
-  if (CITY_TZ[areaSlug]) return areaSlug;
-  for (const [prefix, citySlug] of SLUG_PREFIXES) {
-    if (areaSlug.startsWith(prefix)) return citySlug;
-  }
-  return null;
-}
-
-function tzForAreaSlug(areaSlug: string): string {
-  const citySlug = citySlugForArea(areaSlug);
-  // Default fallback — UTC is still wrong for any US city but at least
-  // it's predictable (and matches the pre-fix behavior on Vercel).
-  return (citySlug && CITY_TZ[citySlug]) || "UTC";
-}
-
-// v99 — cities whose police feed publishes incident DATES only (no
-// time-of-day, or a date stored at local midnight). For these the
-// hour-of-day histogram is fabricated — every incident collapses into
-// one bucket — so we replace the chart with an honest note instead of
-// a misleading spike. Mirrors DATE_ONLY_CITY_SLUGS in
-// packages/crime-data/src/lib/city-time.ts (kept in sync by hand to
-// avoid pulling the server-only crime-data package into this client
-// component). Verified 2026-05-31 by sampling each live feed.
-const DATE_ONLY_CITIES = new Set<string>([
-  "san-diego",
-  "charlotte",
-  "indianapolis",
-  "dallas",
-  "norfolk",
-  "tampa",
-]);
 
 const _hourFormatterCache = new Map<string, Intl.DateTimeFormat>();
 function hourInTz(d: Date, tz: string): number {
@@ -225,7 +126,7 @@ export function TimeOfDayCard({
   // midnight and collapses into a single bucket). Be honest instead of
   // drawing a misleading spike. The day-level data (and every other
   // card on the page) is still accurate — only the *hour* is unknown.
-  if (cityKey && DATE_ONLY_CITIES.has(cityKey)) {
+  if (cityKey && DATE_ONLY_SLUGS.has(cityKey)) {
     return (
       <section className="surface p-5">
         <header>

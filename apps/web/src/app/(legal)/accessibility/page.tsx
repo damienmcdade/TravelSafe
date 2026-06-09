@@ -35,7 +35,7 @@ export default function AccessibilityPage() {
           <li>Semantic HTML with landmark regions and a &ldquo;Skip to main content&rdquo; link on every page.</li>
           <li>Keyboard-operable navigation, controls, and the city / neighborhood pickers, with visible focus states.</li>
           <li>Text color and interactive elements designed to meet AA contrast ratios; a dark-mode option in Settings.</li>
-          <li>Labelled form fields, buttons, and ARIA roles on interactive widgets (e.g. disclaimers use <code className="text-xs">role=&quot;note&quot;</code>).</li>
+          <li>Labeled form fields, buttons, and ARIA roles on interactive widgets (e.g. disclaimers use <code className="text-xs">role=&quot;note&quot;</code>).</li>
           <li>Alt text on imagery and descriptive link text rather than &ldquo;click here&rdquo;.</li>
           <li>Responsive layout that supports zoom and reflow without loss of content.</li>
         </ul>

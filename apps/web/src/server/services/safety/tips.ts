@@ -25,12 +25,12 @@ export type CitySlug =
   | "washington-dc" | "boston" | "philadelphia" | "cincinnati"
   | "new-orleans" | "baton-rouge" | "cambridge" | "dallas"
   | "charlotte" | "baltimore" | "minneapolis" | "cleveland"
-  | "milwaukee" | "las-vegas" | "boise" | "buffalo" | "tucson"
+  | "milwaukee" | "las-vegas" | "boise" | "buffalo"
   | "kansas-city" | "saint-paul" | "pittsburgh"
-  // v98c — these 8 were absent from the union, so Record<CitySlug,…>
+  // v98c — these were absent from the union, so Record<CitySlug,…>
   // lookups (CITY_RESOURCES, NON_EMERGENCY) silently missed them and the
   // safety tab 500'd for these cities.
-  | "norfolk" | "fort-worth" | "denver" | "atlanta" | "indianapolis" | "raleigh" | "honolulu"
+  | "norfolk" | "fort-worth" | "denver" | "atlanta" | "indianapolis" | "honolulu"
   | "long-beach";
 export type TipGroup = "prevention" | "self-defense" | "ca-legal";
 
@@ -79,7 +79,6 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   "las-vegas":     { line: "702-828-3111", label: "LVMPD non-emergency",  url: "https://www.lvmpd.com/" },
   "boise":         { line: "208-377-6790", label: "BPD non-emergency",    url: "https://www.cityofboise.org/departments/police/" },
   "buffalo":       { line: "716-851-4444", label: "Buffalo PD non-emergency", url: "https://www.buffalony.gov/" },
-  "tucson":        { line: "520-791-4444", label: "TPD non-emergency",    url: "https://www.tucsonaz.gov/Departments/Police" },
   "kansas-city":   { line: "816-234-5111", label: "KCPD non-emergency",   url: "https://kcpolice.org/" },
   "saint-paul":    { line: "651-291-1111", label: "SPPD non-emergency",   url: "https://www.stpaul.gov/departments/police" },
   "pittsburgh":    { line: "412-255-2828", label: "PBP non-emergency",    url: "https://pittsburghpa.gov/publicsafety/police" },
@@ -90,7 +89,6 @@ export const NON_EMERGENCY: Record<CitySlug, { line: string; label: string; url:
   "denver":        { line: "720-913-2000", label: "Denver PD non-emergency", url: "https://www.denvergov.org/Government/Agencies-Departments-Offices/Agencies-Departments-Offices-Directory/Police-Department" },
   "atlanta":       { line: "404-658-6666", label: "Atlanta E911 non-emergency", url: "https://www.atlantapd.org/" },
   "indianapolis":  { line: "317-327-3811", label: "IMPD non-emergency", url: "https://www.indy.gov/agency/indianapolis-metropolitan-police-department" },
-  "raleigh":       { line: "919-829-1911", label: "Raleigh PD non-emergency", url: "https://raleighnc.gov/police" },
   "honolulu":      { line: "808-529-3111", label: "HPD non-emergency", url: "https://www.honolulupd.org/" },
   "long-beach":    { line: "562-435-6711", label: "LBPD non-emergency", url: "https://www.longbeach.gov/police/" },
 };
@@ -127,7 +125,6 @@ export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; progr
   "las-vegas":     { name: "Las Vegas Metropolitan Police Department", url: "https://www.lvmpd.com/", programName: "LVMPD Community Engagement", programUrl: "https://www.lvmpd.com/en-us/Pages/Community-Engagement.aspx" },
   "boise":         { name: "Boise Police Department", url: "https://www.cityofboise.org/departments/police/", programName: "Boise Police Department", programUrl: "https://www.cityofboise.org/departments/police/" },
   "buffalo":       { name: "Buffalo Police Department", url: "https://www.buffalony.gov/", programName: "Buffalo Police Department", programUrl: "https://www.buffalony.gov/" },
-  "tucson":        { name: "Tucson Police Department", url: "https://www.tucsonaz.gov/Departments/Police", programName: "TPD Crime Prevention", programUrl: "https://www.tucsonaz.gov/Departments/Police/Crime-Prevention" },
   "kansas-city":   { name: "Kansas City Missouri Police Department", url: "https://kcpolice.org/", programName: "KCPD Community Outreach", programUrl: "https://kcpolice.org/community/" },
   "saint-paul":    { name: "Saint Paul Police Department", url: "https://www.stpaul.gov/departments/police", programName: "Saint Paul Police Department", programUrl: "https://www.stpaul.gov/departments/police" },
   "pittsburgh":    { name: "Pittsburgh Bureau of Police", url: "https://pittsburghpa.gov/publicsafety/police", programName: "Pittsburgh Bureau of Police", programUrl: "https://pittsburghpa.gov/publicsafety/police" },
@@ -140,7 +137,6 @@ export const CITY_RESOURCES: Record<CitySlug, { name: string; url: string; progr
   "sacramento":    { name: "Sacramento Police Department", url: "https://www.cityofsacramento.gov/police", programName: "Sacramento Police Department", programUrl: "https://www.cityofsacramento.gov/police" },
   "atlanta":       { name: "Atlanta Police Department", url: "https://www.atlantapd.org/", programName: "APD Crime Prevention", programUrl: "https://www.atlantapd.org/i-want-to/crime-prevention" },
   "indianapolis":  { name: "Indianapolis Metropolitan Police Department", url: "https://www.indy.gov/agency/indianapolis-metropolitan-police-department", programName: "IMPD", programUrl: "https://www.indy.gov/agency/indianapolis-metropolitan-police-department" },
-  "raleigh":       { name: "Raleigh Police Department", url: "https://raleighnc.gov/police", programName: "Raleigh Police Department", programUrl: "https://raleighnc.gov/police" },
   "honolulu":      { name: "Honolulu Police Department", url: "https://www.honolulupd.org/", programName: "HPD Crime Prevention", programUrl: "https://www.honolulupd.org/information/crime-prevention/" },
   "long-beach":    { name: "Long Beach Police Department", url: "https://www.longbeach.gov/police/", programName: "LBPD Crime Prevention", programUrl: "https://www.longbeach.gov/police/community-programs/" },
 };
@@ -369,10 +365,15 @@ const CITY_STATE: Record<string, string> = {
   "colorado-springs": "CO", "denver": "CO", "detroit": "MI", "washington-dc": "DC",
   "boston": "MA", "cambridge": "MA", "philadelphia": "PA", "pittsburgh": "PA",
   "cincinnati": "OH", "cleveland": "OH", "new-orleans": "LA", "baton-rouge": "LA",
-  "dallas": "TX", "charlotte": "NC", "raleigh": "NC", "baltimore": "MD",
+  "dallas": "TX", "charlotte": "NC", "baltimore": "MD",
   "minneapolis": "MN", "saint-paul": "MN", "milwaukee": "WI", "las-vegas": "NV",
-  "boise": "ID", "norfolk": "VA", "kansas-city": "MO", "fort-worth": "TX", "tucson": "AZ",
+  "boise": "ID", "norfolk": "VA", "kansas-city": "MO", "fort-worth": "TX",
   "atlanta": "GA", "indianapolis": "IN", "honolulu": "HI", "long-beach": "CA",
+  // Newer jurisdictions — slug→state only (accurate); their non-emergency line
+  // falls back to a generic prompt (we don't fabricate phone numbers), but the
+  // per-state legal section now renders correctly.
+  "houston": "TX", "nashville": "TN", "montgomery-county": "MD", "prince-georges-county": "MD",
+  "phoenix": "AZ", "jacksonville": "FL", "tampa": "FL", "gainesville": "FL", "virginia-beach": "VA",
 };
 
 // Verified against NCSL's state-by-state self-defense table + each state's
@@ -406,6 +407,8 @@ const STATE_LAW: Record<string, StateLaw> = {
   GA: { name: "Georgia",    syg: true,  basis: "statute",                                                   cite: "O.C.G.A. §16-3-23.1" },
   IN: { name: "Indiana",    syg: true,  basis: "statute",                                                   cite: "Ind. Code §35-41-3-2" },
   HI: { name: "Hawaii",     syg: false, basis: "statute",                                                   cite: "H.R.S. §703-304" },
+  MD: { name: "Maryland",   syg: false, basis: "case law (no stand-your-ground statute; duty to retreat in public where safe, castle doctrine in the home)", cite: "Maryland self-defense case law" },
+  FL: { name: "Florida",    syg: true,  basis: "statute",                                                   cite: "Fla. Stat. §776.012 / §776.013" },
 };
 
 /// Build the lead legal card for a non-CA city: a plain-language summary of
@@ -599,13 +602,20 @@ export async function getSafetyTipsForArea(area: string): Promise<SafetyTipsResp
   // Charlotte, Nashville, and Minneapolis because the type cast above is
   // unsafe and the runtime lookup silently failed.
   const nonEmergency = NON_EMERGENCY[citySlug];
-  if (!nonEmergency) {
-    console.warn(`[safety.tips] NON_EMERGENCY missing entry for city slug: ${citySlug}`);
-  }
+  // fix(audit safety-tips-wrong-number): when a city has no curated non-emergency
+  // entry, fall back to a GENERIC honest prompt — NOT San Diego's number (which
+  // is what the old `?? NON_EMERGENCY["san-diego"]` showed for every uncurated
+  // city, e.g. Houston/Nashville/MD counties). We don't fabricate a specific
+  // number for these; we point users to 911 + their local line.
+  const genericNonEmergency = {
+    line: "911 for emergencies",
+    label: `${city.label} police — look up the local non-emergency line`,
+    url: `https://www.google.com/search?q=${encodeURIComponent(`${city.label} police non-emergency number`)}`,
+  };
   return {
     area,
     city: { slug: city.slug, label: city.label },
-    nonEmergency: nonEmergency ?? NON_EMERGENCY["san-diego"],
+    nonEmergency: nonEmergency ?? genericNonEmergency,
     basedOn: { dominantCategory, topOffense: mix?.topOffenses[0]?.offense },
     prevention,
     selfDefense,

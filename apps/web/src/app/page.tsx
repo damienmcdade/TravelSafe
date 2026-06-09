@@ -22,7 +22,7 @@ export default function WelcomePage() {
               <span className="bg-gradient-to-r from-white to-coral-200 bg-clip-text text-transparent">Community</span>Safe
             </h1>
             <p className="mt-4 text-sand-100 text-base sm:text-lg animate-rise-in">
-              Calm, neighborhood-level safety context for major US cities. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
+              Calm, neighborhood-level safety context for major US cities and counties. The application draws on official police data and moderated community reports, without surveillance, profiling, or alarmism.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3 animate-rise-in">
               <Link href="/now" className="btn-coral text-base px-6 py-3 w-full sm:w-auto text-center justify-center">Explore CommunitySafe →</Link>

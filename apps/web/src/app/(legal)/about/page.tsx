@@ -147,7 +147,7 @@ export default function AboutPage() {
               rel="noopener noreferrer"
               className="text-bay-700 underline"
             >
-              github.com/damienmcdade/TravelSafe/issues
+              our GitHub issue tracker
             </a>
           </li>
         </ul>

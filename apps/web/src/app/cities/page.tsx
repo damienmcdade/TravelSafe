@@ -26,7 +26,7 @@ export default function CitiesIndexPage() {
       <header>
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Cities</p>
         <h1 className="mt-1 font-display text-3xl text-slate2-900">
-          {sorted.length} US cities covered
+          {sorted.length} US cities and counties covered
         </h1>
         <p className="mt-2 text-sm text-slate2-700 max-w-2xl">
           Pick a city to see neighborhood-level safety data drawn from that city&apos;s

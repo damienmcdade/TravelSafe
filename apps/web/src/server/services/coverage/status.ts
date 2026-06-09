@@ -375,7 +375,6 @@ const STATE_BY_SLUG: Record<string, string> = {
   "milwaukee": "WI",
   "las-vegas": "NV",
   "boise": "ID",
-  "tucson": "AZ",
   "kansas-city": "MO",
   "fort-worth": "TX",
 };
