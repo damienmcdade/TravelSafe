@@ -1,10 +1,32 @@
 import rateLimit from "express-rate-limit";
+import type { Request } from "express";
+
+// fix(security rate-limit-xff-spoof): the limiters previously keyed on the
+// default `req.ip`, which `trust proxy: 1` derives from a CLIENT-SPOOFABLE
+// position in X-Forwarded-For — so an attacker rotating XFF got effectively
+// unlimited /ai/* (LLM cost), /auth (brute-force), and global requests on the
+// publicly-reachable Railway host. (The Vercel edge was already fixed to use
+// x-real-ip.) Railway's edge proxy (Envoy) stamps `x-envoy-external-address`
+// with the true external client IP and OVERWRITES any client-supplied value,
+// so it can't be forged. We key on it when present, falling back to `req.ip`
+// — i.e. STRICTLY no worse than before if the header is ever absent, and it
+// never collapses to a single shared key (the header is per-client).
+function clientIpKey(req: Request): string {
+  const raw = req.headers["x-envoy-external-address"];
+  let ip = typeof raw === "string" ? raw.split(",")[0]!.trim() : "";
+  if (!ip) ip = req.ip || "0.0.0.0";
+  // Group IPv6 by /64 (first four hextets) so a client can't rotate the host
+  // portion to evade the cap; IPv4 is keyed in full.
+  if (ip.includes(":")) ip = ip.split(":").slice(0, 4).join(":") + "::/64";
+  return ip;
+}
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 20,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
 });
 
 export const writeLimiter = rateLimit({
@@ -12,6 +34,7 @@ export const writeLimiter = rateLimit({
   limit: 30,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
 });
 
 // v92 — global per-IP DoS protection on every API route (DISA STIG
@@ -26,6 +49,7 @@ export const globalLimiter = rateLimit({
   limit: 600,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
   // Don't 429 on health checks (Railway probes every 30s) or diag.
   skip: (req) => req.path === "/health" || req.path === "/healthz" || req.path.startsWith("/diag/"),
 });
@@ -42,7 +66,7 @@ export const tokenLimiter = rateLimit({
   limit: 10,
   standardHeaders: "draft-7",
   legacyHeaders: false,
-  keyGenerator: (req) => `token:${req.params.token ?? req.ip}`,
+  keyGenerator: (req) => `token:${req.params.token ?? clientIpKey(req)}`,
 });
 
 // v96 — pen-test follow-up. Anonymous LLM endpoints (the AI brief +
@@ -58,4 +82,5 @@ export const aiReadLimiter = rateLimit({
   limit: 30,
   standardHeaders: "draft-7",
   legacyHeaders: false,
+  keyGenerator: clientIpKey,
 });
