@@ -213,21 +213,24 @@ export async function purgeExpiredAnonPostRate(): Promise<number> {
 /// route remains the absolute backstop regardless.
 export async function anonPostLimited(
   req: NextRequest,
-  opts: { burstLimit: number; burstWindowSec: number; dailyLimit: number },
+  opts: { burstLimit: number; burstWindowSec: number; dailyLimit: number; scope?: string },
 ): Promise<boolean> {
   const h = ipHash(attestedClientIp(req));
+  // scope keeps separate budgets per write type (e.g. "post" vs "comment") so
+  // commenting can't exhaust the posting budget and vice-versa.
+  const s = opts.scope ?? "post";
   // Fast path: Redis, when REDIS_URL is wired on the web runtime.
-  const burstR = await distributedRateLimit(`anonpost:burst:${h}`, opts.burstLimit, opts.burstWindowSec);
-  const dailyR = await distributedRateLimit(`anonpost:day:${h}`, opts.dailyLimit, 24 * 60 * 60);
+  const burstR = await distributedRateLimit(`anon:${s}:burst:${h}`, opts.burstLimit, opts.burstWindowSec);
+  const dailyR = await distributedRateLimit(`anon:${s}:day:${h}`, opts.dailyLimit, 24 * 60 * 60);
   if (burstR || dailyR) return Boolean(burstR?.limited || dailyR?.limited);
   // Redis absent/errored → DB-backed counter (the reliable path on Vercel today).
   try {
     const [burst, daily] = await Promise.all([
-      dbWindowLimited(`anonpost:burst:${h}`, opts.burstLimit, opts.burstWindowSec),
-      dbWindowLimited(`anonpost:day:${h}`, opts.dailyLimit, 24 * 60 * 60),
+      dbWindowLimited(`anon:${s}:burst:${h}`, opts.burstLimit, opts.burstWindowSec),
+      dbWindowLimited(`anon:${s}:day:${h}`, opts.dailyLimit, 24 * 60 * 60),
     ]);
     return burst || daily;
   } catch {
-    return false; // fail open to the route's global DB cap
+    return false; // fail open
   }
 }

@@ -600,6 +600,9 @@ export function humanizeArea(slug: string): string {
 const LABEL_ACRONYMS = new Set([
   "NE", "NW", "SE", "SW", "II", "III", "IV", "USA", "BID", "TOD",
   "CSULB", "UCLA", "USC", "LSU", "SMU", "TCU", "VCU", "FSU", "UNO",
+  // Recognizable place/facility codes that read correctly in uppercase rather
+  // than title-cased ("DIA" not "Dia"). These are how locals refer to them.
+  "DIA", "UMC", "CBD", "CSX", "PV",
 ]);
 // Connector words that read better lower-case when not the first token.
 const LABEL_SMALL_WORDS = new Set([

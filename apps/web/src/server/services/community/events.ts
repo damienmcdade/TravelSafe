@@ -25,7 +25,8 @@ communityEvents.setMaxListeners(200);
 
 export type CommunityEvent =
   | { type: "post.verified"; postId: string; areaSlug: string; kind: string; reviewedAt: string }
-  | { type: "post.reverted"; postId: string; areaSlug: string };
+  | { type: "post.reverted"; postId: string; areaSlug: string }
+  | { type: "comment.created"; postId: string };
 
 const CHANNEL = "community:events";
 

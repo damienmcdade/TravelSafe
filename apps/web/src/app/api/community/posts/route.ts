@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
-import bcrypt from "bcryptjs";
 import { PostStatus, PostKind } from "@/generated/prisma/client";
 import { wrap, HttpError } from "@/server/lib/http";
 import { optionalSession } from "@/server/lib/auth";
@@ -9,6 +8,7 @@ import { preVetPost, POST_RATE_LIMIT_PER_DAY } from "@/server/services/moderatio
 import { isSuspended } from "@/server/services/moderation/suspension";
 import { publishCommunityEvent } from "@/server/services/community/events";
 import { anonPostLimited } from "@/server/lib/rate-limit";
+import { ensureAnonymousUser } from "@/server/services/community/anon-user";
 
 // fix(security anon-post-shared-budget): every anonymous post attributes to the
 // single shared "anonymous@travelsafe.local" row, so the per-author DB cap below
@@ -34,26 +34,6 @@ const Body = z.object({
 
 function compose(input: { what: string; where: string; when: string }) {
   return `What: ${input.what.trim()}\nWhere: ${input.where.trim()}\nWhen: ${input.when.trim()}`;
-}
-
-const ANON_EMAIL = "anonymous@travelsafe.local";
-const ANON_DISPLAY = "Anonymous neighbor";
-
-/// Resolve (or create on first use) the singleton "Anonymous" user that all
-/// anonymous posts attribute to. Avoids the schema change of making
-/// Post.authorId nullable while keeping the spec's audit trail intact.
-async function ensureAnonymousUser(): Promise<{ id: string }> {
-  const existing = await prisma.user.findUnique({ where: { email: ANON_EMAIL }, select: { id: true } });
-  if (existing) return existing;
-  return prisma.user.create({
-    data: {
-      email: ANON_EMAIL,
-      // Random hash — no one will ever sign in as Anonymous.
-      passwordHash: await bcrypt.hash(`anon-${Date.now()}-${Math.random()}`, 4),
-      displayName: ANON_DISPLAY,
-    },
-    select: { id: true },
-  });
 }
 
 export const dynamic = "force-dynamic";

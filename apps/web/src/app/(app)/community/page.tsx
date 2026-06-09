@@ -223,6 +223,9 @@ function PostCard({ post }: { post: PostListItem }) {
   // with NO catch, so a failed API call silently reset the button to idle and the
   // user couldn't tell their reaction/report didn't land. Surface the failure.
   const [error, setError] = useState<string | null>(null);
+  // Comment thread is collapsed by default — expanding lazily loads it.
+  const [showComments, setShowComments] = useState(false);
+  const [commentCount, setCommentCount] = useState(post._count.comments);
 
   async function report() {
     if (busy) return;
@@ -286,6 +289,13 @@ function PostCard({ post }: { post: PostListItem }) {
         <ReactButton onClick={() => react("CONFIRMED")}  busy={busy === "CONFIRMED"} done={confirmed === "CONFIRMED"} color="sage">I saw this too</ReactButton>
         <ReactButton onClick={() => react("CONCERNED")}  busy={busy === "CONCERNED"} done={confirmed === "CONCERNED"} color="amber2">Concerned</ReactButton>
         <button
+          onClick={() => setShowComments((v) => !v)}
+          aria-expanded={showComments}
+          className="px-2.5 py-1 rounded-full bg-bay-100 text-bay-700 hover:bg-bay-200"
+        >
+          💬 {commentCount > 0 ? `${commentCount} ${commentCount === 1 ? "comment" : "comments"}` : "Comment"}
+        </button>
+        <button
           onClick={report}
           disabled={busy != null}
           className="ml-auto text-dusk-700 underline hover:text-dusk-500 disabled:opacity-60 disabled:cursor-not-allowed"
@@ -294,7 +304,98 @@ function PostCard({ post }: { post: PostListItem }) {
         </button>
       </footer>
       {error && <p role="alert" className="mt-2 text-xs text-dusk-700">{error}</p>}
+      {showComments && <CommentThread postId={post.id} onPosted={() => setCommentCount((c) => c + 1)} />}
     </article>
+  );
+}
+
+interface CommentItem {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: { displayName: string | null; trustLevel?: string | null };
+}
+
+/// Lazily-loaded comment thread for a post: lists visible comments and lets
+/// anyone add one (anonymous like posts, or attributed when signed in).
+function CommentThread({ postId, onPosted }: { postId: string; onPosted: () => void }) {
+  const [comments, setComments] = useState<CommentItem[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    api<CommentItem[]>(`/community/posts/${postId}/comment`)
+      .then((c) => { if (active) setComments(c); })
+      .catch((err) => { if (active) setLoadError((err as Error).message); });
+    return () => { active = false; };
+  }, [postId]);
+
+  async function submitComment(e: React.FormEvent) {
+    e.preventDefault();
+    const body = draft.trim();
+    if (body.length < 2 || posting) return;
+    setPosting(true);
+    setPostError(null);
+    try {
+      const created = await api<CommentItem & { status?: string }>(`/community/posts/${postId}/comment`, {
+        method: "POST",
+        body: JSON.stringify({ body }),
+      });
+      setDraft("");
+      // A held (PENDING) comment isn't shown yet; only append visible ones.
+      if (!created.status || created.status === "VERIFIED") {
+        setComments((prev) => [...(prev ?? []), created]);
+        onPosted();
+      } else {
+        setPostError("Thanks — your comment is in review and will appear once approved.");
+      }
+    } catch (err) {
+      const e = err as Error & { body?: { guidance?: string } };
+      setPostError(e.body?.guidance ?? `Couldn't post your comment — ${e.message}`);
+    } finally {
+      setPosting(false);
+    }
+  }
+
+  return (
+    <section className="mt-3 border-t border-sand-200 pt-3 space-y-3" aria-label="Comments">
+      {loadError && <p role="alert" className="text-xs text-dusk-700">Couldn&apos;t load comments — {loadError}</p>}
+      {comments === null && !loadError && <p className="text-xs text-slate2-500 animate-pulse">Loading comments…</p>}
+      {comments && comments.length === 0 && <p className="text-xs text-slate2-500">No comments yet — be the first.</p>}
+      {comments && comments.map((c) => (
+        <div key={c.id} className="text-sm">
+          <div className="flex items-center gap-1.5 text-xs text-slate2-500">
+            <span className="text-slate2-700 font-medium">{c.author.displayName || "Anonymous neighbor"}</span>
+            {c.author.trustLevel && c.author.trustLevel !== "NEW" && <TrustBadge level={c.author.trustLevel as never} />}
+            <span>·</span>
+            <span>{relativeTime(c.createdAt)}</span>
+          </div>
+          <p className="mt-0.5 text-slate2-900 whitespace-pre-wrap break-words">{c.body}</p>
+        </div>
+      ))}
+      <form onSubmit={submitComment} className="flex items-start gap-2">
+        <textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          maxLength={500}
+          rows={2}
+          placeholder="Add a comment…"
+          aria-label="Add a comment"
+          className="input flex-1 text-sm"
+        />
+        <button type="submit" disabled={posting || draft.trim().length < 2} className="btn-primary text-sm disabled:opacity-50 whitespace-nowrap">
+          {posting ? "Posting…" : "Comment"}
+        </button>
+      </form>
+      <p className="text-[11px] text-slate2-500">
+        Comments are screened by the same guidelines as posts. By commenting you agree to the{" "}
+        <Link href="/community-guidelines" className="text-bay-700 hover:underline">Community guidelines</Link>.
+      </p>
+      {postError && <p role="status" className="text-xs text-amber2-700">{postError}</p>}
+    </section>
   );
 }
 

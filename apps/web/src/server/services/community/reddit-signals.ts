@@ -17,18 +17,54 @@ import { cityForArea } from "../crime-data/cities";
 //   the original thread; we never present this as CommunitySafe's own content.
 // - NSFW / over-18 posts are filtered out by Reddit's own flag.
 
+// Well-known, established public city subreddits. A wrong/old name simply yields
+// an empty Community Signals card (graceful), never an error. Covers all 45.
 const CITY_SUBREDDITS: Record<string, string> = {
   "san-diego":     "sandiego",
   "los-angeles":   "LosAngeles",
   "san-francisco": "sanfrancisco",
+  "oakland":       "oakland",
+  "sacramento":    "Sacramento",
+  "long-beach":    "longbeach",
   "chicago":       "chicago",
   "seattle":       "Seattle",
   "new-york":      "nyc",
   "colorado-springs": "ColoradoSprings",
+  "denver":        "Denver",
+  "boise":         "Boise",
   "detroit":       "Detroit",
   "washington-dc": "washingtondc",
   "philadelphia":  "philadelphia",
+  "pittsburgh":    "pittsburgh",
   "boston":        "boston",
+  "cambridge":     "CambridgeMA",
+  "buffalo":       "Buffalo",
+  "cincinnati":    "cincinnati",
+  "cleveland":     "Cleveland",
+  "new-orleans":   "NewOrleans",
+  "baton-rouge":   "BatonRouge",
+  "dallas":        "Dallas",
+  "fort-worth":    "FortWorth",
+  "houston":       "houston",
+  "charlotte":     "Charlotte",
+  "baltimore":     "baltimore",
+  "montgomery-county": "moco",
+  "prince-georges-county": "PrinceGeorgesCounty",
+  "minneapolis":   "minnesota",
+  "saint-paul":    "StPaul",
+  "milwaukee":     "milwaukee",
+  "kansas-city":   "kansascity",
+  "indianapolis":  "indianapolis",
+  "las-vegas":     "vegas",
+  "atlanta":       "Atlanta",
+  "norfolk":       "norfolk",
+  "virginia-beach": "VirginiaBeach",
+  "nashville":     "nashville",
+  "phoenix":       "phoenix",
+  "jacksonville":  "Jacksonville",
+  "tampa":         "tampa",
+  "gainesville":   "gainesville",
+  "honolulu":      "Honolulu",
 };
 
 export interface CommunitySignal {
@@ -67,7 +103,10 @@ interface RedditResp { data?: { children?: RedditChild[] } }
 /// Strip a city-prefix slug ("la-hollywood" → "hollywood") and humanize it
 /// ("la-west-la" → "west la"). The result is what we search Reddit for.
 function neighborhoodQuery(areaSlug: string, cityLabel: string): string {
-  const prefix = /^(la|sf|sd|chi|ny|sea|bos|phl|dc|den|det)-/;
+  // Strip the city routing prefix to recover the neighborhood name. Covers every
+  // city's prefix (san-diego is unprefixed, so its bare name-derived slugs pass
+  // through untouched). Mirrors AREA_SLUG_PREFIX in crime-data/cities.ts.
+  const prefix = /^(la|sf|chi|sea|ny|cosp|det|dc|bos|phl|oak|cin|nola|br|cam|dal|clt|balt|mpls|cle|mke|lv|bzi|buf|nor|kc|sp|pgh|fw|den|sac|atl|indy|hnl|lb|phx|jax|vb|gnv|tpa|bna|hou|moco|pg)-/;
   const stripped = areaSlug.replace(prefix, "").replace(/-/g, " ").trim();
   // For city defaults like "san-diego" / "chicago" the stripped value matches
   // the city label — just search the city if no neighborhood was selected.
