@@ -19,8 +19,13 @@ import { houstonPolygons, houstonPoints } from "../data/houston-neighborhoods.js
 // archival feed — the provenance states the data vintage honestly.
 const BASE = "https://services.arcgis.com/NummVBqZSIJKUeVR/arcgis/rest/services/HPD_NIBRS_Yearly_Cases/FeatureServer/0/query";
 const PAGE_SIZE = 2000;
-const RECENT_PAGES = 6;
-const PAGES = 25;
+// v113 — Houston runs ~570 incidents/day, so 6 pages (12k) spanned only ~21
+// days → the citywide score read "low confidence" (window < the 90-day / 42-day
+// + 1.5k-incident high bar) until the background deepen finished. Fetch 16 pages
+// (~32k incidents ≈ 56 days) up front so the FIRST cold score is already
+// high-confidence; the deepen still backfills the rest for full-depth baselines.
+const RECENT_PAGES = 16;
+const PAGES = 30;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[]; full: boolean } | null = null;
 let lastGoodAreas: KnownArea[] | null = null;

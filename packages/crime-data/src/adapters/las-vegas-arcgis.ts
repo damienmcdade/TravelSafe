@@ -44,7 +44,18 @@ const PAGES = 90;
 // backfill the rest in the background. RECENT_PAGES is larger here because the
 // raw CFS feed is dense and most rows are dropped at ingest, lowering kept-row
 // yield per page.
-const RECENT_PAGES = 14;
+// v113 — bump 14 → 48. At 14 pages the cold window was only ~13 filtered days
+// (wd13), which trips the <30d SHORT_WINDOW guard and computes a LOW-confidence
+// citywide score. That partial score is then cached in Redis L2 BEFORE the
+// background deepen finishes, so the very first request after a container
+// restart latches LV at LOW until the score cache TTL expires — the deepen
+// fixing the row cache doesn't retroactively fix the already-cached score.
+// 48 pages ≈ 96k raw rows ≈ a ≥42-day filtered window with tens of thousands of
+// kept incidents, so the FIRST computed score is already HIGH (windowDays≥42 AND
+// ≥1,500 incidents). The Esri edge cache (cacheHint=true) serves 48 pages at
+// concurrency 4 in ~5s cold — well inside the route budget — so widening the
+// cold batch costs no meaningful latency. PAGES=90 still deepens to ~100 days.
+const RECENT_PAGES = 48;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let cache: { fetchedAt: number; rows: Incident[]; full: boolean } | null = null;
 let lastGoodAreas: KnownArea[] | null = null;
