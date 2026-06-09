@@ -46,13 +46,29 @@ inline in the Leaflet container per OSM's policy
 
 > &copy; OpenStreetMap contributors &copy; CARTO
 
-## CC-BY-SA imagery (work in progress)
+## OpenStreetMap data — ODbL (Charlotte neighborhood boundaries)
+
+Charlotte, NC publishes no official named-neighborhood boundary set, so
+Charlotte's neighborhood polygons + label points
+(`packages/crime-data/src/data/charlotte-neighborhoods.ts`) are derived from
+OpenStreetMap (an Overpass extract of `place=neighbourhood|suburb|quarter`,
+clipped to the Charlotte municipal boundary). This is a *Produced Work*
+under the Open Database License (ODbL) v1.0. Required notice:
+
+> Neighborhood boundaries &copy; OpenStreetMap contributors, available under
+> the Open Database License (ODbL). https://www.openstreetmap.org/copyright
+
+This notice is surfaced to users in the Charlotte data-provenance banner and
+the crime-map data-source caption (`apps/web/src/app/(app)/map/page.tsx`).
+The crime DATA itself is official CMPD (City of Charlotte Open Data); only the
+boundary geometry is OSM-derived.
+
+## CC-BY-SA imagery
 
 City backdrop photography sourced from Wikimedia Commons under
 CC-BY-SA 4.0 requires per-work creator + license enumeration
 (§3(a)(1) of the license). `apps/web/src/app/credits/page.tsx`
-currently uses a template-style attribution; per-photo enumeration
-is a tracked improvement before public launch.
+enumerates each photo with its creator + license link.
 
 ## How to update this file
 

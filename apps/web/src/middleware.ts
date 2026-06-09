@@ -201,11 +201,20 @@ function pickLimit(pathname: string): number | null {
 }
 
 function clientIp(req: NextRequest): string {
-  // Vercel sets x-forwarded-for and x-real-ip. Take the first hop.
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
+  // fix(security rate-limit-xff-spoof): Vercel's edge sets x-real-ip to the
+  // ATTESTED client IP. Prefer it — the LEFTMOST x-forwarded-for token is
+  // client-injectable, so keying the limiter on it let an attacker rotate XFF
+  // to get effectively unlimited /api/ai/* (now public) + auth attempts.
+  // x-real-ip cannot be spoofed past Vercel's proxy.
   const xri = req.headers.get("x-real-ip");
-  if (xri) return xri;
+  if (xri) return xri.trim();
+  // Fallback (non-Vercel / local): take the LAST XFF hop — the one the trusted
+  // proxy appended — not the client-controlled leftmost token.
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
   return "unknown";
 }
 

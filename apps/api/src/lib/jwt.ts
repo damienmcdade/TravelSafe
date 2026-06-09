@@ -41,7 +41,9 @@ export function signMfaPendingToken(uid: string): string {
 }
 
 export function verifyMfaPendingToken(token: string): { uid: string } {
-  const decoded = jwt.verify(token, env.JWT_SECRET);
+  // fix(security): pin the algorithm to HS256 (matches the web side) so an
+  // asymmetric key, if ever introduced, can never enable an alg-confusion forge.
+  const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ["HS256"] });
   if (typeof decoded !== "object" || !decoded) throw new Error("Invalid mfa pending token");
   const p = decoded as { uid?: unknown; typ?: unknown };
   if (p.typ !== "mfa_pending" || typeof p.uid !== "string") {
@@ -58,7 +60,7 @@ export function signSession(payload: Omit<SessionPayload, "typ">): string {
 }
 
 export function verifySession(token: string, opts?: { expectType?: "access" | "refresh" }): SessionPayload {
-  const decoded = jwt.verify(token, env.JWT_SECRET);
+  const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ["HS256"] });
   if (typeof decoded !== "object" || !decoded || !("uid" in decoded)) {
     throw new Error("Invalid session payload");
   }
