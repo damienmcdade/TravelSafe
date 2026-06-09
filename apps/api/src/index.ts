@@ -373,6 +373,21 @@ app.get("/diag/grade-sanity", (_req, res) => {
   });
 });
 
+// TEMP(security rate-limit-key): echoes how Railway's edge presents the client
+// IP so we can key the rate limiters on a NON-forgeable position. No secrets
+// exposed (only forwarding headers). Removed once the keyGenerator is fixed.
+app.get("/diag/whoami", (req, res) => {
+  res.json({
+    reqIp: req.ip,
+    xForwardedFor: req.headers["x-forwarded-for"] ?? null,
+    xRealIp: req.headers["x-real-ip"] ?? null,
+    xEnvoyExternal: req.headers["x-envoy-external-address"] ?? null,
+    forwarded: req.headers["forwarded"] ?? null,
+    cfConnecting: req.headers["cf-connecting-ip"] ?? null,
+    xClientIp: req.headers["x-client-ip"] ?? null,
+  });
+});
+
 app.use(notFound);
 app.use(errorHandler);
 
