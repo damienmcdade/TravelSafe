@@ -186,6 +186,11 @@ function computeAndStore(): Promise<CoverageResponse> {
 export async function getCoverage(): Promise<CoverageResponse> {
   const snap = await readCoverageSnapshot();
   if (snap) {
+    // v113 — if the fleet changed since the snapshot (a city was added or
+    // removed), the cached count is wrong; recompute synchronously so a newly
+    // added city reflects in /coverage immediately instead of waiting out the
+    // 12h hard TTL (the Vercel background refresh can't be relied on to run).
+    if (snap.data.totalCities !== CITIES.length) return computeAndStore();
     const age = Date.now() - snap.computedAt;
     if (age < COVERAGE_SOFT_TTL_MS) return snap.data; // fresh enough
     if (age < COVERAGE_HARD_TTL_MS) {

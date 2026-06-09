@@ -635,6 +635,16 @@ function isPart1Property(desc: string | undefined): boolean {
   return result;
 }
 
+// v113 — cities whose published feed is VERIFIED COMPLETE but whose per-capita
+// rate is genuinely low because they are simply safe. Boise PD publishes a full
+// 365-day calls-for-service feed; Boise is consistently one of the safest US
+// metros, so its sub-0.5×-national rate is real, not a partial pull. Listing it
+// here exempts ONLY the undercount heuristic (the window/volume floors still
+// apply), so its citywide confidence reads "high" honestly instead of being
+// flagged "provisional" forever. Add a slug here only after confirming its feed
+// is complete.
+const LOW_CRIME_VERIFIED: ReadonlySet<string> = new Set(["boise"]);
+
 /// Compute a confidence signal for the score. A small/short data window
 /// produces a per-capita rate that can swing wildly even when the city's
 /// actual crime profile is steady (annualizing a 14-day sample from a
@@ -656,6 +666,12 @@ function computeDataConfidence(
   // scaling (the old single cfsScale arg couldn't). Defaults below derive it
   // from totalIncidents for NIBRS callers that don't pre-scale.
   observedAnnualCombined?: number,
+  // v113 — set true for cities whose feed is VERIFIED COMPLETE but whose
+  // per-capita rate is genuinely low (a safe city), so the "implausibly low
+  // rate ⇒ probably partial data" undercount heuristic doesn't falsely demote
+  // them. Honest, not a relaxed bar: it only applies to a small allowlist of
+  // cities confirmed to publish a full incident feed (see LOW_CRIME_VERIFIED).
+  lowCrimeVerified = false,
 ): { dataConfidence: SafetyScoreResponse["dataConfidence"]; dataConfidenceNote?: string } {
   if (windowDays === 0 || totalIncidents === 0) {
     return {
@@ -722,7 +738,7 @@ function computeDataConfidence(
   const windowStable =
     totalIncidents >= MIN_VOLUME_FOR_HIGH &&
     (windowDays >= 90 || (windowDays >= 42 && totalIncidents >= STABLE_VOLUME));
-  const undercount = pop > 200_000 && ratio < 0.5;
+  const undercount = !lowCrimeVerified && pop > 200_000 && ratio < 0.5;
   if (!windowStable || undercount) {
     return {
       dataConfidence: "medium",
@@ -1263,7 +1279,7 @@ async function computeCitywideSafetyScore(citySlug: string): Promise<SafetyScore
   // Charlotte, Nashville, Minneapolis, Las Vegas, Tucson — ORI
   // lookup pending), fall back to the legacy vs-national grader.
   const cityLabel = `${city.label} (citywide)`;
-  let confidence = computeDataConfidence(windowDays, persons + property, pop, personsLocal100k + propertyLocal100k);
+  let confidence = computeDataConfidence(windowDays, persons + property, pop, personsLocal100k + propertyLocal100k, LOW_CRIME_VERIFIED.has(city.slug));
   const fbiBaseline = CITY_FBI_BASELINES[city.slug];
   // v102 — citywide grade is now ABSOLUTE (city's FBI rate vs national,
   // violent-weighted) so cities discriminate (San Diego A vs Detroit E),
