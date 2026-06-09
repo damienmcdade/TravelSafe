@@ -14,7 +14,7 @@ import { withComputeLimit } from "./lib/compute-limit.js";
 ///
 /// SOURCE / VINTAGE
 /// fix(audit fbi-anchor-year-mix-1): the national anchor MUST be the same vintage
-/// as the per-city baselines it is compared against. The 44 city baselines in
+/// as the per-city baselines it is compared against. The per-city baselines in
 /// CITY_FBI_BASELINES are FBI 2023 (revised), so this anchor is FBI 2023 (revised)
 /// too. A previous pass set this to 379.5 / 1760.1 mislabeled "2024" — but that
 /// pair never existed in any single FBI year: 379.5 is the 2023-REVISED violent

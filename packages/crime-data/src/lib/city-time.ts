@@ -185,4 +185,9 @@ export const DATE_ONLY_CITY_SLUGS: ReadonlySet<string> = new Set([
   "dallas",
   "norfolk",
   "tampa",
+  // Prince George's County PGPD feed publishes date-only timestamps (all
+  // 00:00:00) — surface the honest "date only" message instead of a fabricated
+  // midnight time-of-day spike. (Montgomery County's start_date DOES carry real
+  // times, so it is intentionally NOT listed here.)
+  "prince-georges-county",
 ]);

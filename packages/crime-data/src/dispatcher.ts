@@ -71,7 +71,7 @@ const lkgRecentReports = new Map<string, Incident[]>();
 // LKG rows couldn't be reclaimed under heap pressure. (a) Cap each map and evict
 // the oldest entry (Map preserves insertion order) when over the cap, and
 // (b) register a single evictor so evictAllRowCaches() / the heap watchdog can
-// drop the LKG snapshots too. Area count across 44 cities is in the low
+// drop the LKG snapshots too. Area count across all jurisdictions is in the low
 // thousands, so the cap is a backstop, not a normal-operation limit.
 const LKG_MAX_ENTRIES = 4000;
 function lkgSet<V>(map: Map<string, V>, key: string, value: V): void {

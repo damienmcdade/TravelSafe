@@ -63,8 +63,13 @@ const SOCIETY_KEYS = [
   "DRUG", "NARCOTIC", "CDS", "WEAPON", "FIREARM", "GUN", "TRESPASS",
   "DISORDERLY", "PROSTITUTION", "LIQUOR", "ALCOHOL", "DUI",
 ];
-// Traffic + administrative / non-criminal call types — dropped at ingest so they
-// never inflate the countywide or per-place counts.
+// Traffic + administrative / non-criminal call types we want to guarantee are
+// dropped. NOTE: these are only consulted AFTER positive crime classification
+// fails — a real crime label must never be dropped because it incidentally
+// contains one of these broad words (e.g. a hypothetical "DEATH, HOMICIDE" must
+// classify as PERSONS, not be swept out by "DEATH"). In practice any non-crime
+// label already falls through to null, so this list is belt-and-suspenders
+// documentation of the known PGPD admin/traffic types.
 const SKIP_KEYS = [
   "ACCIDENT", "ALARM", "SERVICE", "LOCATE", "ASSIST", "CHECK", "WELFARE",
   "MISSING", "SUSPICIOUS", "INFORMATION", "LOST", "FOUND", "WARRANT SERVICE",
@@ -73,10 +78,15 @@ const SKIP_KEYS = [
 function classify(t: string): CrimeCategory | null {
   const s = t.toUpperCase();
   if (!s) return null;
-  for (const k of SKIP_KEYS) if (s.includes(k)) return null;
+  // Positive crime classification WINS — a real offense is never dropped because
+  // it happens to contain an admin word. ROBBERY is keyed first so "ROBBERY,
+  // VEHICLE" lands in PERSONS, not PROPERTY.
   if (PERSONS_KEYS.some((k) => s.includes(k))) return CrimeCategory.PERSONS;
   if (PROPERTY_KEYS.some((k) => s.includes(k))) return CrimeCategory.PROPERTY;
   if (SOCIETY_KEYS.some((k) => s.includes(k))) return CrimeCategory.SOCIETY;
+  // Not a Part-1/society crime — traffic, admin, and everything uncategorized
+  // (incl. SKIP_KEYS) is dropped so it never inflates the counts.
+  if (SKIP_KEYS.some((k) => s.includes(k))) return null;
   return null;
 }
 

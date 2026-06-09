@@ -43,8 +43,6 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "colorado-springs": { neighborhoodCount:  78, source: "Colorado Springs Police Department Crime Level Data (CSPD Open Data)" },
   "las-vegas":        { neighborhoodCount:  22, source: "Las Vegas Metropolitan Police Department Calls for Service (Opendata Las Vegas)" },
   "fort-worth":       { neighborhoodCount: 297, source: "FWPD Crime Data · City of Fort Worth GIS" },
-  "tucson":           { neighborhoodCount: 173, source: "Tucson Police Incidents — Last 45 Days (gis.tucsonaz.gov ArcGIS MapServer)" },
-  "austin":           { neighborhoodCount:  10, source: "APD Crime Reports (City of Austin Open Data, Socrata) — APD sectors" },
   "phoenix":          { neighborhoodCount:  13, source: "Phoenix PD Crime Data (phoenixopendata.com, CKAN) — urban villages, through Dec 2025" },
   "jacksonville":     { neighborhoodCount: 208, source: "JSO NIBRS Incidents — Jacksonville Sheriff's Office (ArcGIS) — neighborhood-level" },
   "virginia-beach":   { neighborhoodCount: 333, source: "VBPD Police Incident Reports (data-vbgov.opendata.arcgis.com) — planning subdivisions" },
@@ -64,8 +62,8 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "dallas":           { neighborhoodCount:  24, source: "Dallas Police Incidents (City of Dallas Open Data) — 24 area-sector polygons" },
   "baltimore":        { neighborhoodCount: 283, source: "BPD NIBRS Group A Crime Data · data.baltimorecity.gov" },
   "atlanta":          { neighborhoodCount:  25, source: "Atlanta Police Department Crime Incidents (Atlanta PD Open Data)" },
-  "charlotte":        { neighborhoodCount:  13, source: "Charlotte-Mecklenburg Police Department Crime Incidents (charlottenc.gov ArcGIS)" },
-  "raleigh":          { neighborhoodCount:   6, source: "Raleigh Police Department NIBRS Incidents (Raleigh Open Data, ArcGIS)" },
+  "charlotte":        { neighborhoodCount: 203, source: "Charlotte-Mecklenburg Police Department Crime Incidents (charlottenc.gov ArcGIS) — named neighborhoods (point-in-polygon)" },
+  "houston":          { neighborhoodCount: 266, source: "Houston Police Department NIBRS Crime (City of Houston Open Data, ArcGIS) — named neighborhoods (point-in-polygon), data through 2024" },
   "new-orleans":      { neighborhoodCount:  74, source: "NOPD Calls for Service 2026 (City of New Orleans Open Data)" },
   "baton-rouge":      { neighborhoodCount:  51, source: "Baton Rouge Police Crime Incidents (City of Baton Rouge Open Data)" },
   // Northeast / Mid-Atlantic
@@ -77,6 +75,11 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "buffalo":          { neighborhoodCount:  35, source: "Buffalo Police Crime Incidents (Open Data Buffalo, Socrata)" },
   "washington-dc":    { neighborhoodCount:  51, source: "DC MPD Crime Incidents — Last 30 Days (Open Data DC, ArcGIS MapServer)" },
   "norfolk":          { neighborhoodCount: 122, source: "Norfolk Police Incident Reports (data.norfolk.gov, Socrata)" },
+  "long-beach":       { neighborhoodCount:  74, source: "Long Beach Police Department Incidents (City of Long Beach Open Data, Socrata) — named neighborhoods (point-in-polygon)" },
+  "nashville":        { neighborhoodCount: 180, source: "Metro Nashville Police Department Incidents (Metro Nashville Open Data, ArcGIS) — named neighborhoods (point-in-polygon)" },
+  // Maryland counties
+  "montgomery-county":     { neighborhoodCount:  58, source: "Montgomery County Police Department Crime (Data Montgomery, Socrata) — constituent communities (US Census places)" },
+  "prince-georges-county": { neighborhoodCount:  75, source: "Prince George's County Police Department Reported Crime (PG Open Data, Socrata) — constituent communities (US Census places)" },
   // Pacific
   "honolulu":         { neighborhoodCount: 122, source: "Honolulu Police Department Incidents (data.honolulu.gov, Socrata)" },
 };
