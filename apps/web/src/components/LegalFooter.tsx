@@ -24,6 +24,7 @@ export function LegalFooter() {
         <Link href="/methodology" className="text-bay-700 hover:underline">Methodology</Link>
         <Link href="/privacy" className="text-bay-700 hover:underline">Privacy</Link>
         <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>
+        <Link href="/community-guidelines" className="text-bay-700 hover:underline">Community guidelines</Link>
         <Link href="/accessibility" className="text-bay-700 hover:underline">Accessibility</Link>
         <Link href="/dmca" className="text-bay-700 hover:underline">Copyright / DMCA</Link>
         <Link href="/credits" className="text-bay-700 hover:underline">Photo credits</Link>

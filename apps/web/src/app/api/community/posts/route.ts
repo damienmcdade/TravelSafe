@@ -8,6 +8,19 @@ import { prisma } from "@/server/lib/prisma";
 import { preVetPost, POST_RATE_LIMIT_PER_DAY } from "@/server/services/moderation/post-prevet";
 import { isSuspended } from "@/server/services/moderation/suspension";
 import { publishCommunityEvent } from "@/server/services/community/events";
+import { attestedClientIp, distributedRateLimit } from "@/server/lib/rate-limit";
+
+// fix(security anon-post-shared-budget): every anonymous post attributes to the
+// single shared "anonymous@travelsafe.local" row, so the per-author DB cap below
+// is a GLOBAL counter for all anonymous traffic — one source could exhaust it and
+// block anonymous posting for everyone (feature-DoS), and across Vercel instances
+// the per-instance edge limiter multiplies (content-injection amplification). Gate
+// anonymous posting on a per-IP DISTRIBUTED (Redis) limit keyed on the
+// Vercel-attested x-real-ip: a short burst window + a daily cap. Redis-down fails
+// open to the existing global DB cap, which still bounds total volume.
+const ANON_BURST_LIMIT = 5;          // posts per IP per...
+const ANON_BURST_WINDOW_SEC = 600;   // ...10 minutes
+const ANON_DAILY_LIMIT = 20;         // posts per IP per day
 
 const Body = z.object({
   areaSlug: z.string().min(1),
@@ -90,6 +103,13 @@ export const POST = wrap(async (req: NextRequest) => {
     if (await isSuspended(session.uid)) throw new HttpError(403, "user_suspended");
     authorId = session.uid;
   } else {
+    // Per-IP distributed throttle BEFORE touching the DB or creating the anon row.
+    const ip = attestedClientIp(req);
+    const [burst, daily] = await Promise.all([
+      distributedRateLimit(`anonpost:burst:${ip}`, ANON_BURST_LIMIT, ANON_BURST_WINDOW_SEC),
+      distributedRateLimit(`anonpost:day:${ip}`, ANON_DAILY_LIMIT, 24 * 60 * 60),
+    ]);
+    if (burst?.limited || daily?.limited) throw new HttpError(429, "rate_limited");
     const anon = await ensureAnonymousUser();
     authorId = anon.id;
   }
@@ -98,9 +118,9 @@ export const POST = wrap(async (req: NextRequest) => {
   const area = await prisma.area.findUnique({ where: { slug: input.areaSlug } });
   if (!area) throw new HttpError(404, "unknown_area");
 
-  // Per-author rate limit. For anonymous traffic this caps *all* anonymous
-  // posts collectively, which is intentional — we'd rather throttle than
-  // let one IP flood the feed.
+  // Per-author DB rate limit. For signed-in users this is the primary cap; for
+  // anonymous traffic it's a global BACKSTOP under the per-IP distributed limit
+  // above (it still bounds total anonymous volume if Redis is down).
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const todays = await prisma.post.count({ where: { authorId, createdAt: { gte: since } } });
   if (todays >= POST_RATE_LIMIT_PER_DAY) throw new HttpError(429, "daily_post_limit_reached");

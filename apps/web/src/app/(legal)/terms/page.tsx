@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     "CommunitySafe terms of use — what the app is, what it isn't, acceptable use, AI assistant disclaimer, and how community posts are moderated.",
 };
 
-const LAST_UPDATED = "2026-05-30";
+const LAST_UPDATED = "2026-06-09";
 
 export default function TermsPage() {
   return (
@@ -104,6 +104,16 @@ export default function TermsPage() {
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Governing law &amp; contact</h2>
         <p>CommunitySafe is operated by CyberWave Technologies LLC, a California limited liability company. These Terms are governed by the laws of the State of California, without regard to its conflict-of-laws rules, and you agree to the exclusive jurisdiction and venue of the state and federal courts located in California for any dispute that is not otherwise resolved. Questions about these Terms: <a href="mailto:info@cyberwaveglobal.com?subject=CommunitySafe%20terms" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a> · <a href="https://cyberwaveglobal.com" target="_blank" rel="noopener noreferrer" className="text-bay-700 hover:underline">cyberwaveglobal.com</a>.</p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Dispute resolution — arbitration &amp; class-action waiver</h2>
+        <p className="font-medium text-slate2-900">PLEASE READ THIS SECTION CAREFULLY. IT AFFECTS YOUR LEGAL RIGHTS, INCLUDING YOUR RIGHT TO FILE A LAWSUIT IN COURT AND TO HAVE A JURY TRIAL. You may opt out within 30 days — see below.</p>
+        <p><strong>Agreement to arbitrate.</strong> You and CyberWave Technologies LLC agree that any dispute, claim, or controversy arising out of or relating to CommunitySafe or these Terms (a &quot;Dispute&quot;) will be resolved by binding individual arbitration rather than in court, except that (a) either party may bring an individual claim in small-claims court, and (b) either party may seek injunctive or other equitable relief in the California courts identified above to protect its intellectual property or to stop unauthorized access to or misuse of the service.</p>
+        <p><strong>Arbitration procedure.</strong> The arbitration will be administered by the American Arbitration Association (AAA) under its Consumer Arbitration Rules, as modified by these Terms, and conducted in English. You may elect to have it conducted by telephone, by video, on written submissions, or in person in the county where you live or another mutually agreed location. The arbitrator&apos;s decision is final and binding, and judgment on the award may be entered in any court of competent jurisdiction.</p>
+        <p><strong>Class-action waiver.</strong> You and CyberWave Technologies LLC agree that each may bring claims against the other only in an individual capacity, and not as a plaintiff or class member in any purported class, collective, consolidated, or representative proceeding. The arbitrator may not consolidate more than one person&apos;s claims or preside over any representative or class proceeding. If this class-action waiver is found unenforceable as to a particular claim, then that claim — and only that claim — will be severed and may proceed in the California courts identified above.</p>
+        <p><strong>Your 30-day right to opt out.</strong> You may opt out of this arbitration agreement (including the class-action waiver) within 30 days of first accepting these Terms by emailing <a href="mailto:info@cyberwaveglobal.com?subject=Arbitration%20Opt-Out" className="text-bay-700 hover:underline">info@cyberwaveglobal.com</a> with the subject line &quot;Arbitration Opt-Out&quot; and stating your name and that you decline to arbitrate. Opting out affects no other part of these Terms, and you keep your right to litigate Disputes in the California courts identified above. If you do not opt out within 30 days, you agree to be bound by this section.</p>
+        <p><strong>Fees &amp; severability.</strong> AAA&apos;s rules govern filing and arbitration fees; where those fees would make arbitration cost-prohibitive for you compared with litigation, CyberWave Technologies LLC will pay the portion necessary so that arbitration is not cost-prohibitive. If any part of this section other than the class-action waiver is found unenforceable, the remainder of this section will still be given effect.</p>
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">

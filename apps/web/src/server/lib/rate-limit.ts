@@ -101,3 +101,47 @@ export function rateLimit(req: NextRequest, opts: Options = {}): NextResponse | 
 
 /// Reset all buckets — only for tests.
 export function _resetForTest(): void { buckets.clear(); }
+
+// ---------------------------------------------------------------------------
+// Distributed (Redis-backed) fixed-window limiter. Unlike the in-memory bucket
+// above, this enforces ACROSS all Vercel instances — required for limits that
+// must be globally accurate (e.g. anonymous community posting, where the
+// per-instance bucket would let an attacker get N_instances × the cap). Fails
+// OPEN (returns null) when Redis is unset or errors, so the caller MUST keep its
+// own coarser bound (DB count / in-memory bucket) as the floor.
+import { getRedis } from "./redis";
+
+/// Vercel-attested client IP. Prefers x-real-ip (cannot be spoofed past Vercel's
+/// proxy); falls back to the LAST x-forwarded-for hop (the trusted proxy's), not
+/// the client-controlled leftmost token. Mirrors middleware.ts clientIp().
+export function attestedClientIp(req: NextRequest): string {
+  const xri = req.headers.get("x-real-ip");
+  if (xri) return xri.trim();
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return "unknown";
+}
+
+/// Increment a per-key fixed-window counter in Redis. Returns { count, limited }
+/// or null when Redis is unavailable (caller falls back to its own bound).
+export async function distributedRateLimit(
+  key: string,
+  limit: number,
+  windowSec: number,
+): Promise<{ count: number; limited: boolean } | null> {
+  const redis = getRedis();
+  if (!redis) return null;
+  try {
+    const k = `rl:${key}`;
+    const count = await redis.incr(k);
+    // Set the TTL only when the window opens (count === 1) so the window is
+    // fixed, not sliding-on-every-hit.
+    if (count === 1) await redis.expire(k, windowSec);
+    return { count, limited: count > limit };
+  } catch {
+    return null;
+  }
+}

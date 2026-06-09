@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { api, useApi } from "@/lib/api-client";
 import { useArea } from "@/lib/use-area";
@@ -461,6 +462,13 @@ function PostComposer({ areaSlug, onPosted }: { areaSlug: string; onPosted: () =
         <button type="submit" disabled={busy || uploading} className="btn-primary disabled:opacity-50">
           {busy ? "Posting…" : "Post anonymously"}
         </button>
+        {/* Posting-time acceptable-use affirmation — surfaces the rules at the
+            point of action and records contractual assent for moderation. */}
+        <p className="text-xs text-slate2-500">
+          By posting you confirm this is factual to the best of your knowledge and you have the right to share it, and you agree to the{" "}
+          <Link href="/community-guidelines" className="text-bay-700 hover:underline">Community guidelines</Link>{" "}and{" "}
+          <Link href="/terms" className="text-bay-700 hover:underline">Terms</Link>.
+        </p>
         {guidance && <p id="post-guidance" role="alert" className="text-sm text-amber2-700">{guidance}</p>}
         {success && <p role="status" aria-live="polite" className="text-sm text-sage-700">{success}</p>}
       </form>
