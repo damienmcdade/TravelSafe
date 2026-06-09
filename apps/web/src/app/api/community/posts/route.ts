@@ -8,7 +8,7 @@ import { prisma } from "@/server/lib/prisma";
 import { preVetPost, POST_RATE_LIMIT_PER_DAY } from "@/server/services/moderation/post-prevet";
 import { isSuspended } from "@/server/services/moderation/suspension";
 import { publishCommunityEvent } from "@/server/services/community/events";
-import { attestedClientIp, distributedRateLimit } from "@/server/lib/rate-limit";
+import { anonPostLimited } from "@/server/lib/rate-limit";
 
 // fix(security anon-post-shared-budget): every anonymous post attributes to the
 // single shared "anonymous@travelsafe.local" row, so the per-author DB cap below
@@ -103,13 +103,15 @@ export const POST = wrap(async (req: NextRequest) => {
     if (await isSuspended(session.uid)) throw new HttpError(403, "user_suspended");
     authorId = session.uid;
   } else {
-    // Per-IP distributed throttle BEFORE touching the DB or creating the anon row.
-    const ip = attestedClientIp(req);
-    const [burst, daily] = await Promise.all([
-      distributedRateLimit(`anonpost:burst:${ip}`, ANON_BURST_LIMIT, ANON_BURST_WINDOW_SEC),
-      distributedRateLimit(`anonpost:day:${ip}`, ANON_DAILY_LIMIT, 24 * 60 * 60),
-    ]);
-    if (burst?.limited || daily?.limited) throw new HttpError(429, "rate_limited");
+    // Per-IP throttle BEFORE touching the DB or creating the anon row. In-memory
+    // per-instance floor (always on) + distributed cross-instance (when Redis set).
+    if (await anonPostLimited(req, {
+      burstLimit: ANON_BURST_LIMIT,
+      burstWindowSec: ANON_BURST_WINDOW_SEC,
+      dailyLimit: ANON_DAILY_LIMIT,
+    })) {
+      throw new HttpError(429, "rate_limited");
+    }
     const anon = await ensureAnonymousUser();
     authorId = anon.id;
   }

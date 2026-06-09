@@ -145,3 +145,43 @@ export async function distributedRateLimit(
     return null;
   }
 }
+
+// Dedicated in-memory fixed-window counter for the anon-post limiter's
+// per-INSTANCE floor. Separate from the read-route `buckets` map so the two
+// can't evict each other.
+const anonBuckets = new Map<string, Bucket>();
+function memBucketLimited(key: string, limit: number, windowMs: number): boolean {
+  const now = Date.now();
+  let b = anonBuckets.get(key);
+  if (!b || b.resetAt <= now) b = { count: 0, resetAt: now + windowMs };
+  b.count += 1;
+  anonBuckets.delete(key);
+  anonBuckets.set(key, b);
+  if (anonBuckets.size > MAX_BUCKETS) {
+    const first = anonBuckets.keys().next().value;
+    if (first !== undefined) anonBuckets.delete(first);
+  }
+  return b.count > limit;
+}
+
+/// Per-IP rate gate for ANONYMOUS community posts. Two layers so the protection
+/// holds in every deployment:
+///   1. In-memory per-instance burst floor — ALWAYS active, even with no Redis,
+///      so a single instance can't be flooded from one IP.
+///   2. Distributed (Redis) burst + daily — active when REDIS_URL is set on the
+///      web runtime, giving accurate CROSS-instance enforcement (set REDIS_URL to
+///      the same instance the Railway API uses to enable it).
+/// Returns true if the request should be rejected (429). The global per-author DB
+/// cap in the route remains the absolute backstop regardless.
+export async function anonPostLimited(
+  req: NextRequest,
+  opts: { burstLimit: number; burstWindowSec: number; dailyLimit: number },
+): Promise<boolean> {
+  const ip = attestedClientIp(req);
+  if (memBucketLimited(`anonpost:${ip}`, opts.burstLimit, opts.burstWindowSec * 1000)) return true;
+  const [burst, daily] = await Promise.all([
+    distributedRateLimit(`anonpost:burst:${ip}`, opts.burstLimit, opts.burstWindowSec),
+    distributedRateLimit(`anonpost:day:${ip}`, opts.dailyLimit, 24 * 60 * 60),
+  ]);
+  return Boolean(burst?.limited || daily?.limited);
+}
