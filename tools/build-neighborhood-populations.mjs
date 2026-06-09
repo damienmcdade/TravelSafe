@@ -109,14 +109,11 @@ const CITY_CONFIG = {
   "tampa":         { slugPrefix: "",       counties: [["12", "057"]] },              // Hillsborough County
   "atlanta":       { slugPrefix: "atl-",   counties: [["13", "121"], ["13", "089"]] }, // Fulton + DeKalb
   "indianapolis":  { slugPrefix: "indy-",  counties: [["18", "097"]] },              // Marion County
-  "raleigh":       { slugPrefix: "rdu-",   counties: [["37", "183"]] },              // Wake County
-  "tucson":        { slugPrefix: "tuc-",   counties: [["04", "019"]] },              // Pima County
   // fix(audit cov-no-census-pop-hnl-lb-atx-5 / coverage-la/sac-baseline-stale):
   // these had geojson but no ACS population, so areas used the cruder polygon-area
   // estimate. Adding real census data. (Honolulu is intentionally NOT here — its
   // Hawaiian-diacritic names would slug-mismatch this tool's ASCII slugify vs the
   // adapter's NFD-stripping one; it stays on the polygon-area fallback.)
-  "austin":        { slugPrefix: "atx-",   counties: [["48", "453"]] },              // Travis County
   "colorado-springs":{ slugPrefix: "cosp-", counties: [["08", "041"]] },            // El Paso County
   "fort-worth":    { slugPrefix: "",       counties: [["48", "439"]] },              // Tarrant County
   "long-beach":    { slugPrefix: "lb-",    counties: [["06", "037"]] },              // Los Angeles County

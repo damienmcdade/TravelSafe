@@ -107,8 +107,6 @@ const CITY_TO_ORI = {
   "sacramento":    "CA0340400",   // Sacramento Police Department
   "atlanta":       "GAAPD0000",   // Atlanta Police Department
   "indianapolis":  "INIPD0000",   // Indianapolis Metropolitan Police Department
-  "raleigh":       "NC0920100",   // Raleigh Police Department
-  "tucson":        "AZ0100100",   // Tucson Police Department
   "honolulu":      "HI0010100",   // Honolulu Police Department
   "long-beach":    "CA0194100",   // Long Beach Police Department
 };

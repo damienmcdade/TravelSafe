@@ -14,10 +14,11 @@ export const maxDuration = 60;
 /// but the Vercel Cron schedule has been dropped from vercel.json so
 /// it no longer auto-fires (which would double-send).
 ///
-/// Payload is intentionally generic — we don't yet have a
-/// SavedArea model, so the digest can't personalize per-area.
-/// Future work: persist saved areas server-side and personalize the
-/// message body to the user's actual watchlist.
+/// Payload is intentionally generic. A SavedPlace model now exists, so
+/// per-area personalization is possible as a follow-up; the digest body is
+/// deliberately kept generic for now (the proximity/alert-zone worker handles
+/// real-time per-place push, while this weekly digest is a light re-engagement
+/// nudge).
 export async function GET(req: NextRequest) {
   const denied = requireCronSecret(req);
   if (denied) return denied;
