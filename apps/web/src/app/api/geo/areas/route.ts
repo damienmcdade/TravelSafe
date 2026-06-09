@@ -3,6 +3,7 @@ import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import { allKnownAreas } from "@/server/services/geo/lookup";
 import { cityBySlug } from "@/server/services/crime-data/cities";
+import { normalizeAreaLabel } from "@travelsafe/crime-data/cities";
 import { getDiscoveredAreasStale as sdpdStale } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,10 @@ export async function GET(req: NextRequest) {
     // Use the display-only primary list when a city defines one (e.g. Virginia
     // Beach collapses 961 micro-subdivisions to ~real civic areas for the picker);
     // the full discover() still feeds the citywide grade. fix(audit vb-over-fragmentation).
-    const areas = await (city.discoverPrimary ?? city.discover)().catch(() => []);
+    const discovered = await (city.discoverPrimary ?? city.discover)().catch(() => []);
+    // fix(labels-all-caps): mirror the Railway choke point so the local
+    // fallback path (Railway hiccup) also serves clean Title-Case labels.
+    const areas = discovered.map((a) => ({ ...a, label: normalizeAreaLabel(a.label) }));
     // Per-adapter staleness. Today only SDPD has a last-known-good
     // fallback wired in (because seshat.datasd.org has intermittently
     // rejected Vercel IPs); generalize as other adapters get the same

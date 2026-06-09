@@ -2,7 +2,7 @@ import "server-only";
 import { aiConfigured, generateTextWithFallback } from "./provider";
 import { getCrimeMix } from "../crime-data/mix";
 import { crimeData } from "../crime-data";
-import { cityForArea, cityBySlug } from "../crime-data/cities";
+import { cityForArea, cityBySlug, humanizeArea } from "../crime-data/cities";
 
 // Per-area / per-city AI incident summary. Sibling to area-brief.ts
 // but answers a different question:
@@ -124,7 +124,9 @@ export async function generateIncidentSummary(opts: BuildOpts): Promise<Incident
   if (opts.area) {
     const city = cityForArea(opts.area);
     cityLabel = city.label;
-    areaLabel = opts.area;
+    // fix(labels): humanize the slug ("balt-abell" -> "Abell") so the LLM
+    // doesn't echo the raw slug ("In the Balt-Abell neighborhood…").
+    areaLabel = humanizeArea(opts.area);
     const mix = await getCrimeMix(opts.area).catch(() => null);
     topOffenses = (mix?.topOffenses ?? []).slice(0, 6).map((o) => ({
       offense: o.offense, count: o.count, category: o.category,

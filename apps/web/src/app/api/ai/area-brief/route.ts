@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
-import { requireSession } from "@/server/lib/auth";
 import { tryProxy } from "@/server/lib/proxy-to-api";
 import { generateAreaBrief } from "@/server/services/ai/area-brief";
 import { aiConfigured } from "@/server/services/ai/provider";
@@ -13,12 +12,18 @@ const Query = z.object({
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-// Auth-gated because each call invokes a paid LLM. Anonymous device
-// sessions qualify; the per-IP middleware cap (5/min on /api/ai/*)
-// still applies on top.
+// fix(ai-summary-cross-client): was requireSession-gated, which 401'd for
+// EVERY session-less client — the native WKWebView (cross-origin, no
+// same-origin cs_session cookie), Safari ITP / third-party-cookie blocking,
+// privacy modes, and the first-paint bootstrap race. The /watch AI Summary
+// panel (AreaBriefPanel) then showed "Could not generate a brief" on every
+// city for those users. The endpoint is now PUBLIC — identical to its twin
+// /api/ai/incident-summary (always public) — and still fully protected:
+//   • Vercel middleware caps /api/ai/* at 40/min per IP,
+//   • Railway's /ai/area-brief applies aiReadLimiter,
+//   • the brief is cached 30 min per area (LLM runs ≤2×/area/hour).
+// No auth means no per-user LLM cost surprise; the IP cap + cache bound spend.
 export const GET = wrap(async (req: NextRequest) => {
-  await requireSession(req);
-
   // v38: prefer Railway when API_BASE_URL is set so the brief cache
   // survives Vercel cold starts (Redis-backed on Railway). Local
   // fallback on any upstream error.

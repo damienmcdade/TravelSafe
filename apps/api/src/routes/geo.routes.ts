@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { lookupLocation, allKnownAreas } from "../services/geo/lookup.service.js";
-import { cityBySlug } from "@travelsafe/crime-data/cities";
+import { cityBySlug, normalizeAreaLabel } from "@travelsafe/crime-data/cities";
 import { getDiscoveredAreasStale as sdpdStale } from "@travelsafe/crime-data/adapters/sdpd-nibrs";
 import { withComputeLimit } from "@travelsafe/crime-data/cache-registry";
 
@@ -44,7 +44,12 @@ geoRouter.get("/areas", async (req, res, next) => {
       // primary list where a city defines one (VB: ~100 vs 961). The Vercel route
       // already does this, but it PROXIES here first — so this handler also has to
       // honor discoverPrimary or the proxied response re-introduces the 961 list.
-      const areas = await withComputeLimit(citySlug, () => (city.discoverPrimary ?? city.discover)()).catch(() => []);
+      const discovered = await withComputeLimit(citySlug, () => (city.discoverPrimary ?? city.discover)()).catch(() => []);
+      // fix(labels-all-caps): a few feeds (Baltimore BPD especially) ship
+      // neighborhood names in ALL CAPS. Normalize every label to clean Title
+      // Case at this single choke point so the wheel + Watch header + cards
+      // read correctly fleet-wide. Idempotent: already-cased labels pass through.
+      const areas = discovered.map((a) => ({ ...a, label: normalizeAreaLabel(a.label) }));
       let stale = false;
       let staleMessage: string | undefined;
       if (citySlug === "san-diego" && sdpdStale()) {

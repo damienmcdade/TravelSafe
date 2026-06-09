@@ -3,6 +3,7 @@ import { CITIES } from "../crime-data/cities";
 import { stateAbbrForCity } from "@travelsafe/crime-data/city-states";
 import { crimeData } from "../crime-data";
 import { baselineFor } from "./baseline";
+import { getRedis } from "../../lib/redis";
 
 /// Per-city status payload powering the public /coverage dashboard.
 /// Aggregates everything users want to see at a glance: is this city
@@ -116,7 +117,89 @@ async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T,
   return out;
 }
 
+// fix(coverage cold-load — "unusual time to load if at all"): the live
+// 44-city sweep costs ~60–110s cold because discover() is globally gated to
+// COMPUTE_CONCURRENCY (4). The CDN's stale-while-revalidate hides that AFTER
+// the first successful compute, but a fresh CDN entry (post-deploy, or after
+// a long idle) still strands the first visitor on the full sweep — and the
+// module-level LKG map is per-instance + ephemeral, so it doesn't help a cold
+// serverless box. We add a SHARED Redis snapshot (same Redis the Railway API
+// uses): once any request has computed coverage, every later request — even on
+// a brand-new instance, even right after a deploy — serves that snapshot in
+// one Redis round-trip and refreshes opportunistically in the background.
+const COVERAGE_REDIS_KEY = "coverage:snapshot:v1";
+const COVERAGE_SOFT_TTL_MS = 30 * 60 * 1000; // serve instantly, no refresh
+const COVERAGE_HARD_TTL_MS = 12 * 60 * 60 * 1000; // serve stale + refresh; beyond → recompute sync
+const COVERAGE_REDIS_TTL_S = 24 * 60 * 60; // Redis key lifetime
+let coverageInFlight: Promise<CoverageResponse> | null = null;
+
+interface CoverageSnapshot { computedAt: number; data: CoverageResponse }
+
+async function readCoverageSnapshot(): Promise<CoverageSnapshot | null> {
+  const redis = getRedis();
+  if (!redis) return null;
+  try {
+    const raw = await redis.get(COVERAGE_REDIS_KEY);
+    if (!raw) return null;
+    const snap = JSON.parse(raw) as CoverageSnapshot;
+    if (!snap || typeof snap.computedAt !== "number" || !snap.data) return null;
+    return snap;
+  } catch {
+    return null;
+  }
+}
+
+async function writeCoverageSnapshot(data: CoverageResponse): Promise<void> {
+  const redis = getRedis();
+  if (!redis) return;
+  try {
+    await redis.setex(
+      COVERAGE_REDIS_KEY,
+      COVERAGE_REDIS_TTL_S,
+      JSON.stringify({ computedAt: Date.now(), data } satisfies CoverageSnapshot),
+    );
+  } catch {
+    /* best-effort cache; a write failure just means the next caller recomputes */
+  }
+}
+
+/// Compute + persist, de-duped so concurrent callers on one instance share a
+/// single sweep instead of each firing their own 44-city fan-out.
+function computeAndStore(): Promise<CoverageResponse> {
+  if (coverageInFlight) return coverageInFlight;
+  coverageInFlight = (async () => {
+    try {
+      const data = await computeCoverage();
+      await writeCoverageSnapshot(data);
+      return data;
+    } finally {
+      coverageInFlight = null;
+    }
+  })();
+  return coverageInFlight;
+}
+
+/// Public entry point used by the /api/coverage route. Serves the shared Redis
+/// snapshot when one exists (instant), recomputing only when truly cold or
+/// extremely stale; a moderately-stale snapshot is served immediately while a
+/// fresh sweep runs in the background.
 export async function getCoverage(): Promise<CoverageResponse> {
+  const snap = await readCoverageSnapshot();
+  if (snap) {
+    const age = Date.now() - snap.computedAt;
+    if (age < COVERAGE_SOFT_TTL_MS) return snap.data; // fresh enough
+    if (age < COVERAGE_HARD_TTL_MS) {
+      // Stale-but-usable: return instantly, refresh in the background.
+      void computeAndStore().catch(() => {});
+      return snap.data;
+    }
+    // Beyond hard TTL — too stale to trust; fall through to a sync recompute.
+  }
+  // No snapshot (cold) or beyond hard TTL → compute now (and populate Redis).
+  return computeAndStore();
+}
+
+async function computeCoverage(): Promise<CoverageResponse> {
   const now = Date.now();
   const results = await mapWithConcurrency(
     CITIES,

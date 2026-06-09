@@ -70,7 +70,7 @@ export default function MapPage() {
       </header>
       <CrimeMap />
       <p className="text-xs text-slate2-500">
-        Data source for {city.label}: {SOURCES[city.slug] ?? "city open-data portal"} Map tiles are served by CARTO with OpenStreetMap contributors.
+        Data source for {city.label}: {SOURCES[city.slug] ?? "city open-data portal."} Map tiles are served by CARTO with OpenStreetMap contributors.
       </p>
     </main>
   );

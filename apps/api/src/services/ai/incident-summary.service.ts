@@ -1,7 +1,7 @@
 import { aiConfigured, generateTextWithFallback } from "./provider.js";
 import { getCrimeMix } from "@travelsafe/crime-data/mix";
 import { crimeData } from "@travelsafe/crime-data/dispatcher";
-import { cityForArea, cityBySlug } from "@travelsafe/crime-data/cities";
+import { cityForArea, cityBySlug, humanizeArea } from "@travelsafe/crime-data/cities";
 
 // Per-area / per-city AI incident summary. Ported from apps/web for
 // v38; same prompt + algorithm + deterministic fields, just hosted on
@@ -95,7 +95,10 @@ export async function generateIncidentSummary(opts: BuildOpts): Promise<Incident
   if (opts.area) {
     const city = cityForArea(opts.area);
     cityLabel = city.label;
-    areaLabel = opts.area;
+    // fix(labels): was the raw slug ("balt-abell"), which the LLM echoed
+    // verbatim — "In the Balt-Abell neighborhood…". Humanize to the readable
+    // name ("Abell") so the summary reads naturally.
+    areaLabel = humanizeArea(opts.area);
     const mix = await getCrimeMix(opts.area).catch(() => null);
     topOffenses = (mix?.topOffenses ?? []).slice(0, 6).map((o) => ({
       offense: o.offense, count: o.count, category: o.category,

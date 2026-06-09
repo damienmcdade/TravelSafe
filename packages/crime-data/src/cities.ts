@@ -594,3 +594,64 @@ export function humanizeArea(slug: string): string {
   const label = core.split("-").map(titleCaseToken).join(" ").trim();
   return label || city.label;
 }
+
+// Acronyms / initialisms that must stay upper-case inside an otherwise
+// title-cased neighborhood label. Kept deliberately small — only entries
+// that genuinely read wrong title-cased. (Compass points handled separately.)
+const LABEL_ACRONYMS = new Set([
+  "NE", "NW", "SE", "SW", "II", "III", "IV", "USA", "BID", "TOD",
+  "CSULB", "UCLA", "USC", "LSU", "SMU", "TCU", "VCU", "FSU", "UNO",
+]);
+// Connector words that read better lower-case when not the first token.
+const LABEL_SMALL_WORDS = new Set([
+  "of", "the", "and", "on", "in", "at", "to", "by", "for",
+  "de", "del", "la", "las", "los", "el", "von", "van",
+]);
+
+// Capitalize the first letter of every alphabetic run in a token so
+// apostrophes/periods inside an upper-case token title-case correctly
+// ("O'FALLON" -> "O'Fallon", "ST.LOUIS" -> "St.Louis").
+function capitalizeRuns(lower: string): string {
+  return lower.replace(/(^|[^a-z])([a-z])/g, (_m, pre, ch) => pre + ch.toUpperCase());
+}
+
+/// Normalize a DISPLAY label to clean Title Case with tidy spacing.
+///
+/// Most adapters publish proper-case neighborhood names, but a few open-data
+/// feeds (Baltimore BPD, plus stray Baton Rouge / Long Beach / Tampa rows)
+/// ship them SCREAMING IN ALL CAPS — "ABELL", "BELAIR-EDISON" — which then
+/// rendered verbatim in the wheel, the Neighborhood Watch header, and every
+/// card. This is the single choke point that fixes them fleet-wide.
+///
+/// Safety contract: if the label already contains ANY lower-case letter we
+/// assume the casing is intentional ("Linda Vista", "North (Sector A)",
+/// "McNeil") and only collapse runaway whitespace — never re-case it. So this
+/// is idempotent and cannot damage a correctly-cased label. Only all-caps
+/// labels are title-cased, token by token, preserving hyphens and slashes.
+export function normalizeAreaLabel(label: string): string {
+  if (!label) return label;
+  // Tidy stray punctuation that applies regardless of casing: some feeds use a
+  // backtick where an apostrophe belongs ("Brigand`s Quay" -> "Brigand's Quay").
+  // Labels never legitimately contain a backtick, so this is always safe.
+  const trimmed = label.replace(/`/g, "'").replace(/\s+/g, " ").trim();
+  // Already has lower-case → trust upstream casing, just tidy punctuation/spacing.
+  if (/[a-z]/.test(trimmed)) return trimmed;
+  const words = trimmed.split(" ");
+  return words
+    .map((word, wi) =>
+      word
+        .split(/([/-])/)
+        .map((part, pi) => {
+          if (part === "" || part === "-" || part === "/") return part;
+          if (LABEL_ACRONYMS.has(part)) return part;
+          if (/^\d+(ST|ND|RD|TH)$/.test(part)) return part.toLowerCase(); // "13TH" -> "13th"
+          if (/^\d+$/.test(part)) return part;
+          const lower = part.toLowerCase();
+          const isFirstToken = wi === 0 && pi === 0;
+          if (!isFirstToken && LABEL_SMALL_WORDS.has(lower)) return lower;
+          return capitalizeRuns(lower);
+        })
+        .join(""),
+    )
+    .join(" ");
+}
