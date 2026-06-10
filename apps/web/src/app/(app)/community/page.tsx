@@ -8,7 +8,6 @@ import { useTextStream } from "@/lib/use-stream";
 import { useCommunityStream, relativeTime } from "@/lib/sse";
 import { DataProvenanceBanner, CommunityReportedLabel, type ProvenanceLike } from "@/components/DataProvenanceBanner";
 import { LocationSearch } from "@/components/LocationSearch";
-import { AreaInsightsPanel } from "@/components/AreaInsightsPanel";
 import { TrustBadge } from "@/components/TrustBadge";
 import { LiveActivityBadge } from "@/components/LiveActivityBadge";
 import { CommunitySignalsPanel } from "@/components/CommunitySignalsPanel";
@@ -182,12 +181,10 @@ export default function CommunityPage() {
               signals don't map cleanly to a single feed. */}
           {area && <CommunitySignalsPanel areaSlug={area.slug} />}
 
-          {/* Insights panel only renders when an area is picked — the
-              insights service queries per-area, doesn't have a real
-              citywide aggregate yet. Kept on /community because it
-              contextualizes the neighbor-report feed (e.g. "this week's
-              uptick mirrors what neighbors are flagging"). */}
-          {area && <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(area.slug)}`} />}
+          {/* 12-week trend (AreaInsightsPanel) moved to Neighborhood Watch
+              (/watch) — it tracks a neighborhood's safety over time, so it
+              lives near the top of that view now rather than on the
+              neighbor-report feed. */}
 
           {/* "Recently reported in <area>" card + title removed per
               v7 directive — Connections now focuses on neighbor-led

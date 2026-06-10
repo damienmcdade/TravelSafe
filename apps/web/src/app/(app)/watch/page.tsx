@@ -6,6 +6,7 @@ import { useArea } from "@/lib/use-area";
 import { useDocumentTitle } from "@/lib/use-document-title";
 import { WheelPicker, type WheelItem } from "@/components/WheelPicker";
 import { AreaBriefPanel } from "@/components/AreaBriefPanel";
+import { AreaInsightsPanel } from "@/components/AreaInsightsPanel";
 import { DataFreshnessBanner } from "@/components/DataFreshnessBanner";
 
 interface Area { slug: string; label: string; jurisdiction: string }
@@ -179,6 +180,12 @@ export default function NeighborhoodWatchPage() {
               page mounts this same panel on `area` alone, which is why it
               always worked there. Decoupled here to match. */}
           <AreaBriefPanel areaSlug={selectedArea.slug} />
+
+          {/* 12-week trend — moved here from /community: it tracks this
+              neighborhood's safety over time, so it belongs near the top of
+              the Neighborhood Watch view. Renders per-area (queries the
+              insights service by neighborhood slug). */}
+          <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(selectedArea.slug)}`} />
 
           {watchLoading && <CardGridSkeleton />}
           {watchErr && !watchLoading && (
