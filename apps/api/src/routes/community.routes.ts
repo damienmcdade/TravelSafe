@@ -9,10 +9,38 @@ import { communityEvents, ensureCommunitySubscriber } from "../services/communit
 
 export const communityRouter = Router();
 
+// v110 — connection caps for the public, unauthenticated SSE stream. Each open
+// stream holds a socket + heartbeat timer + EventEmitter listener; without a
+// ceiling a few clients could open thousands and exhaust file descriptors /
+// memory on the memory-bounded container (and trip MaxListenersExceeded). These
+// are per-instance counters (sufficient — a resource guard, not a security one).
+const SSE_MAX_GLOBAL = 800;
+const SSE_MAX_PER_IP = 6;
+let sseOpenGlobal = 0;
+const sseOpenPerIp = new Map<string, number>();
+
 // Server-Sent Events stream for newly VERIFIED posts. Public, no auth — the
 // payload only carries the post id, area, and timestamps; the client must hit
 // /community/posts to render full content (which already filters to VERIFIED).
 communityRouter.get("/stream", (req, res) => {
+  const ip = req.ip || "unknown";
+  const perIp = sseOpenPerIp.get(ip) ?? 0;
+  if (sseOpenGlobal >= SSE_MAX_GLOBAL || perIp >= SSE_MAX_PER_IP) {
+    res.status(503).set("Retry-After", "30").json({ error: "stream_capacity" });
+    return;
+  }
+  sseOpenGlobal += 1;
+  sseOpenPerIp.set(ip, perIp + 1);
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    sseOpenGlobal = Math.max(0, sseOpenGlobal - 1);
+    const n = (sseOpenPerIp.get(ip) ?? 1) - 1;
+    if (n <= 0) sseOpenPerIp.delete(ip);
+    else sseOpenPerIp.set(ip, n);
+  };
+
   // Start the per-instance Redis subscriber (idempotent; no-op without
   // REDIS_URL) so events published on other instances reach this stream.
   ensureCommunitySubscriber();
@@ -30,6 +58,7 @@ communityRouter.get("/stream", (req, res) => {
   req.on("close", () => {
     clearInterval(heartbeat);
     communityEvents.off("event", listener);
+    release();
     res.end();
   });
 });

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { resolveSharedView } from "../services/safety/live-share.service.js";
+import { tokenLimiter } from "../middleware/rate-limit.js";
 
 export const shareRouter = Router();
 
@@ -12,7 +13,10 @@ export const shareRouter = Router();
 // queries that can't match a real token.
 const Token = z.string().min(20).max(64).regex(/^[A-Za-z0-9_-]+$/);
 
-shareRouter.get("/:token", async (req, res, next) => {
+// v110 — per-token limiter (parity with the contact-confirm token route).
+// The token is 160-bit random so enumeration is infeasible, but this caps
+// DB-hitting lookups from a single source on this unauthenticated path.
+shareRouter.get("/:token", tokenLimiter, async (req, res, next) => {
   try {
     const token = Token.parse(req.params.token);
     res.json(await resolveSharedView(token));

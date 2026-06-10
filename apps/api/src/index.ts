@@ -410,5 +410,14 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
     console.log(`[api] ${sig} received, shutting down`);
     server.close(() => process.exit(0));
+    // v110 — hard fallback: the public /community/stream SSE connections are
+    // intentionally long-lived (they only close on client disconnect), so
+    // server.close() can wait indefinitely for them to drain and its callback
+    // may never fire. Force exit after a grace window so deploys/restarts
+    // don't hang until the platform SIGKILLs us mid-write.
+    setTimeout(() => {
+      console.log(`[api] ${sig} grace window elapsed, forcing exit`);
+      process.exit(0);
+    }, 10_000).unref();
   });
 }
