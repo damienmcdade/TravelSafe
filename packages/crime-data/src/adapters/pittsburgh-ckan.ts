@@ -111,6 +111,7 @@ async function fetchPittsburgh(): Promise<Incident[]> {
   const url = `${SEARCH_BASE}?${params.toString()}`;
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Pittsburgh CKAN ${res.status}`);
   const body = await readJson(res) as { result?: { records?: PghRow[] } };

@@ -246,6 +246,7 @@ async function fetchPage(offset: number): Promise<BostonRow[]> {
       Accept: "application/json",
       "User-Agent": "Mozilla/5.0 CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
     },
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Boston CKAN ${res.status} offset=${offset}`);
   const body = await readJson(res) as { success?: boolean; error?: unknown; result?: { records?: BostonRow[] } };
@@ -305,6 +306,7 @@ async function fetchBostonFromCSV(): Promise<Incident[]> {
   const res = await fetch(CSV_URL, {
     redirect: "follow",
     headers: { "User-Agent": "CommunitySafe/1.0 (https://github.com/damienmcdade/TravelSafe)" },
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Boston CSV ${res.status}`);
   // v90p6 — reverted v88's readline+stream streaming because the

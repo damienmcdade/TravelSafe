@@ -140,6 +140,7 @@ async function fetchPage(layer: number, offset: number): Promise<DcRow[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`DC ArcGIS layer=${layer} ${res.status} offset=${offset}`);
   const body = await readJson(res) as { features?: Array<{ attributes: DcRow }> };

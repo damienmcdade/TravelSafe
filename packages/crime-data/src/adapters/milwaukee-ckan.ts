@@ -219,7 +219,7 @@ interface DatastoreResp { success?: boolean; result?: { records?: RawRow[]; tota
 async function fetchPage(offset: number, signal?: AbortSignal): Promise<RawRow[]> {
   const url = `${DATASTORE_API}?resource_id=${MILWAUKEE_RESOURCE_ID}` +
     `&limit=${PAGE_SIZE}&offset=${offset}&sort=${encodeURIComponent("_id desc")}`;
-  const res = await fetch(url, { signal });
+  const res = await fetch(url, { signal: signal ?? AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Milwaukee datastore ${res.status} at offset ${offset}`);
   const body = (await readJson(res)) as DatastoreResp;
   return body.result?.records ?? [];

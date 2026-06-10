@@ -116,7 +116,7 @@ async function sodaGet(query: Record<string, string>): Promise<SodaRow[]> {
   const headers: Record<string, string> = { Accept: "application/json" };
   if (env.SANDAG_SOCRATA_APP_TOKEN) headers["X-App-Token"] = env.SANDAG_SOCRATA_APP_TOKEN;
   try {
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { headers, signal: AbortSignal.timeout(45_000) });
     if (!res.ok) throw new Error(`SANDAG SODA ${res.status}: ${await res.text()}`);
     return (await readJson(res)) as SodaRow[];
   } catch (err) {

@@ -82,7 +82,7 @@ export const GET = wrap(async (req: NextRequest) => {
     `&temperature_unit=fahrenheit&wind_speed_unit=mph`;
   let payload: OpenMeteoCurrent;
   try {
-    const resp = await fetch(url, { next: { revalidate: 300 } });
+    const resp = await fetch(url, { next: { revalidate: 300 }, signal: AbortSignal.timeout(8000) });
     if (!resp.ok) throw new HttpError(502, `open_meteo_${resp.status}`);
     payload = (await resp.json()) as OpenMeteoCurrent;
   } catch (err) {

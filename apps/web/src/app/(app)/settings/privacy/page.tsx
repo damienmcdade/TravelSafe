@@ -29,6 +29,16 @@ const LOCAL_KEYS = [
 
 const SWR_PREFIX = "travelsafe.swr.v1.";
 
+// fix(audit brand-leak-privacy-mono): the raw localStorage keys are still
+// internally prefixed `travelsafe.` (renaming them needs a data migration so
+// existing users don't lose their stored prefs). This page is CommunitySafe-
+// branded, so showing the literal "travelsafe." prefix in the mono technical
+// line was a brand leak. Strip it for DISPLAY only — the underlying key strings
+// (used for getItem/removeItem) are untouched.
+function displayKey(key: string): string {
+  return key.replace(/^travelsafe\./, "");
+}
+
 export default function PrivacyDashboardPage() {
   useDocumentTitle("Privacy controls");
   const [present, setPresent] = useState<Record<string, boolean>>({});
@@ -120,7 +130,7 @@ export default function PrivacyDashboardPage() {
             <li key={e.key} className="py-2.5 flex items-baseline justify-between gap-3 text-sm">
               <div className="flex-1 min-w-0">
                 <p className="text-slate2-900">{e.label}</p>
-                <p className="text-[11px] text-slate2-500 font-mono">{e.key}</p>
+                <p className="text-[11px] text-slate2-500 font-mono">{displayKey(e.key)}</p>
               </div>
               <span className={`text-xs ${present[e.key] ? "text-slate2-700" : "text-slate2-500"}`}>
                 {present[e.key] ? "stored" : "not set"}

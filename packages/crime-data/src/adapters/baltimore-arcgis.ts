@@ -86,7 +86,7 @@ async function fetchPage(offset: number, sinceIso: string): Promise<BpdFeature[]
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
-  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT } });
+  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Baltimore ArcGIS ${res.status} offset=${offset}`);
   const body = await readJson(res) as { features?: BpdFeature[]; error?: { message?: string } };
   if (body.error) throw new Error(`Baltimore ArcGIS error: ${body.error.message}`);

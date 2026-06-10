@@ -99,6 +99,7 @@ async function fetchPage(offset: number): Promise<DenverRow[]> {
   }
   const res = await fetch(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Denver ArcGIS ${res.status} offset=${offset}`);
   const body = await readJson(res) as { features?: Array<{ attributes: DenverRow }>; error?: { code?: number; message?: string } };

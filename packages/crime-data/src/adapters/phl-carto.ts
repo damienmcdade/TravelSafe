@@ -160,6 +160,7 @@ async function fetchPhl(): Promise<Incident[]> {
       "User-Agent": "Mozilla/5.0 CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
     },
     body: formBody,
+    signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`PHL CARTO ${res.status}`);
   const body = await readJson(res) as { rows?: PhlRow[]; error?: unknown };

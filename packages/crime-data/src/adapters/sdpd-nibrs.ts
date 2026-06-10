@@ -64,7 +64,7 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchYear(year: number): Promise<Incident[]> {
   const url = `${env.SDPD_NIBRS_CSV_BASE}/pd_nibrs_${year}_datasd.csv`;
-  const res = await fetch(url);
+  const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`SDPD NIBRS ${res.status} fetching ${url}`);
   const csv = await res.text();
   const records: Record<string, string>[] = parseCsv(csv, { columns: true, skip_empty_lines: true });
