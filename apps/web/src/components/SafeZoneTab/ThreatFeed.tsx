@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { BaselinePoint, ThreatConfidence, ThreatItem } from "./types";
 import { api } from "@/lib/api-client";
 import { snapToSupported, useTimeWindow, type WindowValue } from "@/lib/use-time-window";
@@ -191,6 +192,8 @@ function ThreatFeedSkeleton() {
 /// Provides the "confidence explanation modal" the strategy doc
 /// asked for, scoped per-row so users can interrogate any
 /// individual incident's trust signal without leaving the feed.
+const POPOVER_W = 288; // matches w-72 (18rem) — used for viewport clamping
+
 function ConfidenceBadge({
   confidence,
   label,
@@ -203,17 +206,47 @@ function ConfidenceBadge({
   title: string;
 }) {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  // fix(confidence-popover-clipped): the popover was `position: absolute`
+  // inside the ThreatFeed's `<ol max-h-72 overflow-y-auto>` scroll box, so
+  // the overflow clipped it — clicking the badge opened a popover that was
+  // cut off / invisible for every row except (partly) the top one, while the
+  // fixed full-screen backdrop silently swallowed the next click. The badge
+  // read as dead app-wide. Now rendered in a portal at document.body with
+  // fixed positioning computed from the trigger rect, so it escapes the
+  // scroll clip and every stacking context.
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+
   useEffect(() => {
     if (!open) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setOpen(false);
+    function place() {
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const margin = 8;
+      const left = Math.max(margin, Math.min(r.right - POPOVER_W, window.innerWidth - POPOVER_W - margin));
+      setCoords({ top: r.bottom + 6, left });
     }
+    place();
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
+    // Close on scroll/resize rather than chase the trigger — the feed itself
+    // scrolls (capture:true catches the inner <ol>), so a fixed popover would
+    // otherwise drift away from its badge.
+    function onDismiss() { setOpen(false); }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("resize", onDismiss);
+    window.addEventListener("scroll", onDismiss, true);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onDismiss);
+      window.removeEventListener("scroll", onDismiss, true);
+    };
   }, [open]);
+
   return (
-    <span className="relative inline-flex shrink-0">
+    <span className="inline-flex shrink-0">
       <button
+        ref={btnRef}
         type="button"
         aria-label={`Explain ${label} confidence rating`}
         aria-expanded={open}
@@ -223,7 +256,7 @@ function ConfidenceBadge({
       >
         {label}
       </button>
-      {open && (
+      {open && coords && typeof document !== "undefined" && createPortal(
         <>
           {/* Transparent backdrop swallows outside clicks. */}
           <button
@@ -231,12 +264,13 @@ function ConfidenceBadge({
             aria-hidden
             tabIndex={-1}
             onClick={() => setOpen(false)}
-            className="fixed inset-0 z-30 cursor-default bg-transparent"
+            className="fixed inset-0 z-[60] cursor-default bg-transparent"
           />
           <div
             role="dialog"
             aria-label={`${label} confidence explanation`}
-            className="absolute z-40 right-0 top-6 w-72 max-w-[calc(100vw-2rem)] surface p-3 text-xs leading-snug shadow-lg ring-1 ring-sand-300"
+            style={{ position: "fixed", top: coords.top, left: coords.left, width: POPOVER_W }}
+            className="z-[61] max-w-[calc(100vw-1rem)] surface p-3 text-xs leading-snug shadow-lg ring-1 ring-sand-300"
           >
             <p className="font-medium text-slate2-900">{label} confidence</p>
             <p className="mt-1 text-slate2-700">{title}</p>
@@ -245,7 +279,8 @@ function ConfidenceBadge({
             </p>
             <ConfidenceLevelGuide active={confidence} />
           </div>
-        </>
+        </>,
+        document.body,
       )}
     </span>
   );

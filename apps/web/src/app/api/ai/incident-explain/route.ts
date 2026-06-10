@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap } from "@/server/lib/http";
-import { requireSession } from "@/server/lib/auth";
 import { explainIncident } from "@/server/services/ai/incident-explain";
 import { env } from "@/server/lib/env";
 
@@ -13,16 +12,22 @@ const Query = z.object({
 export const dynamic = "force-dynamic";
 export const maxDuration = 15;
 
-// Auth-gated (anon device session qualifies) like the other /api/ai
-// endpoints. Per-IP middleware cap and the cache layer further
-// constrain cost.
+// fix(explain-cross-client): was requireSession-gated, which 401'd
+// ("missing_bearer_token") for EVERY session-less client — the native
+// WKWebView (cross-origin, no same-origin cs_session cookie), Safari ITP /
+// third-party-cookie blocking, privacy modes, and the first-paint bootstrap
+// race. The "Explain" link in every Local Activity (ThreatFeed) row then
+// failed silently for those users, so the feature read as broken app-wide.
+// Now PUBLIC — identical to /api/ai/area-brief and /api/ai/incident-summary —
+// and still bounded: Vercel middleware caps /api/ai/* at 40/min per IP, and
+// Railway's /ai/incident-explain caches per offense description (LLM runs once
+// per unique offense, then free across rows and users).
 //
 // Routing: when API_BASE_URL is set, proxy to Railway so we hit the
 // shared Redis-backed cache (route-parity Phase 2 — see audit summary).
 // When unset, fall through to the in-process LRU implementation that
 // shipped before the Railway migration.
 export const GET = wrap(async (req: NextRequest) => {
-  await requireSession(req);
   const { desc } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
 
   if (env.API_BASE_URL) {
