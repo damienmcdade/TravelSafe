@@ -65,20 +65,28 @@ const GUIDANCE = {
   profiling: "Describe what the person was DOING, not their race, ethnicity, or skin color. A report that someone looked “suspicious” based only on their appearance isn’t allowed — tell us the specific behavior you witnessed (e.g. “tried car door handles,” “took a package off a porch”).",
 } as const;
 
-export function preVetPost(body: string): PreVetResult {
+// Comments are short replies, so they use a lower minimum than posts (which need
+// the 20-char floor to carry useful context). All the SUBSTANTIVE checks
+// (threat/profanity/address/plate/phone/name/appearance) still apply identically.
+export const COMMENT_MIN_LEN = 2;
+export const COMMENT_MAX_LEN = 500;
+
+export function preVetPost(body: string, opts: { minLen?: number; maxLen?: number } = {}): PreVetResult {
+  const minLen = opts.minLen ?? POST_MIN_LEN;
+  const maxLen = opts.maxLen ?? POST_MAX_LEN;
   const flags: PreVetFlag[] = [];
   let block = false;
   let inlineGuidance: string | undefined;
 
-  if (body.length < POST_MIN_LEN) {
-    flags.push({ kind: PostFlagKind.TOO_SHORT, action: "block", detail: `min ${POST_MIN_LEN} chars` });
+  if (body.length < minLen) {
+    flags.push({ kind: PostFlagKind.TOO_SHORT, action: "block", detail: `min ${minLen} chars` });
     block = true;
-    inlineGuidance ??= GUIDANCE.short;
+    inlineGuidance ??= minLen === POST_MIN_LEN ? GUIDANCE.short : `Please write at least ${minLen} characters.`;
   }
-  if (body.length > POST_MAX_LEN) {
-    flags.push({ kind: PostFlagKind.TOO_LONG, action: "block", detail: `max ${POST_MAX_LEN} chars` });
+  if (body.length > maxLen) {
+    flags.push({ kind: PostFlagKind.TOO_LONG, action: "block", detail: `max ${maxLen} chars` });
     block = true;
-    inlineGuidance ??= GUIDANCE.long;
+    inlineGuidance ??= maxLen === POST_MAX_LEN ? GUIDANCE.long : `Please keep it under ${maxLen} characters.`;
   }
 
   if (THREAT.test(body)) {

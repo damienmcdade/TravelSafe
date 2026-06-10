@@ -182,6 +182,10 @@ export const DATE_ONLY_CITY_SLUGS: ReadonlySet<string> = new Set([
   "dallas",
   "norfolk",
   "tampa",
+  // Houston HPD NIBRS yearly file is date-only (HPD_Occurrence_Date carries no
+  // hour — every incident reads 00:00:00), so the hour-of-day histogram would
+  // fabricate a midnight spike. Same honest "date only" treatment.
+  "houston",
   // Prince George's County PGPD feed publishes date-only timestamps (all
   // 00:00:00) — surface the honest "date only" message instead of a fabricated
   // midnight time-of-day spike. (Montgomery County's start_date DOES carry real

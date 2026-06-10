@@ -291,6 +291,7 @@ function PostCard({ post }: { post: PostListItem }) {
         <button
           onClick={() => setShowComments((v) => !v)}
           aria-expanded={showComments}
+          aria-controls={`comments-${post.id}`}
           className="px-2.5 py-1 rounded-full bg-bay-100 text-bay-700 hover:bg-bay-200"
         >
           💬 {commentCount > 0 ? `${commentCount} ${commentCount === 1 ? "comment" : "comments"}` : "Comment"}
@@ -361,9 +362,9 @@ function CommentThread({ postId, onPosted }: { postId: string; onPosted: () => v
   }
 
   return (
-    <section className="mt-3 border-t border-sand-200 pt-3 space-y-3" aria-label="Comments">
+    <section id={`comments-${postId}`} className="mt-3 border-t border-sand-200 pt-3 space-y-3" aria-label="Comments">
       {loadError && <p role="alert" className="text-xs text-dusk-700">Couldn&apos;t load comments — {loadError}</p>}
-      {comments === null && !loadError && <p className="text-xs text-slate2-500 animate-pulse">Loading comments…</p>}
+      {comments === null && !loadError && <p role="status" className="text-xs text-slate2-500 animate-pulse">Loading comments…</p>}
       {comments && comments.length === 0 && <p className="text-xs text-slate2-500">No comments yet — be the first.</p>}
       {comments && comments.map((c) => (
         <div key={c.id} className="text-sm">

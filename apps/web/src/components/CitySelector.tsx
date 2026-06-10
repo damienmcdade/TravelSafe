@@ -28,12 +28,25 @@ export function CitySelector() {
   const { city } = useCity();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  // Close on outside click / Escape. On Escape, return focus to the
-  // trigger button so keyboard users land back on a recognizable
-  // affordance rather than nowhere (WCAG focus-management).
+  // Modal behavior for this aria-modal dialog: outside-click + Escape close
+  // (Escape returns focus to the trigger), initial focus moves INTO the dialog
+  // on open, and Tab is TRAPPED inside it. fix(audit a11y-picker-no-focustrap):
+  // the dialog asserted aria-modal="true" but previously only implemented the
+  // Escape half — focus could escape behind the backdrop on this primary nav
+  // control. Now matches the delete-account dialog's correct pattern.
   useEffect(() => {
+    if (!open) return;
+    const focusables = (): HTMLElement[] =>
+      Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+    // Move focus into the dialog on open (next tick so the content is mounted).
+    const t = setTimeout(() => focusables()[0]?.focus(), 0);
     function onClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
@@ -41,13 +54,27 @@ export function CitySelector() {
       if (e.key === "Escape") {
         setOpen(false);
         triggerRef.current?.focus();
+        return;
+      }
+      if (e.key === "Tab") {
+        const f = focusables();
+        if (f.length === 0) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey && (active === first || !dialogRef.current?.contains(active))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     }
-    if (open) {
-      document.addEventListener("click", onClick);
-      document.addEventListener("keydown", onKey);
-    }
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
     return () => {
+      clearTimeout(t);
       document.removeEventListener("click", onClick);
       document.removeEventListener("keydown", onKey);
     };
@@ -106,6 +133,7 @@ export function CitySelector() {
             aria-hidden
           />
           <div
+            ref={dialogRef}
             role="dialog"
             aria-label="Change state, city and neighborhood"
             aria-modal="true"

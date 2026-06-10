@@ -2,31 +2,62 @@
 import { useEffect, useRef } from "react";
 import { API_BASE } from "./api-client";
 
+// fix(perf sse-double-connection + stale-closure): the community page mounts BOTH
+// useCommunityStream directly AND <LiveActivityBadge/> (which also calls it), so
+// every page view opened TWO long-lived EventSource connections (each = a 270s
+// Vercel function invocation). And the old per-hook EventSource captured a stale
+// onEvent (empty-deps effect), so after switching neighborhoods the consumer kept
+// filtering against the original area. Both are solved by a single shared
+// EventSource with a subscriber registry whose callbacks are read live each event.
+type StreamSub = {
+  onEvent: (evt: { type: string; [k: string]: unknown }) => void;
+  onStatus?: (connected: boolean) => void;
+};
+const subscribers = new Set<StreamSub>();
+let sharedES: EventSource | null = null;
+
+function openShared() {
+  if (sharedES || typeof window === "undefined") return;
+  const es = new EventSource(`${API_BASE}/api/community/stream`);
+  sharedES = es;
+  es.onopen = () => subscribers.forEach((s) => s.onStatus?.(true));
+  es.onmessage = (m) => {
+    let data: { type: string; [k: string]: unknown } | null = null;
+    try { data = JSON.parse(m.data); } catch { return; }
+    subscribers.forEach((s) => s.onEvent(data!));
+  };
+  // EventSource auto-reconnects after the server's graceful 270s close.
+  es.onerror = () => subscribers.forEach((s) => s.onStatus?.(false));
+}
+function closeSharedIfIdle() {
+  if (subscribers.size === 0 && sharedES) {
+    sharedES.close();
+    sharedES = null;
+  }
+}
+
 export function useCommunityStream(
   onEvent: (evt: { type: string; [k: string]: unknown }) => void,
-  // fix(audit ui-cards-2): optional connection-status callback so a consumer (the
-  // LiveActivityBadge) can reflect the REAL stream state instead of a hardcoded
-  // "Live" dot. Fires true on open, false on error (EventSource auto-reconnects).
+  // Optional connection-status callback so a consumer (the LiveActivityBadge) can
+  // reflect the REAL stream state. Fires true on open, false on error.
   onStatus?: (connected: boolean) => void,
 ) {
-  const ref = useRef<EventSource | null>(null);
+  // Keep the latest callbacks in a ref so the shared stream always invokes the
+  // freshest closure (fixes stale-area filtering after a neighborhood switch).
+  const cbRef = useRef<StreamSub>({ onEvent, onStatus });
+  cbRef.current = { onEvent, onStatus };
 
   useEffect(() => {
-    const es = new EventSource(`${API_BASE}/api/community/stream`);
-    ref.current = es;
-    es.onopen = () => onStatus?.(true);
-    es.onmessage = (m) => {
-      try { onEvent(JSON.parse(m.data)); } catch { /* skip malformed */ }
+    const sub: StreamSub = {
+      onEvent: (evt) => cbRef.current.onEvent(evt),
+      onStatus: (c) => cbRef.current.onStatus?.(c),
     };
-    es.onerror = () => {
-      // EventSource auto-reconnects with exponential backoff by default.
-      onStatus?.(false);
-    };
+    subscribers.add(sub);
+    openShared();
     return () => {
-      es.close();
-      ref.current = null;
+      subscribers.delete(sub);
+      closeSharedIfIdle();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }
 

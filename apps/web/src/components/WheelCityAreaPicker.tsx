@@ -253,7 +253,7 @@ export function WheelCityAreaPicker({
 
       <div className={`mt-3 flex items-center justify-between gap-2 flex-wrap ${compact ? "text-[11px]" : ""}`}>
         <p className={`text-[11px] text-slate2-500 ${compact ? "text-[10px]" : ""}`}>
-          Each wheel updates the page as you settle. Tap done when finished.
+          Each wheel updates the page as you settle. Tap Done when finished.
         </p>
         {onCommit && (
           <button

@@ -54,7 +54,8 @@ export const CITY_TZ: Record<string, string> = {
 
 // Cities whose feed publishes date-only timestamps (no real hour-of-day).
 export const DATE_ONLY_SLUGS: ReadonlySet<string> = new Set([
-  "san-diego", "charlotte", "indianapolis", "dallas", "norfolk", "tampa", "prince-georges-county",
+  "san-diego", "charlotte", "indianapolis", "dallas", "norfolk", "tampa",
+  "houston", "prince-georges-county",
 ]);
 
 // Prefix lookup ordered longest-first so e.g. "pgh-" (pittsburgh) is tested

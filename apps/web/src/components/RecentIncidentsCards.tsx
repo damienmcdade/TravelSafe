@@ -37,6 +37,22 @@ const SOURCE_LABELS: Record<string, string> = {
   "kansas-city":   "Kansas City Police · refreshed every 5 min",
   "saint-paul":    "Saint Paul Police · refreshed every 5 min",
   "pittsburgh":    "Pittsburgh Police · refreshed every 5 min",
+  "denver":        "Denver Police · refreshed every 5 min",
+  "sacramento":    "Sacramento Police · refreshed every 5 min",
+  "atlanta":       "Atlanta Police · refreshed every 5 min",
+  "indianapolis":  "Indianapolis Metro Police · refreshed every 5 min",
+  "honolulu":      "Honolulu Police · refreshed every 5 min",
+  "long-beach":    "Long Beach Police · refreshed every 5 min",
+  "phoenix":       "Phoenix Police · refreshed periodically",
+  "jacksonville":  "Jacksonville Sheriff's Office · refreshed every 5 min",
+  "virginia-beach": "Virginia Beach Police · refreshed every 5 min",
+  "gainesville":   "Gainesville Police · refreshed every 5 min",
+  "tampa":         "Tampa Police (last 365 days) · refreshed every 5 min",
+  "nashville":     "Metro Nashville Police · refreshed every 5 min",
+  "houston":       "Houston Police (data through 2024) · refreshed every 5 min",
+  "norfolk":       "Norfolk Police · refreshed every 5 min",
+  "montgomery-county":     "Montgomery County Police · refreshed every 5 min",
+  "prince-georges-county": "Prince George's County Police · refreshed every 5 min",
 };
 
 export function RecentIncidentsCards({

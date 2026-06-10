@@ -138,6 +138,12 @@ const LIMITS: Array<{ prefix: string; cap: number }> = [
   { prefix: "/api/neighborhood",   cap: 30 },  // feed + watch
   { prefix: "/api/official-alerts", cap: 30 }, // NWS/USGS proxies
   { prefix: "/api/coverage",       cap: 30 },
+  // fix(audit sse-conn-exhaustion): the live-feed SSE holds a connection open for
+  // ~270s, so the general /api/community 30/min cap let one IP accumulate ~130
+  // concurrent long-lived streams per instance. A real client needs just one
+  // (de-duped to a single shared EventSource now); cap new stream opens hard.
+  // Longest-prefix match means this only governs the stream sub-path.
+  { prefix: "/api/community/stream", cap: 6 },
   { prefix: "/api/community",      cap: 30 },
   { prefix: "/api/news",           cap: 30 },
   { prefix: "/api/safezone/",      cap: 60 },

@@ -4,7 +4,7 @@ import { PostStatus } from "@/generated/prisma/client";
 import { wrap, HttpError } from "@/server/lib/http";
 import { optionalSession } from "@/server/lib/auth";
 import { prisma } from "@/server/lib/prisma";
-import { preVetPost } from "@/server/services/moderation/post-prevet";
+import { preVetPost, COMMENT_MIN_LEN, COMMENT_MAX_LEN } from "@/server/services/moderation/post-prevet";
 import { isSuspended } from "@/server/services/moderation/suspension";
 import { ensureAnonymousUser } from "@/server/services/community/anon-user";
 import { anonPostLimited } from "@/server/lib/rate-limit";
@@ -18,6 +18,9 @@ export const dynamic = "force-dynamic";
 const ANON_BURST_LIMIT = 8;          // comments per IP per...
 const ANON_BURST_WINDOW_SEC = 600;   // ...10 minutes
 const ANON_DAILY_LIMIT = 40;         // comments per IP per day
+// Global backstop across ALL anonymous comments (the shared anon author row),
+// active only if the per-IP limiter fails open.
+const ANON_GLOBAL_DAILY_CAP = 300;
 
 /// Public list of a post's VISIBLE comments (oldest-first, like a thread).
 export const GET = wrap(async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -55,6 +58,12 @@ export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<
     }
     const anon = await ensureAnonymousUser();
     authorId = anon.id;
+    // Global DB backstop (mirrors the posts route): if the per-IP limiter ever
+    // fails open (Redis + the Postgres counter both unavailable), this still
+    // bounds total anonymous comment volume across all sources for the day.
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const todays = await prisma.postComment.count({ where: { authorId, createdAt: { gte: since } } });
+    if (todays >= ANON_GLOBAL_DAILY_CAP) throw new HttpError(429, "daily_comment_limit_reached");
   }
 
   const { id } = await params;
@@ -66,7 +75,7 @@ export const POST = wrap(async (req: NextRequest, { params }: { params: Promise<
   if (!post || post.status !== PostStatus.VERIFIED || post.deletedAt) {
     return NextResponse.json({ error: "post_not_found" }, { status: 404 });
   }
-  const vet = preVetPost(body);
+  const vet = preVetPost(body, { minLen: COMMENT_MIN_LEN, maxLen: COMMENT_MAX_LEN });
   if (vet.block) return NextResponse.json({ error: "comment_rejected", guidance: vet.inlineGuidance }, { status: 422 });
   const comment = await prisma.postComment.create({
     data: {

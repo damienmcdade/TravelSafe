@@ -52,6 +52,17 @@ const SOURCES: Record<string, string> = {
   "houston":       "Houston police crime reports (data through 2024), placed into named neighborhoods, from the City of Houston open-data site. Neighborhood boundaries © OpenStreetMap contributors.",
   "montgomery-county": "Montgomery County police crime reports, placed into the county's towns and communities (Silver Spring, Rockville, Bethesda…), from the Data Montgomery open-data site. Community boundaries © US Census Bureau.",
   "prince-georges-county": "Prince George's County police crime reports, placed into the county's towns and communities (Bowie, College Park, Hyattsville…), from the county's open-data site. Community boundaries © US Census Bureau.",
+  "denver":        "Denver police crime reports, grouped by neighborhood, from the City of Denver open-data site.",
+  "sacramento":    "Sacramento police crime reports, grouped by neighborhood, from the City of Sacramento open-data site.",
+  "atlanta":       "Atlanta police crime reports, grouped by neighborhood, from the Atlanta Police Department open-data site.",
+  "indianapolis":  "Indianapolis Metro police crime reports, grouped by district, from the city's open-data site.",
+  "honolulu":      "Honolulu police crime reports, grouped by area, from the City and County of Honolulu open-data site.",
+  "long-beach":    "Long Beach police crime reports, placed into named neighborhoods, from the City of Long Beach open-data site.",
+  "phoenix":       "Phoenix police crime reports, grouped into the city's urban villages, from the Phoenix open-data site (data through December 2025).",
+  "jacksonville":  "Jacksonville Sheriff's Office crime reports, placed into named neighborhoods, from the JSO open-data site.",
+  "virginia-beach": "Virginia Beach police incident reports, grouped into planning areas, from the City of Virginia Beach open-data site.",
+  "gainesville":   "Gainesville police crime reports, placed into named neighborhoods, from the City of Gainesville open-data site.",
+  "tampa":         "Tampa police crime reports (last 365 days), placed into named neighborhoods, from the City of Tampa open-data site.",
 };
 
 export default function MapPage() {
