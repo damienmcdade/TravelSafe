@@ -23,14 +23,16 @@ const COLOR: Record<Trend["category"], string> = {
   SOCIETY:  "text-sage-700",
 };
 
-export function AreaInsightsPanel({ areaQueryString }: { areaQueryString: string }) {
+export function AreaInsightsPanel({ areaQueryString, defaultExpanded = false }: { areaQueryString: string; defaultExpanded?: boolean }) {
   const { data, loading, error } = useApi<Insights>(`/crime-data/insights?${areaQueryString}`, [areaQueryString]);
   // v67 — collapsed-by-default to match the user directive that
   // long cards should be collapsed on landing. The header still
   // shows the title + headline metric, so users can scan past
   // this card without expanding when they're not interested in
   // the 12-week trend.
-  const [expanded, setExpanded] = useState(false);
+  // v11 — opt-in `defaultExpanded` so the Neighborhood Awareness tab can
+  // render it open on landing while the Watch page keeps it collapsed.
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   return (
     <section className="surface p-4 sm:p-5">

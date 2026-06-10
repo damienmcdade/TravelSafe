@@ -244,7 +244,7 @@ function NeighborhoodView() {
               and the ThreatFeed via AreaSafeZoneSection's children slot so
               the whole stack still shares a single SafeZone fetch. */}
           <AreaSafeZoneSection city={{ slug: city.slug, label: city.label }} area={area}>
-            <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(area.slug)}`} />
+            <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(area.slug)}`} defaultExpanded />
             <TrendPanel headingLevel={3} recentReportsDefaultOpen />
           </AreaSafeZoneSection>
 
