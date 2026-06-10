@@ -17,6 +17,10 @@ export interface ThreatFeedProps {
   /// Source citation rendered as a tiny link.
   source: { label: string; url: string };
   loading?: boolean;
+  /// Opt-in: render the panel expanded on first paint (and keep it open
+  /// across area/city switches). Defaults to false so existing surfaces
+  /// (e.g. Community) keep the collapsed-on-landing behavior.
+  defaultOpen?: boolean;
 }
 
 const CAT_DOT: Record<ThreatItem["category"], string> = {
@@ -71,7 +75,7 @@ const WINDOW_PRESETS: ReadonlyArray<WindowValue> = [7, 14, 30, 90];
 /// sanitized dispatches in a scrollable container. Default ~5 rows
 /// visible; remaining rows scroll within the panel so users see the
 /// whole window without the panel monopolizing the page.
-export function ThreatFeed({ threats, windowDays, contextLabel, source, loading }: ThreatFeedProps) {
+export function ThreatFeed({ threats, windowDays, contextLabel, source, loading, defaultOpen = false }: ThreatFeedProps) {
   // In-card time-interval picker — uses the same shared store that
   // drives CrimeChart and TrendPanel so picking here propagates
   // app-wide. Snapped to ThreatFeed's preset list (which is also
@@ -83,8 +87,8 @@ export function ThreatFeed({ threats, windowDays, contextLabel, source, loading 
   // the page on landing. Mirrors AreaBriefPanel + NewsPanel pattern.
   // Resets to closed when contextLabel changes (= user picked a
   // different area/city).
-  const [panelOpen, setPanelOpen] = useState(false);
-  useEffect(() => { setPanelOpen(false); }, [contextLabel]);
+  const [panelOpen, setPanelOpen] = useState(defaultOpen);
+  useEffect(() => { setPanelOpen(defaultOpen); }, [contextLabel, defaultOpen]);
 
   if (loading && threats.length === 0) return <ThreatFeedSkeleton />;
   const eligible = threats.slice(0, HARD_CAP);

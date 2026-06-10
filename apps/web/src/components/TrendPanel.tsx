@@ -64,7 +64,7 @@ const CAT_DOT: Record<NonNullable<TrendBullet["category"]>, string> = {
 /// TrendPanel slots into different hierarchies cleanly: on /trends
 /// (its own page) it's h2 under the page's h1; on /safety-score
 /// (mounted under ScoreReport's h2) it should be h3 to avoid skipping.
-export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) {
+export function TrendPanel({ headingLevel = 2, recentReportsDefaultOpen = false }: { headingLevel?: 2 | 3; recentReportsDefaultOpen?: boolean } = {}) {
   const { city } = useCity();
   const { area } = useArea(city.slug);
   const [compareArea, setCompareArea] = useState<AreaSelection | null>(null);
@@ -117,7 +117,7 @@ export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) 
       {trend && !loading && (
         <>
           <div className={compareMode ? "grid grid-cols-1 lg:grid-cols-2 gap-4 items-start" : "space-y-4"}>
-            <TrendReport trend={trend} csvPath={path} sectionHeadingLevel={headingLevel} windowDays={windowDays} />
+            <TrendReport trend={trend} csvPath={path} sectionHeadingLevel={headingLevel} windowDays={windowDays} recentReportsDefaultOpen={recentReportsDefaultOpen} />
             {compareMode && (
               compareTrend
                 ? <TrendReport trend={compareTrend} csvPath={comparePath ?? path} accent="compare" sectionHeadingLevel={headingLevel} windowDays={windowDays} />
@@ -153,7 +153,7 @@ export function TrendPanel({ headingLevel = 2 }: { headingLevel?: 2 | 3 } = {}) 
 /// Stateless TrendReport — renders the WoW shift bullets, time-of-day
 /// chart, and recent dispatches list for a single TrendResponse.
 /// Reused for both the primary view and the compare panel.
-function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDays = 30 }: { trend: TrendResp; csvPath: string; accent?: "compare"; sectionHeadingLevel?: 2 | 3; windowDays?: number }) {
+function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDays = 30, recentReportsDefaultOpen = false }: { trend: TrendResp; csvPath: string; accent?: "compare"; sectionHeadingLevel?: 2 | 3; windowDays?: number; recentReportsDefaultOpen?: boolean }) {
   // When the parent panel is at h2, our subsections (Week-over-week
   // shift / Recent dispatches / When reports happen) are h3. When
   // the panel is at h3 (mounted under another h2), we bump our
@@ -165,8 +165,8 @@ function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDa
   // pattern already wired into AreaBriefPanel / AreaInsightsPanel /
   // NewsPanel / ThreatFeed / CommunitySignalsPanel. Resets to closed
   // when the area changes so each new neighborhood starts clean.
-  const [dispatchesOpen, setDispatchesOpen] = useState(false);
-  useEffect(() => { setDispatchesOpen(false); }, [trend.area.slug]);
+  const [dispatchesOpen, setDispatchesOpen] = useState(recentReportsDefaultOpen);
+  useEffect(() => { setDispatchesOpen(recentReportsDefaultOpen); }, [trend.area.slug, recentReportsDefaultOpen]);
   return (
     <section className="space-y-3">
       {accent === "compare" && (

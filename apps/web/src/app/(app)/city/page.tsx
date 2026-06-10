@@ -29,14 +29,14 @@ interface Citywide { city: string; totalIncidents: number; alerts: Alert[]; perA
 /// drill-down. Clicking a hotspot in the leaderboard jumps over to
 /// Neighborhood Awareness with that area pre-selected.
 ///
-/// Card order per the v9 directive:
+/// Card order per the v11 directive:
 ///   1. Safety Index            (BlockScore)
 ///   2. City Letter Score       (CityScoreCard — grade + violent/property bars)
 ///   3. Recent Upticks          (UptickTile)
-///   4. Local Activity          (ThreatFeed, with in-card window picker)
-///   5. AI Summary              (IncidentSummaryCard)
-///   6. Hotspots                (HotspotCard)
-///   7. Weather + News          (OfficialAlertsPanel + NewsPanel)
+///   4. Local Activity          (ThreatFeed, expanded on landing)
+///   5. Hotspots                (HotspotCard)
+///   6. Weather + News          (OfficialAlertsPanel + NewsPanel, expanded)
+///   7. AI Summary              (IncidentSummaryCard — moved to bottom)
 ///   8. ALL disclaimer banners  (DataProvenanceBanner, last)
 ///
 /// CrimeChart removed from City Awareness — its area-breakdown function
@@ -107,32 +107,35 @@ export default function CityAwarenessPage() {
 
       {/* 4. Local Activity (ThreatFeed) — scrollable, has its own
              in-card window picker driven by the shared useTimeWindow
-             store. */}
+             store. Expanded on landing per the v11 directive. */}
       <LocalActivity data={safeZone} cityLabel={city.label} />
 
-      {/* 5. AI Summary card (renamed IncidentSummaryCard heading). */}
-      <IncidentSummaryCard
-        citySlug={city.slug}
-        contextLabel={`${city.label} (citywide)`}
-      />
-
-      {/* 6. Hotspots — click a row to focus that neighborhood. */}
+      {/* 5. Hotspots — click a row to focus that neighborhood. */}
       <HotspotCard
         citySlug={city.slug}
         cityLabel={city.label}
         onPickArea={selectNeighborhood}
       />
 
-      {/* 7. Weather + News — paired two-column row. */}
+      {/* 6. Weather + News ("What's being reported") — paired two-column
+             row. News panel expanded on landing per the v11 directive. */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         <OfficialAlertsPanel />
-        <NewsPanel />
+        <NewsPanel defaultOpen />
       </div>
 
-      {/* 7b. Road conditions (CHP) — California cities only; renders
+      {/* 6b. Road conditions (CHP) — California cities only; renders
              nothing when there are no active nearby collisions/closures,
              so it adds no footprint elsewhere or on quiet days. */}
       <TrafficAlertsPanel />
+
+      {/* 7. AI Summary card — moved to the bottom of the page (just above
+             the disclaimers) per the v11 directive, so users see the raw
+             signals first and the AI roll-up last. */}
+      <IncidentSummaryCard
+        citySlug={city.slug}
+        contextLabel={`${city.label} (citywide)`}
+      />
 
       {/* 8. ALL informational source banner disclaimers anchored to the
              bottom of the page per v9 directive. DataProvenanceBanner
@@ -178,6 +181,7 @@ function LocalActivity({ data, cityLabel }: { data: ReturnType<typeof useSafeZon
       contextLabel={`${cityLabel} citywide`}
       source={source}
       loading={data.loading}
+      defaultOpen
     />
   );
 }

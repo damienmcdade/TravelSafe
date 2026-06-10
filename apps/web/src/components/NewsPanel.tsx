@@ -51,7 +51,7 @@ function writePrefs(p: { hidden: string[] }) {
 // can expand via the "Show all" disclosure below.
 const DEFAULT_VISIBLE = 5;
 
-export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
+export function NewsPanel({ areaSlug, defaultOpen = false }: { areaSlug?: string; defaultOpen?: boolean }) {
   const { city } = useCity();
   // Time-window state, hydrated from localStorage so the user's pick
   // survives tab switches + cross-page navigation. Default 30d per
@@ -91,8 +91,8 @@ export function NewsPanel({ areaSlug }: { areaSlug?: string }) {
   // the long-cards directive; user-toggleable; resets when they
   // navigate between cities/areas (so the new area's news starts
   // collapsed too rather than inheriting a previous open state).
-  const [panelOpen, setPanelOpen] = useState(false);
-  useEffect(() => { setPanelOpen(false); }, [city.slug, areaSlug]);
+  const [panelOpen, setPanelOpen] = useState(defaultOpen);
+  useEffect(() => { setPanelOpen(defaultOpen); }, [city.slug, areaSlug, defaultOpen]);
   useEffect(() => { setHidden(new Set(readPrefs().hidden)); }, []);
   // Reset to collapsed whenever the city changes — switching cities
   // brings in a brand-new feed and the user should re-decide whether

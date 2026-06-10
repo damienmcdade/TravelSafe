@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { api, useApi } from "@/lib/api-client";
@@ -33,6 +33,10 @@ const TimeOfDayCard = dynamic(() => import("@/components/TimeOfDayCard").then((m
 const NewsPanel = dynamic(() => import("@/components/NewsPanel").then((m) => m.NewsPanel), { ssr: false });
 const TrendPanel = dynamic(() => import("@/components/TrendPanel").then((m) => m.TrendPanel), { ssr: false });
 const AreaBriefPanel = dynamic(() => import("@/components/AreaBriefPanel").then((m) => m.AreaBriefPanel), { ssr: false });
+// v11 — the 12-week trend chart (3 FBI crime categories) relocated here from
+// the Community/"connections" tab. Renders directly under the Neighborhood
+// Score card, with the week-over-week TrendPanel immediately below it.
+const AreaInsightsPanel = dynamic(() => import("@/components/AreaInsightsPanel").then((m) => m.AreaInsightsPanel), { ssr: false });
 
 interface Alert { area: string; category: "PERSONS"|"PROPERTY"|"SOCIETY"; riskLevel: 1|2|3|4|5; summary: string; recency: string; provenance: ProvenanceLike }
 
@@ -98,14 +102,17 @@ export default function NeighborhoodAwarenessPage() {
   );
 }
 
-/// Card layout per the v6 directive:
+/// Card layout per the v11 directive:
 ///   - Search + Use-my-location header row
-///   - BlockScore + ThreatFeed (recent dispatches stay — they're
-///     the area's own and the user explicitly wanted dispatches HERE)
+///   - Neighborhood Score (BlockScore)
+///   - 12-week trend chart (AreaInsightsPanel, 3 FBI categories — moved
+///     here from the Community/"connections" tab), directly under score
+///   - Week-over-week shift (TrendPanel), directly below the trend chart;
+///     its "Recent reports" sub-section is expanded on landing
+///   - Local Activity (ThreatFeed), expanded on landing
 ///   - CrimeMixCard (per-crime color distinction)
 ///   - TimeOfDayCard (when reports happen)
-///   - TrendPanel (week-over-week shift, area-scoped)
-///   - NewsPanel (area-scoped, with same selectors as City Awareness)
+///   - NewsPanel ("What's being reported", expanded on landing)
 ///   - AreaBriefPanel — AT THE BOTTOM, renamed to "AI Summary"
 ///
 /// Explicitly removed: IncidentSummaryCard ("recent activity"),
@@ -230,19 +237,23 @@ function NeighborhoodView() {
               incidents reads as upstream cadence/freeze, not an app bug. */}
           <DataFreshnessBanner citySlug={city.slug} cityLabel={city.label} />
 
-          <AreaSafeZoneSection city={{ slug: city.slug, label: city.label }} area={area} />
+          {/* v11 layout: Neighborhood Score → 12-week trend chart (3 FBI
+              crime categories, relocated from the Community/"connections"
+              tab) → Week-over-week shift → Local Activity. The chart and
+              the week-over-week TrendPanel are injected between the score
+              and the ThreatFeed via AreaSafeZoneSection's children slot so
+              the whole stack still shares a single SafeZone fetch. */}
+          <AreaSafeZoneSection city={{ slug: city.slug, label: city.label }} area={area}>
+            <AreaInsightsPanel areaQueryString={`neighborhood=${encodeURIComponent(area.slug)}`} />
+            <TrendPanel headingLevel={3} recentReportsDefaultOpen />
+          </AreaSafeZoneSection>
 
           <CrimeMixCard areaSlug={area.slug} title={`${area.label} — last 30 days`} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <TimeOfDayCard areaSlug={area.slug} areaLabel={area.label} citySlug={city.slug} />
-            <NewsPanel areaSlug={area.slug} />
+            <NewsPanel areaSlug={area.slug} defaultOpen />
           </div>
-
-          {/* Week-over-week trend for this neighborhood (moved from
-              City Awareness per v6 directive — area-scoped, not
-              duplicated by anything else on this page). */}
-          <TrendPanel headingLevel={3} />
 
           {/* AI Summary sits above the bottom disclaimer banner so
               users see the summary before the legal/provenance footer.
@@ -259,9 +270,14 @@ function NeighborhoodView() {
 function AreaSafeZoneSection({
   city,
   area,
+  children,
 }: {
   city: { slug: string; label: string };
   area: { slug: string; label: string; jurisdiction: string };
+  /// Cards rendered between the Neighborhood Score and Local Activity
+  /// (v11: the 12-week trend chart + week-over-week shift). Kept inside
+  /// this component so the whole stack shares the single SafeZone fetch.
+  children?: ReactNode;
 }) {
   const data = useSafeZoneData({
     city: { slug: city.slug, label: city.label },
@@ -281,6 +297,7 @@ function AreaSafeZoneSection({
         unavailable={!data.loading && !data.blockScore}
         contextLabel={`${area.label}, ${city.label}`}
       />
+      {children}
       <ThreatFeed
         threats={data.threats}
         baseline={data.baseline}
@@ -288,6 +305,7 @@ function AreaSafeZoneSection({
         contextLabel={area.label}
         source={source}
         loading={data.loading}
+        defaultOpen
       />
     </div>
   );
