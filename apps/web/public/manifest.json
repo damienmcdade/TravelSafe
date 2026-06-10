@@ -1,7 +1,7 @@
 {
   "name": "CommunitySafe",
   "short_name": "CommunitySafe",
-  "description": "Neighborhood-level safety awareness across 44 US cities. Drawn from official police open-data feeds and the FBI Crime Data Explorer national average. Not surveillance; not a substitute for emergency services.",
+  "description": "Neighborhood-level safety awareness across 45 US cities and counties. Drawn from official police open-data feeds and the FBI Crime Data Explorer national average. Not surveillance; not a substitute for emergency services.",
   "lang": "en-US",
   "dir": "ltr",
   "start_url": "/",

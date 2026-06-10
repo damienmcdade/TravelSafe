@@ -34,7 +34,7 @@ export function LiveActivityBadge() {
     };
   }, []);
 
-  const dot = connected ? "bg-sage-500" : "bg-slate2-400";
+  const dot = connected ? "bg-sage-500" : "bg-slate2-500";
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-slate2-500">
       <span className={`relative inline-flex w-2 h-2`}>

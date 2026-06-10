@@ -101,7 +101,7 @@ export default function CommunityPage() {
   });
 
   return (
-    <main className="space-y-5">
+    <div className="space-y-5">
       <header className="page-hero flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs uppercase tracking-[0.18em] text-coral-700 font-medium">CommunitySafe</p>
@@ -209,7 +209,7 @@ export default function CommunityPage() {
         <aside className="space-y-4">
         </aside>
       </div>
-    </main>
+    </div>
   );
 }
 

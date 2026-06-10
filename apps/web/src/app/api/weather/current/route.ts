@@ -1,6 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap, HttpError } from "@/server/lib/http";
+import { anonPostLimited } from "@/server/lib/rate-limit";
+
+// fix(audit weather-proxy-no-ratelimit): public proxy to Open-Meteo with no
+// per-route rate limit (the edge middleware doesn't cover /api/weather). Add the
+// same cross-instance per-IP gate the community routes use so a single IP can't
+// hammer Open-Meteo. 30/min burst + 600/day; fails OPEN if the limiter infra is
+// down.
+const WX_BURST_LIMIT = 30;
+const WX_BURST_WINDOW_SEC = 60;
+const WX_DAILY_LIMIT = 600;
 
 const Query = z.object({
   lat: z.coerce.number().min(-90).max(90),
@@ -58,6 +68,14 @@ export const revalidate = 300; // 5 min — Open-Meteo updates ~hourly anyway
 /// use. Returns Fahrenheit by convention since the rest of the app's
 /// audience is US-domestic; can later flip on a query param.
 export const GET = wrap(async (req: NextRequest) => {
+  if (await anonPostLimited(req, {
+    burstLimit: WX_BURST_LIMIT,
+    burstWindowSec: WX_BURST_WINDOW_SEC,
+    dailyLimit: WX_DAILY_LIMIT,
+    scope: "weather",
+  })) {
+    throw new HttpError(429, "rate_limited");
+  }
   const { lat, lng } = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
     `&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m` +

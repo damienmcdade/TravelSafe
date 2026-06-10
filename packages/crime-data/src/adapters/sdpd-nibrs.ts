@@ -21,7 +21,10 @@ registerRowCache(() => { cache = null; }, "sdpd-nibrs");
 // say "live feed warming up" instead of "0 neighborhoods".
 let lastDiscovered: { fetchedAt: number; areas: KnownArea[] } | null = null;
 
-function mapCrimeAgainst(value: string | undefined): CrimeCategory {
+function mapCrimeAgainst(value: string | undefined, offenseDesc?: string): CrimeCategory {
+  // fix(audit robbery-misclass): robbery is NIBRS "Crime Against Property" (PR)
+  // but FBI UCR Part-1 VIOLENT — force it to PERSONS before the passthrough.
+  if ((offenseDesc ?? "").toLowerCase().includes("robbery")) return CrimeCategory.PERSONS;
   const v = (value ?? "").trim().toUpperCase();
   if (v === "PE" || v === "PERSON" || v === "PERSONS") return CrimeCategory.PERSONS;
   if (v === "PR" || v === "PROPERTY") return CrimeCategory.PROPERTY;
@@ -72,7 +75,7 @@ async function fetchYear(year: number): Promise<Incident[]> {
       id: `${year}-${r.nibrs_uniq ?? r.objectid ?? i}`,
       area: r.neighborhood?.trim() || r.beat?.trim() || "Unknown",
       occurredAt: parseOccurredAt(r),
-      nibrsCategory: mapCrimeAgainst(r.crime_against),
+      nibrsCategory: mapCrimeAgainst(r.crime_against, r.ibr_offense_description ?? r.ibr_category),
       ibrOffenseDescription: r.ibr_offense_description ?? r.ibr_category ?? "Unknown",
       beat: r.beat ?? null,
       blockLabel: r.block_addr ?? undefined,

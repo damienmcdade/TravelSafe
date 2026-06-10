@@ -90,9 +90,17 @@ safezoneRouter.get("/safety-score", async (req, res, next) => {
             // broken so the in-process compute path recovers
             // immediately. The next warm cycle's healthy result
             // overwrites the bad entry.
-            const parsed = JSON.parse(cached) as { windowDays?: number; rows?: Array<{ count?: number }> };
+            const parsed = JSON.parse(cached) as { windowDays?: number; dataConfidence?: string; rows?: Array<{ count?: number }> };
             const totalCounted = (parsed.rows ?? []).reduce((s, r) => s + (r.count ?? 0), 0);
-            if ((parsed.windowDays ?? 0) > 0 && totalCounted > 0) {
+            // fix(audit cold-score-latch): only serve a cached citywide score
+            // when it's HIGH confidence. A PROVISIONAL (low/medium) score is the
+            // cold-tier partial that improves once the adapter warms — serving it
+            // from the 30-min Redis cache would latch the wrong grade until TTL.
+            // Falling through recomputes against the now-warm cache; the next warm
+            // cycle writes the HIGH result. (Citywide is HIGH in steady state for
+            // all 45 jurisdictions, so this only bypasses the cold transient.)
+            const cacheable = city ? parsed.dataConfidence === "high" : true;
+            if ((parsed.windowDays ?? 0) > 0 && totalCounted > 0 && cacheable) {
               return res.json(parsed);
             }
           }

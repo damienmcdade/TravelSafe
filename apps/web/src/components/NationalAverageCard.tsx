@@ -114,7 +114,7 @@ function CompareRow({ label, cityLabel, local, national, deltaPct }: { label: st
 
         <text x="0" y="38" className="fill-slate2-700" style={{ fontSize: 6 }}>National avg</text>
         <rect x="0"  y="41" width="200" height="8" rx="2" className="fill-sand-100" />
-        <rect x="0"  y="41" width={(nationalPct * 200) / 100} height="8" rx="2" className="fill-slate2-400" />
+        <rect x="0"  y="41" width={(nationalPct * 200) / 100} height="8" rx="2" className="fill-slate2-500" />
         <text x="200" y="38" textAnchor="end" className="fill-slate2-700" style={{ fontSize: 6 }}>{formatRatePer100k(national)}</text>
       </svg>
     </div>
@@ -127,7 +127,7 @@ function Legend() {
       <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-sage-500" /> below national</span>
       <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-bay-500" /> near national</span>
       <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-coral-500" /> above national</span>
-      <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-slate2-400" /> national reference</span>
+      <span className="inline-flex items-center gap-1.5"><span className="inline-block w-3 h-2 rounded-sm bg-slate2-500" /> national reference</span>
       <span className="ml-auto italic">Annualized rate from recent reports.</span>
     </div>
   );

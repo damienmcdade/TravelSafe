@@ -70,7 +70,10 @@ export const GET = wrap(async (req: NextRequest) => {
       // _count.reactions, never the rows. Including every reaction row per post
       // is redundant and unbounded — a single viral post would ship thousands of
       // rows on the hottest read path. Keep the aggregate count only.
-      _count: { select: { comments: true, reactions: true, reports: true } },
+      // fix(audit C1): do NOT expose `reports` in the public feed — it was an
+      // oracle telling an attacker exactly how close each post was to the
+      // auto-hide threshold. Moderators see report counts via the queue, not here.
+      _count: { select: { comments: true, reactions: true } },
     },
   });
   return NextResponse.json(posts);

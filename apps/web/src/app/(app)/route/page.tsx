@@ -192,7 +192,7 @@ export default function SafeRoutePage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       {/* Warm CartoDB tile-server connections — see /map for full rationale.
           The route view loads the same Leaflet tiles as the crime map. */}
       <link rel="preconnect" href="https://a.basemaps.cartocdn.com" crossOrigin="" />
@@ -405,7 +405,7 @@ export default function SafeRoutePage() {
           </p>
         </>
       )}
-    </main>
+    </div>
   );
 }
 

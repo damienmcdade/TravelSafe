@@ -46,6 +46,10 @@ interface CoSpRow {
 }
 
 function mapToNibrs(row: CoSpRow): CrimeCategory {
+  // fix(audit robbery-misclass): robbery is NIBRS "Crime Against Property" but
+  // FBI UCR Part-1 VIOLENT — force it to PERSONS before the passthrough.
+  const desc = `${row.crimecodedescription ?? ""} ${row.statutedescription ?? ""}`.toLowerCase();
+  if (desc.includes("robbery")) return CrimeCategory.PERSONS;
   const v = (row.index_crime_category ?? "").trim().toLowerCase();
   if (v.includes("persons")) return CrimeCategory.PERSONS;
   if (v.includes("property")) return CrimeCategory.PROPERTY;

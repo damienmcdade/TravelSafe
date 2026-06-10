@@ -33,6 +33,9 @@ interface SodaRow {
 }
 
 function mapToNibrs(row: SodaRow): CrimeCategory {
+  // fix(audit robbery-misclass): robbery is NIBRS "Crime Against Property" but
+  // FBI UCR Part-1 VIOLENT — force it to PERSONS before the passthrough.
+  if ((row.nibrs_offense_code_description ?? "").toLowerCase().includes("robbery")) return CrimeCategory.PERSONS;
   // SPD publishes NIBRS classification directly — read it off the row instead
   // of inferring from the offense name.
   const c = (row.nibrs_crime_against_category ?? "").trim().toUpperCase();

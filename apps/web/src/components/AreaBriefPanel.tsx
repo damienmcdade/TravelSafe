@@ -70,7 +70,11 @@ export function AreaBriefPanel({
         <span className="text-[11px] uppercase tracking-wider text-slate2-500 shrink-0">AI · grounded in the data</span>
       </button>
       {showBody && (
-        <div className="mt-3">
+        // WCAG 4.1.3 — the AI brief text arrives asynchronously (and can
+        // re-render as the upstream response resolves). aria-live "polite" +
+        // aria-atomic="false" announce the summary to screen readers once it
+        // populates instead of it appearing silently below the heading.
+        <div className="mt-3" aria-live="polite" aria-atomic="false">
           {loading && (
             <div className="space-y-2">
               <div className="skel h-3 w-full" />

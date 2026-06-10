@@ -27,10 +27,15 @@ export const GET = wrap(async (req: NextRequest) => {
 
   if (env.API_BASE_URL) {
     const url = `${env.API_BASE_URL.replace(/\/+$/, "")}/ai/incident-explain`;
+    // fix(resilience upstream-no-timeout): a hung Railway upstream would block
+    // this request until Vercel's function ceiling. 8s is ample for a cached/
+    // short AI definition; on timeout AbortSignal rejects → .catch → null →
+    // soft-fall to the local explainer below.
     const upstream = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ description: desc }),
+      signal: AbortSignal.timeout(8000),
     }).catch(() => null);
     if (upstream?.ok) {
       const body = await upstream.json();

@@ -1,9 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { wrap } from "@/server/lib/http";
+import { wrap, HttpError } from "@/server/lib/http";
 import { getNews } from "@/server/services/news/google-news";
 import { cityForArea, cityBySlug } from "@/server/services/crime-data/cities";
+import { anonPostLimited } from "@/server/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
+
+// fix(audit news-proxy-no-ratelimit): this public proxy fans out to Google
+// News RSS on every call. The edge middleware caps it per-instance, but that's
+// per-Vercel-instance and resets on cold start — add the same cross-instance
+// (Redis/DB-backed) per-IP gate the community routes use so a single IP can't
+// hammer the upstream feed. 30/min burst + 600/day is generous for humans +
+// search crawlers; fails OPEN if the limiter infra is down.
+const NEWS_BURST_LIMIT = 30;
+const NEWS_BURST_WINDOW_SEC = 60;
+const NEWS_DAILY_LIMIT = 600;
 
 // Strip a city's own slug prefix from neighborhood slugs so the Google News
 // query reads naturally (e.g. "la-hollywood" → "Hollywood Los Angeles ...").
@@ -12,6 +23,14 @@ function denormalize(slug: string): string {
 }
 
 export const GET = wrap(async (req: NextRequest) => {
+  if (await anonPostLimited(req, {
+    burstLimit: NEWS_BURST_LIMIT,
+    burstWindowSec: NEWS_BURST_WINDOW_SEC,
+    dailyLimit: NEWS_DAILY_LIMIT,
+    scope: "news",
+  })) {
+    throw new HttpError(429, "rate_limited");
+  }
   const area = req.nextUrl.searchParams.get("area");
   const cityParam = req.nextUrl.searchParams.get("city");
 

@@ -749,12 +749,27 @@ function computeDataConfidence(
   return { dataConfidence: "high" };
 }
 
-/// Grade a per-area row set by the AREA's rate vs the CITY's rate
-/// (averaged across the two reported categories). Thresholds are wider
-/// than the prior vs-national thresholds because within-city variance
-/// is naturally larger — a quiet residential neighborhood can sit at
-/// 0.3× the city rate, a downtown core often runs 2–4× the city rate,
-/// and both are honest reflections of "this area vs its peer cities".
+/// Grade a per-area row set by the AREA's rate vs the CITY's rate.
+///
+/// WEIGHTING (methodology note): the two reported categories (PERSONS and
+/// PROPERTY) are combined with EQUAL weight — a plain mean of each category's
+/// area/city ratio. This DELIBERATELY differs from the CITYWIDE grade
+/// (gradeCitywideAbsolute), which weights violent 70% / property 30% because
+/// that grade is an absolute cross-city safety measure where violent crime
+/// should dominate. The NEIGHBORHOOD grade is a RELATIVE within-city measure
+/// (area vs its own city for the SAME category), so an equal blend answers
+/// the user's actual question — "is this area's crime mix higher or lower
+/// than the rest of this city?" — without baking the citywide severity
+/// weighting into a comparison that is already category-matched on both sides.
+/// (If this is ever changed to a violent-weighted blend, note that it shifts
+/// every neighborhood grade across all tracked cities and needs a full
+/// grade-drift review, like the citywide-anchor changes documented above.)
+///
+/// Thresholds are wider than the prior vs-national thresholds because
+/// within-city variance is naturally larger — a quiet residential
+/// neighborhood can sit at 0.3× the city rate, a downtown core often runs
+/// 2–4× the city rate, and both are honest reflections of "this area vs
+/// its peer cities".
 function gradeFromCityDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["grade"] {
   const ratios = rows.map((r) => r.cityPer100k > 0 ? r.localPer100k / r.cityPer100k : 1);
   if (ratios.length === 0) return "C";

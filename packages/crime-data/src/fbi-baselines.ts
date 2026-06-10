@@ -124,11 +124,10 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "sacramento": { violent: 805, property: 2980, year: 2023, ori: "CA0340400" },
   "atlanta": { violent: 709, property: 3917, year: 2023, ori: "GAAPD0000" },
   "indianapolis": { violent: 1088, property: 3594, year: 2023, ori: "INIPD0000" },
-  // fix(audit tucson-baseline-nonreporting): the prior 473/2764 was the RAW
-  // 12-month CDE sum, but Tucson (AZ0100300) did NOT report Sep/Oct/Dec 2023
-  // (non-reporting months read as 0), so the raw sum under-counts by ~25%.
-  // Annualized over the 9 reporting months (sum/9*12) on pop 548,544: violent
-  // 2,597/9*12=3,463 → 631/100k; property 15,120/9*12=20,160 → 3,675/100k.
+  // Honolulu (Honolulu PD, ORI HI0020000): FBI CDE 2023 per-100k for the agency
+  // that polices the City & County of Honolulu (the prior ORI HI0010100 resolved
+  // to Hilo PD — corrected in fix(audit fbi-baseline-understatement) above).
+  // Hawaii's low violent rate is reflected here (222 violent / 2,122 property).
   "honolulu": { violent: 222, property: 2122, year: 2023, ori: "HI0020000" },
   "long-beach": { violent: 637, property: 3183, year: 2023, ori: "CA0194100" },
 };

@@ -169,7 +169,7 @@ function NeighborhoodView() {
   }
 
   return (
-    <main className="space-y-4">
+    <div className="space-y-4">
       <AmberAlertsBanner />
       <header className="page-hero flex flex-wrap items-center gap-3 justify-between">
         <div>
@@ -252,7 +252,7 @@ function NeighborhoodView() {
           <DataProvenanceBanner provenance={selectedAreaStats?.alerts[0]?.provenance ?? null} />
         </>
       )}
-    </main>
+    </div>
   );
 }
 

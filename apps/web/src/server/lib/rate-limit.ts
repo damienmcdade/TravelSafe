@@ -32,16 +32,11 @@ const DEFAULT_WINDOW_MS = 60_000; // 60s
 // re-insert on increment so newest-touched is always at the back).
 const MAX_BUCKETS = 5_000;
 
-function clientIp(req: NextRequest): string {
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) {
-    const first = xff.split(",")[0]?.trim();
-    if (first) return first;
-  }
-  const real = req.headers.get("x-real-ip");
-  if (real) return real;
-  return "unknown";
-}
+// fix(security rate-limit-xff-spoof): keying this limiter on the LEFTMOST
+// x-forwarded-for token let an attacker rotate XFF to mint unlimited buckets
+// and bypass the cap. The keying now uses attestedClientIp (x-real-ip, which
+// Vercel sets and the client cannot forge past the proxy; falls back to the
+// LAST trusted XFF hop). attestedClientIp is defined below.
 
 interface Options {
   /// Max requests per IP per window. Default 60.
@@ -59,7 +54,7 @@ export function rateLimit(req: NextRequest, opts: Options = {}): NextResponse | 
   const limit = opts.limit ?? DEFAULT_LIMIT;
   const windowMs = opts.windowMs ?? DEFAULT_WINDOW_MS;
   const scope = opts.scope ?? "default";
-  const key = `${scope}:${clientIp(req)}`;
+  const key = `${scope}:${attestedClientIp(req)}`;
   const now = Date.now();
 
   let bucket = buckets.get(key);

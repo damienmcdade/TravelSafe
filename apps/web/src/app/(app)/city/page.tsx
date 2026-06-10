@@ -67,7 +67,7 @@ export default function CityAwarenessPage() {
   }
 
   return (
-    <main className="space-y-4">
+    <div className="space-y-4">
       {/* v95p19 — AMBER alerts banner renders inline at top when
           active for the user's state; renders nothing otherwise.
           Time-critical missing-child surface, distinct from the
@@ -140,7 +140,7 @@ export default function CityAwarenessPage() {
              (mounted at the (app) shell footer) follows below this
              page automatically. */}
       <DataProvenanceBanner provenance={citywide?.alerts[0]?.provenance ?? null} />
-    </main>
+    </div>
   );
 }
 

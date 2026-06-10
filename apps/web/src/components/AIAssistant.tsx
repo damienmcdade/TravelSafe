@@ -259,7 +259,18 @@ export function AIAssistant() {
             <span aria-hidden="true">⚠️</span>
             <span>This is an AI assistant. Responses are machine-generated and may be inaccurate. Verify any number, address, or recommendation against the source the assistant cites. Not legal, medical, or safety advice — call 911 for emergencies.</span>
           </div>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+          {/* WCAG 4.1.3 — assistant replies stream in token-by-token (the
+              reader loop above accumulates into the last message). aria-live
+              "polite" + aria-atomic="false" lets a screen reader announce the
+              incremental updates instead of leaving them silent. role="log"
+              marks it as an append-only conversation transcript. */}
+          <div
+            ref={scrollRef}
+            role="log"
+            aria-live="polite"
+            aria-atomic="false"
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-3"
+          >
             {messages.map((m, i) => (
               <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
                 <div

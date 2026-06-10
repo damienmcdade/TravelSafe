@@ -70,7 +70,7 @@ export default function MapPage() {
   const { area } = useArea(city.slug);
   useDocumentTitle(`Crime Map · ${area?.label ?? city.label}`);
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       {/* Warm DNS + TCP + TLS to CartoDB's tile servers in parallel with the
           dynamic-imported Leaflet bundle. Leaflet round-robins across four
           subdomains (a/b/c/d) so preconnecting to two gives us parallel
@@ -91,6 +91,6 @@ export default function MapPage() {
       <p className="text-xs text-slate2-500">
         Data source for {city.label}: {SOURCES[city.slug] ?? "city open-data portal."} Map tiles are served by CARTO with OpenStreetMap contributors.
       </p>
-    </main>
+    </div>
   );
 }

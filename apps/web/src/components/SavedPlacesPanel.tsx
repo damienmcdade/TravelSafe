@@ -160,7 +160,7 @@ export function SavedPlacesPanel() {
               </div>
             </div>
             {error && <p className="text-xs text-coral-700">{error}</p>}
-            <p className="text-[11px] text-slate2-400">
+            <p className="text-[11px] text-slate2-500">
               Addresses snap to the nearest tracked neighborhood centroid for scoring — CommunitySafe stores the place, not your live movements.
             </p>
           </div>
@@ -211,7 +211,7 @@ function PlaceRow({ place, onToggle, onRemove }: { place: SavedPlace; onToggle: 
       >
         {place.alertsEnabled ? "🔔 Alerts on" : "🔕 Muted"}
       </button>
-      <button onClick={onRemove} className="text-xs text-slate2-400 hover:text-coral-700" aria-label={`Remove ${place.label}`}>
+      <button onClick={onRemove} className="text-xs text-slate2-500 hover:text-coral-700" aria-label={`Remove ${place.label}`}>
         ✕
       </button>
     </li>

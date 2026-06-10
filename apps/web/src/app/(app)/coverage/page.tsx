@@ -73,7 +73,7 @@ export default function CoveragePage() {
     // Lives inside the (app) route group so the global TabNav + footer
     // wrap automatically. Same chrome as every other Browse sub-tab
     // (/threats, /community, /cities) — no bespoke nav needed.
-    <main className="space-y-6">
+    <div className="space-y-6">
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Coverage · System status</p>
         <h1 className="mt-1 font-display text-3xl text-slate2-900">
@@ -190,7 +190,7 @@ export default function CoveragePage() {
         <Link href="/methodology" className="text-bay-700 hover:underline">/methodology</Link>{" "}
         for the full breakdown.
       </p>
-    </main>
+    </div>
   );
 }
 

@@ -1,5 +1,5 @@
 import { prisma } from "../../lib/prisma";
-import { PostStatus, ReviewActionKind } from "@/generated/prisma/client";
+import { PostStatus, ReviewActionKind, TrustLevel } from "@/generated/prisma/client";
 import { HttpError } from "../../lib/http";
 import { evaluateSuspension } from "./suspension";
 import { REPORT_AUTO_REVERT_THRESHOLD } from "./post-prevet";
@@ -94,12 +94,25 @@ export async function reportPost(reporterId: string, postId: string, reason?: st
   const reportCount = await prisma.postReport.count({ where: { postId } });
   await prisma.post.update({ where: { id: postId }, data: { reportCount } });
 
-  if (reportCount >= REPORT_AUTO_REVERT_THRESHOLD) {
+  // fix(audit C1 mass-report-takedown): auto-hiding a post on RAW report count is
+  // trivially abused — anonymous identities are free to mint (/api/auth/anonymous),
+  // so 3 throwaway accounts could hide any post and weaponize moderation. Only
+  // count reports from ESTABLISHED reporters (trust >= REGULAR, i.e. accounts that
+  // have built a track record) toward the auto-revert. A brand-new/NEW account's
+  // report is still recorded (visible to moderators in the queue) but cannot
+  // single-handedly hide content. Sock-puppets are all NEW, so the attack fails.
+  const establishedReportCount = await prisma.postReport.count({
+    where: {
+      postId,
+      reporter: { trustLevel: { in: [TrustLevel.REGULAR, TrustLevel.TRUSTED, TrustLevel.MODERATOR] } },
+    },
+  });
+  if (establishedReportCount >= REPORT_AUTO_REVERT_THRESHOLD) {
     const post = await prisma.post.findUnique({ where: { id: postId } });
     if (post?.status === PostStatus.VERIFIED) {
       await prisma.post.update({ where: { id: postId }, data: { status: PostStatus.PENDING, reviewedAt: null, reviewerId: null } });
       await prisma.postReviewAction.create({
-        data: { postId, reviewerId: reporterId, kind: ReviewActionKind.REVERT_TO_PENDING, reason: `auto-reverted after ${reportCount} reports` },
+        data: { postId, reviewerId: reporterId, kind: ReviewActionKind.REVERT_TO_PENDING, reason: `auto-reverted after ${establishedReportCount} reports from established accounts` },
       });
       const area = await prisma.area.findUnique({ where: { id: post.areaId }, select: { slug: true } });
       publishCommunityEvent({ type: "post.reverted", postId: post.id, areaSlug: area?.slug ?? "" });

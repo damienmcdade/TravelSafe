@@ -15,7 +15,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
   }, [error]);
 
   return (
-    <main className="space-y-4 p-6 max-w-2xl mx-auto">
+    <div className="space-y-4 p-6 max-w-2xl mx-auto">
       <section className="surface p-6 border-amber2-500/40">
         <p className="text-xs uppercase tracking-[0.18em] text-amber2-700 font-medium">Something went wrong</p>
         <h1 className="mt-1 font-display text-2xl text-slate2-900">This page hit an error</h1>
@@ -36,6 +36,6 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
           <p className="mt-4 text-[11px] text-slate2-500 font-mono">ref: {error.digest}</p>
         )}
       </section>
-    </main>
+    </div>
   );
 }

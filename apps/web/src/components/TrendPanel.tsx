@@ -183,7 +183,7 @@ function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDa
           <ul className="mt-3 space-y-2">
             {trendBullets.map((b, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-slate2-700">
-                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-400"}`} />
+                <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-500"}`} />
                 <span>{b.text}</span>
               </li>
             ))}
@@ -244,7 +244,7 @@ function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDa
                 >
                   {dispatchBullets.slice(0, DISPATCH_RENDER_CAP).map((b, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-slate2-700">
-                      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-400"}`} />
+                      <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${b.category ? CAT_DOT[b.category] : "bg-slate2-500"}`} />
                       <span>{b.text}</span>
                     </li>
                   ))}
@@ -255,7 +255,7 @@ function TrendReport({ trend, csvPath, accent, sectionHeadingLevel = 2, windowDa
                   )}
                 </ol>
                 {dispatchBullets.length > DISPATCH_VISIBLE_ROWS && (
-                  <p className="mt-2 text-xs text-slate2-400">
+                  <p className="mt-2 text-xs text-slate2-500">
                     Showing the {Math.min(DISPATCH_VISIBLE_ROWS, dispatchBullets.length)} most recent. Scroll the list to see more.
                   </p>
                 )}

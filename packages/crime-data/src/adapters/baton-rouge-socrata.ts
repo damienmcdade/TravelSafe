@@ -41,6 +41,9 @@ interface BrRow {
 }
 
 function mapToNibrs(row: BrRow): CrimeCategory {
+  // fix(audit robbery-misclass): robbery is NIBRS "Crime Against Property" but
+  // FBI UCR Part-1 VIOLENT — force it to PERSONS before the passthrough.
+  if ((row.offense_description ?? "").toLowerCase().includes("robbery")) return CrimeCategory.PERSONS;
   // BRPD stamps the NIBRS group directly — read it off the row.
   const c = (row.crime_against ?? "").trim().toUpperCase();
   if (c === "PERSONS" || c === "PERSON") return CrimeCategory.PERSONS;

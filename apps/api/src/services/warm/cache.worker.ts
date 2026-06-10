@@ -129,11 +129,20 @@ async function warmCity(slug: string) {
     // non-zero windowDays. Otherwise the prior Redis entry stays
     // (it might be stale but it's not BROKEN) and the route can
     // fall through to in-process compute.
-    const v = scoreResult.value as { rows?: Array<{ count?: number }>; windowDays?: number };
+    const v = scoreResult.value as { rows?: Array<{ count?: number }>; windowDays?: number; dataConfidence?: string };
     const rows = (v.rows ?? []) as Array<{ count?: number }>;
     const totalCounted = rows.reduce((s, r) => s + (r.count ?? 0), 0);
     const wd = (v as { windowDays?: number }).windowDays ?? 0;
-    if (totalCounted > 0 && wd > 0) {
+    // fix(audit cold-score-latch): also require HIGH confidence before caching a
+    // citywide score for 30 min. A provisional (low/medium) score is the cold-tier
+    // partial that improves once the adapter warms; caching it latches the wrong
+    // grade. Skipping the write lets the next warm cycle (now full-depth) cache the
+    // HIGH result. (All 45 jurisdictions are HIGH in steady state.)
+    // The warm worker only ever writes citywide scores (REDIS_KEY_PREFIX
+    // "citywide:", warmCity → getCitywideSafetyScore), so the gate is simply:
+    // only cache a HIGH-confidence citywide score.
+    const confidenceOk = v.dataConfidence === "high";
+    if (totalCounted > 0 && wd > 0 && confidenceOk) {
       const redis = getRedis();
       if (redis) {
         try {

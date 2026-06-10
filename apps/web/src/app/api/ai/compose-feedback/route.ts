@@ -22,22 +22,26 @@ export const maxDuration = 30;
 export async function POST(req: NextRequest) {
   try {
     await requireSession(req);
+    // fix(audit malformed-body-500): parse + validate INSIDE the try so a
+    // malformed JSON body (SyntaxError) or a schema violation (ZodError) becomes
+    // a clean 400 via errorResponse instead of an unhandled 500. This route
+    // returns a raw streaming Response so it can't go through wrap().
+    const draft = Body.parse(await req.json());
+    const result = await streamComposeFeedback(draft);
+    if (!result.configured) {
+      return NextResponse.json({ error: "ai_disabled", message: "No AI provider configured. Set GOOGLE_GENERATIVE_AI_API_KEY (free at aistudio.google.com)." }, { status: 503 });
+    }
+    if (result.text === null) {
+      return NextResponse.json({ error: "ai_unavailable", message: "AI providers are temporarily exhausted; try again in a few minutes." }, { status: 503 });
+    }
+    // v96 — single-chunk text/plain response (was an SDK-driven stream
+    // before the provider fallback rewrite). useTextStream consumes any
+    // length of body, so a one-shot chunk keeps the existing client
+    // wiring intact.
+    return new Response(result.text, {
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+    });
   } catch (err) {
     return errorResponse(err);
   }
-  const draft = Body.parse(await req.json());
-  const result = await streamComposeFeedback(draft);
-  if (!result.configured) {
-    return NextResponse.json({ error: "ai_disabled", message: "No AI provider configured. Set GOOGLE_GENERATIVE_AI_API_KEY (free at aistudio.google.com)." }, { status: 503 });
-  }
-  if (result.text === null) {
-    return NextResponse.json({ error: "ai_unavailable", message: "AI providers are temporarily exhausted; try again in a few minutes." }, { status: 503 });
-  }
-  // v96 — single-chunk text/plain response (was an SDK-driven stream
-  // before the provider fallback rewrite). useTextStream consumes any
-  // length of body, so a one-shot chunk keeps the existing client
-  // wiring intact.
-  return new Response(result.text, {
-    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
-  });
 }

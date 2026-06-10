@@ -57,6 +57,12 @@ interface SodaRow {
 }
 
 function mapToNibrs(row: SodaRow): CrimeCategory {
+  // fix(audit robbery-misclass): NIBRS files Robbery under "Crime Against
+  // Property", but FBI UCR Part-1 counts robbery as VIOLENT (PERSONS). Override
+  // before the crime_against passthrough so robberies land in violent, matching
+  // every keyword adapter (SF/Oakland/NYPD/…) and the FBI baseline taxonomy.
+  const desc = (row.nibr_description ?? "").toLowerCase();
+  if (desc.includes("robbery") || (row.nibr_code ?? "").trim() === "120") return CrimeCategory.PERSONS;
   const v = (row.crime_against ?? "").trim().toLowerCase();
   // LAPD's NIBRS feed emits a multi-category string when a single
   // incident spans groups ("Person, Property, Society", 8k+ rows).

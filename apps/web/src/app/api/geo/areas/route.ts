@@ -30,6 +30,12 @@ const STABLE_CACHE_HEADERS = {
 export async function GET(req: NextRequest) {
   const limited = rateLimit(req, { scope: "geo" });
   if (limited) return limited;
+  // fix(audit geo-areas-unhandled-500): the handler body was not wrapped, so an
+  // upstream/proxy/adapter throw surfaced as an unhandled 500. The wheel/picker
+  // clients tolerate an empty list (they render "no neighborhoods" gracefully),
+  // so degrade to `{ areas: [] }` with 200 — matching the existing unknown-city
+  // fallback shape — instead of a hard error.
+  try {
   // v64 — proxy to Railway. Vercel logs showed recurring 504 timeouts
   // on /api/geo/areas because city.discover() on a cold Vercel instance
   // can do a full adapter fetch (5min+ for Cleveland). Railway's warm
@@ -68,4 +74,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ areas, stale, staleMessage }, { headers: STABLE_CACHE_HEADERS });
   }
   return NextResponse.json(await allKnownAreas(), { headers: STABLE_CACHE_HEADERS });
+  } catch (err) {
+    console.error("[geo/areas] degraded to empty list:", (err as Error)?.message ?? err);
+    // 200 with an empty list keeps the wheel/picker clients functional (they
+    // render an empty state) instead of stranding them on a 500.
+    return NextResponse.json({ areas: [] }, { status: 200, headers: STABLE_CACHE_HEADERS });
+  }
 }

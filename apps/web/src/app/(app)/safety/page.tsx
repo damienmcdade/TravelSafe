@@ -60,7 +60,7 @@ export default function PersonalSafetyPage() {
   }
 
   return (
-    <main className="space-y-5">
+    <div className="space-y-5">
       {/* fix(audit a11y-safety-h1): the tab previously started at an <h2>, so it
           had no page <h1> landmark (every sibling tab has one). */}
       <header>
@@ -117,7 +117,7 @@ export default function PersonalSafetyPage() {
 
 
       <AccountPanel />
-    </main>
+    </div>
   );
 }
 
@@ -165,21 +165,49 @@ function AccountPanel() {
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  // Focus the email field when the dialog opens.
-  useEffect(() => {
-    if (showConfirm) emailRef.current?.focus();
-  }, [showConfirm]);
-
-  // Escape dismisses; focus returns to the trigger button so a keyboard
-  // user lands back where they were.
+  // fix(audit a11y-delete-no-focustrap): this asserts aria-modal="true" but
+  // previously only implemented initial-focus + Escape — Tab could walk out
+  // of the dialog into the page behind it. Mirror the CitySelector pattern:
+  // initial focus on the email field, Escape closes (returning focus to the
+  // trigger), and Tab/Shift+Tab cycle WITHIN the dialog's focusables.
   useEffect(() => {
     if (!showConfirm) return;
+    const focusables = (): HTMLElement[] =>
+      Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),textarea:not([disabled]),input:not([disabled]),select:not([disabled]),[tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+    // Initial focus on the email field once the dialog content is mounted.
+    const t = setTimeout(() => emailRef.current?.focus(), 0);
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") closeDialog();
+      if (e.key === "Escape") {
+        closeDialog();
+        return;
+      }
+      if (e.key === "Tab") {
+        const f = focusables();
+        if (f.length === 0) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        const active = document.activeElement as HTMLElement | null;
+        if (e.shiftKey && (active === first || !dialogRef.current?.contains(active))) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     }
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+    };
+     
   }, [showConfirm]);
 
   function closeDialog() {
@@ -290,6 +318,7 @@ function AccountPanel() {
 
       {showConfirm && (
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-confirm-title"
@@ -637,7 +666,7 @@ function CheckInPanel() {
           <button
             onClick={markSafe}
             disabled={safeBusy}
-            className="mt-3 px-4 py-2 bg-sage-500 text-sand-50 rounded-xl disabled:opacity-60 disabled:cursor-wait"
+            className="mt-3 px-4 py-2 bg-sage-700 text-sand-50 rounded-xl disabled:opacity-60 disabled:cursor-wait"
           >
             {safeBusy ? "Clearing…" : "I'm safe — clear timer"}
           </button>

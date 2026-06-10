@@ -89,7 +89,7 @@ export default function PrivacyDashboardPage() {
   }
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       <header className="page-hero">
         <p className="text-xs uppercase tracking-[0.18em] text-bay-700 font-medium">Settings · Privacy</p>
         <h1 className="mt-1 font-display text-3xl text-slate2-900">
@@ -122,7 +122,7 @@ export default function PrivacyDashboardPage() {
                 <p className="text-slate2-900">{e.label}</p>
                 <p className="text-[11px] text-slate2-500 font-mono">{e.key}</p>
               </div>
-              <span className={`text-xs ${present[e.key] ? "text-slate2-700" : "text-slate2-400"}`}>
+              <span className={`text-xs ${present[e.key] ? "text-slate2-700" : "text-slate2-500"}`}>
                 {present[e.key] ? "stored" : "not set"}
               </span>
               {present[e.key] && (
@@ -195,7 +195,7 @@ export default function PrivacyDashboardPage() {
           <Link href="/privacy" className="text-bay-700 hover:underline">our privacy policy</Link>.
         </p>
       </section>
-    </main>
+    </div>
   );
 }
 
