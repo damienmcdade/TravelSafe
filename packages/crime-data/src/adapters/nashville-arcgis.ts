@@ -39,7 +39,7 @@ interface MnpdRow {
 // NIBRS description → PERSONS / PROPERTY / SOCIETY (same FBI-aligned taxonomy as
 // the Charlotte adapter: Robbery is a violent/PERSONS crime per FBI UCR Part 1).
 const PERSONS_KEYS = ["ASSAULT", "ROBBERY", "HOMICIDE", "MURDER", "MANSLAUGHTER", "KIDNAP", "SEX", "RAPE", "HUMAN TRAFFICK"];
-const PROPERTY_KEYS = ["THEFT", "BURGLARY", "B&E", "LARCENY", "MOTOR VEHICLE", "ARSON", "VANDAL", "DAMAGE", "FORGERY", "FRAUD", "EMBEZZLE", "COUNTERFEIT", "STOLEN", "SHOPLIFT", "ROBBERY OF"];
+const PROPERTY_KEYS = ["THEFT", "BURGLARY", "B&E", "LARCENY", "MOTOR VEHICLE", "ARSON", "VANDAL", "DAMAGE", "FORGERY", "FRAUD", "EMBEZZLE", "COUNTERFEIT", "STOLEN", "SHOPLIFT"];
 function mapToNibrs(r: MnpdRow): CrimeCategory {
   const t = (r.Offense_Description ?? "").toUpperCase();
   if (PERSONS_KEYS.some((k) => t.includes(k))) return CrimeCategory.PERSONS;
