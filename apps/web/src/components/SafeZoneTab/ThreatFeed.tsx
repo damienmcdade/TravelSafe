@@ -229,17 +229,28 @@ function ConfidenceBadge({
     }
     place();
     function onKey(e: KeyboardEvent) { if (e.key === "Escape") setOpen(false); }
-    // Close on scroll/resize rather than chase the trigger — the feed itself
-    // scrolls (capture:true catches the inner <ol>), so a fixed popover would
-    // otherwise drift away from its badge.
-    function onDismiss() { setOpen(false); }
+    // Reposition (don't close) while the page/feed scrolls, so the fixed popover
+    // tracks its badge. fix(audit badge-scroll-dismiss): the prior handler CLOSED
+    // on any scroll — but on touch devices a tap commonly emits a 1px scroll (and
+    // the page settles a pixel when the portal mounts), so the popover opened and
+    // instantly vanished, reading as a dead "Verified" button. Re-place on scroll
+    // instead; only an explicit outside-click / Escape / resize dismisses. If the
+    // badge scrolls out of view, hide so a detached popover doesn't linger.
+    function onScroll() {
+      const el = btnRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) { setOpen(false); return; }
+      place();
+    }
+    function onResize() { setOpen(false); }
     window.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onDismiss);
-    window.addEventListener("scroll", onDismiss, true);
+    window.addEventListener("resize", onResize);
+    window.addEventListener("scroll", onScroll, true);
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onDismiss);
-      window.removeEventListener("scroll", onDismiss, true);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
     };
   }, [open]);
 
