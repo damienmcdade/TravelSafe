@@ -72,6 +72,16 @@ export async function explainIncident(rawDesc: string): Promise<IncidentExplain>
   }
   const hit = cache.get(key);
   if (hit) {
+    // Self-heal entries cached with the raw refusal sentinel before the
+    // friendly-copy conversion below shipped.
+    if (/not a recognizable offense/i.test(hit.explanation)) {
+      const healed =
+        "This label comes straight from the local police feed and doesn't match a " +
+        "standard offense category, so there isn't a general definition to show. " +
+        "The wording shown is exactly how the department recorded the report.";
+      cachePut(key, healed);
+      return { explanation: healed, cached: true, aiConfigured: true };
+    }
     return { explanation: hit.explanation, cached: true, aiConfigured: true };
   }
 
@@ -87,6 +97,19 @@ export async function explainIncident(rawDesc: string): Promise<IncidentExplain>
   if (!result || !result.text) {
     return { explanation: null, cached: false, aiConfigured: true };
   }
-  cachePut(key, result.text);
-  return { explanation: result.text, cached: false, aiConfigured: true };
+  // fix(audit explain-unrecognized): the model's literal refusal sentinel
+  // ("Not a recognizable offense description.") is our prompt-injection guard,
+  // but it was rendered VERBATIM in the Local Activity card whenever a city's
+  // feed uses codes/abbreviations/free-text the model can't map (and whenever
+  // the client sent a whole formatted bullet line — also fixed). Keep the
+  // sentinel as the safety mechanism, but never show it raw: convert it to
+  // honest, non-broken-sounding copy. Cached like any other answer so repeats
+  // stay free.
+  const text = /not a recognizable offense/i.test(result.text)
+    ? "This label comes straight from the local police feed and doesn't match a " +
+      "standard offense category, so there isn't a general definition to show. " +
+      "The wording shown is exactly how the department recorded the report."
+    : result.text;
+  cachePut(key, text);
+  return { explanation: text, cached: false, aiConfigured: true };
 }

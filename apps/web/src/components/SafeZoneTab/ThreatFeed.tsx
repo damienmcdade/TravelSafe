@@ -321,6 +321,24 @@ function ConfidenceLevelGuide({ active }: { active: ThreatConfidence }) {
 /// category. Strictly opt-in (one LLM call per click), and the server
 /// caches by description so repeat clicks across rows with the same
 /// offense — and across users — are free after the first.
+
+/// fix(audit explain-unrecognized): the bullet text is a full formatted line
+/// ("Wed, Jun 10 · Riverwest — Simple Assault near 3518 N 38TH ST."), but the
+/// explainer's prompt expects ONE offense description ("SIMPLE ASSAULT").
+/// Sending the whole line made the model refuse with its literal "Not a
+/// recognizable offense description." sentinel across many cities (and long
+/// lines even tripped the route's 200-char cap). Extract just the offense:
+/// our trend-feed composes bullets as "{date}[ · {area}] — {offense}[ near
+/// {block}]." with an em-dash separator, so strip the prefix and the
+/// block-address suffix before asking.
+function offenseFromBullet(text: string): string {
+  const dash = text.indexOf(" — ");
+  let s = dash >= 0 ? text.slice(dash + 3) : text;
+  const near = s.lastIndexOf(" near ");
+  if (near > 0) s = s.slice(0, near);
+  return s.replace(/[.\s]+$/, "").trim() || text.slice(0, 200);
+}
+
 function IncidentRow({
   description,
   categoryDot,
@@ -346,7 +364,7 @@ function IncidentRow({
     setError(null);
     try {
       const r = await api<{ explanation: string | null; aiConfigured: boolean }>(
-        `/ai/incident-explain?desc=${encodeURIComponent(description)}`,
+        `/ai/incident-explain?desc=${encodeURIComponent(offenseFromBullet(description))}`,
       );
       if (!r.aiConfigured) setError("AI is not configured for this deployment.");
       else if (!r.explanation) setError("No explanation available.");
