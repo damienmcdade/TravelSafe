@@ -14,6 +14,11 @@ on:
         description: "URLs to probe (one per line)"
         required: true
         type: string
+      filter:
+        description: "Optional egrep pattern — when set, matching lines/tokens from the body are printed (up to 60) instead of the raw head"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   probe:
@@ -23,6 +28,7 @@ jobs:
       - name: Probe URLs
         env:
           URLS: ${{ inputs.urls }}
+          FILTER: ${{ inputs.filter }}
         run: |
           set -uo pipefail
           echo "$URLS" | while IFS= read -r url; do
@@ -35,7 +41,13 @@ jobs:
               "$url" 2>/tmp/err) || true
             echo "HTTP $code  bytes=$(wc -c </tmp/body 2>/dev/null || echo 0)"
             [ -s /tmp/err ] && echo "curl: $(cat /tmp/err)"
-            head -c 700 /tmp/body 2>/dev/null; echo
+            if [ -n "$FILTER" ]; then
+              # JSON bodies are often one long line — split on commas/braces so
+              # egrep returns the matching tokens, not the whole body.
+              tr ',{}' '\n' </tmp/body | grep -E -i "$FILTER" | head -60 || echo "(no filter matches)"
+            else
+              head -c 700 /tmp/body 2>/dev/null; echo
+            fi
           done
           echo "===================================================="
           echo "probe complete"
