@@ -32,7 +32,7 @@ export default function AccessibilityPage() {
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">Measures we take</h2>
         <ul className="list-disc pl-5 space-y-1">
-          <li>Semantic HTML with landmark regions and a &ldquo;Skip to main content&rdquo; link on every page.</li>
+          <li>Semantic HTML with landmark regions on every page.</li>
           <li>Keyboard-operable navigation, controls, and the city / neighborhood pickers, with visible focus states.</li>
           <li>Text color and interactive elements designed to meet AA contrast ratios; a dark-mode option in Settings.</li>
           <li>Labeled form fields, buttons, and ARIA roles on interactive widgets (e.g. disclaimers use <code className="text-xs">role=&quot;note&quot;</code>).</li>
