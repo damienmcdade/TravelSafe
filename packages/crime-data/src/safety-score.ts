@@ -771,8 +771,13 @@ function computeDataConfidence(
 /// 2–4× the city rate, and both are honest reflections of "this area vs
 /// its peer cities".
 function gradeFromCityDeltas(rows: SafetyScoreRow[]): SafetyScoreResponse["grade"] {
-  const ratios = rows.map((r) => r.cityPer100k > 0 ? r.localPer100k / r.cityPer100k : 1);
-  if (ratios.length === 0) return "C";
+  // fix(audit data-sev3): only rows with a positive city denominator are
+  // comparable. A zero/absent city rate (citywide feed momentarily empty) must
+  // NOT default to ratio 1 — that silently renders Grade C ("close to the city
+  // average") from a degenerate denominator, asserting a comparison we can't
+  // make. Drop those rows; if none remain, we have no baseline → N/A.
+  const ratios = rows.filter((r) => r.cityPer100k > 0).map((r) => r.localPer100k / r.cityPer100k);
+  if (ratios.length === 0) return "N/A";
   const avg = ratios.reduce((a, b) => a + b, 0) / ratios.length;
   if (avg <= 0.5)  return "A"; // ≥50% below city average
   if (avg <= 0.8)  return "B"; // 20–50% below
@@ -1780,10 +1785,25 @@ async function computeSafetyScore(areaSlug: string, areaLabel: string): Promise<
 
   // Per-area grade compares to the CITY rate, not the national rate.
   // See gradeFromCityDeltas comment for the rationale.
-  const grade = gradeWithNullGuard(
+  let grade = gradeWithNullGuard(
     gradeFromCityDeltas(rows),
     persons + property,
     confidence.dataConfidence,
+  );
+  // fix(audit data-sev1): the per-area path previously applied ONLY the null
+  // guard (totalCount===0), so a discovered neighborhood whose feed went stale
+  // but still held a few incidents (total≠0) produced a tiny localPer100k vs
+  // the city rate → a false "Grade A" ("safer than the city") with only a soft
+  // low-confidence caveat. The citywide path has guarded this since v95p3; wire
+  // the SAME under-count guard into the per-area scorer, comparing the area's
+  // rate against the city's own FBI baseline. Only fires when confidence is
+  // already "low", so genuinely-safe well-sampled neighborhoods are unaffected.
+  grade = gradeWithUndercountGuard(
+    grade,
+    rows,
+    cityBaselinePerArea,
+    confidence.dataConfidence,
+    isCfsArea,
   );
   const headline = headlineForArea(grade, areaLabel, city.label);
   return {

@@ -193,7 +193,13 @@ async function fetchPage(offset: number): Promise<LvRow[]> {
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Las Vegas ArcGIS ${res.status} offset=${offset}`);
-  const body = await readJson(res) as { features?: Array<{ attributes: LvRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: LvRow }>; error?: unknown };
+  // fix(audit data-sev1): ArcGIS returns HTTP 200 with an embedded
+  // {error:{code:499 Token Required,...}} when a layer goes private/
+  // token-gated. Without this guard that maps to 0 rows and grades the
+  // whole city as zero-crime ("100/safe"). Throw so the dispatcher
+  // serves last-known-good instead of a fabricated zero.
+  if (body.error) throw new Error(`Las Vegas ArcGIS body error offset=${offset}`);
   return (body.features ?? []).map((f) => f.attributes);
 }
 

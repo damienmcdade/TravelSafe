@@ -91,7 +91,13 @@ async function fetchPage(offset: number): Promise<BoiseRow[]> {
     signal: AbortSignal.timeout(45_000),
   });
   if (!res.ok) throw new Error(`Boise ArcGIS ${res.status} offset=${offset}`);
-  const body = await readJson(res) as { features?: Array<{ attributes: BoiseRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: BoiseRow }>; error?: unknown };
+  // fix(audit data-sev1): ArcGIS returns HTTP 200 with an embedded
+  // {error:{code:499 Token Required,...}} when a layer goes private/
+  // token-gated. Without this guard that maps to 0 rows and grades the
+  // whole city as zero-crime ("100/safe"). Throw so the dispatcher
+  // serves last-known-good instead of a fabricated zero.
+  if (body.error) throw new Error(`Boise ArcGIS body error offset=${offset}`);
   return (body.features ?? []).map((f) => f.attributes);
 }
 

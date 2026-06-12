@@ -122,7 +122,11 @@ async function fetchPage(offset: number): Promise<LbFeature[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Long Beach ArcGIS ${res.status} offset=${offset}`);
-  const body = await readJson(res) as { features?: LbFeature[] };
+  const body = await readJson(res) as { features?: LbFeature[]; error?: unknown };
+  // fix(audit data-sev1): throw on the embedded ArcGIS error envelope (HTTP 200
+  // with {error:{499 Token Required}}) so a private/token-gated layer serves
+  // last-known-good instead of being graded as zero-crime ("100/safe").
+  if (body.error) throw new Error(`Long Beach ArcGIS body error offset=${offset}`);
   return body.features ?? [];
 }
 

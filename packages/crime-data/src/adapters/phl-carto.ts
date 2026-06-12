@@ -5,6 +5,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { phlPolygons } from "../data/phl-neighborhoods.js";
+import { cityLocalToUtcIso } from "../lib/city-time.js";
 
 // Philadelphia — Crime Incidents Part 1 & Part 2 (PPD).
 // CARTO SQL API at phl.carto.com — third adapter shape after Socrata and
@@ -174,7 +175,13 @@ async function fetchPhl(): Promise<Incident[]> {
     // citywide rate window (collapses windowDays toward 365 from 1970) and dates
     // the incident to 1970 on the map. The SQL already filters NULLs, so this is
     // the belt-and-suspenders for blank / unparseable strings.
-    const ts = r.dispatch_date_time ? +new Date(r.dispatch_date_time) : NaN;
+    // fix(audit data-sev2 tz): dispatch_date_time is Eastern wall-clock with no
+    // zone marker; `new Date()` parsed it as server-local (UTC), shifting every
+    // Philadelphia incident 4–5h (wrong time-of-day, "Xh ago", and since-filter
+    // membership). Route through cityLocalToUtcIso (DST-aware; trusts an
+    // already-zoned string, so it's safe if the feed ever adds an offset).
+    const iso = cityLocalToUtcIso(r.dispatch_date_time, "America/New_York");
+    const ts = +new Date(iso);
     if (!Number.isFinite(ts) || ts <= 0) continue;
     // CARTO returns point_x = lng, point_y = lat (the GIS XY convention).
     const lng = typeof r.point_x === "number" ? r.point_x : undefined;
@@ -187,7 +194,7 @@ async function fetchPhl(): Promise<Incident[]> {
     out.push({
       id: `phl-${r.objectid ?? i}`,
       area,
-      occurredAt: r.dispatch_date_time!,
+      occurredAt: iso,
       nibrsCategory: mapToNibrs(r),
       ibrOffenseDescription: r.text_general_code?.trim() || "Unknown",
       beat: r.psa ?? null,

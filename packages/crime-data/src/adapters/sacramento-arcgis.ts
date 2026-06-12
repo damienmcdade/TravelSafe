@@ -166,7 +166,13 @@ async function fetchPage(baseUrl: string, offset: number): Promise<SacRow[]> {
   url.searchParams.set("f", "json");
   const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Sacramento ArcGIS ${res.status} offset=${offset}`);
-  const body = await readJson(res) as { features?: Array<{ attributes: SacRow }> };
+  const body = await readJson(res) as { features?: Array<{ attributes: SacRow }>; error?: unknown };
+  // fix(audit data-sev1): ArcGIS returns HTTP 200 with an embedded
+  // {error:{code:499 Token Required,...}} when a layer goes private/
+  // token-gated. Without this guard that maps to 0 rows and grades the
+  // whole city as zero-crime ("100/safe"). Throw so the dispatcher
+  // serves last-known-good instead of a fabricated zero.
+  if (body.error) throw new Error(`Sacramento ArcGIS body error offset=${offset}`);
   return (body.features ?? []).map((f) => f.attributes);
 }
 
