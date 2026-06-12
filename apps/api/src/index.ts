@@ -43,12 +43,12 @@ import { geoRouter } from "./routes/geo.routes.js";
 import { aiRouter } from "./routes/ai.routes.js";
 import { officialAlertsRouter } from "./routes/official-alerts.routes.js";
 import { safezoneRouter } from "./routes/safezone.routes.js";
-import { startCheckInWorker } from "./services/safety/check-in.worker.js";
-import { startProximityWorker } from "./services/safety/proximity.worker.js";
-import { startDigestWorker } from "./services/push/digest.worker.js";
+import { startCheckInWorker, stopCheckInWorker } from "./services/safety/check-in.worker.js";
+import { startProximityWorker, stopProximityWorker } from "./services/safety/proximity.worker.js";
+import { startDigestWorker, stopDigestWorker } from "./services/push/digest.worker.js";
 // v107 — startWarmWorker RE-ENABLED (self-gates on WARM_WORKER_ENABLED). See
 // the boot section below for the rationale.
-import { startWarmWorker } from "./services/warm/cache.worker.js";
+import { startWarmWorker, stopWarmWorker } from "./services/warm/cache.worker.js";
 // v98 — the in-process grade-sanity worker is RETIRED. Grade monitoring
 // moved to the external `audit-ratios` Vercel cron (apps/web/src/app/api/
 // cron/audit-ratios), which is strictly more reliable: it runs off-process
@@ -410,6 +410,13 @@ const server = app.listen(env.LISTEN_PORT, () => {
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
     console.log(`[api] ${sig} received, shutting down`);
+    // fix(audit lifecycle): stop the background workers BEFORE draining so they
+    // don't keep ticking DB/HTTP/webpush I/O against a tearing-down connection
+    // pool during the up-to-10s drain window.
+    stopCheckInWorker();
+    stopProximityWorker();
+    stopDigestWorker();
+    stopWarmWorker();
     // Close the Redis pub/sub socket so it can't hold the event loop open.
     closeCommunitySubscriber();
     server.close(() => process.exit(0));

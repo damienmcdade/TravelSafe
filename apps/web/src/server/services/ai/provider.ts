@@ -95,6 +95,12 @@ export async function generateTextWithFallback(opts: GenOpts): Promise<GenResult
         system: opts.system,
         prompt: opts.prompt,
         temperature: opts.temperature ?? 0.3,
+        // fix(audit resilience): bound each tier. Without abortSignal a provider
+        // that HANGS the stream never throws, so the Groq→Gemini→gateway
+        // fallback never advances — the multi-provider design silently does
+        // nothing and the request stalls to the platform function ceiling. A
+        // hang now rejects at 20s and falls through to the next tier.
+        abortSignal: AbortSignal.timeout(20_000),
         ...(opts.maxOutputTokens ? { maxOutputTokens: opts.maxOutputTokens } : {}),
       });
       return { text: (res.text ?? "").trim(), provider: handle.name };

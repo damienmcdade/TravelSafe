@@ -30,6 +30,14 @@ function boundIds(ids: string[]): string[] {
 
 let timer: NodeJS.Timeout | null = null;
 let inFlight = false;
+// fix(audit safety): rotating cursor across ticks. The query is capped at
+// MAX_PLACES_PER_TICK; unlike the check-in worker (whose processed rows leave
+// the ACTIVE set), alert-enabled places STAY alertsEnabled, so a bare `take`
+// with no order returned the same arbitrary 500 every tick — any user past the
+// 500th alert-enabled place NEVER got proximity alerts (silent safety failure).
+// Order by id and advance a cursor each tick so every place is reached; wrap to
+// the start once a short page signals the end of the set.
+let lastCursorId: string | null = null;
 
 function haversineKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const R = 6371;
@@ -95,10 +103,16 @@ async function tick(): Promise<void> {
   inFlight = true;
   try {
     const places = await prisma.savedPlace.findMany({
-      where: { alertsEnabled: true },
+      where: {
+        alertsEnabled: true,
+        ...(lastCursorId ? { id: { gt: lastCursorId } } : {}),
+      },
       select: { id: true, userId: true, label: true, lat: true, lng: true, radiusM: true, lastAlertAt: true, lastSeenIncidentAt: true, seenIncidentIds: true },
+      orderBy: { id: "asc" },
       take: MAX_PLACES_PER_TICK,
     });
+    // Advance the cursor; wrap to the start once we get a short page (end of set).
+    lastCursorId = places.length === MAX_PLACES_PER_TICK ? places[places.length - 1]!.id : null;
     const now = Date.now();
     for (const p of places) {
       try {
@@ -184,4 +198,8 @@ export function startProximityWorker(): void {
   // Small startup delay so the adapter cache can warm first.
   setTimeout(() => { void tick(); }, 60_000);
   timer = setInterval(() => { void tick(); }, TICK_MS);
+}
+
+export function stopProximityWorker(): void {
+  if (timer) { clearInterval(timer); timer = null; }
 }

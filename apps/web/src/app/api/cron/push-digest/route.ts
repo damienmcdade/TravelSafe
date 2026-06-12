@@ -32,6 +32,12 @@ export async function GET(req: NextRequest) {
       // would only be hit for users created before the AlertPreference
       // default was added, which currently never happens).
       alertPreference: { notificationFrequency: NotificationFrequency.DIGEST_DAILY },
+      // fix(audit privacy): exclude soft-deleted (right-to-be-forgotten)
+      // accounts. deletedAt is set on erasure, but PushSubscription rows only
+      // cascade on HARD delete — which the retention worker performs up to 30
+      // days later — so without this filter an erased user keeps getting daily
+      // pushes for the entire grace window.
+      deletedAt: null,
       // Skip suspended / banned accounts — they shouldn't get
       // re-engagement pings.
       permanentlyBanned: false,

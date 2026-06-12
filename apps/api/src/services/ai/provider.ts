@@ -92,6 +92,9 @@ export async function generateTextWithFallback(opts: GenOpts): Promise<GenResult
         system: opts.system,
         prompt: opts.prompt,
         temperature: opts.temperature ?? 0.3,
+        // fix(audit resilience): bound each tier so a hung provider rejects and
+        // the fallback chain actually advances (mirrors the web provider).
+        abortSignal: AbortSignal.timeout(20_000),
         ...(opts.maxOutputTokens ? { maxOutputTokens: opts.maxOutputTokens } : {}),
       });
       return { text: (res.text ?? "").trim(), provider: handle.name };

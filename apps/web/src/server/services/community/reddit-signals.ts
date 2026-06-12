@@ -141,6 +141,10 @@ export async function getCommunitySignals(areaSlug: string): Promise<{ source: s
         // Reddit gets pickier about UAs over time; use a browser-shaped one.
         "User-Agent": "Mozilla/5.0 (compatible; CommunitySafe/0.1; +https://github.com/damienmcdade/TravelSafe)",
       },
+      // fix(audit resilience): bound the request. Reddit blocks Vercel IPs, and
+      // a blackholed connection won't fast-fail — without a signal a hung
+      // upstream blocks the server render to the function ceiling.
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) throw new Error(`Reddit ${res.status}`);
     const body = (await res.json()) as RedditResp;
@@ -175,7 +179,7 @@ export async function getCommunitySignals(areaSlug: string): Promise<{ source: s
       newsUrl.searchParams.set("hl", "en-US");
       newsUrl.searchParams.set("gl", "US");
       newsUrl.searchParams.set("ceid", "US:en");
-      const res = await fetch(newsUrl, { headers: { Accept: "application/rss+xml", "User-Agent": "CommunitySafe/0.1" } });
+      const res = await fetch(newsUrl, { headers: { Accept: "application/rss+xml", "User-Agent": "CommunitySafe/0.1" }, signal: AbortSignal.timeout(8_000) });
       if (res.ok) {
         const xml = await res.text();
         const items = xml.split(/<item>/i).slice(1, SIGNAL_LIMIT + 1);

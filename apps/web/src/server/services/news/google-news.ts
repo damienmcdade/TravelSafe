@@ -140,6 +140,9 @@ export async function getNews(query: string = DEFAULT_QUERY, windowDays: number 
         "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
         Accept: "application/rss+xml, application/xml, text/xml",
       },
+      // fix(audit resilience): bound the request so a hung Google News upstream
+      // can't block the server render to the function ceiling.
+      signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) return cache?.items ?? [];
     const xml = await res.text();

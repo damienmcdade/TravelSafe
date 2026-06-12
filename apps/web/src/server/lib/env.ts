@@ -133,7 +133,28 @@ type ParsedEnv = z.infer<typeof Env>;
 // env vars are populated by Vercel.
 let _cached: ParsedEnv | null = null;
 function _read(): ParsedEnv {
-  if (!_cached) _cached = Env.parse(process.env);
+  if (!_cached) {
+    const parsed = Env.parse(process.env);
+    // fix(audit config): DATABASE_URL/JWT_SECRET are optional in the schema only
+    // so Next's build-time module evaluation doesn't crash. At RUNTIME in
+    // production they are mandatory — fail fast on the first access with a clear
+    // message instead of a confusing first-auth/first-query error deep in a
+    // route. We MUST still skip this during `next build` (NEXT_PHASE ===
+    // 'phase-production-build'), where route modules are evaluated for page-data
+    // collection with NODE_ENV=production but the secrets intentionally absent —
+    // that is the very build crash the deferred parse exists to prevent. The API
+    // (apps/api/src/env.ts) hard-requires these; this aligns the web runtime.
+    const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+    if (parsed.NODE_ENV === "production" && !isBuildPhase) {
+      const missing: string[] = [];
+      if (!parsed.DATABASE_URL) missing.push("DATABASE_URL");
+      if (!parsed.JWT_SECRET || parsed.JWT_SECRET.length < 32) missing.push("JWT_SECRET (min 32 chars)");
+      if (missing.length > 0) {
+        throw new Error(`Missing/invalid required production env: ${missing.join(", ")}`);
+      }
+    }
+    _cached = parsed;
+  }
   return _cached;
 }
 
