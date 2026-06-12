@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { wrap, HttpError } from "@/server/lib/http";
 import { rateLimit } from "@/server/lib/rate-limit";
+import { tryProxy } from "@/server/lib/proxy-to-api";
 import { getAreaInsights, getCitywideInsights } from "@/server/services/crime-data/insights";
 import { withWarmingTimeout } from "@/server/lib/warming-timeout";
 
@@ -26,6 +27,17 @@ const CACHE_HEADERS = {
 export const GET = wrap(async (req: NextRequest) => {
   const limited = rateLimit(req, { scope: "crime-data" });
   if (limited) return limited;
+  // fix(audit data-sev / live timeout): insights was the ONE crime-data endpoint
+  // that didn't proxy to Railway, so a big city (NYC ~200k rows) recomputed from
+  // scratch on every cold Vercel function and blew the 30s+ wall — confirmed in
+  // prod (vercel=0 vs railway=200 on the nightly sync-check AND a direct probe).
+  // The 7 sibling crime-data/safezone routes all hit Railway's warm long-lived
+  // process first; insights now does too, falling through to local compute only
+  // on a Railway hiccup. Also removes the web-vs-Railway numeric divergence
+  // (different per-area limits) the data audit flagged.
+  const proxied = await tryProxy(req, "/crime-data/insights");
+  if (proxied) return proxied.response;
+
   const q = Query.parse(Object.fromEntries(req.nextUrl.searchParams));
   // fix(deploy/sync-check flake): insights was the one heavy crime-data route NOT
   // wrapped, so a cold compute on a big city (NYC ~200k rows) could blow the
