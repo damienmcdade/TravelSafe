@@ -5,11 +5,13 @@
 // existed in apps/web before this package was extracted.
 //
 // VINTAGE: US Census Bureau Vintage 2023 Population Estimates — the
-// most recent annual estimate file with full coverage for these 30
-// cities. A V2024 refresh pass is tracked separately; year-over-year
-// drift for these cities is typically <2%, well within the noise of
-// the rolling-window sampling that produces our per-100k rates. UI
-// and methodology copy must say "Vintage 2023" until the refresh ships.
+// most recent annual estimate file with full coverage for these 45
+// cities (fix(audit data-sev4): the count here had gone stale at "30"
+// as cities were added; the registry integrity test now pins coverage).
+// A V2024 refresh pass is tracked separately; year-over-year drift for
+// these cities is typically <2%, well within the noise of the rolling-
+// window sampling that produces our per-100k rates. UI and methodology
+// copy must say "Vintage 2023" until the refresh ships.
 //
 // Source: https://www.census.gov/programs-surveys/popest.html
 //
