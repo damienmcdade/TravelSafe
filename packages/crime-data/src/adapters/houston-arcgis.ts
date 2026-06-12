@@ -54,7 +54,7 @@ function mapToNibrs(r: HpdRow): CrimeCategory {
 const PROVENANCE: DataProvenance = {
   source: "Houston Police Department NIBRS Crime (City of Houston Open Data, ArcGIS) · neighborhood boundaries © OpenStreetMap contributors (ODbL)",
   datasetUrl: "https://data.houstontx.gov/dataset/houston-police-department-crime-statistics",
-  recency: "Complete-year NIBRS file (data through 2024)",
+  recency: "Rates: complete-year NIBRS file (through 2024) · recent-report feed: HPD rolling recent-crime layer (days old)",
   granularity: "neighborhood",
   disclaimer:
     "Incidents are reported by the Houston Police Department under NIBRS and placed in a " +
@@ -117,6 +117,110 @@ export function resolveHoustonArea(lat: number | undefined, lng: number | undefi
     return houNeighborhoodForPoint(lng, lat) ?? houSnapToNearest(lng, lat);
   }
   return null;
+}
+
+// --- Rolling recent layer (dual-source recency) ---------------------------
+// HPD's self-hosted ArcGIS server publishes a rolling recent-crime layer with
+// per-incident points and NIBRS class/description, current to ~days
+// (verified 2026-06-12: newest row was the previous day; ~4.6k rows ≈ a
+// week's volume). It feeds ONLY getRecentReports below, so the "Recent
+// reports" surfaces show genuinely fresh incidents. It must NEVER feed
+// getIncidents/getAreaStats: the safety-score window anchors at the newest
+// row, so splicing a days-deep feed onto the 2024 yearly file would shrink
+// the 364-day numerator to ~a week of incidents and inflate Houston's grade
+// ~50×. Rates stay on the complete-year file until HPD publishes 2025.
+const ROLLING_BASE =
+  "https://mycity2.houstontx.gov/pubgis02/rest/services/HPD/NIBRS_Recent_Crime_Reports/FeatureServer/0/query";
+const ROLLING_PAGE = 2000;
+const ROLLING_MAX_PAGES = 4;
+const ROLLING_TTL_MS = 5 * 60 * 1000;
+
+interface RollingRow {
+  USER_RMSOccurrenceDate?: number; // epoch ms (date at midnight)
+  USER_RMSOccurrenceHour?: string; // "00".."23"
+  USER_Incident?: string;
+  USER_NIBRSDescription?: string;
+  USER_StreetName?: string;
+  USER_Beat?: string;
+}
+interface RollingFeature { attributes: RollingRow; geometry?: { x?: number; y?: number } }
+
+let rollingCache: { fetchedAt: number; rows: Incident[] } | null = null;
+let rollingInFlight: Promise<Incident[]> | null = null;
+registerRowCache(() => { rollingCache = null; }, "houston-rolling");
+
+async function fetchRollingPage(offset: number): Promise<RollingFeature[]> {
+  const url = new URL(ROLLING_BASE);
+  url.searchParams.set("where", "1=1");
+  url.searchParams.set("outFields", "USER_RMSOccurrenceDate,USER_RMSOccurrenceHour,USER_Incident,USER_NIBRSDescription,USER_StreetName,USER_Beat");
+  url.searchParams.set("returnGeometry", "true");
+  url.searchParams.set("outSR", "4326"); // server reprojects to WGS84 for us
+  url.searchParams.set("orderByFields", "USER_RMSOccurrenceDate DESC");
+  url.searchParams.set("resultOffset", String(offset));
+  url.searchParams.set("resultRecordCount", String(ROLLING_PAGE));
+  url.searchParams.set("f", "json");
+  const res = await fetch(url, {
+    headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) throw new Error(`Houston rolling ${res.status} offset=${offset}`);
+  const body = (await readJson(res)) as { features?: RollingFeature[]; error?: unknown };
+  if (body.error) throw new Error(`Houston rolling error: ${JSON.stringify(body.error).slice(0, 120)}`);
+  return body.features ?? [];
+}
+
+function mapRollingFeatures(features: RollingFeature[]): Incident[] {
+  const out: Incident[] = [];
+  for (let i = 0; i < features.length; i++) {
+    const a = features[i].attributes;
+    const g = features[i].geometry;
+    if (a.USER_RMSOccurrenceDate == null) continue;
+    const hour = Number(a.USER_RMSOccurrenceHour);
+    const ms = a.USER_RMSOccurrenceDate + (Number.isFinite(hour) ? hour * 3_600_000 : 0);
+    const d = new Date(ms);
+    if (Number.isNaN(d.getTime()) || d.getTime() <= 0) continue;
+    const lat = typeof g?.y === "number" ? g.y : undefined;
+    const lng = typeof g?.x === "number" ? g.x : undefined;
+    const area = resolveHoustonArea(lat, lng);
+    if (!area) continue;
+    out.push({
+      id: `hou-r-${a.USER_Incident ?? i}`,
+      area,
+      occurredAt: d.toISOString(),
+      nibrsCategory: mapToNibrs({ HPD_NIBRSDescription: a.USER_NIBRSDescription }),
+      ibrOffenseDescription: a.USER_NIBRSDescription?.trim() || "Unknown",
+      beat: a.USER_Beat ?? null,
+      blockLabel: a.USER_StreetName ?? undefined,
+      lat,
+      lng,
+    });
+  }
+  return out;
+}
+
+async function getRollingRows(): Promise<Incident[]> {
+  const now = Date.now();
+  if (rollingCache && now - rollingCache.fetchedAt < ROLLING_TTL_MS) return rollingCache.rows;
+  if (rollingInFlight) return rollingInFlight;
+  rollingInFlight = (async () => {
+    try {
+      const features: RollingFeature[] = [];
+      for (let page = 0; page < ROLLING_MAX_PAGES; page++) {
+        const batch = await fetchRollingPage(page * ROLLING_PAGE);
+        features.push(...batch);
+        if (batch.length < ROLLING_PAGE) break;
+      }
+      const rows = mapRollingFeatures(features);
+      if (rows.length > 0) rollingCache = { fetchedAt: now, rows };
+      return rows.length > 0 ? rows : (rollingCache?.rows ?? []);
+    } catch (err) {
+      console.warn("[houston] rolling fetch failed:", (err as Error).message);
+      return rollingCache?.rows ?? [];
+    } finally {
+      rollingInFlight = null;
+    }
+  })();
+  return rollingInFlight;
 }
 
 async function fetchPage(offset: number): Promise<HpdRow[]> {
@@ -287,6 +391,18 @@ export const houstonAdapter: CrimeDataAdapter = {
   },
 
   async getRecentReports(area: string, opts?: { limit?: number }) {
-    return this.getIncidents(area, { limit: opts?.limit ?? 20 });
+    // Recency rides the rolling recent-crime layer (days old); the yearly
+    // archival rows fill the list when the area is quiet this week. Scoring
+    // paths (getIncidents/getAreaStats) intentionally stay on the yearly file
+    // — see the ROLLING_BASE note about window anchoring.
+    const limit = opts?.limit ?? 20;
+    const rolling = await getRollingRows().catch(() => [] as Incident[]);
+    const label = labelForSlug(area, rolling) ?? labelForSlug(area, await getRowsHouston());
+    if (!label) return [];
+    const fresh = rolling.filter((r) => r.area === label);
+    fresh.sort((a, b) => +new Date(b.occurredAt) - +new Date(a.occurredAt));
+    if (fresh.length >= limit) return fresh.slice(0, limit);
+    const yearly = await this.getIncidents(area, { limit });
+    return [...fresh, ...yearly].slice(0, limit);
   },
 };
