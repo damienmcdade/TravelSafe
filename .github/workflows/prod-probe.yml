@@ -1,0 +1,41 @@
+name: Upstream Probe
+
+# On-demand prober for production and upstream open-data endpoints.
+# Sandboxed dev environments have no egress, so GitHub runners are the
+# canonical place to check whether an upstream feed (city open-data API)
+# or a production route is reachable and what it returns. Pass one URL
+# per line; each is fetched with curl and the status + first bytes of
+# the body are printed. Never fails the run — it's a diagnostic.
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "URLs to probe (one per line)"
+        required: true
+        type: string
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe URLs
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          set -uo pipefail
+          echo "$URLS" | while IFS= read -r url; do
+            [ -z "$url" ] && continue
+            echo "===================================================="
+            echo "PROBE: $url"
+            code=$(curl -sS -o /tmp/body -w "%{http_code}" --max-time 30 -L \
+              -H "User-Agent: CommunitySafe-probe/1.0 (+https://communitysafe.app)" \
+              -H "Accept: application/json, text/csv;q=0.9, */*;q=0.8" \
+              "$url" 2>/tmp/err) || true
+            echo "HTTP $code  bytes=$(wc -c </tmp/body 2>/dev/null || echo 0)"
+            [ -s /tmp/err ] && echo "curl: $(cat /tmp/err)"
+            head -c 700 /tmp/body 2>/dev/null; echo
+          done
+          echo "===================================================="
+          echo "probe complete"
