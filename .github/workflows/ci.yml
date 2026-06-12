@@ -87,13 +87,19 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
-      - name: Deploy (or warn if token unset)
+      - name: Deploy (fail if token unset)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
         run: |
+          # fix(deploy skew 2026-06-10/11): a missing token used to warn + exit 0,
+          # so this job stayed GREEN while Railway silently pinned at the last
+          # manual deploy — the drift only surfaced a day later as the nightly
+          # sync-check "DEPLOY SKEW" failure, attributed to the wrong place. A
+          # deploy job that cannot deploy is a failure; fail it here, at the
+          # commit that didn't ship, with the actual remediation.
           if [ -z "$RAILWAY_TOKEN" ]; then
-            echo "::warning title=Railway auto-deploy skipped::RAILWAY_TOKEN is not set in repo secrets. Railway will NOT auto-deploy, so the API can drift behind Vercel. Set RAILWAY_TOKEN (a project token for communitysafe-api) to enable lockstep deploys."
-            exit 0
+            echo "::error title=Railway auto-deploy BLOCKED::RAILWAY_TOKEN is not set in repo secrets, so this commit is NOT deployed to Railway and the API will drift behind Vercel (the recurring nightly sync-check DEPLOY SKEW failure). Fix: add a Railway project token for communitysafe-api as RAILWAY_TOKEN (Settings → Secrets and variables → Actions). Stopgap: run 'bash tools/deploy-railway.sh' locally after merging."
+            exit 1
           fi
           npm i -g @railway/cli@latest
           SVC=6a7c8ff7-b038-48d1-a623-d37ffe686011

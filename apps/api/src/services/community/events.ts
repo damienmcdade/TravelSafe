@@ -44,13 +44,20 @@ export function publishCommunityEvent(evt: CommunityEvent): void {
 // Per-instance subscriber, started once. Idempotent — safe to call on every
 // SSE connection. No-op when Redis isn't configured (local emit handles it).
 let subscriberStarted = false;
+let subscriber: ReturnType<typeof getRedisSubscriber> = null;
 export function ensureCommunitySubscriber(): void {
   if (subscriberStarted || !isRedisEnabled()) return;
   const sub = getRedisSubscriber();
   if (!sub) return;
+  subscriber = sub;
   subscriberStarted = true;
   sub.subscribe(CHANNEL).catch((err: Error) => {
     console.warn("[community-events] subscribe failed:", err.message);
+    // fix(audit redis-sub-leak): close the failed connection before allowing a
+    // retry — resetting the flag alone left the old socket (and its "message"
+    // listener) alive, so every retry leaked one Redis connection.
+    sub.disconnect();
+    if (subscriber === sub) subscriber = null;
     subscriberStarted = false; // allow a later retry
   });
   sub.on("message", (_channel: string, payload: string) => {
@@ -60,4 +67,12 @@ export function ensureCommunitySubscriber(): void {
       /* ignore malformed payloads */
     }
   });
+}
+
+/// Graceful-shutdown hook: close the pub/sub socket so the process can exit
+/// without waiting on the shutdown timeout.
+export function closeCommunitySubscriber(): void {
+  subscriber?.disconnect();
+  subscriber = null;
+  subscriberStarted = false;
 }

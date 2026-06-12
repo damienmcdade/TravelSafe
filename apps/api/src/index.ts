@@ -58,6 +58,7 @@ import { startWarmWorker } from "./services/warm/cache.worker.js";
 // was the heap-spike OOM source, and once made read-only it only ever
 // reported NO_WARM_DATA — dead weight either way.
 import { startAuditRetentionWorker } from "./services/audit/retention.worker.js";
+import { closeCommunitySubscriber } from "./services/community/events.js";
 import { evictAllRowCaches, evictColdRowCaches, registeredRowCacheCount, computeLimitStats } from "@travelsafe/crime-data/cache-registry";
 import { Agent, setGlobalDispatcher } from "undici";
 import { globalLimiter } from "./middleware/rate-limit.js";
@@ -409,6 +410,8 @@ const server = app.listen(env.LISTEN_PORT, () => {
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
     console.log(`[api] ${sig} received, shutting down`);
+    // Close the Redis pub/sub socket so it can't hold the event loop open.
+    closeCommunitySubscriber();
     server.close(() => process.exit(0));
     // v110 — hard fallback: the public /community/stream SSE connections are
     // intentionally long-lived (they only close on client disconnect), so

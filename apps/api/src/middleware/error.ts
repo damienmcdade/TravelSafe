@@ -14,6 +14,12 @@ export function notFound(_req: Request, res: Response) {
 
  
 export function errorHandler(err: unknown, req: Request, res: Response, _next: NextFunction) {
+  // If headers already went out (e.g. an error mid-SSE-stream or after a
+  // partial response), res.status()/json() would throw ERR_HTTP_HEADERS_SENT.
+  // Delegate to Express's default handler, which closes the connection.
+  if (res.headersSent) {
+    return _next(err);
+  }
   if (err instanceof ZodError) {
     return res.status(400).json({ error: "validation_failed", issues: err.issues });
   }

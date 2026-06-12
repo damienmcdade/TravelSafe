@@ -98,8 +98,9 @@ const PROBES = [
     (v, r) => keyParityCheck(v, r, "upticks.new-york")],
 
   // Deploy-version coherence — the ROOT cause of data drift is the two sides
-  // running different code: Vercel auto-deploys on push, Railway does NOT, so
-  // until someone runs `railway up` the proxied responses come from older
+  // running different code: Vercel auto-deploys on push, Railway does NOT
+  // (unless the RAILWAY_TOKEN secret is set for CI), so until someone redeploys
+  // the API the proxied responses come from older
   // adapter logic. Compare the deployed git SHAs directly (web /api/health
   // `commit` vs Railway /health `commit`/`buildSha`) so skew is caught even
   // before it manifests as a data-shape difference.
@@ -111,7 +112,10 @@ const PROBES = [
       const rSha = (r && (r.commit || r.buildSha)) || null;
       if (!vSha || !rSha) return []; // can't compare (local/unknown env) — not drift
       if (vSha !== rSha) {
-        return [`DEPLOY SKEW: vercel=${vSha} railway=${rSha} — the two run different code; redeploy the lagging side (\`railway up\` for the API).`];
+        // Recommend the SHA-stamping wrapper, NOT bare `railway up`: a bare
+        // CLI upload never updates GIT_COMMIT_SHA, so /health keeps reporting
+        // the old SHA and this probe stays red even after the code ships.
+        return [`DEPLOY SKEW: vercel=${vSha} railway=${rSha} — the two run different code; redeploy the lagging side (\`bash tools/deploy-railway.sh\` for the API; a bare \`railway up\` leaves GIT_COMMIT_SHA stale and this probe stays red).`];
       }
       return [];
     }],

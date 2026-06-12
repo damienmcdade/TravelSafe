@@ -3,13 +3,12 @@ import { prisma } from "../lib/prisma";
 import { HttpError } from "../lib/http";
 import { sendEmail } from "./notifications/email";
 import { sendSms } from "./notifications/sms";
-import { env } from "../lib/env";
+import { publicBaseUrl } from "../lib/base-url";
 
 const MAX_CONTACTS = 5;
 
 function buildConfirmUrl(token: string) {
-  const base = env.LIVE_SHARE_BASE_URL || "http://localhost:3000";
-  return `${base.replace(/\/$/, "")}/contacts/confirm/${token}`;
+  return `${publicBaseUrl()}/contacts/confirm/${token}`;
 }
 
 export async function listContacts(userId: string) {

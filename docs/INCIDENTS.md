@@ -9,6 +9,77 @@ user-visible number.
 
 ---
 
+## 2026-06-10/11 — Production API ran 7-commit-old code for two days; nightly sync-check red with "DEPLOY SKEW"
+
+### Symptom
+
+The nightly `Frontend ↔ Backend Sync Drift` workflow failed two days in a
+row (runs 27291426646, 27363902223) with:
+
+```
+[DRIFT] deploy version coherence (web vs railway git SHA)
+   • DEPLOY SKEW: vercel=ef3b0a4 railway=9abad86
+```
+
+Vercel was serving the latest `main` while the Railway API was pinned at
+`9abad86` — seven commits behind, missing real API changes that had
+"shipped" (Redis-backed rate-limit store `90155e1`, SSE connection caps +
+shutdown hardening `32fa9b7`). All eight data-parity probes passed, so
+the skew produced no user-visible breakage yet — but the API everyone
+believed was deployed was not running. The same failure mode occurred
+2026-06-08 (railway=`fa2fc3e`) and is the recurring red nightly.
+
+### Root cause
+
+The `RAILWAY_TOKEN` repo secret was never set. The CI `deploy-railway`
+job (added precisely to keep Railway in lockstep with Vercel) handled a
+missing token by emitting a `::warning` annotation and **exiting 0** —
+so every push to `main` showed a green "Deploy API to Railway" check
+while deploying nothing. Railway only ever updated when someone manually
+ran `tools/deploy-railway.sh`, and stopped tracking `main` the moment
+they stopped.
+
+### Why the existing checks didn't catch it
+
+- The deploy job reported **success** on every push. A warning
+  annotation is invisible unless you open the run page.
+- The sync-check did catch it — but a day late (nightly schedule), and
+  its diagnostic blamed the symptom, not the cause: it recommended a
+  bare `railway up`, which `tools/deploy-railway.sh`'s own header
+  explains never updates `GIT_COMMIT_SHA` — following the printed advice
+  redeploys the code but leaves the probe red.
+
+### Fix shipped
+
+1. **Fail loudly at the source** — `.github/workflows/ci.yml`
+   `deploy-railway` now exits 1 with an `::error` when `RAILWAY_TOKEN`
+   is unset. A deploy job that cannot deploy is a failure; the red X now
+   lands on the exact commit that didn't ship, with the remediation in
+   the error message, instead of surfacing a day later in a different
+   workflow.
+2. **Correct remediation hint** — `tools/sync-check.mjs`'s DEPLOY SKEW
+   message now points at `bash tools/deploy-railway.sh` (the
+   SHA-stamping wrapper) and warns that bare `railway up` leaves the
+   probe red.
+
+### Remaining action (repo owner)
+
+Only the repo owner can mint a Railway project token for
+`communitysafe-api` and add it as the `RAILWAY_TOKEN` Actions secret
+(Settings → Secrets and variables → Actions). Until that's done, every
+push to `main` will now (correctly) fail the deploy job, and the API
+must be shipped manually with `bash tools/deploy-railway.sh` after each
+merge — which is also what clears the current ef3b0a4/9abad86 skew.
+
+### Invariant pattern
+
+A pipeline step whose job is to ship/verify production must never
+"skip-as-success" when its preconditions are missing. Skipping IS the
+failure — report it where and when it happens, not via a downstream
+monitor a day later.
+
+---
+
 ## 2026-05-22 — Safety Index showed 100 ("safer than national") on the Awareness tab for every neighborhood in every city
 
 ### Symptom

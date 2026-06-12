@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma";
 import { signSession, signMfaPendingToken, verifyMfaPendingToken } from "../lib/jwt";
 import { env } from "../lib/env";
+import { publicBaseUrl } from "../lib/base-url";
 import { HttpError } from "../lib/http";
 
 // fix(audit pentest-authn-6): password reset. requestPasswordReset emails a
@@ -28,7 +29,7 @@ export async function requestPasswordReset(email: string): Promise<void> {
       passwordResetExpiry: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
     },
   });
-  const base = (env.LIVE_SHARE_BASE_URL || "http://localhost:3000").replace(/\/$/, "");
+  const base = publicBaseUrl();
   const url = `${base}/reset-password?token=${token}`;
   const { sendEmail } = await import("./notifications/email");
   await sendEmail(
