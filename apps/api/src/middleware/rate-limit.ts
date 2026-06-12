@@ -34,7 +34,9 @@ function makeStore(prefix: string): Store | undefined {
 // client-supplied X-Forwarded-For / X-Real-IP and sets `x-real-ip` to the true
 // client IP — so it is non-forgeable. Key on it; fall back to `req.ip` only if
 // it's ever absent (internal calls). Per-client, never a single shared bucket.
-function clientIpKey(req: Request): string {
+// Exported: the SSE connection caps in community.routes.ts must key on the
+// same real-client IP, not `req.ip` (the edge-node IP).
+export function clientIpKey(req: Request): string {
   const raw = req.headers["x-real-ip"];
   let ip = typeof raw === "string" ? raw.split(",")[0]!.trim() : "";
   if (!ip) ip = req.ip || "0.0.0.0";

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma.js";
 import { PostStatus, ReactionKind } from "../generated/prisma/client.js";
 import { requireAuth, optionalAuth } from "../middleware/auth.js";
-import { writeLimiter } from "../middleware/rate-limit.js";
+import { writeLimiter, clientIpKey } from "../middleware/rate-limit.js";
 import { preVetPost } from "../services/moderation/post-prevet.js";
 import { communityEvents, ensureCommunitySubscriber } from "../services/community/events.js";
 
@@ -23,7 +23,12 @@ const sseOpenPerIp = new Map<string, number>();
 // payload only carries the post id, area, and timestamps; the client must hit
 // /community/posts to render full content (which already filters to VERIFIED).
 communityRouter.get("/stream", (req, res) => {
-  const ip = req.ip || "unknown";
+  // fix(audit sse-ip-key): key the per-client cap on the real client IP, same
+  // as the rate limiters. `req.ip` under `trust proxy: 1` is Railway's edge-
+  // node IP (a small shared pool), so keying on it (a) let one attacker open
+  // 6 streams per edge node and (b) made unrelated users behind the same edge
+  // node share one 6-connection budget.
+  const ip = clientIpKey(req);
   const perIp = sseOpenPerIp.get(ip) ?? 0;
   if (sseOpenGlobal >= SSE_MAX_GLOBAL || perIp >= SSE_MAX_PER_IP) {
     res.status(503).set("Retry-After", "30").json({ error: "stream_capacity" });
@@ -50,9 +55,18 @@ communityRouter.get("/stream", (req, res) => {
   res.setHeader("X-Accel-Buffering", "no");
   res.flushHeaders?.();
 
-  const send = (data: unknown) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  // Guard writes: a heartbeat/event can fire in the window between the socket
+  // dying and our "close" handler running; writing to an ended response emits
+  // an unhandled 'error' on the stream. The error listener covers EPIPE-style
+  // failures surfaced asynchronously by the socket.
+  res.on("error", () => release());
+  const send = (data: unknown) => {
+    if (!res.writableEnded) res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
   send({ type: "hello", at: new Date().toISOString() });
-  const heartbeat = setInterval(() => res.write(": ping\n\n"), 25_000);
+  const heartbeat = setInterval(() => {
+    if (!res.writableEnded) res.write(": ping\n\n");
+  }, 25_000);
   const listener = (evt: unknown) => send(evt);
   communityEvents.on("event", listener);
   req.on("close", () => {

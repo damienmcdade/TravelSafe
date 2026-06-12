@@ -59,6 +59,12 @@ export default async function CityLandingPage({ params }: Props) {
   // the page renders with `null`/`[]` and the user sees a "data is
   // warming up" surface instead of a Vercel error screen.
   const TIMEOUT_MS = 12_000;
+  // fix(audit web-city-empty-state): track whether the empty/null fallbacks
+  // came from a timeout or feed error. The "No neighborhoods are tracked yet —
+  // adapter is in bootstrap" copy is wrong (and credibility-hurting) for a
+  // live city whose feed merely took >12s on a cold cache; the v63 comment
+  // promised a "data is warming up" surface that was never actually rendered.
+  let degraded = false;
   // fix(audit api-code-6): clear the deadline timer once the work settles so a
   // fast render doesn't leave a 12s setTimeout pending on the (possibly warm)
   // function instance.
@@ -66,14 +72,14 @@ export default async function CityLandingPage({ params }: Props) {
     let timer: ReturnType<typeof setTimeout>;
     return Promise.race([
       p,
-      new Promise<T>((resolve) => { timer = setTimeout(() => resolve(fallback), TIMEOUT_MS); }),
+      new Promise<T>((resolve) => { timer = setTimeout(() => { degraded = true; resolve(fallback); }, TIMEOUT_MS); }),
     ]).finally(() => clearTimeout(timer));
   };
   const [areas, citywideScore] = await Promise.all([
     // Display the primary (real civic) area list where defined (VB: ~100 vs 961);
     // the citywide score below still uses the full set. fix(audit vb-over-fragmentation).
-    withTimeout((city.discoverPrimary ?? city.discover)().catch(() => []), [] as Awaited<ReturnType<typeof city.discover>>),
-    withTimeout(getCitywideSafetyScore(slug).catch(() => null), null),
+    withTimeout((city.discoverPrimary ?? city.discover)().catch(() => { degraded = true; return []; }), [] as Awaited<ReturnType<typeof city.discover>>),
+    withTimeout(getCitywideSafetyScore(slug).catch(() => { degraded = true; return null; }), null),
   ]);
 
   // JSON-LD structured data. Schema.org Place + BreadcrumbList lets
@@ -163,10 +169,17 @@ export default async function CityLandingPage({ params }: Props) {
       <section>
         <h2 className="font-display text-xl text-slate2-900">Neighborhoods</h2>
         {areas.length === 0 ? (
-          <p className="mt-3 text-sm text-slate2-500">
-            No neighborhoods are tracked for {city.label} yet — the adapter is in bootstrap.
-            Check back as the data feed is wired up.
-          </p>
+          degraded ? (
+            <p className="mt-3 text-sm text-slate2-500">
+              Neighborhood data for {city.label} is taking longer than usual to load —
+              the live police feed is warming up. Refresh in a few minutes.
+            </p>
+          ) : (
+            <p className="mt-3 text-sm text-slate2-500">
+              No neighborhoods are tracked for {city.label} yet — the adapter is in bootstrap.
+              Check back as the data feed is wired up.
+            </p>
+          )
         ) : (
           <ul className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
             {areas.map((a) => (

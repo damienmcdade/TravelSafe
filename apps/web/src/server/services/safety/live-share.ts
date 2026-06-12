@@ -3,11 +3,10 @@ import { prisma } from "../../lib/prisma";
 import { HttpError } from "../../lib/http";
 import { sendEmail } from "../notifications/email";
 import { sendSms } from "../notifications/sms";
-import { env } from "../../lib/env";
+import { publicBaseUrl } from "../../lib/base-url";
 
 function buildShareUrl(token: string) {
-  const base = env.LIVE_SHARE_BASE_URL || "http://localhost:3000";
-  return `${base.replace(/\/$/, "")}/share/${token}`;
+  return `${publicBaseUrl()}/share/${token}`;
 }
 
 // v47 — classify the contact field as email, phone, or unknown so
