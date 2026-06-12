@@ -24,7 +24,7 @@
     "db:studio": "npm run prisma:studio --workspace packages/db",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "lint-staged": {
     "apps/api/**/*.ts": [
