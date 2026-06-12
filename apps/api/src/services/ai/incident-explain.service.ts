@@ -90,6 +90,16 @@ export async function explainIncident(rawDesc: string): Promise<IncidentExplain>
   }
   const hit = await cacheGet(key);
   if (hit) {
+    // Self-heal cache entries poisoned with the raw refusal sentinel before
+    // the friendly-copy conversion below shipped (Redis TTL outlives deploys).
+    if (/not a recognizable offense/i.test(hit)) {
+      const healed =
+        "This label comes straight from the local police feed and doesn't match a " +
+        "standard offense category, so there isn't a general definition to show. " +
+        "The wording shown is exactly how the department recorded the report.";
+      await cachePut(key, healed);
+      return { explanation: healed, cached: true, aiConfigured: true };
+    }
     return { explanation: hit, cached: true, aiConfigured: true };
   }
 
@@ -107,6 +117,17 @@ export async function explainIncident(rawDesc: string): Promise<IncidentExplain>
   if (!result || !result.text) {
     return { explanation: null, cached: false, aiConfigured: true };
   }
-  await cachePut(key, result.text);
-  return { explanation: result.text, cached: false, aiConfigured: true };
+  // fix(audit explain-unrecognized): never surface the model's literal
+  // refusal sentinel ("Not a recognizable offense description.") — it's our
+  // prompt-injection guard, but rendered verbatim it reads as a broken card
+  // for any city feed whose labels are codes/abbreviations/free-text. Keep
+  // the sentinel as the mechanism; replace it with honest copy (mirrors the
+  // web service — this Railway path serves the proxied production calls).
+  const text = /not a recognizable offense/i.test(result.text)
+    ? "This label comes straight from the local police feed and doesn't match a " +
+      "standard offense category, so there isn't a general definition to show. " +
+      "The wording shown is exactly how the department recorded the report."
+    : result.text;
+  await cachePut(key, text);
+  return { explanation: text, cached: false, aiConfigured: true };
 }
