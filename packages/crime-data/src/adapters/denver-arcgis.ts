@@ -10,17 +10,14 @@ import type { KnownArea } from "../neighborhoods.js";
 // resultOffset / resultRecordCount, dates are epoch-ms ints, and responses
 // wrap each row in { attributes, geometry } instead of returning bare rows.
 //
-// UPSTREAM OUTAGE (probed 2026-05-24): every public Denver crime endpoint
-// now returns "Token Required" (HTTP 499) or 403 Forbidden:
-//   - FeatureServer/324/query     → 499 GWM_0003 Token Required
-//   - hub.arcgis.com data download → 403 Forbidden
-//   - www.denvergov.org CSV path   → 301 redirect to the Hub (then 500)
-// The dataset still exists (linked from
-// https://opendata-geospatialdenver.hub.arcgis.com) but is no longer
-// publicly readable. We try the request anyway and fall back to an
-// empty list — the Coverage page surfaces this as "warming up". To
-// restore Denver coverage, contact Denver Open Data for an API token
-// and wire it into env DENVER_ARCGIS_TOKEN.
+// UPSTREAM OUTAGE (probed 2026-05-24, RESOLVED by 2026-06-12): the public
+// endpoints returned "Token Required" (HTTP 499) / 403 for ~3 weeks in
+// May–June 2026. Re-probed 2026-06-12 (Upstream Probe workflow): the
+// FeatureServer query is public again — HTTP 200 with fresh rows (newest
+// incident 2026-06-06) and production /crime-data/citywide?city=denver
+// serves ~12k incidents. No token needed. DENVER_ARCGIS_TOKEN support is
+// kept as a belt-and-suspenders: if Denver re-gates the feed, set the env
+// var and the adapter authenticates without a code change.
 //
 // Doc: https://services1.arcgis.com/zdB7qR0BtYrg0Xpl/arcgis/rest/services/ODC_CRIME_OFFENSES_P/FeatureServer
 
