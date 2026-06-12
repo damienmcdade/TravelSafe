@@ -1,7 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build --workspace apps/web",
-  "//installCommand-note": "fix(deploy 2026-06-12): every Vercel deployment failed from ~06:56 UTC — first npm ci exit 127 (husky prepare, devDeps absent), then Cannot find module 'tailwindcss'. Root cause: a NODE_ENV=production env var on the Vercel project makes npm omit devDependencies at install (per npm docs), and next build NEEDS them (typescript/tailwind). --include=dev explicitly overrides any omit/production config, making installs immune to that env var. Remove the NODE_ENV project env var anyway — Vercel sets it itself at runtime.",
   "installCommand": "npm ci --include=dev",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
