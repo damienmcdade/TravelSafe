@@ -237,7 +237,8 @@ export const CITIES: CityEntry[] = [
   {
     // Replaced Montgomery County (county-level, ambiguous to users) with
     // Milwaukee — a real city with an actively-maintained CKAN dataset
-    // (WIBR Group A) on data.milwaukee.gov, ~9k incidents grouped by ZIP.
+    // (WIBR/NIBRS, ~100k rows, WGS84 coords) on data.milwaukee.gov, placed
+    // into DCD neighborhoods by point-in-polygon.
     slug: "milwaukee",
     label: "Milwaukee",
     bbox: { south: 42.92, west: -88.07, north: 43.20, east: -87.83 },
