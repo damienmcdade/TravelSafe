@@ -70,14 +70,14 @@ export function UptickTile() {
             <li key={u.area.slug} className="py-2">
               <button
                 onClick={() => setArea({ slug: u.area.slug, label: u.area.label, jurisdiction: city.label })}
-                aria-label={`View ${u.area.label} — ${u.multiplier.toFixed(1)}× uptick, ${u.priorCount} to ${u.recentCount} incidents`}
+                aria-label={`View ${u.area.label} — ${Number(u.multiplier ?? 0).toFixed(1)}× uptick, ${u.priorCount} to ${u.recentCount} incidents`}
                 className="w-full text-left group flex items-baseline gap-3"
               >
                 <span className="text-slate2-900 group-hover:text-bay-700 transition-colors flex-1 truncate">
                   {u.area.label}
                 </span>
                 <span className="text-xs text-coral-700 font-medium tabular-nums shrink-0">
-                  {u.multiplier.toFixed(1)}×
+                  {Number(u.multiplier ?? 0).toFixed(1)}×
                 </span>
                 <span className="text-xs text-slate2-500 tabular-nums shrink-0">
                   {u.priorCount} → {u.recentCount}

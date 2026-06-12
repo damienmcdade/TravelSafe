@@ -38,10 +38,11 @@ type GradeSource = "area" | "city";
 interface GradeResult { grade: GradeLetter; source: GradeSource }
 
 function baseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://communitysafe.app")
-  );
+  // fix(audit seo): drop the VERCEL_URL branch — it embedded expiring
+  // *.vercel.app preview URLs in shared neighborhood OG cards (link rot + SEO
+  // dilution) and pointed internal API fetches at the preview origin. Mirror
+  // the root and city OG images, which hardcode the canonical domain.
+  return process.env.NEXT_PUBLIC_SITE_URL ?? "https://communitysafe.app";
 }
 
 function parseGrade(v: unknown): GradeLetter | null {
@@ -79,9 +80,11 @@ async function fetchGrade(citySlug: string, areaSlug: string, areaLabel: string)
 export default async function NeighborhoodOgImage({
   params,
 }: {
-  params: { city: string; neighborhood: string };
+  // fix(audit next15): params is a Promise in Next 15+ (sync shim gone in 16).
+  params: Promise<{ city: string; neighborhood: string }>;
 }) {
-  const cityLabel = cityLabelBySlug(params.city);
+  const { city, neighborhood } = await params;
+  const cityLabel = cityLabelBySlug(city);
   if (!cityLabel) return fallback("Neighborhood overview", "CommunitySafe");
 
   // v95p26 — fetch the area list via the existing API instead of
@@ -91,7 +94,7 @@ export default async function NeighborhoodOgImage({
   // 5xx) renders a city-only fallback card.
   interface Area { slug: string; label: string }
   interface AreasResp { areas: Area[] }
-  const areasUrl = `${baseUrl()}/api/geo/areas?city=${encodeURIComponent(params.city)}`;
+  const areasUrl = `${baseUrl()}/api/geo/areas?city=${encodeURIComponent(city)}`;
   let areas: Area[] = [];
   try {
     const res = await fetch(areasUrl, { cache: "no-store" });
@@ -100,10 +103,10 @@ export default async function NeighborhoodOgImage({
       areas = Array.isArray(body) ? body : body.areas ?? [];
     }
   } catch { /* render fallback below */ }
-  const area = areas.find((a) => a.slug === params.neighborhood);
+  const area = areas.find((a) => a.slug === neighborhood);
   if (!area) return fallback(`${cityLabel} neighborhood`, cityLabel);
 
-  const gradeResult = await fetchGrade(params.city, area.slug, area.label);
+  const gradeResult = await fetchGrade(city, area.slug, area.label);
   const grade = gradeResult?.grade ?? null;
   const theme = grade ? GRADE_THEME[grade] : GRADE_THEME.C;
   // Caveat copy switches based on whether we got the area-level grade
@@ -147,7 +150,7 @@ export default async function NeighborhoodOgImage({
             </div>
           </div>
           <div style={{ display: "flex", fontSize: 20, opacity: 0.85 }}>
-            communitysafe.app/cities/{params.city}/{params.neighborhood}
+            communitysafe.app/cities/{city}/{neighborhood}
           </div>
         </div>
         {/* Right column: grade tile + caveat caption. The caveat is

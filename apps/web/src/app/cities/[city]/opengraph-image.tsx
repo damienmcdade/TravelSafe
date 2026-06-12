@@ -18,8 +18,12 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 export const alt = "CommunitySafe city safety overview";
 
-export default async function CityOgImage({ params }: { params: { city: string } }) {
-  const label = cityLabelBySlug(params.city) ?? "City";
+// fix(audit next15): params is a Promise in Next 15+ (the sync-access shim is
+// removed in Next 16, where params.city would become undefined and every city
+// OG card silently degrades to the generic fallback). Await it, like page.tsx.
+export default async function CityOgImage({ params }: { params: Promise<{ city: string }> }) {
+  const { city } = await params;
+  const label = cityLabelBySlug(city) ?? "City";
   const source = `${label} police open-data feed`;
   return new ImageResponse(
     (
@@ -59,7 +63,7 @@ export default async function CityOgImage({ params }: { params: { city: string }
             Source: {source.length > 60 ? source.slice(0, 57) + "…" : source}
           </div>
           <div style={{ display: "flex" }}>
-            communitysafe.app/cities/{params.city}
+            communitysafe.app/cities/{city}
           </div>
         </div>
       </div>

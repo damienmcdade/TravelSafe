@@ -96,11 +96,19 @@ export default async function CityLandingPage({ params }: Props) {
         name: city.label,
         url: `${base}/cities/${slug}`,
         description: `Neighborhood-level safety data for ${city.label}, sourced from the official ${city.label} police open-data feed.`,
-        geo: {
-          "@type": "GeoCoordinates",
-          latitude: city.bbox ? (city.bbox.south + city.bbox.north) / 2 : undefined,
-          longitude: city.bbox ? (city.bbox.west + city.bbox.east) / 2 : undefined,
-        },
+        // fix(audit seo): omit `geo` entirely when the city has no bbox —
+        // emitting a GeoCoordinates node with undefined lat/lng (which
+        // JSON.stringify drops) left an empty, invalid {"@type":"GeoCoordinates"}
+        // in the structured data.
+        ...(city.bbox
+          ? {
+              geo: {
+                "@type": "GeoCoordinates",
+                latitude: (city.bbox.south + city.bbox.north) / 2,
+                longitude: (city.bbox.west + city.bbox.east) / 2,
+              },
+            }
+          : {}),
       },
       {
         "@type": "BreadcrumbList",

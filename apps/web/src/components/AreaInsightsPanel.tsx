@@ -72,7 +72,7 @@ export function AreaInsightsPanel({ areaQueryString, defaultExpanded = false }: 
                       <Sparkline values={t.weekly} />
                     </div>
                     <div className="text-xs text-slate2-500 mt-1">
-                      usual {t.baseline.toFixed(1)}/week
+                      usual {Number(t.baseline ?? 0).toFixed(1)}/week
                     </div>
                   </li>
                 ))}
