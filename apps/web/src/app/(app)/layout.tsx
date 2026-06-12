@@ -19,17 +19,12 @@ import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      {/* WCAG 2.4.1 — the skip link must be the FIRST focusable element in the
-          DOM so a keyboard user's very first Tab reveals it and lets them jump
-          straight past the header + tab nav to the page content. It's visually
-          hidden until focused (sr-only → not-sr-only), then pins to the top-left
-          above all chrome. Target #main is the single <main> in <AnimatedMain>. */}
-      <a
-        href="#main"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-bay-500 focus:text-white focus:px-3 focus:py-2 focus:rounded-md focus:shadow-card"
-      >
-        Skip to main content
-      </a>
+      {/* Skip-to-main link REMOVED per operator directive (2026-06-12): the
+          #main target was never focusable (no tabindex), so activating the
+          link moved nothing — it read as a dead control. NOTE: shipping
+          without a bypass-blocks mechanism is a WCAG 2.4.1 gap; to restore
+          compliance later, re-add the link AND give the <main> in
+          AnimatedMain a tabindex={-1} so focus actually transfers. */}
       {/* No sign-in / sign-out controls: every device is automatically issued
           an anonymous session by SessionBootstrap (mounted in the root layout).
           Browsing, posting, check-in timer, and live-share all work with no
