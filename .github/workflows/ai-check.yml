@@ -1,0 +1,35 @@
+name: AI Config Check
+
+# On-demand probe of the production AI explainer — run after adding/rotating
+# AI provider keys (GROQ_API_KEY / GEMINI_API_KEY) to confirm the "Explain"
+# button in Local Activity actually returns definitions in production.
+# GitHub runners have full egress, unlike sandboxed dev environments, so this
+# is the canonical way to verify prod config without a local secret.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ai-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe /api/ai/incident-explain on production
+        run: |
+          set -uo pipefail
+          URL="https://communitysafe.app/api/ai/incident-explain?desc=Theft%20from%20vehicle"
+          echo "GET $URL"
+          BODY=$(curl -sS --max-time 30 "$URL")
+          echo "response: $BODY"
+          CONFIGURED=$(echo "$BODY" | python3 -c "import json,sys; print(json.load(sys.stdin).get('aiConfigured'))")
+          EXPLANATION=$(echo "$BODY" | python3 -c "import json,sys; v=json.load(sys.stdin).get('explanation'); print('present' if v else 'null')")
+          echo "aiConfigured=$CONFIGURED explanation=$EXPLANATION"
+          if [ "$CONFIGURED" != "True" ]; then
+            echo "::error title=AI not configured::Production /api/ai/incident-explain reports aiConfigured=false. Set GROQ_API_KEY or GEMINI_API_KEY on the deployment that serves the explain call (Railway service env if API_BASE_URL proxying is on; Vercel env otherwise — Vercel env changes need a redeploy to take effect)."
+            exit 1
+          fi
+          if [ "$EXPLANATION" = "null" ]; then
+            echo "::error title=No explanation returned::aiConfigured=true but the explanation came back null — the provider key may be invalid or quota-exhausted. Check the provider dashboard."
+            exit 1
+          fi
+          echo "AI explainer is live: configured and returning definitions."
