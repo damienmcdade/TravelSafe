@@ -9,15 +9,29 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 // Milwaukee WI — Milwaukee Police Department WIBR (Wisconsin Incident-
 // Based Reporting) crime data on data.milwaukee.gov.
 //
-// CKAN datastore (resource 87843297-a6fa-46d4-ba5d-cb342fb2d3bb) holds
-// ~9.4k incidents with per-incident boolean offense flags AND block-rounded
-// state-plane coordinates (RoughX/RoughY). We pull the full dataset in one
-// request, place each incident in its actual DCD neighborhood by
-// point-in-polygon, and map the boolean flags to NIBRS three-way buckets.
+// UPSTREAM SCHEMA CHANGE (caught 2026-06-12): the city REPLACED the WIBR
+// resource's contents. The old shape (~9.4k rows: ReportedDateTime, RoughX/
+// RoughY state-plane coords, ZIP, per-offense boolean flags) became ~100k rows
+// of NIBRS-style records: Incident_Date, Address_Latitude/Address_Longitude
+// (WGS84), Offense_All (semicolon-separated NIBRS offense codes, e.g.
+// "13B;13C"), Police_District, Location_All, Weapon_Used_All. The old parser
+// found none of its fields, skipped every row, and Milwaukee silently graded
+// N/A ("no recent reports") in production while the feed was actually fresh
+// (newest incident 2 days old). This adapter now speaks the new schema; the
+// state-plane converter below is retained only for its standalone test and as
+// reference should the city revert.
+//
+// Rows are NOT ordered by incident date (_id order follows edit/load order),
+// so pages are pulled sorted by Incident_Date desc until the scoring window
+// is covered.
 
 const MILWAUKEE_RESOURCE_ID = "87843297-a6fa-46d4-ba5d-cb342fb2d3bb";
 const DATASTORE_API = "https://data.milwaukee.gov/api/3/action/datastore_search";
-const PAGE_SIZE = 10_000; // dataset total is ~9.4k; one page covers it
+const PAGE_SIZE = 10_000;
+// 364-day scoring window + slack. 5 pages (50k rows) comfortably covers a year
+// of Milwaukee volume; the loop stops early once a page crosses the cutoff.
+const MAX_PAGES = 5;
+const WINDOW_CUTOFF_MS = 400 * 24 * 60 * 60 * 1000;
 const CACHE_TTL_MS = 10 * 60 * 1000;
 
 import { milwaukeePolygons } from "../data/milwaukee-neighborhoods.js";
@@ -104,28 +118,16 @@ function neighborhoodForPoint(lng: number, lat: number): string | null {
 }
 
 interface RawRow {
-  IncidentNum?: string;
-  ReportedDateTime?: string;
-  Location?: string;
-  ZIP?: string;
-  // Block-rounded Wisconsin State Plane coordinates (privacy-preserving but
-  // neighborhood-accurate). Used to place each incident in its actual DCD
-  // neighborhood via point-in-polygon. See statePlaneToLatLng below.
-  RoughX?: string;
-  RoughY?: string;
-  // Boolean-ish counts: 0/1 per offense category. Multiple can be set per
-  // incident (e.g. burglary + criminal damage); we pick the highest-
-  // precedence offense to drive the row's nibrsCategory + description.
-  Arson?: string;
-  AssaultOffense?: string;
-  Burglary?: string;
-  CriminalDamage?: string;
-  Homicide?: string;
-  LockedVehicle?: string;
-  Robbery?: string;
-  SexOffense?: string;
-  Theft?: string;
-  VehicleTheft?: string;
+  _id?: number;
+  Case_Number?: string;
+  Incident_Number?: string;
+  Incident_Date?: string;          // "2026-06-10 03:00:00" — Central wall-clock
+  Police_District?: string;
+  Offense_All?: string;            // semicolon-separated NIBRS codes: "13B;13C"
+  Location_All?: string;           // block address: "925 N MARTIN L KING JR DR"
+  Address_Longitude?: string;      // WGS84, as text
+  Address_Latitude?: string;
+  Weapon_Used_All?: string;
 }
 
 // Milwaukee ZIPs → representative neighborhood name. v110: this is now only a
@@ -166,43 +168,64 @@ const ZIP_NEIGHBORHOOD: Record<string, string> = {
   "53233": "Avenues West",
 };
 
-// ZIPs whose footprint is overwhelmingly a SEPARATE municipality with its own
-// police department — the MPD WIBR feed carries only a stray boundary sliver,
-// so grading them as Milwaukee neighborhoods is both data-poor (N/A) and
-// misleading (they're labeled after the suburb). Excluded from aggregation.
-// 53227 West Allis · 53228 Greenfield · 53223 Brown Deer.
-const NON_MPD_ZIPS: ReadonlySet<string> = new Set(["53227", "53228", "53223"]);
-
 const PROVENANCE: DataProvenance = {
   source: "Milwaukee Police WIBR Crime Data · data.milwaukee.gov",
   datasetUrl: "https://data.milwaukee.gov/dataset/wibr",
-  recency: "Daily refresh; mapped to DCD neighborhoods",
+  recency: "Daily refresh (NIBRS); mapped to DCD neighborhoods",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Milwaukee Police Department under WIBR and placed in their " +
-    "Department of City Development neighborhood by block-rounded location. Not live. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Milwaukee Police Department under WIBR/NIBRS and placed in their " +
+    "Department of City Development neighborhood by reported location. Not live. CommunitySafe does not track individuals.",
 };
 
-// Each row may have multiple offense flags set. Pick the highest-
-// precedence one (most serious / most informative) to drive the row's
-// reported category. Ties are resolved in this order.
-function classifyRow(r: RawRow): { category: CrimeCategory; description: string } {
-  const yes = (v: string | undefined) => v === "1" || v === "true" || v === "TRUE";
-  // PERSONS — order: Homicide > SexOffense > Robbery > AssaultOffense
-  if (yes(r.Homicide))       return { category: CrimeCategory.PERSONS,  description: "HOMICIDE" };
-  if (yes(r.SexOffense))     return { category: CrimeCategory.PERSONS,  description: "SEX OFFENSE" };
-  if (yes(r.Robbery))        return { category: CrimeCategory.PERSONS,  description: "ROBBERY" };
-  if (yes(r.AssaultOffense)) return { category: CrimeCategory.PERSONS,  description: "ASSAULT" };
-  // PROPERTY — order: Arson > Burglary > VehicleTheft > Theft > CriminalDamage > LockedVehicle
-  if (yes(r.Arson))          return { category: CrimeCategory.PROPERTY, description: "ARSON" };
-  if (yes(r.Burglary))       return { category: CrimeCategory.PROPERTY, description: "BURGLARY" };
-  if (yes(r.VehicleTheft))   return { category: CrimeCategory.PROPERTY, description: "MOTOR VEHICLE THEFT" };
-  if (yes(r.Theft))          return { category: CrimeCategory.PROPERTY, description: "THEFT" };
-  if (yes(r.CriminalDamage)) return { category: CrimeCategory.PROPERTY, description: "CRIMINAL DAMAGE" };
-  if (yes(r.LockedVehicle))  return { category: CrimeCategory.PROPERTY, description: "LOCKED VEHICLE ENTRY" };
-  // SOCIETY fallback if no flag set — shouldn't normally happen but
-  // we'd rather render the row than drop it silently.
-  return { category: CrimeCategory.SOCIETY, description: "OTHER" };
+// FBI NIBRS offense codes → app category + plain description. This is the
+// fixed federal vocabulary (NIBRS User Manual); Offense_All carries one or
+// more of these, semicolon-separated. Robbery (120) is PERSONS here — the app
+// groups it with violent crime, matching every sister adapter.
+const NIBRS_PERSONS: Record<string, string> = {
+  "09A": "HOMICIDE", "09B": "NEGLIGENT MANSLAUGHTER", "09C": "JUSTIFIABLE HOMICIDE",
+  "100": "KIDNAPPING / ABDUCTION",
+  "11A": "SEXUAL ASSAULT", "11B": "SEXUAL ASSAULT", "11C": "SEXUAL ASSAULT", "11D": "SEX OFFENSE (FONDLING)",
+  "120": "ROBBERY",
+  "13A": "AGGRAVATED ASSAULT", "13B": "SIMPLE ASSAULT", "13C": "INTIMIDATION",
+  "36A": "SEX OFFENSE (INCEST)", "36B": "SEX OFFENSE (STATUTORY)",
+  "64A": "HUMAN TRAFFICKING", "64B": "HUMAN TRAFFICKING",
+};
+const NIBRS_PROPERTY: Record<string, string> = {
+  "200": "ARSON", "210": "EXTORTION / BLACKMAIL", "220": "BURGLARY",
+  "23A": "THEFT (POCKET-PICKING)", "23B": "THEFT (PURSE-SNATCHING)", "23C": "SHOPLIFTING",
+  "23D": "THEFT FROM BUILDING", "23E": "THEFT FROM COIN MACHINE", "23F": "THEFT FROM MOTOR VEHICLE",
+  "23G": "THEFT OF VEHICLE PARTS", "23H": "THEFT (OTHER)",
+  "240": "MOTOR VEHICLE THEFT", "250": "COUNTERFEITING / FORGERY",
+  "26A": "FRAUD (FALSE PRETENSES)", "26B": "FRAUD (CREDIT CARD / ATM)", "26C": "FRAUD (IMPERSONATION)",
+  "26D": "FRAUD (WELFARE)", "26E": "FRAUD (WIRE)", "26F": "IDENTITY THEFT", "26G": "HACKING / COMPUTER INVASION",
+  "270": "EMBEZZLEMENT", "280": "STOLEN PROPERTY OFFENSE", "290": "CRIMINAL DAMAGE / VANDALISM",
+  "510": "BRIBERY",
+};
+const NIBRS_SOCIETY: Record<string, string> = {
+  "35A": "DRUG / NARCOTIC VIOLATION", "35B": "DRUG EQUIPMENT VIOLATION",
+  "370": "PORNOGRAPHY / OBSCENE MATERIAL",
+  "39A": "GAMBLING (BETTING)", "39B": "GAMBLING (PROMOTING)", "39C": "GAMBLING EQUIPMENT", "39D": "SPORTS TAMPERING",
+  "40A": "PROSTITUTION", "40B": "ASSISTING PROSTITUTION", "40C": "PURCHASING PROSTITUTION",
+  "520": "WEAPON LAW VIOLATION", "720": "ANIMAL CRUELTY",
+};
+
+// A row can carry several codes ("90Z;290;13B"). Classify each and report the
+// most serious bucket: PERSONS > PROPERTY > SOCIETY; the description follows
+// the code that won. Unknown / Group B (90x) codes fall through to SOCIETY.
+function classifyOffenses(offenseAll: string | undefined): { category: CrimeCategory; description: string } {
+  const codes = (offenseAll ?? "").split(/[;,]/).map((c) => c.trim().toUpperCase()).filter(Boolean);
+  let property: string | null = null;
+  let society: string | null = null;
+  for (const code of codes) {
+    const p = NIBRS_PERSONS[code];
+    if (p) return { category: CrimeCategory.PERSONS, description: p };
+    if (!property && NIBRS_PROPERTY[code]) property = NIBRS_PROPERTY[code];
+    if (!society && NIBRS_SOCIETY[code]) society = NIBRS_SOCIETY[code];
+  }
+  if (property) return { category: CrimeCategory.PROPERTY, description: property };
+  if (society) return { category: CrimeCategory.SOCIETY, description: society };
+  return { category: CrimeCategory.SOCIETY, description: "OTHER OFFENSE" };
 }
 
 function parseDateMaybe(raw: string | undefined): Date | null {
@@ -217,8 +240,13 @@ function parseDateMaybe(raw: string | undefined): Date | null {
 interface DatastoreResp { success?: boolean; result?: { records?: RawRow[]; total?: number } }
 
 async function fetchPage(offset: number, signal?: AbortSignal): Promise<RawRow[]> {
+  // Sorted by Incident_Date desc — NOT _id. The datastore's _id follows CSV
+  // load/edit order, so its tail is dominated by recently-EDITED old incidents
+  // (e.g. a Jan-2024 case amended last month); paging by _id desc is what made
+  // the adapter fetch 10k stale rows and grade the city N/A after the dataset
+  // grew past one page. Date-desc pages = the newest incidents first, always.
   const url = `${DATASTORE_API}?resource_id=${MILWAUKEE_RESOURCE_ID}` +
-    `&limit=${PAGE_SIZE}&offset=${offset}&sort=${encodeURIComponent("_id desc")}`;
+    `&limit=${PAGE_SIZE}&offset=${offset}&sort=${encodeURIComponent("Incident_Date desc")}`;
   const res = await fetch(url, { signal: signal ?? AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Milwaukee datastore ${res.status} at offset ${offset}`);
   const body = (await readJson(res)) as DatastoreResp;
@@ -252,66 +280,66 @@ const STATIC_MILWAUKEE_AREAS: KnownArea[] = milwaukeePolygons.map((p) => ({
 }));
 
 async function fetchAndParse(): Promise<Cache> {
-  // Try one big page first; if it returns the full count we're done.
-  // The dataset is ~9.4k rows so one PAGE_SIZE=10k fetch covers it.
-  const rawRows = await fetchPage(0).catch((err) => {
-    console.warn("[milwaukee] fetchPage failed:", (err as Error).message);
-    return [] as RawRow[];
-  });
+  // Date-desc pages until the scoring window (+slack) is covered. The dataset
+  // is ~100k rows spanning multiple years; only the newest slice matters.
+  const cutoff = Date.now() - WINDOW_CUTOFF_MS;
+  const rawRows: RawRow[] = [];
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const batch = await fetchPage(page * PAGE_SIZE).catch((err) => {
+      console.warn("[milwaukee] fetchPage failed:", (err as Error).message);
+      return [] as RawRow[];
+    });
+    if (batch.length === 0) break;
+    rawRows.push(...batch);
+    const oldest = parseDateMaybe(batch[batch.length - 1]?.Incident_Date);
+    if (oldest && +oldest < cutoff) break; // window covered
+    if (batch.length < PAGE_SIZE) break;   // dataset exhausted
+  }
 
   const rows: Incident[] = [];
   const nbhCounts = new Map<string, number>();
   let placedByPoint = 0;
-  let placedByZip = 0;
+  let unplaced = 0;
   for (const r of rawRows) {
-    const occurred = parseDateMaybe(r.ReportedDateTime);
+    const occurred = parseDateMaybe(r.Incident_Date);
     if (!occurred) continue;
 
-    // v110 — resolve each incident to its ACTUAL DCD neighborhood (190 of
-    // them) via its block-rounded state-plane coordinate + point-in-polygon,
-    // instead of the old coarse ZIP→one-representative-name bucketing. This
-    // is what residents recognize ("Riverwest", "Bay View", "Sherman Park")
-    // and lifts Milwaukee from ~21 ZIP buckets to its real neighborhood map.
-    let nbh: string | null = null;
-    const rx = Number(r.RoughX);
-    const ry = Number(r.RoughY);
-    if (Number.isFinite(rx) && Number.isFinite(ry) && rx > 0 && ry > 0) {
-      const { lat, lng } = statePlaneToLatLng(rx, ry);
-      nbh = neighborhoodForPoint(lng, lat);
-      if (nbh) placedByPoint++;
+    // v110 semantics preserved: resolve each incident to its ACTUAL DCD
+    // neighborhood (190 of them) by point-in-polygon — the new schema ships
+    // WGS84 Address_Latitude/Longitude directly, so the state-plane transform
+    // is no longer in this path. Rows without usable coordinates, or landing
+    // outside every city polygon (suburb slivers, redacted locations), are
+    // skipped — there is no ZIP column to fall back on anymore.
+    const lat = Number(r.Address_Latitude);
+    const lng = Number(r.Address_Longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng) || lat < 42.6 || lat > 43.4 || lng < -88.4 || lng > -87.5) {
+      unplaced++;
+      continue;
     }
-    // Fallback: rows missing coords or landing in a boundary sliver keep the
-    // ZIP→neighborhood mapping so no incident is dropped and the citywide
-    // total is preserved. NON_MPD suburb ZIPs are still excluded.
-    if (!nbh) {
-      const zip = (r.ZIP ?? "").trim();
-      if (/^\d{5}$/.test(zip) && !NON_MPD_ZIPS.has(zip)) {
-        nbh = ZIP_NEIGHBORHOOD[zip] ?? null;
-        if (nbh) placedByZip++;
-      }
-    }
-    if (!nbh) continue;
+    const nbh = neighborhoodForPoint(lng, lat);
+    if (!nbh) { unplaced++; continue; }
+    placedByPoint++;
 
-    const { category, description } = classifyRow(r);
+    const { category, description } = classifyOffenses(r.Offense_All);
     rows.push({
-      id: `mke-${r.IncidentNum ?? `${rows.length}`}`,
+      id: `mke-${r.Incident_Number ?? r.Case_Number ?? `${rows.length}`}`,
       area: nbh,
       occurredAt: occurred.toISOString(),
       nibrsCategory: category,
       ibrOffenseDescription: description,
-      beat: null,
-      blockLabel: r.Location ?? undefined,
+      beat: r.Police_District ? `District ${r.Police_District}` : null,
+      blockLabel: r.Location_All ?? undefined,
     });
     nbhCounts.set(nbh, (nbhCounts.get(nbh) ?? 0) + 1);
   }
-  // fix(deploy-log-spam): mapMilwaukeeRows runs on every adapter call, so the
-  // warm-worker logged this identical line thousands of times, drowning real
-  // errors. Dedupe — only log when the placement summary actually changes.
-  if (placedByPoint + placedByZip > 0) {
-    const sig = `${placedByPoint}/${placedByZip}/${nbhCounts.size}`;
+  // fix(deploy-log-spam): runs on every adapter call, so the warm-worker
+  // logged this identical line thousands of times, drowning real errors.
+  // Dedupe — only log when the placement summary actually changes.
+  if (placedByPoint > 0) {
+    const sig = `${placedByPoint}/${unplaced}/${nbhCounts.size}`;
     if (sig !== lastMilwaukeePlacementLog) {
       lastMilwaukeePlacementLog = sig;
-      console.log(`[milwaukee] placed ${placedByPoint} by point-in-polygon, ${placedByZip} by ZIP fallback, ${nbhCounts.size} neighborhoods`);
+      console.log(`[milwaukee] placed ${placedByPoint} by point-in-polygon (${unplaced} outside coverage), ${nbhCounts.size} neighborhoods`);
     }
   }
 
