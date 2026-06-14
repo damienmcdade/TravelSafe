@@ -1,7 +1,7 @@
 import rateLimit, { type Store } from "express-rate-limit";
 import { RedisStore, type RedisReply } from "rate-limit-redis";
 import type { Request } from "express";
-import { getRedis, isRedisEnabled } from "../lib/redis.js";
+import { getRedis, isRedisEnabled, redisReady } from "../lib/redis.js";
 
 // v111 — durable, cross-replica rate-limit counters. The limiters previously
 // used express-rate-limit's default in-process MemoryStore, so every cap was
@@ -21,8 +21,20 @@ function makeStore(prefix: string): Store | undefined {
   if (!client) return undefined;
   return new RedisStore({
     prefix: `rl:${prefix}:`,
-    sendCommand: (command: string, ...args: string[]) =>
-      client.call(command, ...args) as Promise<RedisReply>,
+    // The shared client is lazyConnect with enableOfflineQueue:false, so a
+    // command issued during the brief "connecting" window after a cold boot —
+    // notably RedisStore.init()'s one-time SCRIPT LOAD on the first request —
+    // rejects with "Stream isn't writeable". express-rate-limit's
+    // passOnStoreError covers per-request increments but NOT init(), so that
+    // rejection floated to the process-level unhandledRejection handler (two
+    // false-alarm Sentry events on every deploy). Awaiting redisReady() first
+    // ensures the command runs on a live socket; it's a no-op fast path once
+    // the client is "ready", and on a genuine outage it throws so
+    // passOnStoreError still fails OPEN.
+    sendCommand: async (command: string, ...args: string[]): Promise<RedisReply> => {
+      await redisReady();
+      return client.call(command, ...args) as Promise<RedisReply>;
+    },
   });
 }
 
