@@ -1,5 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
-import { readJson } from "../lib/http.js";
+import { readJson, fetchWithRetry } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
@@ -247,7 +247,11 @@ async function fetchPage(offset: number, signal?: AbortSignal): Promise<RawRow[]
   // grew past one page. Date-desc pages = the newest incidents first, always.
   const url = `${DATASTORE_API}?resource_id=${MILWAUKEE_RESOURCE_ID}` +
     `&limit=${PAGE_SIZE}&offset=${offset}&sort=${encodeURIComponent("Incident_Date desc")}`;
-  const res = await fetch(url, { signal: signal ?? AbortSignal.timeout(45_000) });
+  // v110p1 — use the shared transient-retry wrapper. The deploy-log scan kept
+  // showing `[milwaukee] fetchPage failed: fetch failed` (undici socket drops
+  // from data.milwaukee.gov's CKAN host) which, with no retry, zeroed the whole
+  // refresh and produced recurring `totalCounted=0` degenerate-result skips.
+  const res = await fetchWithRetry(url, { signal: signal ?? AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Milwaukee datastore ${res.status} at offset ${offset}`);
   const body = (await readJson(res)) as DatastoreResp;
   return body.result?.records ?? [];

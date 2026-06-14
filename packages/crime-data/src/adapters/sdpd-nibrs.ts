@@ -6,6 +6,7 @@ import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { findArea } from "../neighborhoods.js";
+import { fetchWithRetry } from "../lib/http.js";
 
 // 5-minute cache: half the client's 10-minute refresh window so a 10-minute
 // client refresh always lands on a fresh upstream pull (matched TTLs were
@@ -64,7 +65,7 @@ const PROVENANCE: DataProvenance = {
 
 async function fetchYear(year: number): Promise<Incident[]> {
   const url = `${env.SDPD_NIBRS_CSV_BASE}/pd_nibrs_${year}_datasd.csv`;
-  const res = await fetch(url, { signal: AbortSignal.timeout(45_000) });
+  const res = await fetchWithRetry(url, { signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`SDPD NIBRS ${res.status} fetching ${url}`);
   const csv = await res.text();
   const records: Record<string, string>[] = parseCsv(csv, { columns: true, skip_empty_lines: true });

@@ -1,5 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
-import { readJson } from "../lib/http.js";
+import { readJson, fetchWithRetry } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
@@ -153,7 +153,7 @@ async function fetchPhl(): Promise<Incident[]> {
   // build was logging "[phl] fetch failed: PHL CARTO 400". POST has no
   // such limit, and the API contract is the same either way.
   const formBody = new URLSearchParams({ q: sql }).toString();
-  const res = await fetch(BASE, {
+  const res = await fetchWithRetry(BASE, {
     method: "POST",
     headers: {
       Accept: "application/json",

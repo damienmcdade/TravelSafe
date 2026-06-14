@@ -1,5 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
-import { readJson } from "../lib/http.js";
+import { readJson, fetchWithRetry } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
 import { bucketByBands, deriveBands } from "../risk-bands.js";
@@ -126,7 +126,7 @@ async function fetchPage(offset: number): Promise<DetroitRow[]> {
       // (30s) tripped. Bounding each page at 20s lets a slow page fail fast,
       // hit the retry/backoff above, and keeps populate within the 45s route
       // budget.
-      const res = await fetch(url, {
+      const res = await fetchWithRetry(url, {
         headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
         signal: AbortSignal.timeout(20_000),
       });

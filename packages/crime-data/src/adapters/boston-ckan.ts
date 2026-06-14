@@ -1,5 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
-import { readJson } from "../lib/http.js";
+import { readJson, fetchWithRetry } from "../lib/http.js";
 import { env } from "../env.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { registerRowCache } from "../cache-registry.js";
@@ -241,7 +241,7 @@ function endpointBase(): string {
 async function fetchPage(offset: number): Promise<BostonRow[]> {
   const sort = encodeURIComponent("OCCURRED_ON_DATE desc");
   const u = `${endpointBase()}?resource_id=${RESOURCE_ID}&limit=${PAGE_SIZE}&offset=${offset}&sort=${sort}`;
-  const res = await fetch(u, {
+  const res = await fetchWithRetry(u, {
     headers: {
       Accept: "application/json",
       "User-Agent": "Mozilla/5.0 CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)",
@@ -303,7 +303,7 @@ function splitCSVRow(line: string): string[] {
 }
 
 async function fetchBostonFromCSV(): Promise<Incident[]> {
-  const res = await fetch(CSV_URL, {
+  const res = await fetchWithRetry(CSV_URL, {
     redirect: "follow",
     headers: { "User-Agent": "CommunitySafe/1.0 (https://github.com/damienmcdade/TravelSafe)" },
     signal: AbortSignal.timeout(45_000),

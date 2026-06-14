@@ -2,7 +2,7 @@ import { CrimeCategory } from "../crime-category.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT, readJson } from "../lib/http.js";
+import { USER_AGENT, readJson, fetchWithRetry } from "../lib/http.js";
 import { createTieredLoader } from "../lib/tiered-loader.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { fortWorthNeighborhoods, fortWorthDivisions } from "../data/fort-worth-neighborhoods.js";
@@ -134,7 +134,7 @@ async function fetchPage(offset: number, sinceIso: string): Promise<FwFeature[]>
   url.searchParams.set("resultOffset", String(offset));
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("f", "json");
-  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
+  const res = await fetchWithRetry(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Fort Worth ArcGIS ${res.status} offset=${offset}`);
   const body = await readJson(res) as { features?: FwFeature[]; error?: { message?: string } };
   if (body.error) throw new Error(`Fort Worth ArcGIS error: ${body.error.message}`);

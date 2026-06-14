@@ -3,7 +3,7 @@ import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../t
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT, readJson } from "../lib/http.js";
+import { USER_AGENT, readJson, fetchWithRetry } from "../lib/http.js";
 
 // Atlanta — Atlanta PD Crimes (OpenDataWebsite_Crime_view).
 // ArcGIS FeatureServer on services3.arcgis.com (owner: RJStanionis0638
@@ -98,7 +98,7 @@ async function fetchPage(offset: number): Promise<AtlRow[]> {
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true");
   url.searchParams.set("f", "json");
-  const res = await fetch(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
+  const res = await fetchWithRetry(url, { headers: { Accept: "application/json", "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(45_000) });
   if (!res.ok) throw new Error(`Atlanta ArcGIS ${res.status} offset=${offset}`);
   const body = await readJson(res) as { features?: Array<{ attributes: AtlRow }>; error?: unknown };
   // fix(audit data-sev1): ArcGIS returns HTTP 200 with an embedded

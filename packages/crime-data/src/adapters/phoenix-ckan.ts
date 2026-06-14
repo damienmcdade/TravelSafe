@@ -4,7 +4,7 @@ import { cityLocalToUtcIso } from "../lib/city-time.js";
 import { registerRowCache } from "../cache-registry.js";
 import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
-import { USER_AGENT, readJson } from "../lib/http.js";
+import { USER_AGENT, readJson, fetchWithRetry } from "../lib/http.js";
 
 // Phoenix AZ — Phoenix PD Crime Data (phoenixopendata.com CKAN datastore).
 //
@@ -273,7 +273,7 @@ async function fetchPage(offset: number): Promise<PhxRow[]> {
     `${DATASTORE_API}?resource_id=${RESOURCE_ID}` +
     `&limit=${PAGE_SIZE}&offset=${offset}` +
     `&sort=${encodeURIComponent("_id desc")}`;
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: { Accept: "application/json", "User-Agent": USER_AGENT },
     signal: AbortSignal.timeout(45_000),
   });

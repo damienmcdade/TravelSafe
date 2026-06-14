@@ -1,5 +1,5 @@
 import { CrimeCategory } from "../crime-category.js";
-import { readJson } from "../lib/http.js";
+import { readJson, fetchWithRetry } from "../lib/http.js";
 import type { AreaStats, CrimeDataAdapter, DataProvenance, Incident } from "../types.js";
 import { createTieredLoader } from "../lib/tiered-loader.js";
 import { deriveBands, bucketByBands } from "../risk-bands.js";
@@ -115,7 +115,7 @@ async function fetchPage(offset: number): Promise<SpRow[]> {
   url.searchParams.set("resultRecordCount", String(PAGE_SIZE));
   url.searchParams.set("cacheHint", "true"); // v87 — Esri edge cache
   url.searchParams.set("f", "json");
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     headers: { Accept: "application/json", "User-Agent": "CommunitySafe/0.1 (https://github.com/damienmcdade/TravelSafe)" },
     signal: AbortSignal.timeout(45_000),
   });
