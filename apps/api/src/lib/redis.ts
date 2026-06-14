@@ -77,11 +77,19 @@ export function getRedisSubscriber(): Redis | null {
 // client when ready, null when REDIS_URL is unset or the connection
 // can't be established within READY_TIMEOUT_MS.
 const READY_TIMEOUT_MS = 5_000;
+// Coalesce concurrent waiters onto ONE pending promise. Without this, every
+// caller during the connecting window registers its own ready+error listener
+// pair on the single shared client — with the 5 rate-limit stores each calling
+// redisReady() on the first request after a cold boot, that tripped Node's
+// MaxListenersExceededWarning ("11 error listeners added"). One shared promise =
+// one listener pair, regardless of how many subsystems await readiness.
+let readyPromise: Promise<Redis | null> | null = null;
 export async function redisReady(): Promise<Redis | null> {
   const c = getRedis();
   if (!c) return null;
   if (c.status === "ready") return c;
-  return new Promise<Redis | null>((resolve) => {
+  if (readyPromise) return readyPromise;
+  readyPromise = new Promise<Redis | null>((resolve) => {
     const onReady = () => { cleanup(); resolve(c); };
     const onErr = () => { cleanup(); resolve(null); };
     const timer = setTimeout(() => { cleanup(); resolve(null); }, READY_TIMEOUT_MS);
@@ -89,10 +97,13 @@ export async function redisReady(): Promise<Redis | null> {
       clearTimeout(timer);
       c?.off("ready", onReady);
       c?.off("error", onErr);
+      // Reset so a later disconnect/reconnect cycle can be awaited afresh.
+      readyPromise = null;
     }
     c.once("ready", onReady);
     c.once("error", onErr);
     // Nudge the client to start connecting if it hasn't yet (lazy mode).
     void c.connect().catch(() => { /* swallowed; error event handles it */ });
   });
+  return readyPromise;
 }
