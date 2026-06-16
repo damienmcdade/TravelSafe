@@ -19,6 +19,12 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.80",
     "@ai-sdk/groq": "^3.0.39",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/geolocation": "^8.2.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.2",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@travelsafe/crime-data": "*",

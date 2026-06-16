@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, useAnonymousAuth, useApi, getStoredToken } from "@/lib/api-client";
 import { requestLocation } from "@/lib/geolocation";
+import { isNativeApp, nativeWatchPosition, shareOrCopy, hapticImpact, hapticNotify } from "@/lib/native";
 import { SafetyTipsPanel } from "@/components/SafetyTipsPanel";
 import { TrustedContactsManager } from "@/components/TrustedContactsManager";
 import { SavedPlacesPanel } from "@/components/SavedPlacesPanel";
@@ -483,6 +484,7 @@ function SosPanel() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<SosResult | null>(null);
+  const [shareNote, setShareNote] = useState<string | null>(null);
 
   // Auto-disarm the confirm state after 4s so a stray first tap doesn't linger.
   useEffect(() => {
@@ -506,8 +508,10 @@ function SosPanel() {
       const r = await api<SosResult>("/safety/sos", { method: "POST", body: JSON.stringify({ lat, lng }) });
       setResult(r);
       setArmed(false);
+      void hapticNotify("warning"); // confirm the alert fired (Taptic Engine on iOS)
     } catch (err) {
       setError(`Could not send SOS — ${(err as Error).message}`);
+      void hapticNotify("error");
     } finally {
       setBusy(false);
     }
@@ -545,9 +549,26 @@ function SosPanel() {
             Live link active until {new Date(result.expiresAt).toLocaleTimeString()}.{" "}
             <a href={result.shareUrl} target="_blank" rel="noreferrer" className="text-bay-700 hover:underline">Open share page</a>.
           </p>
-          <button onClick={() => setResult(null)} className="mt-3 text-xs text-slate2-600 hover:underline">
-            Done
-          </button>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              onClick={async () => {
+                const r = await shareOrCopy({
+                  title: "My live location — CommunitySafe",
+                  text: "I've shared my live location with you. Follow it here:",
+                  url: result.shareUrl,
+                });
+                void hapticImpact("light");
+                setShareNote(r === "shared" ? "Shared." : r === "copied" ? "Link copied." : "Couldn't share — copy the link above.");
+              }}
+              className="rounded-lg bg-bay-700 px-3 py-1.5 text-xs font-medium text-white active:scale-[0.98]"
+            >
+              Share live link
+            </button>
+            {shareNote && <span className="text-xs text-sage-700">{shareNote}</span>}
+            <button onClick={() => { setResult(null); setShareNote(null); }} className="text-xs text-slate2-600 hover:underline">
+              Done
+            </button>
+          </div>
         </div>
       ) : confirmed.length === 0 ? (
         <p className="mt-3 text-sm text-amber2-700">
@@ -556,7 +577,7 @@ function SosPanel() {
       ) : (
         <div className="mt-4">
           <button
-            onClick={() => (armed ? fire() : setArmed(true))}
+            onClick={() => { void hapticImpact(armed ? "heavy" : "medium"); armed ? fire() : setArmed(true); }}
             disabled={busy}
             className="w-full py-4 rounded-2xl text-white font-display text-lg tracking-wide disabled:opacity-60 transition-transform active:scale-[0.98]"
             style={{ background: armed ? "#991B1B" : "#DC2626" }}
@@ -772,6 +793,7 @@ function LiveSharePanel() {
   const [batchResult, setBatchResult] = useState<Array<{ label: string; sent: boolean; reason?: string }> | null>(null);
   const [createBusy, setCreateBusy] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [liveShareNote, setLiveShareNote] = useState<string | null>(null);
 
   // v113 — while ANY Live Share is active, stream this device's position to the
   // heartbeat endpoint so recipients follow live movement on the /share map. One
@@ -779,7 +801,7 @@ function LiveSharePanel() {
   // well under the /api/safety rate limit and to save battery.
   const hasActive = active.length > 0;
   useEffect(() => {
-    if (!hasActive || typeof navigator === "undefined" || !navigator.geolocation) return;
+    if (!hasActive) return;
     let lastSent = 0;
     const onPos = (pos: GeolocationPosition) => {
       const now = Date.now();
@@ -790,6 +812,15 @@ function LiveSharePanel() {
         body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       }).catch(() => { /* best-effort; next position retries */ });
     };
+    // Native shell: stream from CoreLocation via @capacitor/geolocation.
+    if (isNativeApp()) {
+      let cleanup: (() => void) | null = null;
+      let cancelled = false;
+      void nativeWatchPosition({ enableHighAccuracy: true, timeout: 20_000 }, onPos, () => { /* denied/unavailable */ })
+        .then((c) => { if (cancelled) c(); else cleanup = c; });
+      return () => { cancelled = true; cleanup?.(); };
+    }
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
     const id = navigator.geolocation.watchPosition(onPos, () => { /* permission denied / unavailable */ }, {
       enableHighAccuracy: true, maximumAge: 10_000, timeout: 20_000,
     });
@@ -952,6 +983,21 @@ function LiveSharePanel() {
         <div className="mt-4 surface-muted p-4 text-sm space-y-2">
           <div className="text-slate2-700">Share link (expires {new Date(lastShare.expiresAt).toLocaleString()})</div>
           <code className="block break-all">{lastShare.shareUrl}</code>
+          <button
+            onClick={async () => {
+              const r = await shareOrCopy({
+                title: "My live location — CommunitySafe",
+                text: "Follow my live location:",
+                url: lastShare.shareUrl,
+              });
+              void hapticImpact("light");
+              setLiveShareNote(r === "shared" ? "Shared." : r === "copied" ? "Link copied to clipboard." : "Couldn't share — copy the link above.");
+            }}
+            className="rounded-lg bg-bay-700 px-3 py-1.5 text-xs font-medium text-white active:scale-[0.98]"
+          >
+            Share link
+          </button>
+          {liveShareNote && <span className="ml-2 text-xs text-sage-700">{liveShareNote}</span>}
           {lastShare.delivery && lastShare.delivery.kind && (
             lastShare.delivery.sent ? (
               <p className="text-xs text-sage-700">

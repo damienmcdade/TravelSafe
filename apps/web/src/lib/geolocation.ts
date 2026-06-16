@@ -1,5 +1,7 @@
 "use client";
 
+import { isNativeApp, nativeGetCurrentPosition } from "@/lib/native";
+
 const ERROR_MESSAGES: Record<number, string> = {
   1: "Location permission was blocked. Allow location access for this site in your browser settings, then try again.",
   2: "Your device could not determine its location. Try again, or move to an area with a clearer signal.",
@@ -14,6 +16,21 @@ export class GeolocationError extends Error {
 }
 
 function getOnce(opts: PositionOptions): Promise<GeolocationPosition> {
+  // Inside the native shell use real CoreLocation via @capacitor/geolocation;
+  // the WKWebView's navigator.geolocation is unreliable on iOS.
+  if (isNativeApp()) {
+    return nativeGetCurrentPosition({
+      enableHighAccuracy: opts.enableHighAccuracy ?? false,
+      timeout: opts.timeout ?? 10_000,
+      maximumAge: opts.maximumAge,
+    }).catch((err: unknown) => {
+      const code =
+        err && typeof err === "object" && "code" in err && typeof err.code === "number"
+          ? err.code
+          : 2;
+      throw new GeolocationError(code, ERROR_MESSAGES[code]);
+    });
+  }
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (p) => resolve(p),
@@ -33,10 +50,10 @@ function getOnce(opts: PositionOptions): Promise<GeolocationPosition> {
 /// is plenty good enough for city + neighborhood resolution. We only
 /// surface the failure if BOTH stages fail.
 export async function requestLocation(): Promise<GeolocationPosition> {
-  if (typeof navigator === "undefined" || !navigator.geolocation) {
+  if (!isNativeApp() && (typeof navigator === "undefined" || !navigator.geolocation)) {
     throw new GeolocationError(0, "Your browser does not support geolocation.");
   }
-  if (typeof window !== "undefined" && window.isSecureContext === false) {
+  if (!isNativeApp() && typeof window !== "undefined" && window.isSecureContext === false) {
     throw new GeolocationError(0, "Location requires a secure (https) connection.");
   }
   try {
