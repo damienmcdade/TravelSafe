@@ -47,7 +47,6 @@ import { raleighAdapter, getDiscoveredAreasRaleigh } from "./adapters/raleigh-ar
 import { grandRapidsAdapter, getDiscoveredAreasGrandRapids } from "./adapters/grand-rapids-arcgis.js";
 import { arlingtonAdapter, getDiscoveredAreasArlington } from "./adapters/arlington-arcgis.js";
 import { riversideAdapter, getDiscoveredAreasRiverside } from "./adapters/riverside-arcgis.js";
-import { hendersonAdapter, getDiscoveredAreasHenderson } from "./adapters/henderson-arcgis.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ckan.js";
 import { jacksonvilleAdapter, getDiscoveredAreasJacksonville } from "./adapters/jacksonville-arcgis.js";
 import { virginiaBeachAdapter, getDiscoveredAreasVirginiaBeach, getPrimaryAreasVirginiaBeach } from "./adapters/virginia-beach-arcgis.js";
@@ -532,15 +531,6 @@ export const CITIES: CityEntry[] = [
     adapter: riversideAdapter,
     discover: getDiscoveredAreasRiverside,
   },
-  {
-    // Henderson, NV — HPD public crime ArcGIS (current YTD unioned with the
-    // prior annual layer for a continuous window); grouped by HPD beat.
-    slug: "henderson",
-    label: "Henderson",
-    bbox: { south: 35.95, west: -115.12, north: 36.11, east: -114.9 },
-    adapter: hendersonAdapter,
-    discover: getDiscoveredAreasHenderson,
-  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -648,7 +638,6 @@ const AREA_SLUG_PREFIX: Record<string, string> = {
   "grand-rapids": "grr-",
   "arlington": "arl-",
   "riverside": "riv-",
-  "henderson": "hnd-",
 };
 
 const COMPASS = new Set(["n", "s", "e", "w", "nw", "ne", "sw", "se"]);

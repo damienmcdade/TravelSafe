@@ -76,7 +76,6 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "grand-rapids": { violent: 883, property: 3079, year: 2023, ori: "MI4143600" },
   "arlington": { violent: 498, property: 2606, year: 2023, ori: "TX2200100" },
   "riverside": { violent: 551, property: 3410, year: 2023, ori: "CA0331300" },
-  "henderson": { violent: 294, property: 2065, year: 2023, ori: "NV0020300" },
   "gainesville": { violent: 749, property: 2927, year: 2023, ori: "FL0010100" },
   "tampa": { violent: 469, property: 1686, year: 2023, ori: "FL0290200" },
   // Nashville (Metro Nashville PD, ORI TN0190100): FBI CDE 2023 — 8,909 violent

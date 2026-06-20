@@ -41,7 +41,6 @@ export const CITY_STATES: Record<string, UsState> = {
   "grand-rapids":      { abbr: "MI", label: "Michigan" },
   "arlington":         { abbr: "TX", label: "Texas" },
   "riverside":         { abbr: "CA", label: "California" },
-  "henderson":         { abbr: "NV", label: "Nevada" },
   "new-orleans":       { abbr: "LA", label: "Louisiana" },
   "baton-rouge":       { abbr: "LA", label: "Louisiana" },
   "dallas":            { abbr: "TX", label: "Texas" },

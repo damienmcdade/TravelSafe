@@ -134,6 +134,19 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // aggregate (persons ≈ 1 / observed-over-count). Property is accurate → 1.0.
   "honolulu":      { persons: 0.35, property: 1.0, sourceType: "coarse" },
   "milwaukee":     { persons: 0.53, property: 1.0, sourceType: "coarse" },
+  // v113 — Dayton. DPD's "Crimes Greater 2016" NIBRSCat is a coarse bucket
+  // ("ASSAULT OFFENSES" = aggravated + simple + intimidation combined, with no
+  // severity/statute column), so the Part-1 filter can't drop simple assault and
+  // every assault counts as violent → live PERSONS ≈3,079 vs FBI 2023 violent
+  // 1,182/100k (2.60×). Same coarse-assault-bucket pattern as Honolulu/Milwaukee:
+  // calibrate persons to the FBI baseline (1182/3079 ≈ 0.38). Property (~0.79×) is
+  // accurate → 1.0. Brings the citywide grade from a false E to its true D.
+  "dayton":        { persons: 0.38, property: 1.0, sourceType: "coarse" },
+  // v113 — Riverside. RPD's nibrsdesc carries no aggravated/simple severity split,
+  // so simple assault + intimidation inflate PERSONS to ≈1,574 vs FBI 2023 violent
+  // 551/100k (2.86×). Calibrate persons to the FBI baseline (551/1574 ≈ 0.35).
+  // Property (~0.63×) accurate → 1.0.
+  "riverside":     { persons: 0.35, property: 1.0, sourceType: "coarse" },
   // v111 — Austin. APD's open "Crime Reports" feed reports the city's full set of
   // person-offense reports (per-victim, every family-violence / strangulation
   // aggravated-assault variant, threats), which runs ~3.0× Austin's own FBI
