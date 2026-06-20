@@ -64,11 +64,26 @@ describe("fetchSocrata retry classifier", () => {
     expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
-  it("does NOT retry an AbortError", async () => {
+  it("does NOT retry a caller AbortError (genuine cancellation)", async () => {
     const abort = Object.assign(new Error("aborted"), { name: "AbortError" });
     global.fetch = vi.fn().mockRejectedValue(abort);
     await expect(fetchSocrata("Test", { url: "https://x/y.json" })).rejects.toThrow();
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  // v110 — AbortSignal.timeout() fires a DOMException named "TimeoutError"
+  // ("The operation was aborted due to timeout"). The upstream was just slow;
+  // the next attempt usually lands inside budget, so it MUST be retried.
+  it("retries a TimeoutError (AbortSignal.timeout) and recovers", async () => {
+    const timeout = Object.assign(new Error("The operation was aborted due to timeout"), {
+      name: "TimeoutError",
+    });
+    global.fetch = vi.fn()
+      .mockRejectedValueOnce(timeout)
+      .mockResolvedValueOnce(new Response(JSON.stringify([{ id: "warm" }]), { status: 200 }));
+    const rows = await fetchSocrata<{ id: string }>("Test", { url: "https://x/y.json" });
+    expect(rows).toEqual([{ id: "warm" }]);
+    expect(global.fetch).toHaveBeenCalledTimes(2);
   });
 
   it("exhausts retries on persistent transient", async () => {

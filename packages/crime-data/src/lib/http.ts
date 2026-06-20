@@ -160,6 +160,20 @@ export async function readJson<T = unknown>(res: Response): Promise<T> {
 // from request abort (deliberate timeout — retrying is pointless).
 function isTransientFetchError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
+  // v110 — a timeout from our own AbortSignal.timeout() guard is transient, NOT
+  // a reason to give up. The deployment-log scan kept showing
+  // `[seattle]/[dal]/[colorado-springs] fetch failed: The operation was aborted
+  // due to timeout`: those Socrata queries are already window-bounded and fast in
+  // the steady state, but the upstream occasionally exceeds the 45s budget on a
+  // cold query plan, and the very next attempt lands well inside it. This fires as
+  // a DOMException named "TimeoutError" (message "...aborted due to timeout"), so
+  // match it explicitly and retry. Checked BEFORE AbortError so a timeout-flavoured
+  // abort is treated as retryable here.
+  if (err.name === "TimeoutError" || /timed out|aborted due to timeout/i.test(err.message)) {
+    return true;
+  }
+  // A *caller*-initiated AbortController.abort() (request cancelled / shutdown) is
+  // a genuine cancellation — retrying is pointless.
   if (err.name === "AbortError") return false;
   // v108 — a non-JSON upstream error page is worth one quick retry: it's
   // very often a transient CDN/WAF 502/503 or a momentary maintenance
