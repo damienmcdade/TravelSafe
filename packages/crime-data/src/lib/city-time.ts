@@ -140,6 +140,7 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "norfolk": "America/New_York",
   "honolulu": "Pacific/Honolulu",
   "long-beach": "America/Los_Angeles",
+  "dayton": "America/New_York",
 };
 
 const _hourFmtCache = new Map<string, Intl.DateTimeFormat>();

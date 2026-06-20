@@ -35,6 +35,7 @@ export const CITY_STATES: Record<string, UsState> = {
   "pittsburgh":        { abbr: "PA", label: "Pennsylvania" },
   "cincinnati":        { abbr: "OH", label: "Ohio" },
   "cleveland":         { abbr: "OH", label: "Ohio" },
+  "dayton":            { abbr: "OH", label: "Ohio" },
   "new-orleans":       { abbr: "LA", label: "Louisiana" },
   "baton-rouge":       { abbr: "LA", label: "Louisiana" },
   "dallas":            { abbr: "TX", label: "Texas" },

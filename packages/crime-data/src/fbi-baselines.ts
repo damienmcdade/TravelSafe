@@ -66,6 +66,9 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "phoenix": { violent: 785, property: 2495, year: 2023, ori: "AZ0072300" },
   "jacksonville": { violent: 661, property: 2598, year: 2023, ori: "FL0160000" },
   "virginia-beach": { violent: 116, property: 1699, year: 2023, ori: "VA1210000" },
+  // Dayton (DPD, ORI OH0570200): FBI CDE 2023, computed from agency actuals ÷
+  // agency population (the CDE pre-computed rates are unreliable for this agency).
+  "dayton": { violent: 1182, property: 4763, year: 2023, ori: "OH0570200" },
   "gainesville": { violent: 749, property: 2927, year: 2023, ori: "FL0010100" },
   "tampa": { violent: 469, property: 1686, year: 2023, ori: "FL0290200" },
   // Nashville (Metro Nashville PD, ORI TN0190100): FBI CDE 2023 — 8,909 violent

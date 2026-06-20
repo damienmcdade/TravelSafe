@@ -41,6 +41,7 @@ import { atlantaAdapter, getDiscoveredAreasAtlanta } from "./adapters/atlanta-ar
 import { indianapolisAdapter, getDiscoveredAreasIndianapolis } from "./adapters/indianapolis-arcgis.js";
 import { honoluluAdapter, getDiscoveredAreasHonolulu } from "./adapters/honolulu-socrata.js";
 import { longBeachAdapter, getDiscoveredAreasLongBeach } from "./adapters/long-beach-arcgis.js";
+import { daytonAdapter, getDiscoveredAreasDayton } from "./adapters/dayton-arcgis.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ckan.js";
 import { jacksonvilleAdapter, getDiscoveredAreasJacksonville } from "./adapters/jacksonville-arcgis.js";
 import { virginiaBeachAdapter, getDiscoveredAreasVirginiaBeach, getPrimaryAreasVirginiaBeach } from "./adapters/virginia-beach-arcgis.js";
@@ -470,6 +471,16 @@ export const CITIES: CityEntry[] = [
     adapter: princeGeorgesCountyAdapter,
     discover: getDiscoveredAreasPrinceGeorgesCounty,
   },
+  {
+    // Dayton, OH — DPD "Crimes Greater 2016" ArcGIS FeatureServer; incident-level
+    // NIBRS rows with point geometry + the city's own ~50 neighborhood names
+    // (Nhood) taken straight from the feed. Hour-of-day from CT1_HOUR.
+    slug: "dayton",
+    label: "Dayton",
+    bbox: { south: 39.67, west: -84.34, north: 39.85, east: -84.12 },
+    adapter: daytonAdapter,
+    discover: getDiscoveredAreasDayton,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -571,6 +582,7 @@ const AREA_SLUG_PREFIX: Record<string, string> = {
   "houston": "hou-",
   "montgomery-county": "moco-",
   "prince-georges-county": "pg-",
+  "dayton": "day-",
 };
 
 const COMPASS = new Set(["n", "s", "e", "w", "nw", "ne", "sw", "se"]);

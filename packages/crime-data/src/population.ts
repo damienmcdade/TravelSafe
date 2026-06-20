@@ -50,6 +50,7 @@ export const CITY_POPULATION: Record<string, number> = {
   "philadelphia":  1_550_542,
   "oakland":         430_553,
   "cincinnati":      311_097,
+  "dayton":          137_644,  // 2020 US Census — City of Dayton, OH
   "new-orleans":     364_136,
   "baton-rouge":     217_665,
   "cambridge":       118_488,

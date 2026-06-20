@@ -57,6 +57,7 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "indianapolis":     { neighborhoodCount:   9, source: "Indianapolis Metropolitan Police Department Public Incidents (gis.indy.gov)" },
   "cincinnati":       { neighborhoodCount:  52, source: "Cincinnati Police Department Reported Crime (STARS)" },
   "cleveland":        { neighborhoodCount:  33, source: "Cleveland Division of Police — Part-1 Crime Incidents (NIBRS RMS)" },
+  "dayton":           { neighborhoodCount:  66, source: "Dayton Police Department NIBRS Incidents (City of Dayton ArcGIS Open Data) — official neighborhoods" },
   "detroit":          { neighborhoodCount: 208, source: "Detroit Police RMS Crime Incidents · data.detroitmi.gov" },
   // Texas / South
   "dallas":           { neighborhoodCount:  24, source: "Dallas Police Incidents (City of Dallas Open Data) — 24 area-sector polygons" },

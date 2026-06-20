@@ -62,4 +62,5 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "pittsburgh":        { slug: "pittsburgh",        label: "Pittsburgh",        state: "PA", centroid: { lat: 40.44, lng: -80.00 } },
   "sacramento":        { slug: "sacramento",        label: "Sacramento",        state: "CA", centroid: { lat: 38.58, lng: -121.49 } },
   "saint-paul":        { slug: "saint-paul",        label: "Saint Paul",        state: "MN", centroid: { lat: 44.95, lng: -93.09 } },
+  "dayton":            { slug: "dayton",            label: "Dayton",            state: "OH", centroid: { lat: 39.76, lng: -84.19 } },
 };
