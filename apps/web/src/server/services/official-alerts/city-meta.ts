@@ -67,4 +67,6 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "raleigh":           { slug: "raleigh",           label: "Raleigh",           state: "NC", centroid: { lat: 35.78, lng: -78.64 } },
   "grand-rapids":      { slug: "grand-rapids",      label: "Grand Rapids",      state: "MI", centroid: { lat: 42.96, lng: -85.67 } },
   "arlington":         { slug: "arlington",         label: "Arlington",         state: "TX", centroid: { lat: 32.74, lng: -97.11 } },
+  "riverside":         { slug: "riverside",         label: "Riverside",         state: "CA", centroid: { lat: 33.95, lng: -117.40 } },
+  "henderson":         { slug: "henderson",         label: "Henderson",         state: "NV", centroid: { lat: 36.04, lng: -114.98 } },
 };

@@ -145,6 +145,8 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "raleigh": "America/New_York",
   "grand-rapids": "America/Detroit",
   "arlington": "America/Chicago",
+  "riverside": "America/Los_Angeles",
+  "henderson": "America/Los_Angeles",
 };
 
 const _hourFmtCache = new Map<string, Intl.DateTimeFormat>();

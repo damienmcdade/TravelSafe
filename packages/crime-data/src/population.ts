@@ -55,6 +55,8 @@ export const CITY_POPULATION: Record<string, number> = {
   "raleigh":         467_665,  // 2020 US Census — City of Raleigh, NC
   "grand-rapids":    198_917,  // 2020 US Census — City of Grand Rapids, MI
   "arlington":       394_266,  // 2020 US Census — City of Arlington, TX
+  "riverside":       314_998,  // 2020 US Census — City of Riverside, CA
+  "henderson":       317_610,  // 2020 US Census — City of Henderson, NV
   "new-orleans":     364_136,
   "baton-rouge":     217_665,
   "cambridge":       118_488,

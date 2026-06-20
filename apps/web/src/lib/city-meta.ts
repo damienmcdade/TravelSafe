@@ -28,7 +28,7 @@ export const AREA_SLUG_PREFIX: Record<string, string> = {
   "virginia-beach": "vb-", "gainesville": "gnv-", "tampa": "tpa-", "nashville": "bna-",
   "houston": "hou-", "montgomery-county": "moco-", "prince-georges-county": "pg-",
   "dayton": "day-", "rochester": "roc-", "raleigh": "ral-", "grand-rapids": "grr-",
-  "arlington": "arl-",
+  "arlington": "arl-", "riverside": "riv-", "henderson": "hnd-",
 };
 
 // City → IANA timezone (the 45 live jurisdictions).
@@ -54,7 +54,8 @@ export const CITY_TZ: Record<string, string> = {
   "norfolk": "America/New_York", "honolulu": "Pacific/Honolulu",
   "dayton": "America/New_York", "rochester": "America/New_York",
   "raleigh": "America/New_York", "grand-rapids": "America/Detroit",
-  "arlington": "America/Chicago",
+  "arlington": "America/Chicago", "riverside": "America/Los_Angeles",
+  "henderson": "America/Los_Angeles",
 };
 
 // Cities whose feed publishes date-only timestamps (no real hour-of-day).
