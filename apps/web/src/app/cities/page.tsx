@@ -8,7 +8,7 @@ import { FBI_DATA_LABEL } from "@/lib/data-vintage";
 export const metadata: Metadata = {
   title: "All supported cities",
   description:
-    "CommunitySafe surfaces neighborhood-level safety data for 45 US cities and counties. Browse the full list and drill into any city's safety overview.",
+    "CommunitySafe surfaces neighborhood-level safety data for 57 US cities and counties. Browse the full list and drill into any city's safety overview.",
   alternates: { canonical: "/cities" },
 };
 

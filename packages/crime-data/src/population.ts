@@ -59,6 +59,7 @@ export const CITY_POPULATION: Record<string, number> = {
   "hartford":        121_054,  // 2020 US Census — Hartford, CT
   "wichita":         397_532,  // 2020 US Census — Wichita, KS
   "tucson":          542_629,  // 2020 US Census — Tucson, AZ
+  "albuquerque":     564_559,  // 2020 US Census — Albuquerque, NM
   "savannah":        147_780,  // 2020 US Census — City of Savannah, GA
   "corpus-christi":  317_863,  // 2020 US Census — City of Corpus Christi, TX
   "new-orleans":     364_136,

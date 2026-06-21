@@ -29,7 +29,7 @@ export const AREA_SLUG_PREFIX: Record<string, string> = {
   "houston": "hou-", "montgomery-county": "moco-", "prince-georges-county": "pg-",
   "dayton": "day-", "rochester": "roc-", "raleigh": "ral-", "grand-rapids": "grr-", "riverside": "riv-", "savannah": "sav-",
   "corpus-christi": "cc-", "salt-lake-city": "slc-", "hartford": "htfd-",
-  "wichita": "ict-", "tucson": "tuc-",
+  "wichita": "ict-", "tucson": "tuc-", "albuquerque": "abq-",
 };
 
 // City → IANA timezone (the 45 live jurisdictions).
@@ -58,6 +58,7 @@ export const CITY_TZ: Record<string, string> = {
   "corpus-christi": "America/Chicago",
   "salt-lake-city": "America/Denver", "hartford": "America/New_York",
   "wichita": "America/Chicago", "tucson": "America/Phoenix",
+  "albuquerque": "America/Denver",
 };
 
 // Cities whose feed publishes date-only timestamps (no real hour-of-day).

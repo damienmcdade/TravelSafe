@@ -82,6 +82,7 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   // this is a triangulated estimate (AZ DPS + FBI Table 8). ORI AZ0100300 is
   // Tucson PD (NOT South Tucson AZ0100100).
   "tucson": { violent: 602, property: 3500, year: 2023, ori: "AZ0100300" },
+  "albuquerque": { violent: 1324, property: 4759, year: 2023, ori: "NM0010100" },
   "corpus-christi": { violent: 875, property: 3216, year: 2023, ori: "TX1780200" },
   // Savannah: FBI CDE 2023 NIBRS series is empty (GA transition gap — only
   // Jan/Feb reported, both 0), so this is an aggregator estimate, NOT FBI-

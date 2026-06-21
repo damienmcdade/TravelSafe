@@ -17,7 +17,7 @@ export default function WelcomePage() {
       <section className="relative">
         <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24 md:py-32">
           <div className="max-w-2xl rounded-2xl bg-slate2-900/55 backdrop-blur-md p-5 sm:p-8 shadow-card-lift border border-white/10">
-            <p className="text-bay-200 text-xs sm:text-sm tracking-wide uppercase animate-fade-in">Area-level safety · 45 US cities and counties, coast to coast</p>
+            <p className="text-bay-200 text-xs sm:text-sm tracking-wide uppercase animate-fade-in">Area-level safety · 57 US cities and counties, coast to coast</p>
             <h1 className="mt-2 font-display text-4xl sm:text-5xl md:text-6xl text-white animate-rise-in">
               <span className="bg-gradient-to-r from-white to-coral-200 bg-clip-text text-transparent">Community</span>Safe
             </h1>
@@ -30,7 +30,7 @@ export default function WelcomePage() {
                 Open the Crime Map
               </Link>
               <Link href="/cities" className="btn-secondary text-base px-6 py-3 w-full sm:w-auto text-center justify-center !bg-white/10 !border-white/30 !text-white hover:!bg-white/20">
-                Browse all 45 cities and counties
+                Browse all 57 cities and counties
               </Link>
             </div>
             <p className="mt-6 text-xs text-sand-100/80">

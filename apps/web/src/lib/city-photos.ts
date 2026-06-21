@@ -578,4 +578,14 @@ export const PHOTOS: Record<string, string[]> = {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Downtown_Tucson_Arizona_Colorful_Neighborhood_6.JPG/1920px-Downtown_Tucson_Arizona_Colorful_Neighborhood_6.JPG",
     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/TucsonAMountainCity.jpg/1920px-TucsonAMountainCity.jpg",
   ],
+  "albuquerque": [
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Abqdowntown.jpg/1920px-Abqdowntown.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Albuquerque_pano_sunset.jpg/1920px-Albuquerque_pano_sunset.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/DowntownAlbuquerqueSkyline.JPG/1920px-DowntownAlbuquerqueSkyline.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Albuquerque_Skyline.JPG/1920px-Albuquerque_Skyline.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/ABQ_downtown_skyline.JPG/1920px-ABQ_downtown_skyline.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Albuquerque_Rail_Shops.JPG/1920px-Albuquerque_Rail_Shops.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/ABQ-West-Mesa.jpg/1920px-ABQ-West-Mesa.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/View_from_Sandia_Peak_Tramway%2C_Albuquerque%2C_NM..jpg/1920px-View_from_Sandia_Peak_Tramway%2C_Albuquerque%2C_NM..jpg",
+  ],
 };

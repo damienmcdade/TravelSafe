@@ -66,6 +66,7 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "hartford":         { neighborhoodCount:  17, source: "Hartford Police incidents (City of Hartford ArcGIS) — official neighborhoods (point-in-polygon)" },
   "wichita":          { neighborhoodCount:  74, source: "Wichita Police crime (City of Wichita ArcGIS) — neighborhood associations (point-in-polygon)" },
   "tucson":           { neighborhoodCount: 131, source: "Tucson Police incidents (City of Tucson ArcGIS) — named neighborhoods (point-in-polygon)" },
+  "albuquerque":      { neighborhoodCount: 139, source: "Albuquerque Police incidents (City of Albuquerque ArcGIS) — recognized neighborhood associations (point-in-polygon)" },
   "savannah":         { neighborhoodCount: 124, source: "Savannah Police Department Crimes (City of Savannah ArcGIS) — named neighborhoods" },
   "corpus-christi":   { neighborhoodCount:   9, source: "Corpus Christi PD Crime (City of Corpus Christi ArcGIS) — Area Development Plan districts (point-in-polygon)" },
   "detroit":          { neighborhoodCount: 208, source: "Detroit Police RMS Crime Incidents · data.detroitmi.gov" },

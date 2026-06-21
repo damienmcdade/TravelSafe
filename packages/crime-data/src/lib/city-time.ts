@@ -149,6 +149,7 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "hartford": "America/New_York",
   "wichita": "America/Chicago",
   "tucson": "America/Phoenix",
+  "albuquerque": "America/Denver",
   "savannah": "America/New_York",
   "corpus-christi": "America/Chicago",
 };

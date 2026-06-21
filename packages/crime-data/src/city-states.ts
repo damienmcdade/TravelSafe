@@ -44,6 +44,7 @@ export const CITY_STATES: Record<string, UsState> = {
   "hartford":          { abbr: "CT", label: "Connecticut" },
   "wichita":           { abbr: "KS", label: "Kansas" },
   "tucson":            { abbr: "AZ", label: "Arizona" },
+  "albuquerque":       { abbr: "NM", label: "New Mexico" },
   "savannah":          { abbr: "GA", label: "Georgia" },
   "corpus-christi":    { abbr: "TX", label: "Texas" },
   "new-orleans":       { abbr: "LA", label: "Louisiana" },

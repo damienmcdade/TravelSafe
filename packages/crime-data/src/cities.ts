@@ -52,6 +52,7 @@ import { saltLakeCityAdapter, getDiscoveredAreasSaltLakeCity } from "./adapters/
 import { hartfordAdapter, getDiscoveredAreasHartford } from "./adapters/hartford-arcgis.js";
 import { wichitaAdapter, getDiscoveredAreasWichita } from "./adapters/wichita-arcgis.js";
 import { tucsonAdapter, getDiscoveredAreasTucson } from "./adapters/tucson-arcgis.js";
+import { albuquerqueAdapter, getDiscoveredAreasAlbuquerque } from "./adapters/albuquerque-arcgis.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ckan.js";
 import { jacksonvilleAdapter, getDiscoveredAreasJacksonville } from "./adapters/jacksonville-arcgis.js";
 import { virginiaBeachAdapter, getDiscoveredAreasVirginiaBeach, getPrimaryAreasVirginiaBeach } from "./adapters/virginia-beach-arcgis.js";
@@ -584,6 +585,17 @@ export const CITIES: CityEntry[] = [
     adapter: tucsonAdapter,
     discover: getDiscoveredAreasTucson,
   },
+  {
+    // Albuquerque, NM — APD incidents ArcGIS; point geometry geocoded via point-
+    // in-polygon into the city's 143 recognized neighborhood associations (Nob
+    // Hill, Barelas, Old Town, Bel-Air…). Non-crime "Disturbing the Peace" CAD
+    // rows are filtered out in the adapter.
+    slug: "albuquerque",
+    label: "Albuquerque",
+    bbox: { south: 34.95, west: -106.79, north: 35.22, east: -106.47 },
+    adapter: albuquerqueAdapter,
+    discover: getDiscoveredAreasAlbuquerque,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -696,6 +708,7 @@ const AREA_SLUG_PREFIX: Record<string, string> = {
   "hartford": "htfd-",
   "wichita": "ict-",
   "tucson": "tuc-",
+  "albuquerque": "abq-",
 };
 
 const COMPASS = new Set(["n", "s", "e", "w", "nw", "ne", "sw", "se"]);

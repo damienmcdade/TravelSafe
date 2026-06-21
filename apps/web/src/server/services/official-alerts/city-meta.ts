@@ -71,6 +71,7 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "hartford":          { slug: "hartford",          label: "Hartford",          state: "CT", centroid: { lat: 41.76, lng: -72.67 } },
   "wichita":           { slug: "wichita",           label: "Wichita",           state: "KS", centroid: { lat: 37.69, lng: -97.34 } },
   "tucson":            { slug: "tucson",            label: "Tucson",            state: "AZ", centroid: { lat: 32.22, lng: -110.97 } },
+  "albuquerque":       { slug: "albuquerque",       label: "Albuquerque",       state: "NM", centroid: { lat: 35.08, lng: -106.65 } },
   "savannah":          { slug: "savannah",          label: "Savannah",          state: "GA", centroid: { lat: 32.08, lng: -81.09 } },
   "corpus-christi":    { slug: "corpus-christi",    label: "Corpus Christi",    state: "TX", centroid: { lat: 27.80, lng: -97.40 } },
 };
