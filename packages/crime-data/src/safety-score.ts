@@ -385,6 +385,16 @@ export interface SafetyScoreResponse {
 const PART1_VIOLENT_EXCLUDE = [
   /\bsimple\b/i,            // SDPD "SIMPLE ASSAULT", LAPD "...Simple..."
   /\bcommon assault\b/i,    // Baltimore's term for simple/2nd-degree assault — NOT Part-1 aggravated
+  // v114 — Maryland law splits assault into 1st degree (aggravated, Part-1) and
+  // 2nd degree (simple, NOT Part-1). Montgomery County PD's feed labels simple
+  // assault "Assault - 2nd Degree" — 3.3k/yr, ~59% of its PERSONS rows — which
+  // carries no "simple" token and was counted as Part-1 violent, pushing MoCo's
+  // violent rate to 2.57× its FBI baseline (grade-sanity sweep outlier). Match
+  // it explicitly. The "assault" context is REQUIRED so genuine 1st/2nd-degree
+  // MURDER (a real Part-1 violent offense) is never excluded. Also helps any
+  // other MD-style feed (Prince George's) that uses the same degree terminology.
+  /assault\b[^a-z]{0,6}(2nd|second)\s*degree/i,
+  /(2nd|second)\s*degree[^a-z]{0,6}assault/i,
   /misdemeanor/i,
   /\bintimidation\b/i,
   // v68 — also catch the present-tense / non-noun forms. Las Vegas
