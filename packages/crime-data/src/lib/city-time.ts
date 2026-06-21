@@ -146,6 +146,10 @@ export const CITY_TIMEZONES: Record<string, string> = {
   "grand-rapids": "America/Detroit",
   "arlington": "America/Chicago",
   "riverside": "America/Los_Angeles",
+  "mesa": "America/Phoenix",
+  "savannah": "America/New_York",
+  "corpus-christi": "America/Chicago",
+  "durham": "America/New_York",
 };
 
 const _hourFmtCache = new Map<string, Intl.DateTimeFormat>();
@@ -197,4 +201,7 @@ export const DATE_ONLY_CITY_SLUGS: ReadonlySet<string> = new Set([
   // midnight time-of-day spike. (Montgomery County's start_date DOES carry real
   // times, so it is intentionally NOT listed here.)
   "prince-georges-county",
+  // Mesa PD Socrata `occurred_date` is always 00:00:00 (date-only) — the adapter
+  // pins occurrences to local noon, so suppress the fabricated time-of-day spike.
+  "mesa",
 ]);

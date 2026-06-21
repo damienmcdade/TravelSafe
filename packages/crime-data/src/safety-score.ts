@@ -147,6 +147,12 @@ const CFS_CALIBRATION: Record<string, CfsScale> = {
   // 551/100k (2.86×). Calibrate persons to the FBI baseline (551/1574 ≈ 0.35).
   // Property (~0.63×) accurate → 1.0.
   "riverside":     { persons: 0.35, property: 1.0, sourceType: "coarse" },
+  // v113 — Corpus Christi. CCPD's crime-dashboard feed exposes a single coarse
+  // "ASSAULT" type (no aggravated/simple split), so every assault counts as
+  // Part-1 violent → live PERSONS ≈2,371 vs FBI 2023 violent 875/100k (2.71×).
+  // Calibrate persons to the FBI baseline (875/2371 ≈ 0.37). Property (~0.84×)
+  // accurate → 1.0.
+  "corpus-christi": { persons: 0.37, property: 1.0, sourceType: "coarse" },
   // v111 — Austin. APD's open "Crime Reports" feed reports the city's full set of
   // person-offense reports (per-victim, every family-violence / strangulation
   // aggravated-assault variant, threats), which runs ~3.0× Austin's own FBI

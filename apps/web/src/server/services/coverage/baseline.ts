@@ -63,6 +63,10 @@ export const COVERAGE_BASELINE: Record<string, BaselineEntry> = {
   "grand-rapids":     { neighborhoodCount:   5, source: "Grand Rapids Police Department Incidents (City of Grand Rapids ArcGIS) — GRPD service areas" },
   "arlington":        { neighborhoodCount:   4, source: "Arlington Police Department Incidents (City of Arlington GIS) — APD police districts" },
   "riverside":        { neighborhoodCount:  28, source: "Riverside Police Department Crimes (City of Riverside ArcGIS) — official communities" },
+  "mesa":             { neighborhoodCount:   6, source: "Mesa Police Incidents (City of Mesa Open Data, Socrata) — city council districts (point-in-polygon)" },
+  "savannah":         { neighborhoodCount: 124, source: "Savannah Police Department Crimes (City of Savannah ArcGIS) — named neighborhoods" },
+  "corpus-christi":   { neighborhoodCount:   9, source: "Corpus Christi PD Crime (City of Corpus Christi ArcGIS) — Area Development Plan districts (point-in-polygon)" },
+  "durham":           { neighborhoodCount:   5, source: "Durham Police Department Incidents (City of Durham ArcGIS) — DPD police districts" },
   "detroit":          { neighborhoodCount: 208, source: "Detroit Police RMS Crime Incidents · data.detroitmi.gov" },
   // Texas / South
   "dallas":           { neighborhoodCount:  24, source: "Dallas Police Incidents (City of Dallas Open Data) — 24 area-sector polygons" },

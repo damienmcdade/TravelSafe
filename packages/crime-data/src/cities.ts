@@ -47,6 +47,10 @@ import { raleighAdapter, getDiscoveredAreasRaleigh } from "./adapters/raleigh-ar
 import { grandRapidsAdapter, getDiscoveredAreasGrandRapids } from "./adapters/grand-rapids-arcgis.js";
 import { arlingtonAdapter, getDiscoveredAreasArlington } from "./adapters/arlington-arcgis.js";
 import { riversideAdapter, getDiscoveredAreasRiverside } from "./adapters/riverside-arcgis.js";
+import { mesaAdapter, getDiscoveredAreasMesa } from "./adapters/mesa-socrata.js";
+import { savannahAdapter, getDiscoveredAreasSavannah } from "./adapters/savannah-arcgis.js";
+import { corpusChristiAdapter, getDiscoveredAreasCorpusChristi } from "./adapters/corpus-christi-arcgis.js";
+import { durhamAdapter, getDiscoveredAreasDurham } from "./adapters/durham-arcgis.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ckan.js";
 import { jacksonvilleAdapter, getDiscoveredAreasJacksonville } from "./adapters/jacksonville-arcgis.js";
 import { virginiaBeachAdapter, getDiscoveredAreasVirginiaBeach, getPrimaryAreasVirginiaBeach } from "./adapters/virginia-beach-arcgis.js";
@@ -531,6 +535,43 @@ export const CITIES: CityEntry[] = [
     adapter: riversideAdapter,
     discover: getDiscoveredAreasRiverside,
   },
+  {
+    // Mesa, AZ — Mesa PD Police Incidents (Socrata hpbg-2wph); per-incident
+    // point geocoded by point-in-polygon into the 6 city council districts.
+    // Date-only feed (no hour-of-day).
+    slug: "mesa",
+    label: "Mesa",
+    bbox: { south: 33.30, west: -111.90, north: 33.51, east: -111.58 },
+    adapter: mesaAdapter,
+    discover: getDiscoveredAreasMesa,
+  },
+  {
+    // Savannah, GA — SPD Crimes ArcGIS; per-incident NIBRS with the city's own
+    // neighborhood field. Feed lags ~3 months (graded on the freshest 12mo).
+    slug: "savannah",
+    label: "Savannah",
+    bbox: { south: 31.96, west: -81.25, north: 32.18, east: -81.04 },
+    adapter: savannahAdapter,
+    discover: getDiscoveredAreasSavannah,
+  },
+  {
+    // Corpus Christi, TX — CCPD crime dashboard ArcGIS MapServer; point geometry
+    // geocoded via point-in-polygon into the 9 Area Development Plan districts.
+    slug: "corpus-christi",
+    label: "Corpus Christi",
+    bbox: { south: 27.63, west: -97.55, north: 27.85, east: -97.27 },
+    adapter: corpusChristiAdapter,
+    discover: getDiscoveredAreasCorpusChristi,
+  },
+  {
+    // Durham, NC — DPD incidents ArcGIS (non-spatial table); grouped by the 5 DPD
+    // police districts (polygon-count granularity, no per-incident pins).
+    slug: "durham",
+    label: "Durham",
+    bbox: { south: 35.86, west: -79.02, north: 36.14, east: -78.76 },
+    adapter: durhamAdapter,
+    discover: getDiscoveredAreasDurham,
+  },
 ];
 
 export function cityFromLatLng(point: { lat: number; lng: number }): CityEntry | null {
@@ -638,6 +679,10 @@ const AREA_SLUG_PREFIX: Record<string, string> = {
   "grand-rapids": "grr-",
   "arlington": "arl-",
   "riverside": "riv-",
+  "mesa": "mesa-",
+  "savannah": "sav-",
+  "corpus-christi": "cc-",
+  "durham": "dur-",
 };
 
 const COMPASS = new Set(["n", "s", "e", "w", "nw", "ne", "sw", "se"]);

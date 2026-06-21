@@ -68,4 +68,8 @@ export const OFFICIAL_ALERTS_CITY_META: Record<string, OfficialAlertsCityMeta> =
   "grand-rapids":      { slug: "grand-rapids",      label: "Grand Rapids",      state: "MI", centroid: { lat: 42.96, lng: -85.67 } },
   "arlington":         { slug: "arlington",         label: "Arlington",         state: "TX", centroid: { lat: 32.74, lng: -97.11 } },
   "riverside":         { slug: "riverside",         label: "Riverside",         state: "CA", centroid: { lat: 33.95, lng: -117.40 } },
+  "mesa":              { slug: "mesa",              label: "Mesa",              state: "AZ", centroid: { lat: 33.42, lng: -111.74 } },
+  "savannah":          { slug: "savannah",          label: "Savannah",          state: "GA", centroid: { lat: 32.08, lng: -81.09 } },
+  "corpus-christi":    { slug: "corpus-christi",    label: "Corpus Christi",    state: "TX", centroid: { lat: 27.80, lng: -97.40 } },
+  "durham":            { slug: "durham",            label: "Durham",            state: "NC", centroid: { lat: 35.99, lng: -78.90 } },
 };

@@ -76,6 +76,13 @@ const BASE_FBI_BASELINES: Record<string, CityFbiBaseline> = {
   "grand-rapids": { violent: 883, property: 3079, year: 2023, ori: "MI4143600" },
   "arlington": { violent: 498, property: 2606, year: 2023, ori: "TX2200100" },
   "riverside": { violent: 551, property: 3410, year: 2023, ori: "CA0331300" },
+  "mesa": { violent: 445, property: 1652, year: 2023, ori: "AZ0071700" },
+  "corpus-christi": { violent: 875, property: 3216, year: 2023, ori: "TX1780200" },
+  "durham": { violent: 639, property: 3789, year: 2023, ori: "NC0320100" },
+  // Savannah: FBI CDE 2023 NIBRS series is empty (GA transition gap — only
+  // Jan/Feb reported, both 0), so this is an aggregator estimate, NOT FBI-
+  // anchored. Grade should be read as approximate. ORI GA0250300 is correct.
+  "savannah": { violent: 640, property: 3289, year: 2023, ori: "GA0250300" },
   "gainesville": { violent: 749, property: 2927, year: 2023, ori: "FL0010100" },
   "tampa": { violent: 469, property: 1686, year: 2023, ori: "FL0290200" },
   // Nashville (Metro Nashville PD, ORI TN0190100): FBI CDE 2023 — 8,909 violent
