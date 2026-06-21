@@ -6,6 +6,7 @@ import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, readJson, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
 import { cityLocalToUtcIso } from "../lib/city-time.js";
+import { rochesterPolygons } from "../data/rochester-neighborhoods.js";
 
 // Rochester, NY — Rochester Police Department "RPD Part I Crime - 2011 to
 // Present" ArcGIS FeatureServer. Incident-level UCR Part I rows with point
@@ -14,11 +15,15 @@ import { cityLocalToUtcIso } from "../lib/city-time.js";
 // integer UCR Part I crime category (`Statute_CrimeCategory`: 1=Murder,
 // 2=Rape, 3=Robbery, 4=Aggravated Assault, 5=Burglary, 6=Larceny, 7=Motor
 // Vehicle Theft, 8=Arson), a free-text offense (`Statute_Description`), and the
-// RPD patrol section (`Patrol_Section`: Clinton/Genesee/Goodman/Lake — a real
-// geographic area). The occurrence timestamp (`OccurredFrom_Timestamp`) is
-// epoch-ms with a real hour-of-day, so we take it straight as UTC. We take the
-// section straight from the feed — no point-in-polygon needed.
-// Source: https://maps.cityofrochester.gov/arcgis/rest/services/RPD/RPD_Part_I_Crime/FeatureServer/3
+// RPD patrol section (`Patrol_Section`: Clinton/Genesee/Goodman/Lake — coarse).
+// The occurrence timestamp (`OccurredFrom_Timestamp`) is epoch-ms with a real
+// hour-of-day, so we take it straight as UTC. We geocode each incident's
+// lng/lat to one of 48 official City of Rochester named neighborhoods (Corn
+// Hill, South Wedge, Swillburg, North Winton Village, Beechwood, …) via
+// point-in-polygon — the coarse patrol section is the fallback only for the
+// rare point outside every neighborhood or with no coordinates.
+// Source (crime): https://maps.cityofrochester.gov/arcgis/rest/services/RPD/RPD_Part_I_Crime/FeatureServer/3
+// Source (neighborhoods): https://maps.cityofrochester.gov/arcgis/rest/services/RPD/City_Neighborhoods/MapServer/0
 
 const BASE =
   "https://maps.cityofrochester.gov/arcgis/rest/services/RPD/RPD_Part_I_Crime/FeatureServer/3/query";
@@ -97,27 +102,61 @@ function classify(code: number | undefined, description: string | undefined): Cr
   return CrimeCategory.SOCIETY;
 }
 
-// Title-case to match the City of Rochester's official "City_Sections" polygon
-// names (the rochester.geojson `name`s). The feed already supplies them title-
-// cased (Clinton/Genesee/Goodman/Lake) but we normalize defensively, preserving
-// Mc/Mac and O' prefixes.
-function titleCaseSection(name: string): string {
-  return name
+// Title-case the coarse RPD patrol section (Clinton/Genesee/Goodman/Lake), used
+// only as a fallback label for the rare point that geocodes outside every
+// neighborhood. We label it as a patrol section so it reads honestly and is
+// excluded from neighborhood discovery (those incidents still count citywide).
+function sectionFallback(name: string): string {
+  const s = name.trim();
+  if (!s || NON_SECTION.has(s)) return "Unknown";
+  const title = s
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase())
-    .replace(/\bMc(\w)/g, (_, c) => "Mc" + c.toUpperCase())
-    .replace(/\bMac([a-z])/g, (_, c) => "Mac" + c.toUpperCase())
-    .replace(/\bO'(\w)/g, (_, c) => "O'" + c.toUpperCase())
-    .replace(/\b(Of|And|The)\b/g, (w) => w.toLowerCase())
     .trim();
+  return `RPD ${title} Section`;
 }
 
-// Feed catch-all bucket for unassigned points ("***") — still counts citywide
-// but is not a browsable section, so it's excluded from discovery.
+// Catch-all buckets for unassigned points ("***") — still count citywide but
+// are not browsable, so they're excluded from discovery.
 const NON_SECTION = new Set(["", "***", "Unknown"]);
 
 function slugifySection(name: string): string {
   return `roc-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+// Point-in-polygon geocoder over the 48 official City of Rochester named
+// neighborhoods. bbox-prefiltered even-odd parity ray casting — same self-
+// contained pattern as the Long Beach / Indianapolis / Boston adapters.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = rochesterPolygons.map((p) => {
+  const rings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of rings) for (const [x, y] of ring) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+});
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function geocodeRochester(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
 }
 
 const PROVENANCE: DataProvenance = {
@@ -126,8 +165,9 @@ const PROVENANCE: DataProvenance = {
   recency: "Refreshed daily by the Rochester Police Department (rolling UCR Part I incident feed)",
   granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Rochester Police Department and grouped by the city's " +
-    "own patrol sections — not live, not street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Rochester Police Department and geocoded to one of 48 " +
+    "official City of Rochester named neighborhoods (the RPD patrol section for the rare point " +
+    "outside every neighborhood) — not live, not street-level. CommunitySafe does not track individuals.",
 };
 
 // OccurredFrom_Timestamp is epoch-ms carrying the real hour-of-day, so we take
@@ -192,14 +232,16 @@ async function fetchRochester(): Promise<Incident[]> {
   await Promise.all(workers);
   const feats = results.flat();
   return feats
-    .filter((f) => (f.attributes.Patrol_Section ?? "").trim() && !NON_SECTION.has((f.attributes.Patrol_Section ?? "").trim()))
+    .filter((f) => typeof f.attributes.OccurredFrom_Timestamp === "number" || typeof f.attributes.OccurredFrom_Date_Year === "number")
     .map((f, i) => {
       const a = f.attributes;
       const lng = f.geometry && f.geometry.x !== 0 ? f.geometry.x : undefined;
       const lat = f.geometry && f.geometry.y !== 0 ? f.geometry.y : undefined;
+      const nbhd = lat != null && lng != null ? geocodeRochester(lng, lat) : null;
+      const area = nbhd ?? sectionFallback((a.Patrol_Section ?? "").trim());
       return {
         id: `roc-${a.OBJECTID ?? i}`,
-        area: titleCaseSection((a.Patrol_Section ?? "").trim()),
+        area,
         occurredAt: occurredAtFor(a),
         nibrsCategory: classify(a.Statute_CrimeCategory, a.Statute_Description),
         ibrOffenseDescription: titleCaseOffense((a.Statute_Description ?? "Unknown").trim()),
@@ -238,6 +280,9 @@ export async function getDiscoveredAreasRochester(): Promise<KnownArea[]> {
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
     if (!r.area || NON_SECTION.has(r.area)) continue;
+    // Keep the catalog to real neighborhoods — the RPD patrol-section fallback
+    // labels still count citywide but aren't browsable pseudo-neighborhoods.
+    if (/^RPD .* Section$/.test(r.area)) continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat;

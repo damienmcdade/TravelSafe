@@ -5,6 +5,7 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, readJson, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+import { grandRapidsPolygons } from "../data/grand-rapids-neighborhoods.js";
 
 // Grand Rapids, MI — Grand Rapids Police Department (GRPD) incident feed on the
 // City of Grand Rapids ArcGIS Online org. The geocoded layer ("Sheet2_Geocoded3",
@@ -14,9 +15,13 @@ import { titleCaseOffense } from "../lib/titlecase-offense.js";
 // offense group (`USER_NIBRS_GRP`, which carries "Robbery" — see classify), the
 // GRPD service area (`USER_Service_Area` = North/South/East/West/Central) and an
 // offense datetime (`USER_DATEOFOFFENSE`, epoch-ms UTC with a REAL time of day,
-// not a midnight-truncated date — verified live). We take the service area
-// straight from the feed — no point-in-polygon needed. ~60k rows / 400 days.
-// Source: https://services2.arcgis.com/L81TiOwAPO1ZvU9b/arcgis/rest/services/CRIME_DALLLLLLL/FeatureServer/0
+// not a midnight-truncated date — verified live). We geocode each incident's
+// lng/lat to one of the 40 OFFICIAL named City of Grand Rapids neighborhoods
+// (Heritage Hill, Eastown, Creston, Alger Heights, Garfield Park, Baxter,
+// Midtown…) via point-in-polygon, falling back to the GRPD service area for the
+// rare point outside every polygon. ~60k rows / 400 days.
+// Crime source: https://services2.arcgis.com/L81TiOwAPO1ZvU9b/arcgis/rest/services/CRIME_DALLLLLLL/FeatureServer/0
+// Neighborhood polygons: https://services2.arcgis.com/L81TiOwAPO1ZvU9b/arcgis/rest/services/City_of_Grand_Rapids_Neighborhood_Areas/FeatureServer/0 (NEBRH name field)
 
 const BASE =
   "https://services2.arcgis.com/L81TiOwAPO1ZvU9b/arcgis/rest/services/CRIME_DALLLLLLL/FeatureServer/0/query";
@@ -64,18 +69,57 @@ function classify(category: string | undefined, grp: string | undefined): CrimeC
   return CrimeCategory.SOCIETY;
 }
 
-// Title-case the GRPD service area ("NORTH" → "North") to match the city's
-// Police Service Area boundary names (the grand-rapids.geojson `SERVCEN`s).
-function titleCaseArea(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase())
-    .trim();
+// GRPD service-area fallback label for the rare point outside every neighborhood
+// polygon (river, parks, annexed edges, ~missing coords). Clearly labeled as a
+// service area so it reads honestly, and excluded from neighborhood discovery
+// below — those incidents still count citywide.
+function serviceAreaFallback(name: string | undefined): string {
+  const d = (name ?? "").trim();
+  if (!d) return "Unknown";
+  const title = d.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+  return `GRPD ${title}`;
 }
 
-// Feed catch-all values for points outside a GRPD service area — counts citywide
-// but is not a browsable area, so it's excluded from discovery.
-const NON_AREA = new Set(["", "Other Jurisdiction", "Unknown"]);
+// Point-in-polygon geocoder over the 40 official City of Grand Rapids
+// neighborhoods. bbox-prefiltered ray casting — same self-contained pattern as
+// the Long Beach / Indianapolis / Boston adapters.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = grandRapidsPolygons.map((p) => {
+  const rings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of rings) for (const [x, y] of ring) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+});
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function geocodeGrandRapids(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
+}
+
+// Catch-all area labels that count citywide but are not browsable neighborhoods,
+// so they're excluded from discovery. Matches "Unknown" and any "GRPD <area>".
+function isNonArea(area: string): boolean {
+  return !area || area === "Unknown" || /^GRPD\b/.test(area);
+}
 
 function slugifyArea(name: string): string {
   return `grr-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
@@ -85,10 +129,11 @@ const PROVENANCE: DataProvenance = {
   source: "Grand Rapids Police Department (City of Grand Rapids ArcGIS Open Data)",
   datasetUrl: "https://grandrapidsmi.gov/Services/Police",
   recency: "Refreshed regularly by the Grand Rapids Police Department (rolling NIBRS incident feed)",
-  granularity: "beat",
+  granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Grand Rapids Police Department and grouped by the " +
-    "department's own service areas — not live, not street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Grand Rapids Police Department and geocoded to one of " +
+    "40 official City of Grand Rapids neighborhoods (GRPD service area for the rare point " +
+    "outside every polygon) — not live, not street-level. CommunitySafe does not track individuals.",
 };
 
 async function fetchPage(offset: number, sinceTs: string): Promise<GrandRapidsFeature[]> {
@@ -134,9 +179,7 @@ async function fetchGrandRapids(): Promise<Incident[]> {
   await Promise.all(workers);
   const feats = results.flat();
   return feats
-    .filter(
-      (f) => typeof f.attributes.USER_DATEOFOFFENSE === "number" && (f.attributes.USER_Service_Area ?? "").trim(),
-    )
+    .filter((f) => typeof f.attributes.USER_DATEOFOFFENSE === "number")
     .map((f, i) => {
       const a = f.attributes;
       // Geometry (outSR=4326) is authoritative; fall back to the X/Y fields.
@@ -144,11 +187,15 @@ async function fetchGrandRapids(): Promise<Incident[]> {
       const rawLat = f.geometry && f.geometry.y !== 0 ? f.geometry.y : a.Y;
       const lng = typeof rawLng === "number" && rawLng !== 0 ? rawLng : undefined;
       const lat = typeof rawLat === "number" && rawLat !== 0 ? rawLat : undefined;
+      // Geocode lng/lat to an official GR neighborhood; fall back to the GRPD
+      // service area for the rare point outside every polygon (or missing coords).
+      const nbhd = lat != null && lng != null ? geocodeGrandRapids(lng, lat) : null;
+      const area = nbhd ?? serviceAreaFallback(a.USER_Service_Area);
       // USER_DATEOFOFFENSE is epoch-ms UTC with a real time of day — use it directly.
       const occurredAt = new Date(a.USER_DATEOFOFFENSE as number).toISOString();
       return {
         id: `grr-${a.ObjectID ?? i}`,
-        area: titleCaseArea((a.USER_Service_Area ?? "").trim()),
+        area,
         occurredAt,
         nibrsCategory: classify(a.USER_NIBRS_Category, a.USER_NIBRS_GRP),
         ibrOffenseDescription: titleCaseOffense(
@@ -188,7 +235,7 @@ export async function getDiscoveredAreasGrandRapids(): Promise<KnownArea[]> {
   const rows = await getRowsGrandRapids();
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
-    if (!r.area || NON_AREA.has(r.area)) continue;
+    if (isNonArea(r.area)) continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat;

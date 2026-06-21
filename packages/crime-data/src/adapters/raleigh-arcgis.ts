@@ -5,6 +5,7 @@ import { riskLevelFromAreaCounts } from "../risk-bands.js";
 import type { KnownArea } from "../neighborhoods.js";
 import { USER_AGENT, readJson, fetchWithRetry } from "../lib/http.js";
 import { titleCaseOffense } from "../lib/titlecase-offense.js";
+import { raleighPolygons } from "../data/raleigh-neighborhoods.js";
 
 // Raleigh, NC — Raleigh Police Department "Police Incidents" ArcGIS
 // FeatureServer. Incident-level rows with real WGS84 lat/lng fields
@@ -12,10 +13,15 @@ import { titleCaseOffense } from "../lib/titlecase-offense.js";
 // (`crime_category`, e.g. "AGGRAVATED ASSAULT"), an offense description
 // (`crime_description`), the RPD police district (`district`, six patrol
 // districts: Southeast / North / Northeast / Southwest / Downtown /
-// Northwest), and a full timestamp (`reported_date`, epoch ms — verified to
-// agree with `reported_hour` to the hour, so it is the real wall-clock time
-// of report, not a date-only midnight). We take the district straight from
-// the feed (already title-cased) — no point-in-polygon needed.
+// Northwest — kept only as the fallback label), and a full timestamp
+// (`reported_date`, epoch ms — verified to agree with `reported_hour` to the
+// hour, so it is the real wall-clock time of report, not a date-only
+// midnight). We geocode each incident to one of the 18 city-published
+// Raleigh Citizens Advisory Council (CAC) areas via point-in-polygon —
+// recognizable named areas (Five Points, Mordecai, Glenwood,
+// Hillsborough-Wade, Midtown, North Central, …) instead of the generic
+// compass patrol districts. The RPD district is the fallback label only for
+// the rare point outside every CAC polygon.
 //
 // CRITICAL: a large share of rows are null-island (latitude=0 / null —
 // ~37.5% across the full archive, ~25% of 2026). We filter `latitude<>0`
@@ -94,7 +100,7 @@ function classify(category: string | undefined): CrimeCategory {
 }
 
 // Districts come back already title-cased ("Southeast", "Downtown", …) — we
-// just trim and normalize any stray casing so the slug/label is stable.
+// just trim and normalize any stray casing so the fallback label is stable.
 function titleCaseDistrict(name: string): string {
   return name
     .trim()
@@ -102,22 +108,70 @@ function titleCaseDistrict(name: string): string {
     .replace(/\b\w/g, (ch) => ch.toUpperCase());
 }
 
-// Rows with a blank/unknown district still count citywide but aren't a
-// browsable district, so they're excluded from discovery.
-const NON_DISTRICT = new Set(["Unknown", ""]);
+// RPD-district fallback label for the rare point outside every CAC polygon
+// (city edges, water, geocode noise). Clearly reads as a patrol district so
+// it's honest, and excluded from CAC discovery below — those rows still
+// count citywide. Blank/unknown districts collapse to "Unknown".
+function districtFallback(district: string | undefined): string {
+  const d = (district ?? "").trim();
+  if (!d) return "Unknown";
+  return `RPD ${titleCaseDistrict(d)} District`;
+}
 
-function slugifyDistrict(name: string): string {
+// Rows that fell back to a patrol district (or Unknown) still count citywide
+// but aren't a browsable CAC area, so they're excluded from discovery.
+const NON_NEIGHBORHOOD = (area: string): boolean =>
+  area === "Unknown" || area === "" || /^RPD .* District$/.test(area);
+
+function slugifyArea(name: string): string {
   return `ral-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`;
+}
+
+// Point-in-polygon geocoder over the 18 official Raleigh CAC areas.
+// bbox-prefiltered ray casting — same self-contained pattern as the
+// Long Beach / Indianapolis / Boston / Philadelphia adapters.
+interface PolyIndex { name: string; bbox: [number, number, number, number]; rings: number[][][] }
+const POLY_INDEX: PolyIndex[] = raleighPolygons.map((p) => {
+  const rings: number[][][] = p.geometry.type === "Polygon"
+    ? (p.geometry.coordinates as number[][][])
+    : (p.geometry.coordinates as number[][][][]).flat();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const ring of rings) for (const [x, y] of ring) {
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  return { name: p.name, bbox: [minX, minY, maxX, maxY], rings };
+});
+function pointInRing(x: number, y: number, ring: number[][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    const intersect = ((yi > y) !== (yj > y)) && (x < ((xj - xi) * (y - yi)) / (yj - yi || 1e-12) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+function geocodeRaleigh(lng: number, lat: number): string | null {
+  for (const p of POLY_INDEX) {
+    const [minX, minY, maxX, maxY] = p.bbox;
+    if (lng < minX || lng > maxX || lat < minY || lat > maxY) continue;
+    let parity = 0;
+    for (const ring of p.rings) if (pointInRing(lng, lat, ring)) parity++;
+    if (parity % 2 === 1) return p.name;
+  }
+  return null;
 }
 
 const PROVENANCE: DataProvenance = {
   source: "Raleigh Police Department (City of Raleigh Open Data ArcGIS)",
   datasetUrl: "https://data-ral.opendata.arcgis.com/",
   recency: "Refreshed daily by the Raleigh Police Department (rolling incident feed)",
-  granularity: "beat",
+  granularity: "neighborhood",
   disclaimer:
-    "Incidents are reported by the Raleigh Police Department and grouped by RPD police " +
-    "district — not live, not street-level. CommunitySafe does not track individuals.",
+    "Incidents are reported by the Raleigh Police Department and geocoded to one of 18 " +
+    "official Raleigh Citizens Advisory Council (CAC) areas (RPD patrol district for the " +
+    "rare point outside every CAC polygon) — not live, not street-level. CommunitySafe " +
+    "does not track individuals.",
 };
 
 async function fetchPage(offset: number, sinceTs: string): Promise<RaleighFeature[]> {
@@ -168,21 +222,24 @@ async function fetchRaleigh(): Promise<Incident[]> {
   return feats
     .filter((f) => {
       const a = f.attributes;
-      // Defensive null-island + date guard (mirrors the where clause).
+      // Defensive null-island + date guard (mirrors the where clause). We no
+      // longer require a non-blank district — a blank-district row with a real
+      // lat/lng still geocodes to a CAC via point-in-polygon (and falls back
+      // to "Unknown" only if it lands outside every CAC polygon).
       return (
         typeof a.reported_date === "number" &&
         typeof a.latitude === "number" &&
-        a.latitude !== 0 &&
-        (a.district ?? "").trim() !== ""
+        a.latitude !== 0
       );
     })
     .map((f, i) => {
       const a = f.attributes;
       const lat = a.latitude;
       const lng = typeof a.longitude === "number" && a.longitude !== 0 ? a.longitude : undefined;
+      const cac = lat != null && lng != null ? geocodeRaleigh(lng, lat) : null;
       return {
         id: `ral-${a.case_number ?? a.OBJECTID ?? i}`,
-        area: titleCaseDistrict((a.district ?? "").trim()),
+        area: cac ?? districtFallback(a.district),
         // reported_date is a real epoch-ms timestamp (verified to agree with
         // reported_hour), so use it directly — no local-midnight reconstruction.
         occurredAt: new Date(a.reported_date!).toISOString(),
@@ -222,7 +279,7 @@ export async function getDiscoveredAreasRaleigh(): Promise<KnownArea[]> {
   const rows = await getRowsRaleigh();
   const agg = new Map<string, { latSum: number; lngSum: number; count: number }>();
   for (const r of rows) {
-    if (!r.area || NON_DISTRICT.has(r.area)) continue;
+    if (!r.area || NON_NEIGHBORHOOD(r.area)) continue;
     if (r.lat == null || r.lng == null) continue;
     const e = agg.get(r.area) ?? { latSum: 0, lngSum: 0, count: 0 };
     e.latSum += r.lat;
@@ -233,7 +290,7 @@ export async function getDiscoveredAreasRaleigh(): Promise<KnownArea[]> {
   return Array.from(agg.entries())
     .filter(([, e]) => e.count >= 3)
     .map(([name, e]) => ({
-      slug: slugifyDistrict(name),
+      slug: slugifyArea(name),
       label: name,
       jurisdiction: "Raleigh",
       centroid: { lat: e.latSum / e.count, lng: e.lngSum / e.count },
@@ -244,7 +301,7 @@ export async function getDiscoveredAreasRaleigh(): Promise<KnownArea[]> {
 function labelForSlug(slug: string, rows: Incident[]): string | null {
   const want = slug.toLowerCase();
   for (const r of rows) {
-    if (slugifyDistrict(r.area) === want) return r.area;
+    if (slugifyArea(r.area) === want) return r.area;
   }
   return null;
 }

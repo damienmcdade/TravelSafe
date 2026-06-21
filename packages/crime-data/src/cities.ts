@@ -45,12 +45,9 @@ import { daytonAdapter, getDiscoveredAreasDayton } from "./adapters/dayton-arcgi
 import { rochesterAdapter, getDiscoveredAreasRochester } from "./adapters/rochester-arcgis.js";
 import { raleighAdapter, getDiscoveredAreasRaleigh } from "./adapters/raleigh-arcgis.js";
 import { grandRapidsAdapter, getDiscoveredAreasGrandRapids } from "./adapters/grand-rapids-arcgis.js";
-import { arlingtonAdapter, getDiscoveredAreasArlington } from "./adapters/arlington-arcgis.js";
 import { riversideAdapter, getDiscoveredAreasRiverside } from "./adapters/riverside-arcgis.js";
-import { mesaAdapter, getDiscoveredAreasMesa } from "./adapters/mesa-socrata.js";
 import { savannahAdapter, getDiscoveredAreasSavannah } from "./adapters/savannah-arcgis.js";
 import { corpusChristiAdapter, getDiscoveredAreasCorpusChristi } from "./adapters/corpus-christi-arcgis.js";
-import { durhamAdapter, getDiscoveredAreasDurham } from "./adapters/durham-arcgis.js";
 import { phoenixAdapter, getDiscoveredAreasPhoenix } from "./adapters/phoenix-ckan.js";
 import { jacksonvilleAdapter, getDiscoveredAreasJacksonville } from "./adapters/jacksonville-arcgis.js";
 import { virginiaBeachAdapter, getDiscoveredAreasVirginiaBeach, getPrimaryAreasVirginiaBeach } from "./adapters/virginia-beach-arcgis.js";
@@ -518,15 +515,6 @@ export const CITIES: CityEntry[] = [
     discover: getDiscoveredAreasGrandRapids,
   },
   {
-    // Arlington, TX — APD PoliceExternal MapServer; per-incident point geometry
-    // grouped by the 4 APD police districts (North/East/South/West).
-    slug: "arlington",
-    label: "Arlington",
-    bbox: { south: 32.6, west: -97.23, north: 32.82, east: -97.0 },
-    adapter: arlingtonAdapter,
-    discover: getDiscoveredAreasArlington,
-  },
-  {
     // Riverside, CA — RPD Crimes ArcGIS FeatureServer; per-incident NIBRS rows
     // carrying their own COMMUNITY (28 official Riverside neighborhoods).
     slug: "riverside",
@@ -534,16 +522,6 @@ export const CITIES: CityEntry[] = [
     bbox: { south: 33.86, west: -117.52, north: 34.02, east: -117.27 },
     adapter: riversideAdapter,
     discover: getDiscoveredAreasRiverside,
-  },
-  {
-    // Mesa, AZ — Mesa PD Police Incidents (Socrata hpbg-2wph); per-incident
-    // point geocoded by point-in-polygon into the 6 city council districts.
-    // Date-only feed (no hour-of-day).
-    slug: "mesa",
-    label: "Mesa",
-    bbox: { south: 33.30, west: -111.90, north: 33.51, east: -111.58 },
-    adapter: mesaAdapter,
-    discover: getDiscoveredAreasMesa,
   },
   {
     // Savannah, GA — SPD Crimes ArcGIS; per-incident NIBRS with the city's own
@@ -562,15 +540,6 @@ export const CITIES: CityEntry[] = [
     bbox: { south: 27.63, west: -97.55, north: 27.85, east: -97.27 },
     adapter: corpusChristiAdapter,
     discover: getDiscoveredAreasCorpusChristi,
-  },
-  {
-    // Durham, NC — DPD incidents ArcGIS (non-spatial table); grouped by the 5 DPD
-    // police districts (polygon-count granularity, no per-incident pins).
-    slug: "durham",
-    label: "Durham",
-    bbox: { south: 35.86, west: -79.02, north: 36.14, east: -78.76 },
-    adapter: durhamAdapter,
-    discover: getDiscoveredAreasDurham,
   },
 ];
 
@@ -677,12 +646,9 @@ const AREA_SLUG_PREFIX: Record<string, string> = {
   "rochester": "roc-",
   "raleigh": "ral-",
   "grand-rapids": "grr-",
-  "arlington": "arl-",
   "riverside": "riv-",
-  "mesa": "mesa-",
   "savannah": "sav-",
   "corpus-christi": "cc-",
-  "durham": "dur-",
 };
 
 const COMPASS = new Set(["n", "s", "e", "w", "nw", "ne", "sw", "se"]);
