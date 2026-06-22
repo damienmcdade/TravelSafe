@@ -20,7 +20,7 @@ jobs:
       contents: write
       actions: write # to dispatch ci.yml after committing the snapshot
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
