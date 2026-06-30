@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>CommunitySafe</string>
+	<string>CommunitySafe</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -21,9 +21,24 @@
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<string>3</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>CommunitySafe uses the camera if you choose to attach a photo to a community post or incident report.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>CommunitySafe lets you import trusted contacts from your address book so you can quickly add them to your Check-on-Me list.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>CommunitySafe uses your location to show neighborhood safety scores, nearby incidents, and weather conditions for where you are right now. Background location is used only if you enable the live-share safety feature, so your trusted contacts can see you have arrived safely.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>CommunitySafe uses your location to show neighborhood safety scores, nearby incidents, and weather conditions for where you are right now.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>CommunitySafe accesses your photos only if you choose to attach an image to a community post.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -47,21 +62,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>CommunitySafe uses your location to show neighborhood safety scores, nearby incidents, and weather conditions for where you are right now.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>CommunitySafe lets you import trusted contacts from your address book so you can quickly add them to your Check-on-Me list.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>CommunitySafe uses the camera if you choose to attach a photo to a community post or incident report.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>CommunitySafe accesses your photos only if you choose to attach an image to a community post.</string>
-	<!-- 'location' background mode removed: no native background-geolocation
-	     plugin ships (packageClassList is empty), so background location isn't
-	     implemented and declaring it triggers App Store rejection (2.5.4).
-	     Foreground location (NSLocationWhenInUseUsageDescription) is retained. -->
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-	</array>
 </dict>
 </plist>

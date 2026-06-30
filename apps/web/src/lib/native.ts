@@ -186,6 +186,72 @@ export async function hapticNotify(type: "success" | "warning" | "error" = "succ
 }
 
 // ---------------------------------------------------------------------------
+// Push Notifications (APNS on iOS via @capacitor/push-notifications)
+// ---------------------------------------------------------------------------
+
+export type PushPermission = "granted" | "denied" | "prompt";
+
+export async function requestPushPermission(): Promise<PushPermission> {
+  if (!isNativeApp()) return "prompt";
+  try {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    const status = await PushNotifications.checkPermissions();
+    if (status.receive === "granted") return "granted";
+    if (status.receive === "denied") return "denied";
+    const result = await PushNotifications.requestPermissions();
+    if (result.receive !== "granted") return "denied";
+    await PushNotifications.register();
+    return "granted";
+  } catch {
+    return "prompt";
+  }
+}
+
+export async function initPushNotifications(onToken?: (token: string) => void): Promise<void> {
+  if (!isNativeApp()) return;
+  try {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    await PushNotifications.addListener("registration", ({ value }) => {
+      onToken?.(value);
+      // Persist the token so the server can send targeted crime alerts
+      try { localStorage.setItem("cs_push_token", value); } catch { /* ignore */ }
+    });
+    await PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      // Foreground notification — show custom in-app banner
+      const event = new CustomEvent("cs:push", { detail: notification });
+      window.dispatchEvent(event);
+    });
+    await PushNotifications.addListener("pushNotificationActionPerformed", (action) => {
+      // User tapped the notification — deep-link into the app
+      const url: string | undefined = (action.notification.data as Record<string, string>)?.url;
+      if (url) {
+        try {
+          const path = new URL(url).pathname;
+          if (path && path !== "/") window.location.assign(path);
+        } catch { /* ignore */ }
+      }
+    });
+  } catch {
+    /* push plugin unavailable */
+  }
+}
+
+// Write preferred city to shared App Group so the WidgetKit extension can read it
+export function syncPreferredCityToWidget(citySlug: string): void {
+  if (!isNativeApp()) return;
+  try {
+    // Capacitor Preferences bridge for App Group data
+    localStorage.setItem("cs_preferred_city", citySlug);
+    // Custom message to native layer via custom URL scheme (AppDelegate reads this)
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = `communitysafe://set-city?slug=${encodeURIComponent(citySlug)}`;
+    document.body.appendChild(iframe);
+    setTimeout(() => document.body.removeChild(iframe), 500);
+  } catch { /* ignore */ }
+}
+
+// ---------------------------------------------------------------------------
 // One-time native shell init: status bar, splash, deep links, hardware back
 // ---------------------------------------------------------------------------
 
@@ -230,4 +296,7 @@ export async function initNativeShell(): Promise<void> {
   } catch {
     /* ignore */
   }
+
+  // Initialise push notification listeners (registration completes asynchronously)
+  await initPushNotifications();
 }
