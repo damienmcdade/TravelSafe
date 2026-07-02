@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Script from "next/script";
+import { isNativeApp } from "@/lib/native";
 
 const CONSENT_KEY = "cs.consent.v1";
 
@@ -23,8 +24,13 @@ function readConsent(): "accept" | "reject" | null {
 /// unless NEXT_PUBLIC_ADSENSE_CLIENT_ID is set, which the caller already guards.)
 export function ConsentedAdSense({ clientId }: { clientId: string }) {
   const [consented, setConsented] = useState(false);
+  // Never load ads inside the native iOS/Android shell: the App Store listing
+  // says "no ads", and serving AdSense in-app would also require ATT
+  // disclosure (Guideline 5.1.2). Web browsers are unaffected.
+  const [native, setNative] = useState(false);
 
   useEffect(() => {
+    setNative(isNativeApp());
     const sync = () => setConsented(readConsent() === "accept");
     sync();
     // Cross-tab + same-tab consent changes. The banner/settings dispatch a
@@ -39,7 +45,7 @@ export function ConsentedAdSense({ clientId }: { clientId: string }) {
     };
   }, []);
 
-  if (!consented) return null;
+  if (native || !consented) return null;
 
   return (
     <Script
