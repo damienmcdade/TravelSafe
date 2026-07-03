@@ -3,6 +3,7 @@ import { z } from "zod";
 import { wrap } from "@/server/lib/http";
 import { rateLimit } from "@/server/lib/rate-limit";
 import { tryProxy } from "@/server/lib/proxy-to-api";
+import { canonicalCitySlug } from "@/server/lib/city-alias";
 import {
   getSafetyScore,
   getCitywideSafetyScore,
@@ -46,6 +47,13 @@ const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
 export const GET = wrap(async (req: NextRequest) => {
   const limited = rateLimit(req, { scope: "safezone" });
   if (limited) return limited;
+  // Canonicalize label-derived city slugs ("new-york-city" → "new-york")
+  // BEFORE the proxy so Railway receives the registry slug too.
+  const rawCity = req.nextUrl.searchParams.get("city");
+  if (rawCity) {
+    const canon = canonicalCitySlug(rawCity);
+    if (canon !== rawCity) req.nextUrl.searchParams.set("city", canon);
+  }
   // v37: prefer Railway when API_BASE_URL is set so all four
   // safezone + crime-data endpoints run on the Railway long-lived
   // process (shared adapter cache → fewer upstream fetches).
