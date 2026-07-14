@@ -67,6 +67,11 @@ export default function TermsPage() {
       </section>
 
       <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
+        <h2 className="font-display text-xl text-slate2-900">Subscriptions (iOS apps)</h2>
+        <p>The CommunitySafe web app is free. Our iOS apps offer optional auto-renewable subscriptions billed by Apple to your Apple Account: <strong>CommunitySafe Widget Premium (Monthly)</strong> at $5.00/month (or the local-currency equivalent shown in the App Store at purchase), with a 3-day free trial for new subscribers. After any free trial, the subscription renews automatically unless cancelled at least 24 hours before the end of the current period; manage or cancel it any time in your Apple Account settings. Prices for your storefront are always shown in the App Store purchase sheet before you confirm.</p>
+      </section>
+
+      <section className="surface p-6 space-y-3 text-sm text-slate2-700 leading-relaxed">
         <h2 className="font-display text-xl text-slate2-900">AI Assistant</h2>
         <p>The optional AI Assistant uses a third-party large language model to answer questions about CommunitySafe&apos;s data. By using it you acknowledge that:</p>
         <ul className="list-disc pl-5 space-y-1">
