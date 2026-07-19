@@ -84,16 +84,32 @@ final class PremiumManager: ObservableObject {
     }
 
     private func checkEntitlement() async {
+        var ownActive = false
+        var ownOriginalID: String?
+        var ownExpires: Date?
         for await result in Transaction.currentEntitlements {
             // Accept unverified entitlements too — device verification fails
             // spuriously in the sandbox for genuine transactions (see purchase()).
             let tx = result.unsafePayloadValue
             if tx.productID == Self.productID {
-                isPremium = tx.revocationDate == nil
-                return
+                ownActive = tx.revocationDate == nil
+                ownOriginalID = String(tx.originalID)
+                ownExpires = tx.expirationDate
+                break
             }
         }
-        isPremium = false
+        // Report our own subscription so the standalone widget app can honor it
+        // (and stops when it lapses). Then, if we're not subscribed here, carry
+        // over a subscription the family already has in the widget app so they
+        // never pay twice for the same service. Both are best-effort/fail-soft.
+        await CrossAppEntitlement.report(
+            productID: Self.productID, source: "main",
+            active: ownActive, originalID: ownOriginalID, expires: ownExpires)
+        if ownActive {
+            isPremium = true
+            return
+        }
+        isPremium = await CrossAppEntitlement.siblingActive(excludingProductID: Self.productID)
     }
 
     private static func syncWidgetEntitlement(_ active: Bool) {
@@ -344,4 +360,74 @@ private struct FeatureRow: View {
             Spacer()
         }
     }
+}
+
+/// Cross-app subscription carryover.
+///
+/// CommunitySafe and the standalone CommunitySafe Widget app are SEPARATE App
+/// Store products, so StoreKit's per-app entitlements can't see each other. Each
+/// app reports its active subscription to a shared backend keyed by the device's
+/// `identifierForVendor` (identical across our same-team apps on one device), and
+/// checks whether the sibling app holds an active subscription — so a subscriber
+/// to one app is never charged twice for the same service in the other.
+///
+/// Same-device only (identifierForVendor is per-device); cross-device carryover
+/// would require account login. Best-effort and fail-soft: any network failure
+/// simply leaves the app on its own StoreKit result.
+enum CrossAppEntitlement {
+    private static let base = "https://communitysafe-api-production.up.railway.app"
+
+    private static var deviceId: String? {
+        UIDevice.current.identifierForVendor?.uuidString
+    }
+
+    /// Tell the backend about THIS app's subscription so the sibling app can
+    /// honor it. A lapse is conveyed by `active == false` (expires the row now);
+    /// a natural expiry needs no call — the reported `expires` date passes on its
+    /// own. No-ops when there's no transaction to report (never subscribed).
+    static func report(productID: String, source: String, active: Bool,
+                       originalID: String?, expires: Date?) async {
+        guard let deviceId, let originalID, let expires else { return }
+        guard let url = URL(string: "\(base)/entitlement/report") else { return }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.timeoutInterval = 10
+        let body: [String: Any] = [
+            "deviceId": deviceId,
+            "productId": productID,
+            "originalTransactionId": originalID,
+            "source": source,
+            "expiresDate": Int(expires.timeIntervalSince1970 * 1000),
+            "active": active,
+        ]
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        _ = try? await URLSession.shared.data(for: req)
+    }
+
+    /// Does the SIBLING app hold an active subscription on this device? Excludes
+    /// our own product so we only ever count carryover, never our own sub.
+    static func siblingActive(excludingProductID productID: String) async -> Bool {
+        guard let deviceId,
+              let encoded = productID.addingPercentEncoding(withAllowedCharacters: .csUrlQueryValueAllowed),
+              let url = URL(string: "\(base)/entitlement/check?deviceId=\(deviceId)&exclude=\(encoded)")
+        else { return false }
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 10
+        guard let (data, resp) = try? await URLSession.shared.data(for: req),
+              (resp as? HTTPURLResponse)?.statusCode == 200,
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let premium = json["premium"] as? Bool
+        else { return false }
+        return premium
+    }
+}
+
+private extension CharacterSet {
+    /// Query-value-safe set (no "&"/"="/"+"), so a product id can't break the URL.
+    static let csUrlQueryValueAllowed: CharacterSet = {
+        var s = CharacterSet.urlQueryAllowed
+        s.remove(charactersIn: "&=+")
+        return s
+    }()
 }
