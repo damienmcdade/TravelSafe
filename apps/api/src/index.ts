@@ -43,6 +43,7 @@ import { geoRouter } from "./routes/geo.routes.js";
 import { aiRouter } from "./routes/ai.routes.js";
 import { officialAlertsRouter } from "./routes/official-alerts.routes.js";
 import { safezoneRouter } from "./routes/safezone.routes.js";
+import { entitlementRouter } from "./routes/entitlement.routes.js";
 import { startCheckInWorker, stopCheckInWorker } from "./services/safety/check-in.worker.js";
 import { startProximityWorker, stopProximityWorker } from "./services/safety/proximity.worker.js";
 import { startDigestWorker, stopDigestWorker } from "./services/push/digest.worker.js";
@@ -362,6 +363,7 @@ if (process.env.ENABLE_LEGACY_API_AUTH === "true") {
   });
 }
 app.use("/safezone", safezoneRouter);
+app.use("/entitlement", entitlementRouter);
 
 // v98 — grade-sanity diagnostic retired alongside the in-process worker.
 // Kept as a 200 pointer (not a 404) so anything still polling this path
