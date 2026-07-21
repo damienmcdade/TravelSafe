@@ -38,6 +38,22 @@ export function LegalFooter() {
       {/* fix(audit legal-trademark-no-mark-1): explicit brand-ownership / mark
           assertion so the entity -> mark -> product chain is stated. */}
       <p>CommunitySafe™ is a trademark of CyberWave Technologies LLC.</p>
+      {/* Cross-promotion strip (playbook §14) — surfaces the rest of the
+          CyberWave fleet from every public page. Own product link omitted. */}
+      <p className="text-slate2-400">
+        More from CyberWave Technologies:{" "}
+        <a href="https://pcsexpress.app" target="_blank" rel="noopener noreferrer" className="hover:underline">PCS Express</a>
+        {" · "}
+        <a href="https://kinsaga.app" target="_blank" rel="noopener noreferrer" className="hover:underline">Kin Saga</a>
+        {" · "}
+        <a href="https://storymade.dev" target="_blank" rel="noopener noreferrer" className="hover:underline">StoryMade</a>
+        {" · "}
+        <a href="https://codecanic.app" target="_blank" rel="noopener noreferrer" className="hover:underline">Codecanic</a>
+        {" · "}
+        <a href="https://marketscale-ai.vercel.app" target="_blank" rel="noopener noreferrer" className="hover:underline">MarketScale AI</a>
+        {" · "}
+        <a href="https://apps.apple.com/us/app/id6782158794" target="_blank" rel="noopener noreferrer" className="hover:underline">Byte Guardians</a>
+      </p>
     </footer>
   );
 }
