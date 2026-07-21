@@ -26,8 +26,6 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>CommunitySafe uses the camera if you choose to attach a photo to a community post or incident report.</string>
-	<key>NSContactsUsageDescription</key>
-	<string>CommunitySafe lets you import trusted contacts from your address book so you can quickly add them to your Check-on-Me list.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>CommunitySafe uses your location to show neighborhood safety scores, nearby incidents, and weather conditions for where you are right now. Background location is used only if you enable the live-share safety feature, so your trusted contacts can see you have arrived safely.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
